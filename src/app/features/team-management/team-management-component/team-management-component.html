@@ -1,0 +1,59 @@
+<div class="team-container">
+    <header class="team-header">
+        <h1 class="page-title">👥 Team-Verwaltung</h1>
+        <p class="page-subtitle">Lege neue Teammitglieder an und verwalte die Pastell-Kollaborateure.</p>
+    </header>
+
+    <div class="split-workspace">
+
+        <div class="workspace-column form-column">
+            <h3 class="column-title">➕ Neues Mitglied eintragen</h3>
+
+            <form (submit)="onAddMember($event)" class="member-form">
+                <div class="input-group">
+                    <label for="firstName">Vorname</label>
+                    <input type="text" id="firstName" name="firstName" [(ngModel)]="firstNameInput"
+                        placeholder="z.B. Max" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="lastName">Nachname</label>
+                    <input type="text" id="lastName" name="lastName" [(ngModel)]="lastNameInput"
+                        placeholder="z.B. Mustermann" required>
+                </div>
+
+                <button type="submit" class="submit-btn" [disabled]="!firstNameInput.trim() || !lastNameInput.trim()">
+                    Kollegen hinzufügen ✨
+                </button>
+            </form>
+        </div>
+
+        <div class="workspace-column gallery-column">
+            <h3 class="column-title">💼 Registrierte Kollegen ({{ members().length }})</h3>
+
+            <div class="members-gallery">
+                @for (member of members(); track member.id) {
+                    <div class="member-card">
+                        <div class="avatar-circle" [style.background-color]="member.color">
+                           {{ member.initials }}
+                        </div>
+                        <div class="member-info">
+                            <span class="member-name">{{ member.fullName }}</span>
+                            <span class="member-id">ID: {{ member.id }}</span>
+                        </div>
+
+                        <button class="roulette-btn" (click)="randomizeMemberColor(member.id)"
+                            title="Farbe neu auswürfeln">
+                            🎨
+                        </button>
+                    </div> 
+                } @empty {
+                  <div class="empty-gallery">
+                     Es sind noch keine Teammitglieder im System registriert.
+                  </div>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>

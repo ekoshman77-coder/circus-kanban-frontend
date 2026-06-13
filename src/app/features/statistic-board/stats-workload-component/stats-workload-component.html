@@ -1,0 +1,39 @@
+<div class="workload-container">
+  
+  <div class="workload-card" [style.background]="workloadMeta().bg" [style.border-color]="workloadMeta().border">
+    
+    <div class="workload-header">
+      <span class="workload-icon">⏳</span>
+      <div class="workload-title-box">
+        <h3>Tageskapazität</h3>
+        <p class="workload-status-text" [style.color]="workloadMeta().color">
+          {{ workloadMeta().text }}
+        </p>
+      </div>
+      
+      <div class="workload-counter" [style.color]="workloadMeta().color">
+        @if (mode === 'tasks') {
+          <strong>{{ todayTodos.length }}</strong><small>/5</small>
+        } @else {
+          <strong>{{ todayPoints() }}</strong><small>/8P</small>
+        }
+      </div>
+    </div>
+
+    <div class="workload-progress-wrapper">
+      <div class="progress-bar-bg">
+        <div 
+          class="progress-bar-fill" 
+          [style.width.%]="workloadPercent()" 
+          [style.background-color]="workloadMeta().color">
+        </div>
+      </div>
+      <div class="progress-labels">
+        <span>0%</span>
+        <span>Optimal (100%)</span>
+      </div>
+    </div>
+
+  </div>
+
+</div>

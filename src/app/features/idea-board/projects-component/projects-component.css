@@ -1,0 +1,442 @@
+/* ==========================================================================
+   🏗️ COCKPIT: PROJEKT-ZENTRALE DYNAMIC STYLES
+   ========================================================================== */
+
+.projects-dashboard {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 0 20px;
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+.projects-dashboard h2 {
+    font-size: 26px;
+    color: #0f172a;
+    margin-bottom: 4px;
+    font-weight: 800;
+}
+
+.subtitle {
+    color: #64748b;
+    font-size: 15px;
+    margin-bottom: 30px;
+}
+
+/* 🧊 DAS RASTER: Ordnet die Karten reaktiv nebeneinander an */
+.projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 24px;
+}
+
+/* 🎴 DIE PROJEKT-KARTE */
+.project-card {
+    background: #ffffff;
+    border: 2px solid #e2e8f0;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}
+
+/* Highlight, wenn das Projekt aktiv ist */
+.project-card.is-active {
+    border-color: #3b82f6; /* Euer schickes Königsblau */
+    box-shadow: 0 10px 25px rgba(59, 130, 246, 0.08);
+}
+
+.project-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 20px -5px rgba(15, 23, 42, 0.08);
+}
+
+/* 🏷️ CARD HEADER: Jetzt im edlen, einladenden Himmelblau-Verlauf */
+.project-card-header {
+    padding: 20px 20px 14px 20px;
+    /* 🌊 Ein richtig frischer, strategischer Himmelblau-Gradient */
+    background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+    /* Ein etwas kräftigerer blauer Trenner zum Body hin */
+    border-bottom: 2px solid rgba(59, 130, 246, 0.15);
+}
+
+/* Der Bereichs-Tag hebt sich jetzt rein weiß von der blauen Hülle ab */
+.project-area-tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    background: #ffffff; /* Strahlendes Weiß */
+    color: #0284c7;      /* Klares Himmelblau für den Text */
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); /* Minimaler Kachel-Effekt */
+}
+
+.project-card-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #0f172a;
+    font-weight: 700;
+}
+
+/* 📄 CARD BODY */
+.project-card-body {
+    padding: 20px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.project-description {
+    font-size: 14px;
+    color: #475569;
+    line-height: 1.5;
+    margin: 0 0 20px 0;
+}
+
+/* 🏁 MEILENSTEIN INTERAKTIONS-LISTE */
+.milestones-preview h4 {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #64748b;
+    margin: 0 0 10px 0;
+    letter-spacing: 0.5px;
+}
+
+.ms-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* 🚀 Die Klick-Zeile verhält sich wie ein flacher Button */
+.ms-clickable-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.ms-clickable-item:hover {
+    background: #eff6ff; /* Zartes Blau beim Hovern */
+    border-color: #93c5fd;
+    transform: scale(1.01);
+}
+
+.ms-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ms-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.ms-duration-badge {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    background: #ffffff;
+    padding: 2px 6px;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+}
+
+.ms-clickable-item:hover .ms-duration-badge {
+    color: #1d4ed8;
+    border-color: #93c5fd;
+}
+
+.no-milestones {
+    font-size: 13px;
+    color: #94a3b8;
+    font-style: italic;
+    padding: 8px;
+    text-align: center;
+}
+
+/* 🛞 CARD FOOTER & BUTTONS */
+.project-card-footer {
+    padding: 16px 20px;
+    background: #ffffff;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.btn-footer {
+    height: 36px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.15s ease-in-out;
+    box-sizing: border-box;
+}
+
+/* Hauptbutton: Phasen verwalten */
+.btn-milestones {
+    flex: 2;
+    background-color: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+.btn-milestones:hover {
+    background-color: #2563eb;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+/* Zweiter Button: Kalkulator */
+.btn-recalc {
+    flex: 1.5;
+    background-color: #ffffff;
+    color: #475569;
+}
+
+.btn-recalc:hover {
+    background-color: #f8fafc;
+    color: #0f172a;
+    border-color: #94a3b8;
+}
+
+/* Lösch-Button */
+.btn-delete {
+    width: 36px;
+    background-color: #ffffff;
+    color: #ef4444;
+}
+
+.btn-delete:hover {
+    background-color: #fef2f2;
+    border-color: #fca5a5;
+}
+
+/* 🏜️ FALLBACK (Wenn keine Projekte da sind) */
+.no-projects-fallback {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    background: #f8fafc;
+    border: 2px dashed #cbd5e1;
+    border-radius: 16px;
+    color: #64748b;
+}
+
+.fallback-icon {
+    font-size: 48px;
+    display: block;
+    margin-bottom: 16px;
+}
+
+.no-projects-fallback h3 {
+    margin: 0 0 8px 0;
+    color: #334155;
+    font-size: 20px;
+}
+
+.no-projects-fallback p {
+    font-size: 14px;
+    max-width: 400px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+/* ==========================================================================
+   📂 CLAPBOX FÜR STATISTIKEN
+   ========================================================================== */
+
+.top-flex-row {
+    width: 100%;
+    margin-bottom: 25px;
+}
+
+.stats-collapse-section {
+    width: 100%;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+    transition: all 0.2s ease;
+}
+
+/* Der Griff zum Klicken */
+.stats-toggle-header {
+    padding: 14px 20px;
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    color: #334155;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s ease;
+}
+
+.stats-toggle-header:hover {
+    background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+}
+
+/* Innenabstand für die Kacheln, wenn aufgeklappt */
+.stats-collapse-section[open] .stats-dashboard-row {
+    padding: 20px;
+    display: flex;
+    gap: 16px;
+    animation: fadeInStats 0.2s ease-out;
+}
+
+@keyframes fadeInStats {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   🛰️ SIDE-PANEL STYLES (DRAWER ENGINE)
+   ========================================================================== */
+
+/* ==========================================================================
+   🛰️ SIDE-PANEL STYLES (COMPACT MINI-DRAWER ENGINE)
+   ========================================================================== */
+
+.btn-open-stats {
+    background-color: #ffffff;
+    color: #0284c7;
+    border: 1.5px solid #cbd5e1;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-open-stats:hover {
+    background-color: #f0f9ff;
+    border-color: #bae6fd;
+}
+
+/* 🔒 DEIN MINI-PANEL: Keine 100vh, sondern kompakt und zentriert! */
+.side-stats-panel {
+    position: fixed;
+    top: 150px;
+    
+    /* 🎯 DIE RETTUNG: Wir schieben das Panel nur um -280px nach rechts! */
+    /* Da das Panel 320px breit ist, gucken noch 40px aus dem Bildschirm heraus. */
+    /* Weil der Button left: -44px hat, sitzt er jetzt HAARGENAU perfekt sichtbar am rechten Bildschirmrand! */
+    right: -320px; 
+    
+    width: 320px;
+    height: auto;
+    max-height: 480px;
+    background: #ffffff;
+    border-radius: 16px 0 0 16px;
+    box-shadow: -8px 8px 30px rgba(15, 23, 42, 0.12);
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    will-change: right;
+    transform: translateZ(0);
+    transition: right 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* 🟢 DER RUNDE ZIEH-KNOPF: Perfekt an die linke Kante gepresst */
+.panel-handle-trigger {
+    position: absolute;
+    left: -44px; /* Schmiegt sich direkt vor die linke Wand des Panels */
+    top: 20px;   
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: white;
+    border: none;
+    border-radius: 16px 0 0 16px; /* Eine schicke, eckige Lasche nach links geöffnet */
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: -4px 4px 12px rgba(29, 78, 216, 0.25);
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+
+.side-stats-panel.is-open {
+    right: 0;
+}
+
+.panel-header {
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+    border-bottom: 1px solid rgba(59, 130, 246, 0.15);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.panel-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #0369a1;
+    font-weight: 800;
+}
+
+.btn-close-panel {
+    background: transparent;
+    border: none;
+    font-size: 22px;
+    color: #0369a1;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.panel-body {
+    padding: 20px;
+    background: #ffffff;
+}
+
+.panel-stats-vertical-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Der transparente Klick-Schutz im Hintergrund */
+.panel-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.15); /* Sehr dezent, damit es leicht bleibt */
+    backdrop-filter: blur(1px); 
+    z-index: 998;
+    animation: fadeInBackdrop 0.2s ease-out;
+}
+
+@keyframes fadeInBackdrop {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}

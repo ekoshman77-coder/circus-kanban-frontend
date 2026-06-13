@@ -1,0 +1,58 @@
+<div class="page-container">
+
+    <nav>
+        <button [class.is-active]="activeTab() === IdeaTabType.Pinboard" (click)="setTab(IdeaTabType.Pinboard)">
+            📌 Ideen-Pinnwand
+        </button>
+        <button [class.is-active]="activeTab() === IdeaTabType.Calculator" (click)="setTab(IdeaTabType.Calculator)">
+            🧮 Meilenstein-Kalkulator
+        </button>
+        <button [class.is-active]="activeTab() === IdeaTabType.Projects" (click)="setTab(IdeaTabType.Projects)">
+            🏗️ Aktive Projekte
+        </button>
+        <button [class.is-active]="activeTab() === IdeaTabType.Milestones" (click)="setTab(IdeaTabType.Milestones)">
+            🎯 Meilenstein-Details
+        </button>
+        <button [class.is-active]="activeTab() === IdeaTabType.Milestones" (click)="setTab(IdeaTabType.team)">
+              🎪 Team-Kanban
+        </button>
+    </nav>
+    <hr> 
+    
+@switch (activeTab()) {
+    
+    @case (IdeaTabType.Pinboard) {
+        <div>
+            <app-idea-board></app-idea-board>
+        </div>
+    }
+
+    @case (IdeaTabType.Calculator) {
+        <div>
+            <app-project-calculator-component></app-project-calculator-component>
+        </div>
+    }
+
+    @case (IdeaTabType.Projects) {
+        <app-projects-component></app-projects-component>   
+    }
+
+    @case (IdeaTabType.Milestones) {
+        <div>
+            <app-project-milestones-component></app-project-milestones-component>
+        </div>   
+    }
+
+    @case (IdeaTabType.team) {
+        <div>
+            <app-team-board></app-team-board>
+        </div>
+    }
+
+    @default {
+        <div class="error-info">
+            Huch, dieser Tab existiert noch nicht! 🤷‍♂️
+        </div>
+    }
+}
+</div>

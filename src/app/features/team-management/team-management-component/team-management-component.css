@@ -1,0 +1,209 @@
+.team-container {
+    padding: 20px;
+    font-family: system-ui, -apple-system, sans-serif;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.team-header {
+    margin-bottom: 30px;
+}
+
+.page-title {
+    margin: 0 0 6px 0;
+    color: #1e293b;
+    font-size: 28px;
+    font-weight: 800;
+}
+
+.page-subtitle {
+    color: #64748b;
+    margin: 0;
+    font-size: 15px;
+}
+
+/* 🪟 Zwei-Spalten-Workspace */
+.split-workspace {
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+}
+
+.workspace-column {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 15px rgba(148, 163, 184, 0.05);
+}
+
+.form-column {
+    flex: 1;
+    max-width: 380px;
+    position: sticky;
+    top: 20px;
+}
+
+.gallery-column {
+    flex: 1.5;
+}
+
+.column-title {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #0f172a;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+/* 📝 Formular-Styling */
+.member-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.input-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+}
+
+.input-group input {
+    padding: 10px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.input-group input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.submit-btn {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 8px;
+}
+
+.submit-btn:hover:not(:disabled) {
+    background: #1d4ed8;
+}
+
+.submit-btn:disabled {
+    background: #cbd5e1;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+/* 🖼️ Galerie-Styling */
+.members-gallery {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 550px;
+    overflow-y: auto;
+    padding-right: 6px;
+}
+
+.member-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 18px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02); /* Flach auf dem Tisch */
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 🪄 DER HOVER-TRICK: Karte "schwebt" auf und bekommt einen größeren, weicheren Schatten! */
+.member-card:hover {
+    transform: translateY(-3px);
+    border-color: #93c5fd;
+    box-shadow: 0 10px 20px rgba(148, 163, 184, 0.12); /* Schwebender Schatten */
+}
+
+/* 🎨 Der berechnete Avatar-Kreis */
+.avatar-circle {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 15px;
+    color: #1e293b; /* Dunkelgraue Schrift passt perfekt auf jeden Pastellton */
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05); /* Minimaler Innenrahmen */
+}
+
+.member-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.member-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.member-id {
+    font-size: 11px;
+    color: #94a3b8;
+    font-family: monospace;
+    margin-top: 2px;
+}
+
+.empty-gallery {
+    text-align: center;
+    padding: 40px;
+    border: 2px dashed #e2e8f0;
+    border-radius: 12px;
+    color: #94a3b8;
+    font-style: italic;
+}
+
+.member-card {
+    position: relative; /* Anker für den Button */
+}
+
+.roulette-btn {
+    margin-left: auto; /* Schiebt den Button ganz nach rechts */
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 50%;
+    transition: all 0.2s;
+    opacity: 0.4; /* Standardmäßig dezent im Hintergrund */
+}
+
+/* Der Button leuchtet auf, wenn man über die Karte oder den Button fährt */
+.member-card:hover .roulette-btn {
+    opacity: 1;
+}
+
+.roulette-btn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    transform: scale(1.2) rotate(15deg); /* Kleiner Dreheffekt beim Hovern! */
+}

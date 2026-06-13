@@ -1,0 +1,178 @@
+.performance-container {
+  width: 100%;
+  box-sizing: border-box;
+  animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+}
+
+.perf-card-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+  width: 100%;
+}
+
+.perf-card {
+  background: #ffffff;
+  border: 1px solid #c8d6e0;
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  box-shadow: 0 4px 10px rgba(16, 42, 58, 0.04);
+  transition: all 0.3s ease;
+}
+
+.perf-card.large {
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+}
+
+.card-emoji {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.perf-card h3 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.big-percentage {
+  font-size: 48px;
+  font-weight: 900;
+  line-height: 1;
+  margin: 8px 0;
+  letter-spacing: -1px;
+}
+
+.card-sub {
+  margin: 4px 0 0 0;
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.stats-sub-box {
+  border: 2px solid #e9d5ff;
+  background: linear-gradient(135deg, #f3e8ff, #ffffff);
+  gap: 16px;
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.08);
+}
+
+.sub-row + .sub-row {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e9d5ff;
+}
+
+.sub-row span {
+  font-size: 11px;
+  color: #7e22ce;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.sub-row strong {
+  font-size: 20px;
+  color: #4c1d95;
+  font-weight: 800;
+}
+
+/* Der Container für die untere Reihe */
+.perf-extra-row {
+  display: flex;            /* Aktiviert Flexbox: Legt alles nebeneinander */
+  gap: 12px;                /* Abstand zwischen den Kacheln */
+  margin-top: 16px;
+  width: 100%;
+}
+
+/* Die kleineren Analyse-Kacheln */
+.perf-card.small-analytic {
+  flex: 1;                  /* 🟢 Der Zaubertrick: Alle Karten teilen sich den Platz zu gleichen Teilen! */
+  min-width: 0;             /* Verhindert, dass die Karten bei kleinem Bildschirm kaputtgehen */
+  padding: 16px;            /* Etwas kompakterer Innenabstand */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;      /* Zentriert den Inhalt (Zahl und Text) */
+  text-align: center;
+}
+
+.analytic-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.analytic-header h3 {
+  margin: 0;
+  font-size: 13px;          /* Schriftzug etwas dezenter */
+  color: #64748b;
+}
+
+.analytic-emoji {
+  font-size: 16px;
+}
+
+/* Die Zahlen in den Kacheln */
+.medium-percentage {
+  font-size: 28px;          /* Von 36px auf 28px verkleinert, damit es harmonisch wirkt */
+  font-weight: 800;
+  line-height: 1;
+  margin: 8px 0;
+  color: #0f172a;
+}
+
+.medium-percentage .text-lg {
+  font-size: 14px;          /* Das Wort "Tage" nach der Zahl etwas kleiner machen */
+}
+
+.medium-percentage.warning-orange {
+  color: #ea580c;
+}
+
+.card-sub {
+  margin: 0;
+  font-size: 11px;          /* Beschreibungstext kompakter */
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+/* Spezial-Anpassung für die Kreisbalken-Karte, damit der Kreis perfekt reinpasst */
+.circular-card {
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.circular-progress {
+  width: 70px;              /* Kreis von 120px auf 70px geschrumpft */
+  height: 70px;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--progress-color) calc(var(--progress-val) * 1%), 
+    #f1f5f9 0
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 4px auto 0;
+  transition: background 0.3s ease;
+}
+
+.circular-progress-inner {
+  width: 54px;              /* Inneren Ring angepasst */
+  height: 54px;
+  background-color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1rem;          /* Textgröße im Kreis kompakt */
+  color: #0f172a;
+}

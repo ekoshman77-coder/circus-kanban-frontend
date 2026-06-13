@@ -1,0 +1,88 @@
+<div class="edit-container">
+    <div class="edit-card">
+        <div class="card-header">
+            <h2>🚀 To-Do pimpen</h2>
+            <button class="btn-close" (click)="cancel()">✕</button>
+        </div>
+
+        @if (todoForm) {
+        <form [formGroup]="todoForm" (ngSubmit)="save()">
+
+            <div class="form-group">
+                <app-milestone-selector-component
+                    [initialMilestoneId]="milestoneId()"
+                    (milestoneSelected)="onMilestoneSelected($any($event))">
+                </app-milestone-selector-component>
+                    
+                <label for="task">Was ist zu tun? 🎯</label>
+                <input id="task" type="text" formControlName="task" class="form-control" (input)="0"
+                    placeholder="z.B. Weltherrschaft planen...">
+                @if (todoForm.get('task')?.invalid && todoForm.get('task')?.touched) {
+                <small class="error-msg">Ohne Titel wird das nix!</small>
+                }
+            </div>
+
+            <div class="form-group">
+                <label>Kategorie pimpen? 🏷️</label>
+                <div class="edit-category-wrapper">
+                    <app-universal-tag-input-component 
+                        [textToWatch]="todoForm.get('task')?.value || ''" 
+                        [contextType]="'todo'"
+                        [placeholder]="'Kategorie ändern...'" 
+                        [initialValue]="editTodoCategory()"
+                        (valueChanged)="onCategoryChanged($event)">
+                    </app-universal-tag-input-component>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Zusatzinfos / Geheime Notizen 📝</label>
+                <textarea id="description" formControlName="description" rows="4" class="form-control"
+                    placeholder="Schreib hier die Details auf..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Wie viel Power kostet das? ⚡</label>
+                <div class="fibonacci-tablo" [ngClass]="{ 'offline-disabled': isOffline() }">
+                    @for (num of todoService.fibonacciSequence; track num) {
+                    <button type="button" 
+                        [class.active]="todoForm.get('effort')?.value === num"
+                        (click)="todoForm.get('effort')?.setValue(num)">
+                        {{ num }}
+                        <span class="pts">pts</span>
+                    </button>
+                    }
+                </div>
+                @if (isOffline()) {
+                <small class="offline-warning-text">⚠️ Punkte ändern ist im Offline-Modus gesperrt.</small>
+                }
+            </div>
+            
+            <div class="form-group flex-1">
+                <label for="daysAheadSlider">Wann muss es fertig sein? 📅</label>
+                <div class="slider-wrapper">
+                    <input id="daysAheadSlider" type="range" min="0" max="30" step="0.2" formControlName="daysAhead"
+                        (input)="onSliderInput($event)" class="funny-slider" [style.--val]="sliderPercentage() + '%'"
+                        [style.--hue]="sliderHue()">
+
+                    <span class="funny-date-badge" [style.color]="dynamicColor()"
+                        [style.background-color]="dynamicColor() + '15'" [style.border-color]="dynamicColor() + '40'">
+                        ⏳ {{ liquidDateLabel() }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" (click)="cancel()">Lieber nicht</button>
+                <button type="submit" class="btn-primary" [disabled]="todoForm.invalid">Eingetütet! 💾</button>
+            </div>
+
+        </form>
+        } @else {
+        <div class="loading-state">
+            <p>🔍 To-Do wird gesucht... Vielleicht hat es sich versteckt?</p>
+            <button class="btn-primary" (click)="cancel()">Zurück zur Basis</button>
+        </div>
+        }
+    </div>
+</div>

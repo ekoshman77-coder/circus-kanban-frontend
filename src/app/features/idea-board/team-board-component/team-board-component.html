@@ -1,0 +1,84 @@
+<div class="board-container">
+  <header class="board-header">
+    <h1>🎪 Team-Projekt-Board</h1>
+    <p>Übersicht aller Aufgaben sortiert nach virtuellem Bearbeitungsstatus.</p>
+  </header>
+
+  @if (boardFilter().type === null || boardFilter().id === null) {
+
+    <div class="welcome-placeholder-box">
+      <div class="welcome-icon">🎪</div>
+      <h2>Willkommen auf dem Team-Board!</h2>
+      <p>Um die Aufgaben deines Teams zu sehen und zu verschieben, wähle bitte zuerst einen aktiven Meilenstein oder ein Projekt aus:</p>
+
+      <div class="selector-wrapper">
+        <app-milestone-selector-component 
+          [initialMilestoneId]="null"
+          [canChooseProject]="true"
+          (projectSelected)="onProjectSelectedFromWelcome($event)"
+          (milestoneSelected)="onMilestoneSelectedFromWelcome($event)">
+        </app-milestone-selector-component>
+      </div>
+    </div>
+
+  } @else {
+
+    <div class="board-control-header">
+      <div class="active-filter-info">
+        <span>Aktive Ansicht:</span>
+        <strong>{{ boardFilter().type === 'project' ? '📁 Gesamtprojekt' : '🏁 Einzelne Phase' }}</strong>
+      </div>
+      
+      <app-milestone-selector-component
+        [canChooseProject]="true"
+        [initialMilestoneId]="boardFilter().type === 'milestone' ? boardFilter().id : null"
+        [initialProjectId]="boardFilter().type === 'project' ? boardFilter().id : null"
+        (projectSelected)="onProjectSelectedFromWelcome($event)"
+        (milestoneSelected)="onMilestoneSelectedFromWelcome($event)">
+      </app-milestone-selector-component>
+    </div>
+
+    <div class="kanban-workspace" cdkDropListGroup>
+
+      <div class="kanban-column column-open">
+        <h3 class="column-header">⚪ Offen ({{ openTasks().length }})</h3>
+        <div id="column-open-list" cdkDropList [cdkDropListData]="openTasks()"
+          [cdkDropListConnectedTo]="['column-progress-list', 'column-done-list']"
+          (cdkDropListDropped)="onTodoDropped($event)" class="cards-holder">
+          @for (todoViewModel of openTasks(); track todoViewModel.todo.id) {
+            <app-todo-item [item]="todoViewModel" [isKanbanMode]="true" [isTeamsPopupEnabled]="true" cdkDrag
+              [cdkDragData]="todoViewModel">
+            </app-todo-item>
+          } @empty { <div class="empty-info">Keine offenen Aufgaben</div> }
+        </div>
+      </div>
+
+      <div class="kanban-column column-progress">
+        <h3 class="column-header">🟡 In Arbeit ({{ inProgressTasks().length }})</h3>
+        <div id="column-progress-list" cdkDropList [cdkDropListData]="inProgressTasks()"
+          [cdkDropListConnectedTo]="['column-open-list', 'column-done-list']" (cdkDropListDropped)="onTodoDropped($event)"
+          class="cards-holder">
+          @for (todoViewModel of inProgressTasks(); track todoViewModel.todo.id) {
+            <app-todo-item [item]="todoViewModel" [isKanbanMode]="true" [isTeamsPopupEnabled]="true" cdkDrag
+              [cdkDragData]="todoViewModel">
+            </app-todo-item>
+          } @empty { <div class="empty-info">Niemand arbeitet gerade</div> }
+        </div>
+      </div>
+
+      <div class="kanban-column column-done">
+        <h3 class="column-header">🟢 Erledigt ({{ doneTasks().length }})</h3>
+        <div id="column-done-list" cdkDropList [cdkDropListData]="doneTasks()"
+          [cdkDropListConnectedTo]="['column-open-list', 'column-progress-list']"
+          (cdkDropListDropped)="onTodoDropped($event)" class="cards-holder">
+          @for (todoViewModel of doneTasks(); track todoViewModel.todo.id) {
+            <app-todo-item [item]="todoViewModel" [isKanbanMode]="true" [isTeamsPopupEnabled]="true" cdkDrag
+              [cdkDragData]="todoViewModel">
+            </app-todo-item>
+          } @empty { <div class="empty-info">Noch nichts geschafft</div> }
+        </div>
+      </div>
+
+    </div>
+  }
+</div>

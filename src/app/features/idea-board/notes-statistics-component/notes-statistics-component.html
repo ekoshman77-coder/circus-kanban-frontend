@@ -1,0 +1,57 @@
+<button class="floating-stats-btn" [class.is-active]="isSidebarOpen()" (click)="toggleSidebar()">
+  <span class="btn-content">
+    <span class="arrow-icon">←</span>
+    <span class="stats-icon">📊</span>
+  </span>
+</button>
+
+<div class="stats-sidebar" [class.is-open]="isSidebarOpen()">
+    <div class="sidebar-header">
+        <h2>Dashboard Live-Analyse</h2>
+    </div>
+
+    <div class="sidebar-content">
+        <div class="sidebar-card">
+            <span class="card-icon">📌</span>
+            <div class="card-info">
+                <h3>Zettel-Status</h3>
+                <p class="card-value">{{ boardStatistics().filteredCount }} <span class="sub-value">von {{ boardStatistics().totalCount }}</span></p>
+            </div>
+        </div>
+
+        <div class="sidebar-card">
+            <span class="card-icon">🎯</span>
+            <div class="card-info">
+                <h3>Filter-Fokus</h3>
+                <p class="card-value">
+                    @if (boardStatistics().isFilteredActive) {
+                        <span class="badge active">Aktiviert ⚡</span>
+                    } @else {
+                        <span class="badge clean">Inaktiv ⚪</span>
+                    }
+                </p>
+            </div>
+        </div>
+
+        <div class="sidebar-card chart-card">
+            <h3>Farb-Balance</h3>
+            <div class="chart-wheel" [style.background]="boardStatistics().conicGradient">
+                <div class="chart-center-hole">
+                    <span class="chart-total-num">{{ boardStatistics().filteredCount }}</span>
+                    <span class="chart-total-label">Sichtbar</span>
+                </div>
+            </div>
+
+            <div class="vertical-legend">
+                <span class="legend-item"><span class="dot yellow"></span> Gelb: <strong>{{ boardStatistics().colorCounts['note-yellow'] }}</strong></span>
+                <span class="legend-item"><span class="dot green"></span> Grün: <strong>{{ boardStatistics().colorCounts['note-green'] }}</strong></span>
+                <span class="legend-item"><span class="dot pink"></span> Pink: <strong>{{ boardStatistics().colorCounts['note-pink'] }}</strong></span>
+                <span class="legend-item"><span class="dot blue"></span> Blau: <strong>{{ boardStatistics().colorCounts['note-blue'] }}</strong></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (isSidebarOpen()) {
+    <div class="sidebar-overlay" (click)="toggleSidebar()"></div>
+}

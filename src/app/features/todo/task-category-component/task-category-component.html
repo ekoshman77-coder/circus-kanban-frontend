@@ -1,0 +1,33 @@
+<div class="category-hybrid-zone">
+
+  @if (suggestedCategory()) {
+    <div class="ai-hint-badge animate-pop">
+      <span>💡 KI-Tipp: <strong>{{ suggestedCategory() }}</strong></span>
+      <button type="button" class="btn-confirm-ai" (click)="acceptAiSuggestion()">
+        Ja-passt 👍
+      </button>
+    </div>
+  }
+
+  <div class="input-with-arrow-group">
+    <input 
+      type="text" 
+      [ngModel]="categoryInput()" 
+      (input)="updateCategory($any($event.target).value)"
+      placeholder="Kategorie..." 
+      class="free-category-input" 
+    />
+    
+    <button type="button" class="arrow-toggle-btn" (click)="toggleDropdown()">
+      ▼
+    </button>
+  </div>
+
+  @if (isDropdownOpen()) {
+    <ul class="dropdown-selection-menu">
+      @for (cat of availableCategories(); track cat) {
+        <li (click)="selectFromDropdown(cat)">{{ cat }}</li>
+      }
+    </ul>
+  }
+</div>

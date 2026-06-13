@@ -1,0 +1,40 @@
+/* Erzeugt die perfekte Dreier-Reihe nebeneinander */
+.actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+  font-size: 13px;
+  width: 100%;
+}
+
+/* Die Text-Buttons nutzen das originale Blau deiner App */
+.delete-completed-btn,
+.delete-all-btn {
+  color: #007bff;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.disable-btn {
+  color: #adb5bd !important; /* Ein schönes, dezentes Grau */
+  cursor: not-allowed !important; /* Verhindert die Klick-Hand */
+  text-decoration: none !important; /* Verhindert Unterstreichung */
+}
+
+.delete-completed-btn:hover,
+.delete-all-btn:hover {
+  text-decoration: underline;
+  color: #0056b3;
+}
+
+/* Der Aufwand in der Mitte bekommt das neutrale Grau des alten Gesamt-Zählers */
+.total-time-display {
+  color: #666;
+  font-weight: 500;
+  cursor: default;
+  text-align: center;
+}

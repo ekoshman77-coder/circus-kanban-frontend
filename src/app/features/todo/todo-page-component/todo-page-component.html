@@ -1,0 +1,87 @@
+<div class="todo-page-layout">
+  
+  <section class="todo-form-section">
+    <app-todo-form></app-todo-form>
+  </section>
+
+  <div class="nav-menu">
+    <button 
+      class="nav-btn" 
+      [class.active]="currentView() === 'list'" 
+      (click)="setView('list')">
+      Listen-Ansicht
+    </button>
+    <button 
+      class="nav-btn" 
+      [class.active]="currentView() === 'kanban'" 
+      (click)="setView('kanban')">
+      Kanban-Board
+    </button>
+    <button 
+      class="nav-btn" 
+      [class.active]="currentView() === 'express'" 
+      (click)="setView('express')">
+      ⚡ Express-Erfassung
+  </button>
+ </div> 
+  <section class="todo-list-section">
+    @if (currentView() === 'list') {
+      <app-todo-list></app-todo-list>
+      <app-todo-footer></app-todo-footer>
+    } 
+    @if (currentView() === 'kanban') {
+      <app-todo-kanban></app-todo-kanban>
+      <app-todo-footer></app-todo-footer>
+    }
+    @if (currentView() === 'express') {
+      <app-archiv-express></app-archiv-express>
+    }
+  </section>
+
+@if (todoService.showUndoToast()) {
+  <div class="undo-toast-wrapper animate-slide-up">
+    <div class="undo-toast">
+      <div class="toast-info">
+        <span class="icon">🗑️</span>
+        <span class="message">
+          <strong>"{{ todoService.lastDeletedTaskName() }}"</strong> gelöscht
+        </span>
+      </div>
+      
+      <button class="undo-button" (click)="todoService.undoDelete()">
+        <span class="btn-icon">↩️</span> Rückgängig
+      </button>
+      
+      <div class="progress-bar"></div>
+    </div>
+  </div>
+}
+
+@if (pageError()) {
+  <div class="error-toast">
+    <span>⚠️</span>
+    <span>{{ pageError() }}</span>
+    <button class="close-toast-btn" (click)="clearError()">Verstanden</button>
+  </div>
+}
+
+@if (localShowLevelUpBanner(); as result) {
+  <div class="level-up-overlay">
+    <div class="level-up-card animated pop-in">
+      <div class="stars">✨ ⭐ ✨</div>
+      <h1>LEVEL UP!</h1>
+      
+      <p class="level-title-name">» {{ result.levelTitle }} «</p>
+      
+      <div class="level-badge">
+        <span>{{ result.currentLevel }}</span>
+      </div>
+      
+      <p class="congrats-text">Du hast erfolgreich Stufe {{ result.currentLevel }} erreicht. Deine Produktivität ist legendär! 🚀</p>
+      
+      <button class="close-btn" (click)="closeBanner()">
+        Weiter rocken!
+      </button>
+    </div>
+  </div>
+}

@@ -1,0 +1,118 @@
+.timer-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  text-align: center;
+}
+
+.timer-header h2 {
+  font-size: 26px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 0 0 6px 0;
+}
+
+.timer-header p {
+  color: #64748b;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Selector Zone */
+.task-selector-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.task-selector-zone label {
+  font-weight: 700;
+  color: #334155;
+  font-size: 14px;
+}
+
+.task-selector-zone select {
+  width: 100%;
+  max-width: 400px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 2px solid #cbd5e1;
+  background-color: white;
+  font-size: 14px;
+  color: #334155;
+  font-weight: 500;
+}
+
+/* Die Uhr-Karte */
+.timer-display-card {
+  background: #1e293b;
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.15);
+  border: 2px solid #334155;
+  transition: border-color 0.5s;
+}
+
+.timer-display-card.pulse {
+  border-color: #f59e0b;
+}
+
+.time-string {
+  font-size: 80px;
+  font-weight: 900;
+  font-family: monospace;
+  color: #f8fafc;
+  line-height: 1;
+  letter-spacing: -2px;
+}
+
+.timer-status-text {
+  margin-top: 12px;
+  font-size: 14px;
+  color: #94a3b8;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* Tasten */
+.timer-controls {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+.timer-controls button {
+  padding: 12px 28px;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 30px;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.1s;
+}
+
+.timer-controls button:active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #d97706, #f59e0b);
+  color: white;
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.3);
+}
+
+.btn-secondary {
+  background: #cbd5e1;
+  color: #475569;
+}
+
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

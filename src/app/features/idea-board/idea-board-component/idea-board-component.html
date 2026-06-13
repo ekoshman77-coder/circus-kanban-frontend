@@ -1,0 +1,52 @@
+<div class="board-container">
+    <div class="top-bar">
+
+        <div class="trash-zone" id="trashList" cdkDropList [cdkDropListConnectedTo]="['wallList']"
+            (cdkDropListDropped)="onDropped($event)">
+            <div class="trash-content">
+                <span class="trash-icon">🗑️</span>
+                <p>Zettel löschen</p>
+            </div>
+        </div>
+
+        <div class="top-flex-row">
+            <details open class="idea-form-section">
+                <summary class="form-toggle-header">
+                    <span>✍️ Neue Idee anpinnen? (Klicke zum Einklappen)</span>
+                </summary>
+
+                <app-note-input></app-note-input>
+            </details>
+        </div>
+
+        <div class="calculator-slot" id="calculatorList" cdkDropList [cdkDropListConnectedTo]="['wallList']"
+            [cdkDropListEnterPredicate]="canIdeaEnterCalculator" (cdkDropListDropped)="onDropped($event)">
+            <div class="slot-content">
+                <div class="slot-row">
+                    <span class="slot-icon">🧮</span>
+                    <div class="slot-opening-vertical"></div>
+                </div>
+                <p class="slot-text">In Kalkulator schieben</p>
+            </div>
+        </div>
+    </div>
+
+    <app-board-filter [availableTags]="availableTags()" [availableColors]="availableColors()"
+        (filterChanged)="onFilterChanged($event)">
+    </app-board-filter>
+
+    <app-notes-statistics [allNotes]="viewModels()" [filteredNotes]="sortedViewModels()">
+    </app-notes-statistics>
+
+    <div class="ideas-grid" id="wallList" cdkDropList cdkDropListOrientation="mixed"
+        [cdkDropListConnectedTo]="['trashList', 'calculatorList']" (cdkDropListDropped)="onDropped($event)">
+
+        @for (singleVM of sortedViewModels(); track singleVM.note.id) {
+
+        <app-note-component [vm]="singleVM" cdkDrag [cdkDragData]="singleVM" (updated)="onNoteUpdated($any($event))">
+        </app-note-component>
+
+        } @empty {
+        }
+    </div>
+</div>

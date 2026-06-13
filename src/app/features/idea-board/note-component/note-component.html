@@ -1,0 +1,59 @@
+<div class="simple-card" [class]="vm.note.colorType">
+
+  <div class="pin" [class]="vm.pinClass()"></div>
+
+  @if (vm.isEditing()) {
+    <input [(ngModel)]="vm.note.title" (keydown)="onKeyDown($event)" class="edit-input-title" autofocus />
+  } @else {
+    <h3>{{ vm.note.title }}</h3>
+  }
+
+  @if (vm.isEditing()) {
+    <textarea [(ngModel)]="vm.note.content" (keydown)="onKeyDown($event)" class="edit-textarea-content"></textarea>
+  } @else {
+    <p>{{ vm.note.content }}</p>
+  }
+
+  @if (!vm.isEditing()) {
+    <div class="badge-container" style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px;">
+      @if (vm.note.tag) {
+        <div class="note-tag-badge">🏷️ {{ vm.note.tag }}</div>
+      }
+      @if (vm.note.isInCalculation) {
+        <div class="calculation-badge">🧮 In Kalkulation</div>
+      }
+    </div>
+  }
+
+  <div class="card-footer">
+    @if (!vm.isEditing()) {
+      <div class="action-buttons-group">
+        <button class="round-btn view-btn" (click)="vm.togglePopup()" data-tooltip="Details anzeigen">🔍</button>
+        <button class="round-btn edit-btn" (click)="vm.startEdit()" data-tooltip="Zettel bearbeiten">📝</button>
+      </div>
+    }
+
+    @if (vm.isEditing()) {
+      <div class="action-buttons-group edit-mode-group">
+        <button class="round-btn save-btn" (click)="saveEdit()" data-tooltip="Änderungen speichern">✅</button>
+      </div>
+    }
+  </div>
+
+  @if (vm.showPopup()) {
+    <div class="note-popup">
+      <div class="popup-header">
+        <h3>{{ vm.note.title }}</h3>
+        <button class="close-popup-btn" (click)="vm.togglePopup()">❌</button>
+      </div>
+      <p>{{ vm.note.content }}</p>
+      
+      @if (vm.note.tag) {
+        <div class="note-tag-badge" style="margin-top: 10px; background: rgba(0,0,0,0.1);">
+          🏷️ {{ vm.note.tag }}
+        </div>
+      }
+    </div>
+  }
+
+</div>

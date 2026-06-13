@@ -1,0 +1,166 @@
+.stats-overview-wrapper {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ROTATIONS BUTTON */
+.chart-controls {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.rotate-btn {
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rotate-btn:hover {
+  background-color: #e2e8f0;
+  color: #0f172a;
+}
+
+/* DIAGRAMM-CONTAINER (STANDARD: VERTIKALE SÄULEN) */
+.chart-container {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end; /* Säulen stehen auf dem Boden */
+  height: 240px;
+  background-color: #f8fafc;
+  border-bottom: 2px solid #cbd5e1;
+  padding: 20px 10px;
+  border-radius: 8px;
+  gap: 12px;
+  transition: all 0.4s ease-in-out;
+}
+
+/* SÄULEN-STRUKTUR (VERTIKAL) */
+.chart-bar-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  flex: 1;
+  gap: 8px;
+}
+.bar-track {
+  width: 30px; /* Die Breite der Säulen im Stehen */
+  height: 100%;
+  background-color: #e2e8f0;
+  border-radius: 15px; /* ⭐ KORREKTUR: Vollständig gerundet (Pill-Look) */
+  display: flex;
+  align-items: flex-end; /* Füllung wächst von unten */
+  overflow: hidden;
+}
+
+/* DIE ANIMIERTE FÜLLUNG */
+.bar-fill {
+  width: 100%;
+/*  border-radius: 6px 6px 0 0;*/
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 6px;
+  box-sizing: border-box;
+  
+  /* 🚀 HIER IST DEINE TRANSITION-ANIMATION! */
+  transition: all 1.0s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+}
+
+.bar-value {
+  font-size: 11px;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.bar-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  order: 2; /* Label steht unter der Säule */
+}
+
+/* 🌈 FARBCODIERUNG FÜR DEINE SÄULEN */
+.chart-bar-wrapper.all .bar-fill { 
+  background: linear-gradient(to top, #6366f1, #818cf8); /* Wunderschönes Indigo-Violett */
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2); /* Ein dezenter, farblich passender Schatten für mehr Tiefe */
+}
+.chart-bar-wrapper.open .bar-fill { background: linear-gradient(to top, #00b4d8, #0096c7); }
+.chart-bar-wrapper.overdue .bar-fill { background: linear-gradient(to top, #e74c3c, #c0392b); }
+.chart-bar-wrapper.done .bar-fill { background: linear-gradient(to top, #2ecc71, #27ae60); }
+
+
+/* 🔄 HORIZONTALES LAYOUT (WENN UMGEKIPPT) */
+.chart-container.horizontal-layout {
+  flex-direction: column;
+  align-items: stretch;
+  height: auto;
+  border-bottom: none;
+  border-left: 2px solid #cbd5e1;
+  gap: 20px; /* Etwas mehr Abstand zwischen den dickeren Balken */
+}
+
+.chart-container.horizontal-layout .chart-bar-wrapper {
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  height: 40px; /* ⭐ KORREKTUR: Balken sind jetzt deutlich dicker (von 30px auf 40px) */
+  gap: 12px;
+}
+.chart-container.horizontal-layout .bar-track {
+  width: 100%;
+  height: 100%;
+  border-radius: 20px; /* ⭐ KORREKTUR: Hälfte der Höhe (40px) für Pill-Look */
+  display: flex;
+  align-items: flex-start; /* Füllung wächst von links */
+}
+
+.chart-container.horizontal-layout .bar-fill {
+/*  border-radius: 0 6px 6px 0;*/
+  align-items: center;
+  justify-content: flex-end;
+  padding-top: 0;
+  padding-right: 8px;
+}
+
+.chart-container.horizontal-layout .bar-label {
+  width: 90px; /* Etwas mehr Platz für das Label */
+  text-align: right;
+  order: 0; /* Label steht links */
+}
+
+/* UNTEN: FORTSCHRITT */
+.chart-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.stat-percent {
+  font-size: 14px;
+  font-weight: 700;
+  color: #14532d;
+  background-color: #dcfce7;
+  padding: 8px 14px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.progress-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #166534;
+}

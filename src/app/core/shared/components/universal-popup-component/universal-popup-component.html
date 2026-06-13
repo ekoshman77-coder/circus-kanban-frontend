@@ -1,0 +1,30 @@
+<div class="popup-overlay" (click)="onCancel()">
+  <div class="popup-card" [class.mode-danger]="mode() === 'danger'" (click)="$event.stopPropagation()">
+    
+    <div class="popup-animation" [class.danger-pulse]="mode() === 'danger'">
+      {{ animationIcon() }}
+    </div>
+    
+    <h2>{{ title() }}</h2>
+    <p [innerHTML]="message()"></p>
+
+@if (showLoadingBar()) {
+      <div class="loading-bar-container">
+        <div class="loading-bar-fill" [style.--timer-duration]="(timerMs() / 1000) + 's'"></div>
+      </div>
+    }
+    
+    <div class="popup-actions">
+      <button type="button" class="popup-cancel-btn" (click)="onCancel()">
+        {{ cancelText() }}
+      </button>
+      
+      @if (confirmText()) {
+        <button type="button" class="popup-confirm-btn" (click)="onConfirm()">
+          {{ confirmText() }}
+        </button>
+      }
+    </div>
+    
+  </div>
+</div>

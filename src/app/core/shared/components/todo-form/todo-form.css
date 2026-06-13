@@ -1,0 +1,224 @@
+/* ==========================================================================
+   📦 ARCHITEKTUR: DAS MODERN ZWEI-ZEILEN-FORMULAR (FRISCHER HELLBLAU-LOOK)
+   ========================================================================== */
+.form-container {
+  width: 100%;
+  margin-bottom: 25px;
+}
+
+.modern-two-line-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px; /* Abstand zwischen Zeile 1 und Zeile 2 */
+  width: 100%;
+  
+  /* 🌊 Kräftiger, einladender pastell-hellblauer Hintergrund */
+  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); 
+  
+  /* 🔹 Echter, knackiger blauer Rahmen für klare Kanten */
+  border: 2px solid #3b82f6; 
+  border-radius: 14px;
+  
+  /* Blauer Glow-Schatten, der das Formular lebendig macht */
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.2);
+  padding: 12px; 
+  box-sizing: border-box;
+}
+
+/* ↕️ Eine Zeile im Formular verhält sich als Flexbox */
+.form-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 10px; /* Perfekter Abstand zwischen den Feldern */
+}
+
+/* 🌟 VERTEILUNG ZEILE 1: Aufgabe kriegt 65%, Kategorie kriegt 35% */
+.main-inputs-row .flex-task { flex: 6.5; }
+.main-inputs-row .flex-category { flex: 3.5; }
+
+/* 🌟 VERTEILUNG ZEILE 2: Details, Datum, Aufwand balancieren */
+.detail-inputs-row .flex-descr { flex: 4; }
+.detail-inputs-row .flex-date { flex: 2.5; }
+.detail-inputs-row .flex-effort { flex: 1.5; }
+
+/* Jedes einzelne Feldgehäuse */
+.field-group {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+/* 🎛️ 👑 DIE WEISSEN EINGABEKACHELN (Echte Inputs & Selects) */
+.field-group input,
+.field-group select {
+  width: 100%;
+  height: 42px;
+  padding: 0 14px;
+  
+  /* Strahlend weiße Boxen, die sich perfekt vom blauen Gehäuse abheben */
+  background-color: #ffffff; 
+  border: 1px solid rgba(59, 130, 246, 0.3); /* Leicht blauer Rahmen */
+  border-radius: 8px;
+  
+  font-size: 14px;
+  color: #0f172a; /* Schickes Dunkelblau-Schwarz für beste Lesbarkeit */
+  font-family: inherit;
+  box-sizing: border-box;
+  outline: none;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04); /* Minimaler Tiefeneffekt */
+}
+
+/* Platzhalter-Farbe (Schickes, dezentes Graublau) */
+.field-group input::placeholder {
+  color: #94a3b8;
+}
+
+/* 🔥 FOCUS-ZUSTAND: Wenn du reinklickst, wird der Rahmen dick blau */
+.field-group input:focus,
+.field-group select:focus {
+  border-color: #1d4ed8; /* Tiefes Königsblau beim Tippen */
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.25);
+}
+
+
+/* ==========================================================================
+   🏷️ KI-KATEGORIE INTEGRATION (Synchronisiert im Kachel-Look)
+   ========================================================================== */
+
+/* Die rechte Box in Zeile 1 */
+.flex-category {
+  display: flex !important;
+  align-items: center !important;
+  height: 100%;
+}
+
+/* Die Universal-Komponente füllt die Spalte voll aus */
+.flex-category app-universal-tag-input-component {
+  display: flex !important;
+  width: 100% !important;
+  flex: 1 !important;
+}
+
+/* Äußere Hülle der KI-Komponente unsichtbar machen, da wir das Input direkt stylen */
+.flex-category ::v-deep .category-hybrid-zone,
+.flex-category ::v-deep .universal-tag-input-wrapper {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Das eigentliche Eingabefeld im Inneren der KI-Komponente */
+.flex-category ::v-deep .form-control,
+.flex-category ::v-deep input {
+  width: 100% !important;
+  height: 42px !important;
+  padding: 0 14px !important;
+  
+  /* Exakt dieselbe strahlend weiße Kachel wie die anderen Felder */
+  background-color: #ffffff !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  border-radius: 8px !important;
+  
+  font-family: inherit !important;
+  font-size: 14px !important;
+  color: #0f172a !important;
+  box-sizing: border-box !important;
+  outline: none !important;
+  transition: all 0.2s ease-in-out !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* 🔥 Focus-Zustand für das KI-Kategoriefeld */
+.flex-category ::v-deep .form-control:focus,
+.flex-category ::v-deep input:focus {
+  border-color: #1d4ed8 !important;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.25) !important;
+}
+
+/* Falls ein interner Dropdown-Button existiert */
+.flex-category ::v-deep button {
+  border: none !important;
+  background: transparent !important;
+  height: 42px !important;
+}
+
+/* 🤖 KI-DROPDOWN-MENÜ: 
+   Klappt absolut nach unten auf und überlagert alles messerscharf */
+.flex-category ::v-deep .dropdown-selection-menu {
+  position: absolute !important;
+  top: 105% !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 999 !important;
+  background-color: #ffffff !important;
+  border: 2px solid #3b82f6 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+
+/* ==========================================================================
+   🚨 VALIDIERUNG & FEHLERMELDE-ZUSTÄNDE
+   ========================================================================== */
+.field-group.has-error input {
+  border: 2px solid #ef4444 !important; /* Kräftiges Rot bei Fehlern */
+  background-color: #fef2f2 !important;
+}
+
+.error-container {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-error-msg {
+  color: #b91c1c; /* Dunkleres Rot, perfekt lesbar auf Hellblau */
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+}
+
+
+/* ==========================================================================
+   🟢 BUTTONS: DER ERSTELLEN-SCHALTER
+   ========================================================================== */
+.submit-btn-inline {
+  height: 42px;
+  padding: 0 20px;
+  background-color: #10b981; /* Knalliges Smaragdgrün, das richtig heraussticht */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease-in-out;
+  margin-left: 4px;
+  white-space: nowrap;
+  box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);
+}
+
+.submit-btn-inline:hover:not(:disabled) {
+  background-color: #059669;
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 14px rgba(16, 185, 129, 0.35);
+}
+
+.submit-btn-inline:disabled {
+  background-color: #cbd5e1;
+  color: #94a3b8;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}

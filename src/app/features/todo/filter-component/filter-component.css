@@ -1,0 +1,108 @@
+.filter-bar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  background: transparent;
+  padding: 0;
+}
+
+/* 🔵 Kompakte, kreisrunde Icon-Buttons */
+.filter-btn {
+  position: relative; /* Wichtig für die Positionierung des Tooltips! */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  background-color: #ffffff;
+  color: #475569;
+  border: 1px solid #c8d6e0;
+  border-radius: 50%; /* Macht den Button perfekt rund */
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 2px 4px rgba(16, 42, 58, 0.05);
+}
+
+.filter-btn:hover {
+  border-color: #94a3b8;
+  background-color: #f8fafc;
+  transform: translateY(-1px);
+}
+
+/* --- DYNAMISCHE FARBEN IM AKTIVEN ZUSTAND --- */
+.filter-btn.active {
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(16, 42, 58, 0.15);
+}
+
+/* Standard-Blau für Alle, Offen, Erledigt */
+.filter-btn.active[data-status="all"],
+.filter-btn.active[data-status="open"],
+.filter-btn.active[data-status="completed"] {
+  background-color: #00b4d8;
+  border-color: #00b4d8;
+  box-shadow: 0 2px 8px rgba(0, 180, 216, 0.3);
+}
+
+/* ⏳ Warmes Orange/Gelb für Heute fällig */
+.filter-btn.active[data-status="due_today"] {
+  background-color: #f59e0b;
+  border-color: #f59e0b;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+}
+
+/* 🚨 Alarm-Rot für Überfällig */
+.filter-btn.active[data-status="overdue"] {
+  background-color: #e63946;
+  border-color: #e63946;
+  box-shadow: 0 2px 8px rgba(230, 57, 70, 0.4);
+}
+
+
+/* --- 🔮 DAS CSS-TOOLTIP (REINE MAGIE) --- */
+.filter-btn::after {
+  content: attr(data-tooltip); /* Holt sich den Text aus dem HTML-Attribut */
+  position: absolute;
+  bottom: 125%; /* Schwebt über dem Button */
+  left: 50%;
+  transform: translateX(-50%) translateY(5px);
+  
+  /* Styling des Tooltip-Kastens */
+  background-color: #1e293b; /* Dunkles, edles Schieferblau */
+  color: #ffffff;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap; /* Verhindert Zeilenumbruch */
+  
+  /* Start-Zustand: Unsichtbar */
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.15s ease-in-out;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Kleiner Pfeil nach unten für das Tooltip */
+.filter-btn::before {
+  content: '';
+  position: absolute;
+  bottom: 110%;
+  left: 50%;
+  transform: translateX(-50%) translateY(5px);
+  border-width: 5px;
+  border-style: solid;
+  border-color: #1e293b transparent transparent transparent;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.15s ease-in-out;
+}
+
+/* Einblenden beim Hovern */
+.filter-btn:hover::after,
+.filter-btn:hover::before {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}

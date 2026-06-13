@@ -1,0 +1,279 @@
+.planner-container {
+  padding: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: system-ui, -apple-system, sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 📋 NEU STRUKTURIERTER HEADER */
+.planner-header {
+  margin-bottom: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Obere Zeile: Verteilt Titel nach links und Button nach rechts */
+.header-main-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+/* 🎨 DER MAGISCHE FARBVERLAUF-TITEL */
+.gradient-title {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0;
+  /* Farbverlauf von Indigo zu Violett, passend zu deinem Button */
+  background: linear-gradient(135deg, #4f46e5, #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: inline-block;
+}
+
+/* Untere Zeile: Die ungestörte Beschreibung */
+.planner-subtitle {
+  color: #64748b;
+  margin: 0;
+  font-size: 14px;
+}
+
+/* ✨ DER MAGISCHE KÖNIGS-BUTTON */
+.magic-btn {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 20px; /* Schön abgerundet wie eine Pille */
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.magic-btn:hover {
+  background: linear-gradient(135deg, #4338ca, #6d28d9);
+  transform: translateY(-2px); /* Eleganter Schwebe-Effekt beim Hovern */
+  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.35);
+}
+
+.magic-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.2);
+}
+
+/* 🚀 RECOMMENDATION CARD */
+.recommendation-card {
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.recommendation-card h3 {
+  margin: 0 0 12px 0;
+  color: #1e293b;
+  font-size: 16px;
+}
+
+.todo-item-highlight {
+  background: white;
+  border: 2px solid #a855f7; /* Violett umrandet, weil es die "Königsaufgabe" ist */
+  padding: 12px 16px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.todo-item-highlight strong {
+  color: #0f172a;
+  font-size: 15px;
+}
+
+.todo-item-highlight p {
+  margin: 4px 0 0 0;
+  color: #64748b;
+  font-size: 13px;
+  flex-grow: 1;
+}
+
+.badge {
+  background: #f3e8ff;
+  color: #7e22ce;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* 🟩 MATRIX GRID (2x2) */
+.matrix-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* 📦 QUADRANT BOX */
+.quadrant {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  height: 320px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+
+.q-header {
+  color: white;
+  padding: 10px 14px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Farbverläufe für die Quadranten-Header */
+.q-do-first .q-header { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.q-schedule .q-header { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.q-delegate .q-header { background: linear-gradient(135deg, #10b981, #059669); }
+.q-eliminate .q-header { background: linear-gradient(135deg, #64748b, #475569); }
+
+.q-body {
+  padding: 12px;
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.q-body::-webkit-scrollbar {
+  width: 6px;
+}
+.q-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+.q-body::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+.q-body::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* 📄 TODO CARDS INNERHALB DER MATRIX */
+.matrix-todo-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  border: 1px solid #e2e8f0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  transition: all 0.15s ease-in-out;
+}
+
+.matrix-todo-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.todo-title {
+  font-size: 13px;
+  color: #334155;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-right: 12px;
+}
+
+.todo-badge {
+  background: #f1f5f9;
+  color: #475569;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* 🪹 EMPTY STATE TEXT */
+.empty-text {
+  color: #94a3b8;
+  font-size: 12px;
+  text-align: center;
+  margin-top: 24px;
+  font-style: italic;
+}
+
+/* Responsive Anpassung für kleinere Bildschirme (Mobile) */
+@media (max-width: 768px) {
+  .matrix-grid {
+    grid-template-columns: 1fr;
+  }
+  .header-main-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .magic-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ==========================================================================
+   🌴 ERHOLUNGS-OASE FÜR PAUSETICKETS (Ganz unten platziert)
+   ========================================================================== */
+.quadrant.q-rest-zone {
+  height: auto; 
+  max-height: 180px;
+  border-color: #a7f3d0;      /* Sanfter grüner Rand */
+  background-color: #f0fdf4;  /* Extrem beruhigender hellgrüner Hintergrund */
+  box-shadow: 0 4px 12px rgba(4, 120, 87, 0.06);
+  margin-top: 4px;            /* Kleiner Abstand zum Grid darüber */
+}
+
+.q-rest-zone .q-header {
+  background: linear-gradient(135deg, #10b981, #059669); /* Zen-Grün */
+}
+
+.rest-body {
+  display: flex;
+  flex-wrap: wrap;            /* Zeigt Pausen nebeneinander an */
+  gap: 12px;
+  padding: 12px;
+}
+
+.matrix-todo-card.pause-card {
+  margin-bottom: 0;
+  border-color: #a7f3d0;
+  background: white;
+  min-width: 220px;
+  flex: 1 1 calc(33.333% - 12px); /* Passt sich dynamisch an die Breite an */
+  max-width: 350px;
+}
+
+.matrix-todo-card.pause-card:hover {
+  border-color: #059669;
+  transform: translateY(-1px);
+}
+
+.todo-badge.pause-badge {
+  background: #d1fae5;
+  color: #065f46;
+}

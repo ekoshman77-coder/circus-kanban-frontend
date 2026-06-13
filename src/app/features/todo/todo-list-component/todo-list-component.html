@@ -1,0 +1,41 @@
+<div class="todo-list-container">
+
+  <!-- DER WRAPPER, DER ALLES NEBENANDER ZWINGT -->
+  <div class="controls-wrapper">
+
+    <!-- Erstes Kind: Die Filter-Buttons -->
+    <app-filter [currentFilter]="currentFilter" [availableFilters]="availableFilters"
+      (filterChanged)="onFilterChange($event)">
+    </app-filter>
+
+    <!-- Zweites Kind: Die Statistik (JETZT OHNE KLAMMERN!) -->
+    <app-statistic [stats]="stats"></app-statistic>
+  </div>
+
+  <!-- ÜBERSCHRIFT (uiTodos bleibt ein Signal, daher mit Klammern) -->
+  <h3>Deine Aufgaben ({{ uiTodos().length }})</h3>
+
+  <!-- DIE LISTE ODER DER LEER-ZUSTAND -->
+  @if (uiTodos().length === 0) {
+
+  @let msg = emptyFilterMessage();
+
+  <div class="empty-filter-state">
+    <div class="empty-icon">{{ msg?.icon }}</div>
+    <h3>{{ msg?.title }}</h3>
+    <p>{{ msg?.text }}</p>
+  </div>
+  } @else {
+  <div class="todo-list">
+
+    @for (item of uiTodos(); track item.id) {
+    <div @filterAnimation>
+      <app-todo-item [item]="item" [isDescriptionOpen]="item.isDescriptionOpen"
+        [ngClass]="'status-' + item.visualStatus" (toggleDescription)="toggleDescription(item.id)"
+        (toggleComplete)="onToggleComplete(item.id)" (delete)="onDeleteTodo(item.id)">
+      </app-todo-item>
+    </div>
+    }
+  </div>
+  }
+</div>

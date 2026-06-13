@@ -1,0 +1,33 @@
+<app-statistic [stats]="stats"></app-statistic>
+
+<div class="kanban-container" cdkDropListGroup>
+
+  <div class="column">
+    <h2>To Do ({{ todoList().length }})</h2>
+    <div id="todo-list" cdkDropList [cdkDropListData]="todoList()" (cdkDropListDropped)="onDrop($event)" class="list">
+
+      @for (todo of todoList(); track todo.id) {
+      <app-todo-item [item]="todo" [isKanbanMode]="true" [ngClass]="'status-' + todo.visualStatus" cdkDrag>
+      </app-todo-item>
+      } @empty {
+      <div class="empty-info">Keine offenen Aufgaben ☕</div>
+      }
+
+    </div>
+  </div>
+
+  <div class="column">
+    <h2>Fertig ({{ doneList().length }})</h2>
+    <div id="done-list" cdkDropList [cdkDropListData]="doneList()" (cdkDropListDropped)="onDrop($event)" class="list">
+
+      @for (todo of doneList(); track todo.id) {
+      <app-todo-item [item]="todo" [isKanbanMode]="true" [ngClass]="'status-' + todo.visualStatus" cdkDrag>
+      </app-todo-item>
+      } @empty {
+      <div class="empty-info">Noch nichts erledigt 💪</div>
+      }
+
+    </div>
+  </div>
+
+</div>

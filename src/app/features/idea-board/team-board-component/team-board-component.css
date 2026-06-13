@@ -1,0 +1,201 @@
+.board-container {
+  padding: 20px;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+.board-header h1 { margin: 0 0 4px 0; color: #1e293b; }
+.board-header p { margin: 0 0 24px 0; color: #64748b; font-size: 14px; }
+
+.kanban-column {
+  flex: 1;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  min-height: 500px;
+}
+
+.column-header {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 15px;
+  color: #334155;
+  font-weight: 700;
+}
+
+.cards-holder {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  
+  /* 🚀 DIE RETTUNG FOR DRAG & DROP: */
+  min-height: 450px; /* Macht die Drop-Zone physikalisch riesig, auch wenn sie leer ist! */
+  height: 100%;       /* Nutzt den vollen Platz der Spalte aus */
+}
+
+/* Kachel-Styling */
+.todo-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 14px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  transition: all 0.2s ease;
+}
+.todo-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 12px rgba(148,163,184,0.12);
+}
+
+.todo-title { margin: 0 0 6px 0; color: #0f172a; font-size: 14px; }
+.todo-desc { margin: 0 0 12px 0; color: #64748b; font-size: 12px; }
+
+/* Footer im Kachel inneren */
+.card-team-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed #f1f5f9;
+}
+
+.assignee-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #1e293b;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+.assignee-avatar.unassigned { background: #e2e8f0; font-size: 11px; color: #64748b; }
+
+.assignee-select {
+  padding: 3px 6px;
+  font-size: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  max-width: 120px;
+}
+
+.empty-info {
+  text-align: center;
+  color: #94a3b8;
+  font-size: 12px;
+  font-style: italic;
+  padding: 20px 0;
+}
+
+/* 🎪 STYLING FÜR DIE WILLKOMMENS-BOX */
+.welcome-placeholder-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background-color: #f8fafc;
+  border: 2px dashed #cbd5e1;
+  border-radius: 16px;
+  padding: 60px 40px;
+  max-width: 600px;
+  margin: 40px auto;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.welcome-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+  animation: bounce 2s infinite;
+}
+
+.welcome-placeholder-box h2 {
+  color: #0f172a;
+  margin: 0 0 12px 0;
+  font-size: 1.5rem;
+}
+
+.welcome-placeholder-box p {
+  color: #64748b;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0 0 24px 0;
+  max-width: 450px;
+}
+
+.selector-wrapper {
+  /* Sorgt dafür, dass unser schöner Meilenstein-Selector stabil sitzt */
+  display: inline-block;
+}
+
+/* Ein kleiner, spaßiger Effekt für das Zirkuszelt */
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.board-control-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    padding: 12px 20px;
+    border-radius: 12px;
+    margin-bottom: 24px; /* Schafft Platz zu den Kanban-Spalten darunter */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.active-filter-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #475569;
+}
+
+.active-filter-info strong {
+    color: #0f172a;
+    background-color: #f1f5f9;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.kanban-workspace {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.board-control-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    padding: 12px 20px;
+    border-radius: 12px;
+    margin-bottom: 24px; /* 👈 Drückt deine Spalten von gestern sanft nach unten */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.active-filter-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #475569;
+}
+
+.active-filter-info strong {
+    color: #0f172a;
+    background-color: #f1f5f9;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+}

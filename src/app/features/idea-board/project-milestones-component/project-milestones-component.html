@@ -1,0 +1,95 @@
+<div class="milestones-manager">
+
+    <div class="selector-header-row">
+        <span class="focus-label">🎯 Gewählter Fokus:</span>
+        <app-milestone-selector-component [initialMilestoneId]="activeMilestoneId()"
+            (milestoneSelected)="onMilestoneChanged($event)">
+        </app-milestone-selector-component>
+    </div>
+
+    <hr class="section-divider">
+
+    @if (currentMatch(); as match) {    
+    <div class="details-card">
+
+        <div class="project-tag">📁 Projekt: {{ match.project.title }}</div>
+        <h2 class="milestone-title">🏁 {{ match.milestone.title }}</h2>
+        <p class="milestone-status">Status: <strong>{{ liveMilestoneStatus() }}</strong></p>
+
+        <div class="progress-container">
+            <div class="progress-bar-wrapper">
+                <div class="progress-bar-fill" [style.width.%]="milestoneProgress()"></div>
+            </div>
+            <span class="progress-text">{{ milestoneProgress() }}% abgeschlossen</span>
+        </div>
+                     <button (click)="openTeamBoardForMilestone(match.milestone.id)" class="btn-team-board">
+  <span>🎪</span> Team-Kanban
+</button>
+
+        <div class="split-workspace" cdkDropListGroup>
+
+            <div class="workspace-column">
+                <h3 class="workspace-title">📝 Aufgaben in dieser Phase</h3>
+                
+                <div id="milestone-todo-list"
+                     cdkDropList
+                     [cdkDropListData]="match.milestoneTodos"
+                     (cdkDropListDropped)="onTodoDropped($event)"
+                     class="drag-drop-zone">
+                    @for (todoViewModel of match.milestoneTodos; track todoViewModel.id) {
+                        <app-todo-item 
+                            [item]="todoViewModel" 
+                            [isKanbanMode]="true" 
+                            [ngClass]="'status-' + todoViewModel.visualStatus"
+                            cdkDrag 
+                            [cdkDragData]="todoViewModel.todo"
+                            (delete)="removeTodoFromMilestone(todoViewModel.id)">
+                        </app-todo-item>
+                    } @empty {
+                        <div class="todo-empty-state">
+                            Zieh eine Aufgabe hierher, um sie der Phase zuzuordnen! 🚀
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="workspace-column">
+                <h3 class="workspace-title">➕ Unzugeordnete Aufgaben</h3>
+                
+                <div id="free-todo-list"
+                     cdkDropList
+                     [cdkDropListData]="unassignedTodos()"
+                     (cdkDropListDropped)="onTodoDropped($event)"
+                     class="drag-drop-zone">
+                     
+                    @for (todoViewModel of unassignedTodos(); track todoViewModel.id) {
+                        <app-todo-item 
+                            [item]="todoViewModel" 
+                            [isKanbanMode]="true" 
+                            [ngClass]="'status-' + todoViewModel.visualStatus"
+                            cdkDrag 
+                            [cdkDragData]="todoViewModel.todo">
+                        </app-todo-item>
+                    } @empty {
+                        <div class="unassigned-empty-state">
+                            Keine freien Aufgaben im System gefunden.
+                        </div>
+                    }
+                </div>
+            </div>
+
+        </div> <div class="workspace-form-wrapper">
+            <app-todo-form [forcedMilestoneId]="activeMilestoneId()"></app-todo-form>
+        </div>
+
+    </div>
+    } @else {
+    <div class="no-milestone-selected-container">
+        <div class="welcome-card">
+            <span class="empty-icon-neon">🎯</span>
+            <h3>Willkommen im Meilenstein-Workspace!</h3>
+            <p>Aktuell ist kein Meilenstein im Fokus. Wähle einfach oben über die Suche eine Phase aus, um deine Aufgaben per Drag & Drop zu strukturieren!</p>
+        </div>
+    </div>
+    }
+</div>

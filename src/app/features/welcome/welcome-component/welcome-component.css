@@ -1,0 +1,273 @@
+/* Zentriert die gesamte Karte schön auf dem Bildschirm */
+.welcome-container {
+  max-width: 450px;
+  margin: 60px auto;
+  padding: 40px 30px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  text-align: center;
+  font-family: 'Segoe UI', Roboto, sans-serif;
+  color: #333333;
+}
+
+/* Die herzliche Überschrift */
+.welcome-container h1 {
+  font-size: 26px;
+  margin-bottom: 8px;
+  color: #1a1a1a;
+}
+
+.welcome-container p {
+  color: #666666;
+  font-size: 16px;
+  margin-bottom: 24px;
+}
+
+/* Das Eingabefeld (Ehemals "Suchfeld" wegen des Browser-Tricks) */
+.input-group input[type="search"] {
+  width: 100%;
+  padding: 14px 20px;
+  font-size: 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  outline: none;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+/* Wenn man ins Feld klickt: Schöner blauer Glow Effect */
+.input-group input[type="search"]:focus {
+  border-color: #4a90e2;
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.15);
+}
+
+/* Die Button-Gruppe nebeneinander anordnen */
+.button-group {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+/* Basis-Styling für BEIDE Hauptbuttons */
+.button-group button {
+  flex: 1;
+  padding: 14px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Button 1: Board öffnen (Der Haupt-Aktionsbutton) */
+.button-group button:first-child {
+  background-color: #4a90e2;
+  color: white;
+}
+
+.button-group button:first-child:hover:not(:disabled) {
+  background-color: #357abd;
+  transform: translateY(-1px);
+}
+
+/* Button 2: Neues Board erstellen (Dezentere Zweit-Aktion) */
+.button-group button:last-child {
+  background-color: #f0f4f8;
+  color: #4a90e2;
+  border: 1px solid #d0e0f0;
+}
+
+.button-group button:last-child:hover:not(:disabled) {
+  background-color: #e1ebf5;
+  transform: translateY(-1px);
+}
+
+/* Wenn die Buttons deaktiviert sind (weil noch kein Name eingetippt wurde) */
+.button-group button:disabled,
+.start-btn:disabled {
+    opacity: 0.5;              /* 50% Deckkraft – das Blau schimmert sanft durch (dein Alpha-Effekt) */
+  cursor: not-allowed;       /* Zeigt dem User an: Hier kannst du gerade nicht klicken */
+  box-shadow: none;          /* Entfernt eventuelle Schatten im deaktivierten Zustand */
+  transform: none;           /* Verhindert Hover-Effekte wie "Nach oben hüpfen", wenn gesperrt */}
+
+/* Trennstrich */
+hr {
+  border: 0;
+  height: 1px;
+  background: #eeeeee;
+  margin: 30px 0;
+}
+
+/* Die Status-Zone unten (Wenn man eingeloggt ist) */
+.status-zone {
+  background-color: #f8fafc;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px dashed #e2e8f0;
+}
+
+.success-text {
+  color: #2e7d32 !important;
+  font-weight: 500;
+  margin-bottom: 16px !important;
+}
+
+.wait-text {
+  color: #718096 !important;
+  font-size: 14px !important;
+  margin-bottom: 0 !important;
+}
+
+/* Der große, fette "Gehe zu meinen To-Dos"-Button */
+.start-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+.start-btn:hover:not(:disabled) {
+  opacity: 0.95;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
+}
+
+/* Namen wechseln Button */
+.logout-btn {
+  background: none;
+  border: none;
+  color: #ef4444;
+  font-size: 13px;
+  margin-top: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.logout-btn:hover {
+  color: #dc2626;
+}
+
+/* Fehlermeldung */
+.error-msg {
+  background-color: #fef2f2;
+  color: #dc2626;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 16px;
+  font-size: 14px;
+  border: 1px solid #fee2e2;
+}
+
+/* Der Spinner-Kreis */
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3); /* Blasser Außenring */
+  border-radius: 50%;
+  border-top-color: #fff; /* Weiser aktiver Strich */
+  animation: spin 0.8s linear infinite; /* Drehung */
+  margin-right: 8px; /* Abstand zum Text */
+  vertical-align: middle;
+}
+
+/* Die Dreh-Animation */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 1. Die Überschrift von oben einfliegen lassen */
+.welcome-container h1 {
+  /* Von 0.8s auf 1.2s erhöht */
+  animation: slideDown 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards; 
+}
+
+/* 2. Den Untertext leicht verzögert einblenden */
+.welcome-container p {
+  opacity: 0;
+  /* Braucht 0.9s zum Einblenden und wartet 0.4s, bis es startet */
+  animation: fadeIn 0.9s ease-out 0.4s forwards; 
+}
+
+/* 3. Die Input-Gruppe und Buttons einblenden */
+.input-group, .button-group, .status-zone, hr {
+  opacity: 0;
+  /* Braucht 1.2s zum Einblenden und wartet 0.7s, bis es startet */
+  animation: fadeIn 1.2s ease-out 0.7s forwards; 
+}
+/* 🎬 DIE ANIMATIONS-REZEPTE (Keyframes) */
+
+/* Von oben nach unten sliden + einblenden */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Reines weiches Einblenden */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.waving-hand {
+  display: inline-block; /* Wichtig, damit Transformationen funktionieren! */
+  transform-origin: 70% 70%; /* Setzt den Drehpunkt unten an das Handgelenk */
+  animation: wave 1.5s ease-in-out 1.2s 3; /* Braucht 1.5s, startet nach 1.2s (wenn der Text da ist) und winkt 3-mal */
+}
+
+/* 🎬 Das Wink-Rezept (Keyframes) */
+@keyframes wave {
+  0% { transform: rotate( 0.0deg) }
+ 10% { transform: rotate(14.0deg) }  /* Nach rechts drehen */
+ 20% { transform: rotate(-8.0deg) }  /* Nach links drehen */
+ 30% { transform: rotate(14.0deg) }
+ 40% { transform: rotate(-4.0deg) }
+ 50% { transform: rotate(10.0deg) }
+ 60% { transform: rotate( 0.0deg) }  /* Zurück zur Mitte */
+100% { transform: rotate( 0.0deg) }
+}
+
+.recent-user-badge {
+  background-color: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #444;
+  transition: all 0.2s ease;
+}
+
+.recent-user-badge:hover:not(:disabled) {
+  background-color: rgba(59, 130, 246, 0.08); /* Schickes helles Angular-Blau */
+  border-color: #3b82f6;
+  color: #3b82f6;
+  transform: translateY(-1px);
+}
+
+.recent-user-badge:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}

@@ -1,0 +1,389 @@
+/* Styling für das Navigations-Menü */
+.nav-menu { 
+  display: flex; 
+  justify-content: center; 
+  gap: 15px; 
+  margin: 20px 0; 
+  width: 100%; 
+}
+
+.nav-btn { 
+  padding: 8px 20px; 
+  font-weight: bold; 
+  cursor: pointer; 
+  border: 1px solid #ccc; 
+  background: #fff; 
+  border-radius: 4px; 
+  transition: all 0.2s ease-in-out;
+}
+
+/* Aktiver Zustand bekommt dein schickes App-Blau */
+.nav-btn.active { 
+  background: #007bff; 
+  color: white; 
+  border-color: #0056b3; 
+}
+
+.nav-btn:hover:not(.active) {
+  background: #f0f0f0;
+}
+
+.undo-toast-wrapper {
+  position: fixed;
+  bottom: 30px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  z-index: 9999;       /* Immer ganz oben über allen Karten schweben! */
+  pointer-events: none; /* Klicks gehen durch den leeren Raum des Wrappers hindurch */
+}
+
+/* 🧰 Die eigentliche Toast-Kachel */
+.undo-toast {
+  pointer-events: auto; /* Die Kachel selbst fängt Klicks (wie den Button) natürlich ab */
+  background-color: #1e293b; /* Edles, dunkles Anthrazit/Slate */
+  color: #f8fafc;
+  padding: 12px 22px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  min-width: 340px;
+  overflow: hidden; /* Schneidet die Progressbar unten sauber ab */
+  position: relative;
+}
+
+.toast-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* ⚡ Der interaktive Undo-Button */
+.undo-button {
+  background-color: #3b82f6; /* Modernes Angular/Tailwind-Blau */
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.undo-button:hover {
+  background-color: #2563eb; /* Leicht dunkler beim Drüberfahren */
+  transform: translateY(-1px);
+}
+
+.undo-button:active {
+  transform: translateY(0);
+}
+
+/* 🎬 Die Einflug-Animation von unten mit leichtem "Bouncen" */
+.animate-slide-up {
+  animation: toastIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes toastIn {
+  from {
+    transform: translateY(100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ⏱️ Der schrumpfende Zeitbalken (läuft exakt synchron zu deinen 5000ms im Service!) */
+.progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background-color: #3b82f6;
+  width: 100%;
+  animation: shrinkBar 5s linear forwards;
+}
+
+@keyframes shrinkBar {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+.error-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #dc3545;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+  z-index: 9999;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-size: 14px;
+  animation: errorSlideUp 0.3s ease-out;
+}
+
+.close-toast-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.close-toast-btn:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+@keyframes errorSlideUp {
+  from { bottom: -60px; opacity: 0; }
+  to { bottom: 24px; opacity: 1; }
+}
+
+/* 1. Das Fullscreen-Overlay: Setzt sich über die komplette App */
+.level-up-overlay {
+  position: fixed; /* 🌟 Absolut wichtig: Löst es aus dem normalen HTML-Fluss */
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 12, 30, 0.85); /* Dunkler, mystischer Hintergrund-Blur */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999; /* 🌟 Setzt es über absolut JEDES andere Element deiner UI */
+  backdrop-filter: blur(8px); /* Macht die To-Do-Liste dahinter edel unscharf */
+}
+
+/* 2. Die vergrößerte, epische Plakate */
+.level-up-card {
+  background: linear-gradient(135deg, #e52d27 0%, #b31217 100%); /* Feuriges, motivierendes Rot-Orange-Gradient */
+  color: white;
+  padding: 50px 40px; /* Mehr Platz zum Atmen */
+  border-radius: 32px;
+  text-align: center;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), 
+              0 0 50px rgba(229, 45, 39, 0.4); /* Leuchteffekt nach außen */
+  max-width: 500px; /* Breiter als vorher */
+  width: 90%;
+  border: 5px solid #fffb00; /* Dickerer, goldener Rahmen */
+  position: relative;
+}
+
+/* Die funkelnden Sterne oben */
+.stars {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+  animation: pulse 1.5s infinite alternate;
+}
+
+.level-up-card h1 {
+  font-size: 3.5rem; /* Richtig fett! */
+  margin: 0;
+  font-weight: 900;
+  text-shadow: 3px 3px 0px #4a0000;
+  letter-spacing: 3px;
+}
+
+.subtitle {
+  font-size: 1.3rem;
+  color: #ffeb3b;
+  margin-top: 5px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+/* 3. Das riesige Level-Abzeichen */
+.level-badge {
+  background: #fffb00;
+  color: #b31217;
+  width: 130px; /* Von 100px auf 130px vergrößert */
+  height: 130px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 4.5rem; /* Gigantische Zahl */
+  font-weight: 900;
+  margin: 30px auto;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+  border: 4px solid white;
+}
+
+.congrats-text {
+  font-size: 1.2rem;
+  line-height: 1.6;
+  margin-bottom: 30px;
+  font-weight: 500;
+}
+
+/* 4. Der fette Schließen-Button */
+.close-btn {
+  background: white;
+  color: #b31217;
+  border: none;
+  padding: 16px 40px;
+  font-size: 1.3rem;
+  font-weight: 800;
+  border-radius: 50px;
+  cursor: pointer;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease-in-out;
+}
+
+.close-btn:hover {
+  transform: scale(1.1);
+  background: #fffb00;
+  color: #b31217;
+  box-shadow: 0 15px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* Coole Animationen */
+@keyframes popIn {
+  0% { transform: scale(0.3); opacity: 0; }
+  70% { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.15); }
+}
+
+.animated.pop-in {
+  animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Das Fullscreen-Overlay */
+.level-up-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(10, 6, 24, 0.85); /* Sehr dunkles Lila-Schwarz */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+  backdrop-filter: blur(10px);
+}
+
+/* Die neue, edle Plakate */
+.level-up-card {
+  background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%); /* 💜 Edles Cyber-Lila-Blau-Gradient */
+  color: white;
+  padding: 50px 40px;
+  border-radius: 32px;
+  text-align: center;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), 
+              0 0 40px rgba(143, 148, 251, 0.5); /* Magischer lila Leuchteffekt */
+  max-width: 480px;
+  width: 90%;
+  border: 4px solid #ffd700; /* Echtes Gold (Gold-Gelb) */
+}
+
+.stars {
+  font-size: 2.2rem;
+  margin-bottom: 5px;
+  animation: pulse 1.5s infinite alternate;
+}
+
+.level-up-card h1 {
+  font-size: 3.8rem;
+  margin: 0;
+  font-weight: 900;
+  color: #ffd700; /* 🌟 Schriftzug in Gold */
+  text-shadow: 2px 4px 10px rgba(0, 0, 0, 0.4);
+  letter-spacing: 4px;
+}
+
+/* Styling für den neuen epischen Levelnamen */
+.level-title-name {
+  font-size: 1.6rem;
+  color: #00ffff; /* Neon-Türkis für den Titel-Kontrast */
+  margin: 10px 0 20px 0;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  text-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
+}
+
+/* Das goldene Level-Abzeichen */
+.level-badge {
+  background: linear-gradient(135deg, #ffd700 0%, #ffa500 100%); /* Gold-Orange-Verlauf */
+  color: #1a0b36; /* Sehr dunkles Lila für maximalen Kontrast zur Zahl */
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 4.5rem;
+  font-weight: 900;
+  margin: 20px auto;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+  border: 4px solid white;
+}
+
+.congrats-text {
+  font-size: 1.15rem;
+  line-height: 1.6;
+  margin-bottom: 35px;
+  color: #f3f0ff;
+}
+
+/* Der Schließen-Button */
+.close-btn {
+  background: #ffd700; /* Goldener Button */
+  color: #1a0b36;
+  border: none;
+  padding: 16px 45px;
+  font-size: 1.25rem;
+  font-weight: 800;
+  border-radius: 50px;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  transition: all 0.25s ease;
+}
+
+.close-btn:hover {
+  transform: scale(1.08) translateY(-2px);
+  background: white;
+  box-shadow: 0 15px 30px rgba(143, 148, 251, 0.4);
+}
+
+/* Animationen */
+@keyframes popIn {
+  0% { transform: scale(0.4); opacity: 0; }
+  70% { transform: scale(1.03); }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes pulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.1); }
+}
+.animated.pop-in {
+  animation: popIn 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}

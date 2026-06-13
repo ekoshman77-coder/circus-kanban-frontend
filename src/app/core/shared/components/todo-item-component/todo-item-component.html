@@ -1,0 +1,123 @@
+@if (item()) {
+<div class="todo-item-card">
+  <div class="header-row">
+    @if (!isKanbanMode) {
+    <span class="arrow" (click)="toggleDescription.emit()">
+      {{ isDescriptionOpen ? '▼' : '▶' }}
+    </span>
+    }
+
+    <div class="title-wrapper">
+      <span class="text" [class.completed-text]="item().done">{{ item().task }}</span>
+
+      <div class="todo-metadata">
+        <span class="todo-date">
+          📅 {{ item().dateText }} {{ item().timestamp | date:'dd.MM.yyyy HH:mm' }}
+        </span>
+
+        @if (item().category) {
+        <span class="category-badge">{{ item().category }}</span>
+        }
+
+        @if (item().effort && item().effort > 0) {
+        <span class="points-container">
+
+          @if (item().done) {
+          <span class="badge-comparison" [ngClass]="item().estimationStatus().toLowerCase()">
+            @if (item().estimationStatus() === 'MATCH') { 🎯 {{ item().todo.usedEffort }}/{{ item().effort }} P }
+            @if (item().estimationStatus() === 'FASTER') { 🚀 {{ item().todo.usedEffort }}/{{ item().effort }} P }
+            @if (item().estimationStatus() === 'SLOWER') { 🥵 {{ item().todo.usedEffort }}/{{ item().effort }} P }
+          </span>
+          }
+
+          @else {
+          @if (isEditingPoints() && !isOffline()) {
+          <span class="points-selector">
+            @for (p of todoService.fibonacciSequence; track p) {
+            <button class="point-opt" (click)="selectPoints(p)">{{ p }}</button>
+            }
+            <button class="point-opt cancel" (click)="isEditingPoints.set(false)">×</button>
+          </span>
+          } @else {
+          <span class="points-badge" [class.clickable]="!isOffline()" [class.offline-locked]="isOffline()"
+            (click)="isEditingPoints.set(true)">
+            <span class="edit-hint-icon">✍️</span> ({{ item().effort }} P)
+          </span>
+          }
+          }
+
+        </span>
+        }
+      </div>
+    </div>
+
+    @if (!isKanbanMode) {
+    <div class="right-actions">
+      <label class="circle">
+        <input class="done" type="checkbox" [checked]="item().done" (click)="onCheckClick($event)">
+        <span class="custom-circle"></span>
+      </label>
+
+      <button class="btn-utility btn-action-edit" [class.hidden-edit]="item().done" (click)="onEditClick()">
+        ✏️
+      </button>
+
+      <button class="btn-utility btn-action-delete" [disabled]="isOffline()" (click)="delete.emit()">
+        🗑️
+      </button>
+    </div>
+    }
+  </div>
+
+  @if (!isKanbanMode && isDescriptionOpen) {
+  <div class="description-box">
+    <textarea class="descr-text" readonly>{{ item().description }}</textarea>
+  </div>
+  }
+
+  @if (isPopupOpen()) {
+  <div class="satellite-popover">
+    <div class="popover-controls-row">
+
+      <div class="input-wrapper">
+        <input type="number" [(ngModel)]="item().popupEffortValue"
+          (keydown.enter)="onEffortConfirmed(item().popupEffortValue())" />
+        <span class="unit">P</span>
+      </div>
+
+      <div class="popover-buttons-column">
+        <button class="btn-primary" (click)="onEffortConfirmed(item().popupEffortValue())">
+          ✔
+        </button>
+        <button class="btn-secondary" (click)="item().showEffortPopup.set(false)">
+          ✖
+        </button>
+      </div>
+
+    </div>
+  </div>
+  }
+  @if (isTeamsPopupEnabled() && item().showAssigneePopup()) {
+  <div class="satellite-popover assignee-popover" style="position: absolute; background: white; border: 1px solid #cbd5e1; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 8px; padding: 12px; z-index: 999; width: 200px; display: flex; flex-direction: column; gap: 6px; top: 50%; left: 10px; transform: translateY(-50%);">
+    <strong style="font-size: 11px; color: #64748b; margin-bottom: 4px;">Mitarbeiter zuweisen:</strong>
+    
+    @for (member of teamService.membersList(); track member.id) {
+      <button 
+        type="button" 
+        (click)="onAssigneeSelected(member.id)"
+        style="display: flex; align-items: center; gap: 8px; width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px; cursor: pointer; text-align: left;"
+      >
+        <div [style.background-color]="member.color" style="width: 18px; height: 18px; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold;">
+          {{ member.initials }}
+        </div>
+        <span style="font-size: 12px; color: #1e293b; font-weight: 500;">{{ member.initials }}</span>
+      </button>
+    }
+    
+    <button (click)="item().showAssigneePopup.set(false)" style="margin-top: 4px; background: #64748b; color: white; border: none; border-radius: 4px; padding: 6px; font-size: 11px; cursor: pointer; border-radius: 4px;">
+      Abbrechen 🛑
+    </button>
+  </div>
+}
+</div>
+}

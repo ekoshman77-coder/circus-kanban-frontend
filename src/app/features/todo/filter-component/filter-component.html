@@ -1,0 +1,14 @@
+<div class="filter-bar">
+  @for (filter of availableFilters; track filter.value) {
+    @let info = getIconAndText(filter.label);
+    
+    <button 
+      class="filter-btn" 
+      [class.active]="currentFilter === filter.value"
+      [attr.data-status]="filter.value"
+      [attr.data-tooltip]="info.text"
+      (click)="onFilterChange(filter.value)">
+      <span class="filter-icon">{{ info.icon }}</span>
+    </button>
+  }
+</div>

@@ -1,0 +1,62 @@
+<div class="form-container">
+  <form [formGroup]="todoForm" (ngSubmit)="onSubmit()" class="modern-two-line-form">
+
+    <div class="form-row main-inputs-row">
+      <div class="field-group flex-milestone-trigger" style="flex: 0 0 auto;">
+        <app-milestone-selector-component 
+            [initialMilestoneId]="newMilestoneId()"
+            [isDisabled]="isEmbeddedInMilestone()"
+            (milestoneSelected)="onMilestoneSelected($any($event))">
+        </app-milestone-selector-component>
+      </div>
+
+      <div class="field-group flex-task" [ngClass]="{ 'has-error': taskControl?.invalid && taskControl?.touched }">
+        <input id="task" type="text" formControlName="task"
+          placeholder="Was steht an? (z.B. Rechnungen sortieren...)" />
+      </div>
+
+      <div class="field-group flex-category">
+        <app-universal-tag-input-component [textToWatch]="todoForm.get('task')?.value || ''" [contextType]="'todo'"
+          [placeholder]="'Kategorie...'" [initialValue]="newTodoCategory()" (valueChanged)="onCategoryChanged($event)">
+        </app-universal-tag-input-component>
+      </div>
+    </div>
+
+    <div class="form-row detail-inputs-row">
+      <div class="field-group flex-descr">
+        <input id="description" type="text" formControlName="description" placeholder="Optionale Details...">
+      </div>
+
+      <div class="field-group flex-date"
+        [ngClass]="{ 'has-error': (dueDateControl?.invalid && dueDateControl?.touched) || dueDateControl?.hasError('dateInPast') }">
+        <input #dateInput id="dueDate" type="date" formControlName="dueDate" (change)="onDateChange(dateInput)">
+      </div>
+
+      <div class="field-group flex-effort">
+        <select id="effort" formControlName="effort">
+          @for (num of fibonacciSequence; track num) {
+          <option [ngValue]="num">{{ num }} P</option>
+          }
+        </select>
+      </div>
+
+      <button type="submit" [disabled]="todoForm.invalid" class="submit-btn-inline">
+        ➕ Aufgabe erstellen
+      </button>
+    </div>
+
+  </form>
+
+  <div class="error-container">
+    <div *ngIf="taskControl?.invalid && taskControl?.touched" class="form-error-msg">
+      ⚠️ Der Aufgabenname muss mindestens 3 Zeichen lang sein!
+    </div>
+    <div *ngIf="dueDateControl?.hasError('required') && dueDateControl?.touched" class="form-error-msg">
+      ⚠️ Bitte wähle ein fälliges Datum aus!
+    </div>
+    <div *ngIf="dueDateControl?.hasError('dateInPast')" class="form-error-msg">
+      ⚠️ Das Datum darf nicht in der Vergangenheit liegen!
+    </div>
+  </div>
+
+</div>

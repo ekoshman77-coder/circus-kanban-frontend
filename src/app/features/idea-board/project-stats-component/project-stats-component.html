@@ -1,0 +1,30 @@
+<div class="panel-stats-vertical-list">
+    
+    <!-- KACHEL 1: Projekte -->
+    <div class="stat-card-mini blueprint-blue animate-drop">
+        <span class="stat-icon-mini">📂</span>
+        <div class="stat-info">
+            <span class="stat-value">{{ totalProjectsCount() }}</span>
+            <span class="stat-label">Projekte aktiv</span>
+        </div>
+    </div>
+
+    <!-- KACHEL 2: Phasen (Gleitet minimal verzögert rein) -->
+    <div class="stat-card-mini compass-orange animate-drop delay-1">
+        <span class="stat-icon-mini">🏁</span>
+        <div class="stat-info">
+            <span class="stat-value">{{ totalMilestonesCount() }}</span>
+            <span class="stat-label">Phasen geplant</span>
+        </div>
+    </div>
+
+    <!-- KACHEL 3: To-Dos (Gleitet als Letztes rein) -->
+    <div class="stat-card-mini emerald-green animate-drop delay-2">
+        <span class="stat-icon-mini">📝</span>
+        <div class="stat-info">
+            <span class="stat-value">{{ totalTodosCount() }}</span>
+            <span class="stat-label">Aufgaben gesamt</span>
+        </div>
+    </div>
+    
+</div>

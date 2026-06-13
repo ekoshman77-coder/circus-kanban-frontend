@@ -1,0 +1,109 @@
+.statistic-dashboard-container {
+  width: 100%;
+  background-color: #ffffff;
+  border: 1px solid #c8d6e0; /* */
+  border-radius: 12px;
+  box-shadow: 0 6px 16px rgba(16, 42, 58, 0.06);
+  padding: 20px;
+  box-sizing: border-box;
+  margin-bottom: 25px;
+}
+
+/* HEADER-ZEILE */
+.stats-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.stats-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+/* MODUS BUTTONS (Oben rechts) */
+.mode-toggle-group {
+  display: flex;
+  background-color: #f1f5f9;
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.mode-btn {
+  background: transparent;
+  border: none;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.mode-btn.active {
+  background-color: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* TABS LEISTE */
+.stats-tabs-bar {
+  display: flex;
+  border-bottom: 2px solid #e2e8f0;
+  gap: 8px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+}
+
+.tab-link {
+  background: transparent;
+  border: none;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px; /* Setzt sich direkt auf die Border */
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.tab-link:hover {
+  color: #0f172a;
+}
+
+.tab-link.active {
+  color: #0ea5e9; /* Dein cooles App-Blau */
+  border-bottom-color: #0ea5e9;
+}
+
+/* SEITEN CONTAINER */
+.stats-page-content {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 580px) {
+  .stats-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .mode-toggle-group {
+    width: 100%;
+  }
+  .mode-btn {
+    flex: 1;
+    text-align: center;
+  }
+}

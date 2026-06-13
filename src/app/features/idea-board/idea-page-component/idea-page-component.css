@@ -1,0 +1,47 @@
+/* 🧭 Die Steuerzentrale (Tab-Leiste) */
+nav {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;           /* Angenehmer Abstand zwischen den Buttons */
+  flex-wrap: nowrap;   /* 🚫 Kein Umbruch nach unten mehr erlaubt! */
+  overflow-x: auto;    /* Falls der Bildschirm mal zu schmal wird, kann man wischen */
+  padding: 10px 5px;
+  margin-bottom: 15px;
+}
+
+/* 🔘 Das einheitliche, moderne Button-Styling */
+nav button {
+  background-color: #f3f4f6; /* Diskretes Hellgrau im inaktiven Zustand */
+  color: #4b5563;           /* Angenehmes Anthrazit für den Text */
+  border: 2px solid #e5e7eb; /* Subtiler Rand */
+  padding: 5px 20px;
+  border-radius: 12px;       /* Schön abgerundete Ecken passend zu den Projektkarten */
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;       /* 🚫 Der Text im Button bleibt immer einzeilig */
+  cursor: pointer;
+  transition: all 0.2s ease; /* Macht das Aufleuchten beim Drüberfahren geschmeidig */
+}
+
+/* ✨ Hover-Effekt (Wenn man mit der Maus drüberfährt) */
+nav button:hover {
+  background-color: #e5e7eb;
+  color: #1f2937;
+  transform: translateY(-1px); /* Ganz dezentes Anheben */
+}
+
+/* 🔥 DER AKTIVE ZUSTAND (Wenn der Tab ausgewählt ist) */
+nav button.is-active {
+  background-color: #eff6ff; /* Sanftes Fokus-Blau */
+  color: #2563eb;           /* Kräftiges Blau für die Schrift, genau wie deine Tage-Anzeige! */
+  border-color: #2563eb;     /* Der Rand leuchtet blau auf */
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1); /* Eleganter, weicher Schatten */
+}
+
+/* 📏 Die Trennlinie darunter etwas dezenter machen */
+hr {
+  border: none;
+  border-top: 1px solid #e2e8f0;
+  margin: 0 0 25px 0;
+}

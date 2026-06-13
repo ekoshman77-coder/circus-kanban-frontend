@@ -1,0 +1,29 @@
+
+<div class="header-title-container" style="display: flex; align-items: center; gap: 10px;">
+  <h1>Meine Todo App</h1>
+
+  @if (connectionService.isOffline()) {
+    <div class="offline-badge" style="color: #ef4444; display: flex; align-items: center; gap: 5px;" title="Keine Verbindung zum Kotlin-Server">
+      <span>🔌❌</span> 
+      <span style="font-size: 12px; font-weight: bold;">Offline-Modus</span>
+    </div>
+  } @else {
+    <div class="online-indicator" style="width: 8px; height: 8px; background-color: #22c55e; border-radius: 50%;" title="Verbunden mit Server"></div>
+  }
+</div>
+<div class="xp-container">
+  <div class="xp-text-row">
+    <span class="xp-title">
+      Level {{ gamification().currentLevel }} – {{ gamification().levelTitle }}
+    </span>
+    <span class="xp-percentage">{{ progressPercent() }}%</span>
+  </div>
+  
+  <div class="xp-bar-bg">
+    <div class="xp-bar-fill" [style.width.%]="progressPercent()"></div>
+  </div>
+  
+  <div class="xp-points-sub">
+    {{ gamification().currentXp }} / {{ gamification().nextLevelXpRequired }} XP
+  </div>
+</div>

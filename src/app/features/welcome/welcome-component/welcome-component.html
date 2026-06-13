@@ -1,0 +1,82 @@
+<div class="welcome-container">
+ <h1>Schön, dass du da bist! <span class="waving-hand">👋</span></h1>
+  <p>Wie heißt du?</p>
+
+  <div class="input-group">
+    <input 
+      type="search" 
+      placeholder="Dein Name..."
+      [ngModel]="usernameInput()"
+      (ngModelChange)="usernameInput.set($event)"
+      (keyup.enter)="onLogin()"
+    />
+  </div>
+
+  <div class="button-group" style="margin-top: 20px;">
+    <button (click)="onLogin()" [disabled]="!usernameInput().trim()">
+      @if (isLoading()) {
+        <span class="spinner"></span> Laden...
+      } @else {
+        Mein Board öffnen
+      }
+    </button>
+    <button (click)="onRegister()" [disabled]="!usernameInput().trim()">
+        @if (isLoading()) {
+          <span class="spinner"></span> Laden...
+        } @else {
+          Neues Board erstellen
+        }
+    </button>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="error-msg">
+      ⚠️ {{ errorMessage() }}
+    </div>
+  }
+
+  <hr />
+
+<div class="status-zone">
+    @if (userService.isLoggedIn()) {
+      <p class="success-text">
+        ✔ Bereit! Du bist als <strong>{{ userService.currentUser()?.username }}</strong> unterwegs.
+      </p>
+      
+      <button class="start-btn" routerLink="/todopage" [disabled]="isForwardButtonDisabled()">
+        Gehe zu meinen To-Dos →
+      </button>
+
+      <button class="logout-btn" (click)="userService.logout()">
+        Anderen Namen eingeben
+      </button>
+    }  @else {
+      <p class="wait-text">
+        🔒 Bitte verrate mir zuerst deinen Namen, um zu deinen To-Dos zu gelangen.
+      </p>
+      
+      @if (recentUsers().length > 0) {
+        <div class="recent-users-section" style="margin-bottom: 18px; text-align: center;">
+          <small style="color: #666; display: block; margin-bottom: 6px; font-size: 13px;">
+            Zuletzt eingeloggt:
+          </small>
+          <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+            @for (name of recentUsers(); track name) {
+              <button 
+                type="button"
+                class="recent-user-badge" 
+                (click)="selectRecentUser(name)"
+                [disabled]="isLoading()">
+                👤 {{ name }}
+              </button>
+            }
+          </div>
+        </div>
+      }
+      
+      <button class="start-btn" [disabled]="true">
+        Gehe zu meinen To-Dos →
+      </button>
+    }
+  </div>
+</div>

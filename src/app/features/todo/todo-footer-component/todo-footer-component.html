@@ -1,0 +1,23 @@
+@if (!isListEmpty) {
+  <div class="actions">
+    <span 
+      [class.delete-completed-btn]="!disableDeleteButtons()"
+      [class.disable-btn]="disableDeleteButtons()" 
+      [attr.title]="disableDeleteButtons() ? 'Diese Funktion ist offline nicht verfügbar 🔌' : null"
+      (click)="disableDeleteButtons() ? null : onClearCompleted()">
+      gemachte löschen
+    </span>
+    
+    <span class="total-time-display">
+      Offener Aufwand: {{ totalOpenEffort }} Story Points
+    </span>
+    
+    <span 
+      [class.delete-all-btn]="!disableDeleteButtons()"
+      [class.disable-btn]="disableDeleteButtons()" 
+      [attr.title]="disableDeleteButtons() ? 'Diese Funktion ist offline nicht verfügbar 🔌' : null"
+      (click)="disableDeleteButtons() ? null : onClearAll()">
+      alles löschen
+    </span>
+  </div>
+}

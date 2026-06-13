@@ -1,0 +1,530 @@
+/* ==========================================================================
+   DAS KÄRTCHEN-GEHÄUSE (Gilt für Liste UND Kanban-Board!)
+   ========================================================================== */
+:host {
+  display: flex;
+  flex-direction: column; 
+  width: 100%;
+  box-sizing: border-box;
+  
+  /* 🟢 WICHTIG: Das Gehäuse selbst kriegt fast kein Padding, 
+     damit der Rahmen schön dünn und präzise wird! */
+  padding: 3px; 
+  
+  /* Der Rahmen außen rum kann ganz dezent sein */
+  border: 1px solid #3b82f6;
+  border-radius: 8px;        
+  margin-bottom: 8px; /* Abstand zum nächsten To-Do-Paket */
+  box-shadow: 0 1px 3px rgba(16, 42, 58, 0.05);
+  cursor: grab;
+  transition: all 0.2s ease;
+}
+
+:host-context(.todo-list-container) {
+  transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out !important;
+}
+
+:host:hover {
+  box-shadow: 0 6px 14px rgba(16, 42, 58, 0.18);
+  
+  /* 🔵 HIER BLEIBT DEIN DUNKELES BLAU: Schaltet beim Hovern auf das tiefe, edle Navy-Blau */
+  border-color: hsl(215, 90%, 31%); 
+}
+
+:host-context(.todo-list-container):hover {
+  transform: translateY(-1px) !important;
+}
+
+:host:active {
+  cursor: grabbing;
+}
+
+/* ==========================================================================
+   DIE STATUS-ZUSTÄNDE (DIREKT AM GEHÄUSE)
+   ========================================================================== */
+:host(.status-pending) {
+  border-left: 6px solid #00b4d8 !important;
+  background-color: #ffffff !important;
+}
+:host(.status-pending) .text {
+  color: #2c3e50 !important;
+  text-decoration: none !important;
+}
+
+/* 🔥 DEIN BRANDNEUER, EXKLUSIVER STATUS FÜR HEUTE */
+/* 2. 🍊 DEIN NEUER STATUS: HEUTE FÄLLIG (Warn-Orange + sanfter Hintergrund) */
+:host(.status-due-today) {
+  border-left: 6px solid #ff9f43 !important; /* Kräftiges Orange direkt am Rand! */
+  background-color: #fffbeb !important;     /* Sanfter, gelblicher Hintergrund */
+}
+
+/* Optional: Damit der Text heute auch ein bisschen nach Warnung aussieht */
+:host(.status-due-today) .text {
+  color: #d35400 !important; /* Ein schönes, dunkles Orangebraun für die Lesbarkeit */
+  text-decoration: none !important;
+}
+
+:host(.status-on-time) {
+  border-left: 6px solid #2ecc71 !important;
+  background-color: #f8fafc;
+}
+:host(.status-on-time) .text {
+  color: #2ecc71 !important;
+  text-decoration: line-through !important;
+}
+
+:host(.status-overdue) {
+  border-left: 6px solid #e74c3c !important;
+  background-color: #fffafa;
+}
+:host(.status-overdue) .text {
+  color: #c0392b !important;
+  text-decoration: none !important;
+}
+
+:host(.status-completed) {
+  border-left: 6px solid #2ecc71 !important;
+  background-color: #f8fafc;
+}
+:host(.status-completed) .text {
+  color: #000803 !important;
+  text-decoration: line-through !important;
+}
+
+/* ==========================================================================
+   INNERES FLEXBOX-LAYOUT & CHECKBOX-STYLE
+   ========================================================================== */
+.header-row {
+  display: flex;
+  align-items: center;    /* 🟢 Zwingt alles (Pfeil, Text, rechte Buttons) auf die exakte Mitte! */
+  gap: 10px;           
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.title-wrapper {
+  flex-grow: 1; 
+  display: flex;
+  flex-direction: column;
+  gap: 2px;               /* Minimaler Abstand zwischen Text und Datum */
+}
+
+.text {
+  font-size: 13px;        /* Schön knackig kompakt */
+  font-weight: 600;
+  line-height: 1.1 !important;
+}
+
+.todo-metadata {
+  display: flex;
+  align-items: center;      /* Zentriert Datum, Badge und Punkte perfekt auf einer Linie */
+  flex-wrap: wrap;          /* Falls der Platz mal eng wird, bricht es sauber um */
+  gap: 8px;                 /* 🟢 Das Geheimnis: Ein einheitlicher, sauberer Abstand zwischen ALLEN Elementen! */
+  margin-top: 3px;          /* Schiebt die Metadaten-Zeile einen Hauch nach unten, weg vom Haupttext */
+  line-height: 1.1 !important;
+  font-size: 11px;
+  color: #7f8c8d;
+}
+
+.category-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 9px;           /* Minimal kleiner, passend zur flachen Karte */
+  font-weight: 700;
+  text-transform: uppercase;
+  background-color: #e0f2fe; /* Das schöne, sanfte Hellblau */
+  color: #0369a1;            /* Das klare Dunkelblau für den Text */
+ 
+  /* 🟢 PERFEKTES MINIMAL-PADDING: Schützt die Pille vor dem vertikalen Quetschen */
+  padding: 1px 6px !important; 
+  border-radius: 4px;
+  
+  /* Margins auf 0 setzen, da wir jetzt den Abstand sauber über das 'gap' der .todo-metadata regeln! */
+  margin: 0 !important; 
+  vertical-align: middle;
+}
+
+.points-badge {
+  display: inline-flex;
+  align-items: center;
+  font-weight: bold;
+  color: #64748b;
+  padding: 1px 6px !important;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background-color: #f8fafc;
+  transition: all 0.2s ease-in-out;
+}
+
+/* 🟢 DEIN NEUER ONLINE-MODUS: Wenn klickbar, bekommt die Pille das lila Design! */
+.points-badge.clickable {
+  cursor: pointer;
+  background-color: #f5f3ff !important; /* Ein ganz sanfter, edler lila Schimmer */
+  color: #4e54c8 !important;            /* Die Schrift leuchtet im lila Edit-Ton */
+  border: 1px dashed #c084fc !important; /* Ein feiner, gestrichelter lila Rahmen (Interaktivitäts-Signal) */
+}
+
+/* Der Hover-Effekt, wenn man mit der Maus direkt draufsteht */
+.points-badge.clickable:hover {
+  background-color: #4e54c8 !important;  /* Schaltet um auf volles Gaming-Lila */
+  color: #ffffff !important;             /* Text wird weiß für perfekten Kontrast */
+  border-color: #4e54c8 !important;
+  transform: scale(1.05);                /* Die Pille hüpft der Maus minimal entgegen */
+}
+
+
+
+/* Das winzige ✍️-Symbol innerhalb der Pille */
+.edit-hint-icon {
+  font-size: 10px;
+  margin-right: 3px;
+  opacity: 0.7;                          /* Standardmäßig etwas dezenter im Hintergrund */
+  transition: transform 0.2s;
+}
+
+/* Die rechte Aktionsbox steuert nur das Zusammensitzen der Buttons */
+.right-actions {
+  display: inline-flex;
+  align-items: center;    /* 🟢 Zentriert Checkbox, Stift und Mülleimer perfekt zueinander */
+  gap: 6px;               /* Einheitlicher Abstand zwischen den Buttons */
+  flex-shrink: 0;         /* Verhindert Zusammendrücken */
+  height: 20px;
+}
+
+/* ==========================================================================
+   DIE NEUEN, STRUKTURIERTEN UTILITY-BUTTONS (✏️ & 🗑️)
+   ========================================================================== */
+
+/* 1. Die gemeinsame Basis-Klasse (Das Skelett für alle Werkzeug-Knöpfe) */
+.btn-utility {
+  height: 20px !important;
+  width: 20px !important;     
+  padding: 0 !important;      
+  margin: 0 !important;       
+  line-height: 1 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px !important; 
+  
+  /* Radikaler Schutz vor Browser-Rahmen */
+  background: transparent !important; 
+  border: 0px solid transparent !important; 
+  outline: none !important;           
+  box-shadow: none !important;        
+  cursor: pointer;
+  
+  /* 🟢 NEU: HARDWARE-BESCHLEUNIGUNG GEGEN DAS LAYOUT-FLACKERN */
+  will-change: transform, filter;    /* Sagt dem Browser Bescheid, was animiert wird */
+  transform: translateZ(0);          /* Zwingt das Element auf eine eigene Grafik-Ebene */
+  
+  /* Weicher Übergang für ALLE Effekte (Größe und Filter) */
+  transition: transform 0.2s ease-out, filter 0.2s ease-out, color 0.2s ease-out;
+}
+
+/* Klick-Feedback für alle Utility-Buttons (Einfedern beim Drücken) */
+.btn-utility:active {
+  transform: scale(0.92);
+}
+
+/* 2. Spezifische Klasse: Nur für den Edit-Stift ✏️ */
+.btn-action-edit {
+  /* Animation für das Ausblenden beim Erledigen beibehalten */
+  opacity: 1;
+  overflow: hidden;             
+  transition: all 0.25s ease-in-out; 
+}
+
+.btn-action-edit:hover {
+  transform: scale(1.18);
+  filter: drop-shadow(0 0 4px rgba(78, 84, 200, 0.6));
+}
+
+.btn-action-edit.hidden-edit {
+  width: 0px !important;        
+  opacity: 0;                   
+  pointer-events: none;         
+}
+
+/* 3. Spezifische Klasse: Nur für den Mülleimer 🗑️ */
+.btn-action-delete {
+  /* Keine extra Zuweisungen im Standardzustand nötig! */
+}
+
+.btn-action-delete:hover {
+  transform: scale(1.18);
+  /* Der lodernde Rot-Effekt für das Emoji */
+  filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.7)) sepia(1) hue-rotate(320deg) saturate(5);
+}
+
+/* 4. Der Beschreibungs-Pfeil (Er ist kein Emoji, sondern Text, bleibt daher separat) */
+.arrow {
+  color: #7f8c8d;
+  user-select: none;
+}
+
+.arrow:hover {
+  transform: scale(1.18);
+  color: #4e54c8 !important;
+}
+
+/* 🟢 DER CHECKBOX-STYLE PERFEKT ANPASSEN */
+.circle {
+  position: relative;
+  display: inline-block;
+  width: 20px;                /* 🟢 An die 20px der anderen Buttons angepasst */
+  height: 20px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.circle input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.custom-circle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 20px;               /* 🟢 Von 22px auf 20px verringert – jetzt schmiegt sie sich perfekt an! */
+  width: 20px;
+  background-color: #ffffff;
+  border: 2px solid #b4c6d0;
+  border-radius: 50%;
+  box-sizing: border-box;     /* Wichtig, damit der Rahmen die 20px nicht vergrößert */
+}
+
+.circle:hover input ~ .custom-circle {
+  border-color: #00b4d8;
+}
+
+.circle input:checked ~ .custom-circle {
+  background-color: #2ecc71;
+  border-color: #2ecc71;
+}
+
+.custom-circle:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+.circle input:checked ~ .custom-circle:after {
+  display: block;
+}
+
+/* Das kleine Häkchen im Kreis zentrieren */
+.circle .custom-circle:after {
+  left: 6px;
+  top: 2px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* 🟢 DIE INNEREN KARTEN-ANCKER */
+.todo-item-card {
+  position: relative; 
+  background: white;
+  border-radius: 12px;
+  padding: 4px 8px;           /* Oben/Unten 4px für Kompaktheit, Links/Rechts 8px für etwas Luft */
+  margin: 4px 10px 10px 10px; /* Deine perfekt optimierte Shorthand-Zeile! */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* 2. Der schwebende Satellit */
+/* 🛰️ DAS ULTRA-KOMPAKTE MINI-POPUP */
+.satellite-popover {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  
+  width: 110px;               /* Von 180px auf 110px geschrumpft - extrem schmal! */
+  background: #ffffff; 
+  border-radius: 6px; 
+  padding: 4px 6px;           /* Minimaler Innenabstand oben/unten (nur 4px!) */
+  border: 1.5px solid #0284c7; /* Dünnerer, edlerer Rahmen */
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.12);
+  z-index: 20;
+  animation: slideInRight 0.15s ease-out;
+}
+
+/* Die Kontroll-Zeile nutzt die volle Breite */
+.popover-controls-row {
+  display: flex;
+  align-items: center; 
+  justify-content: space-between; 
+  gap: 4px;
+}
+
+/* Input-Bereich links */
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.input-wrapper input {
+  width: 32px;                /* Noch ein kleines Stück schmaler */
+  padding: 2px;               /* Ultra-flaches Padding */
+  border: 1px solid #cbd5e1;  /* Dünnerer Rahmen */
+  border-radius: 4px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.input-wrapper .unit {
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+/* Die Buttons rechts stapeln wir als winzige Quadrate übereinander */
+.popover-buttons-column {
+  display: flex;
+  flex-direction: column; 
+  gap: 2px;
+}
+
+.popover-buttons-column button {
+  width: 20px;                /* Winzige, quadratische Buttons */
+  height: 18px;
+  padding: 0;
+  border-radius: 3px;
+  font-size: 10px;            /* Symbole ✔ und ✖ passen perfekt rein */
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.1s ease, filter 0.1s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.popover-buttons-column button:active {
+  transform: scale(0.9);
+}
+
+/* Haken-Button (Sichern) */
+.popover-buttons-column .btn-primary {
+  background: #0284c7;
+  color: white;
+}
+.popover-buttons-column .btn-primary:hover {
+  filter: brightness(1.1);
+}
+
+/* Kreuz-Button (Abbrechen) */
+.popover-buttons-column .btn-secondary {
+  background: #f1f5f9;
+  color: #64748b;
+}
+.popover-buttons-column .btn-secondary:hover {
+  background: #e2e8f0;
+  color: #ef4444;            /* Wird beim Hovern rot für "Abbrechen" */
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateY(-50%) translateX(10px); }
+  to { opacity: 1; transform: translateY(-50%) translateX(0); }
+}
+
+.badge-comparison {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: bold;
+  
+  /* 🟢 PERFEKTES MINIMAL-PADDING: Kompakt, aber lesbar */
+  padding: 1px 6px !important; 
+  border-radius: 4px;
+  margin: 0 !important;
+}
+
+/* Entspricht exakt den 3 Signal-Values im Kleinformat */
+.badge-comparison.match { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+.badge-comparison.faster { background-color: #cce5ff; color: #004085; border: 1px solid #b8daff; }
+.badge-comparison.slower { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+/* ==========================================================================
+   DAS INLINE-AUSWAHLMENÜ (FIBONACCI) FÜR OFFENE TODOS
+   ========================================================================== */
+
+.points-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  /* Wir geben ihm eine minimale Breite/Höhe, damit der Ankerpunkt berechenbar ist */
+  min-width: 35px; 
+  height: 14px;
+}
+
+/* 2. 🛸 JETZT SCHWEBT ES PERFEKT RECHTS DANEBEN */
+.points-selector {
+  display: inline-flex;
+  gap: 3px;
+  background-color: #ffffff;
+  padding: 2px 4px;
+  border-radius: 6px;
+  border: 1.5px solid #4e54c8;
+  
+  /* Löst die Box komplett aus dem Platzbedarf der Karte */
+  position: absolute;
+  
+  /* 🟢 DIE ANPASSUNG: Orientierung an der Oberkante statt Unterkante! */
+  top: 50%;                   /* Setzt die Box genau auf die vertikale Mitte des Ankers */
+  transform: translateY(-50%); /* Zentriert sie mathematisch exakt */
+  left: 0px;                  /* Startet genau dort, wo sonst die Klammer-Pille saß */
+  
+  white-space: nowrap;        /* Buttons bleiben stur in einer Reihe */
+  z-index: 99;                /* Schiebt sich über absolut jeden Text drüber */
+  
+  box-shadow: 0 3px 10px rgba(78, 84, 200, 0.22); /* Hochwertiger, schwebender Schatten */
+}
+
+/* Die einzelnen Zahlen-Knöpfe (1, 2, 3, 5...) auf strenge Diät setzen */
+.point-opt {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 0px 5px !important; /* Absolut kein Puffer nach oben/unten! */
+  height: 16px !important;     /* Knallhart flach gehalten (2px flacher als die Karte) */
+  font-size: 10px !important;  /* Feine, kleine Schrift */
+  font-weight: 700;
+  cursor: pointer;
+  color: #4e54c8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+/* Hover-Effekt für die Zahlen */
+.point-opt:hover {
+  background-color: #4e54c8;
+  color: #ffffff;
+  border-color: #4e54c8;
+}
+
+/* Der Abbrechen-Button (×) ganz rechts */
+.point-opt.cancel {
+  color: #ef4444;
+  border-color: #fee2e2;
+  background: #fff5f5;
+  font-size: 12px !important;
+}
+
+.point-opt.cancel:hover {
+  background-color: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+}

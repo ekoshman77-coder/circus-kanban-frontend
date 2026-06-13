@@ -1,0 +1,162 @@
+/* --- 1. Der äußere Rahmen für die gesamte Liste --- */
+.todo-list-container {
+  width: 100%;
+  /* Wir geben dem Container eine feste maximale Höhe, 
+     damit er nicht unendlich nach unten wächst */
+  max-height: 450px; /* 80% der sichtbaren Bildschirmhöhe */
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff; 
+  border: 1px solid #cfdadf; 
+  border-radius: 10px;       
+  padding: 16px;             
+  box-sizing: border-box;
+  box-shadow: 0 2px 8px rgba(16, 42, 58, 0.04); 
+}
+
+/* --- 4. Der eigentliche Listen-Bereich wird scrollbar --- */
+.todo-list {
+  flex-grow: 1;         /* Nutzt den restlichen Platz im Container optimal aus */
+  overflow-y: auto;     /* Aktiviert die vertikale Scrollbar NUR, wenn es zu viele Items gibt! */
+  padding-right: 8px;   /* Kleiner Sicherheitsabstand, damit die Scrollbar nicht an den Karten klebt */
+  padding-top: 5px;
+
+  /* Hübsche, dezente Scrollbar für moderne Browser (Chrome, Safari, Edge) */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+}
+
+/* --- 2. Das schicke, haptische Item-Kärtchen --- */
+.todo-item {
+  display: flex;
+  align-items: center; /* Richtet Checkbox, Text und Button perfekt auf einer Linie aus */
+  gap: 15px;           /* Stabiler Abstand zwischen den Elementen */
+  padding: 12px 16px;
+  background-color: #ffffff;
+  border: 1px solid #c8d6e0;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  box-shadow: 0 3px 8px rgba(16, 42, 58, 0.12); /* Dein neuer, kräftigerer Schatten! */
+  transition: all 0.2s ease-in-out;
+}
+
+/* Hover-Effekt: Karte ploppt leicht nach oben */
+.todo-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 12px rgba(16, 42, 58, 0.18);
+  border-color: #00b4d8; /* Cyan-Akzent aus dem Header */
+}
+
+/* --- 3. Die inneren Elemente perfekt aufteilen --- */
+
+/* Die Checkbox bleibt links verankert */
+.todo-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* Die Text-Box schnappt sich elastisch den gesamten Platz in der Mitte */
+.todo-text-container {
+  flex-grow: 1; /* Schiebt alles andere nach rechts weg! */
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.todo-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+/* Wenn die Aufgabe erledigt ist, wird sie dezent durchgestrichen */
+.todo-title.done {
+  text-decoration: line-through;
+  color: #94a3b8;
+}
+
+.todo-desc {
+  font-size: 12px;
+  color: #7f8c8d;
+}
+
+/* Der Mülleimer-Button wandert ganz stabil nach rechts außen */
+.delete-btn {
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: background-color 0.2s;
+}
+
+.delete-btn:hover {
+  background-color: #fce4e4; /* Sanftes Rot beim Drüberfahren */
+}
+
+/* Falls die Liste leer ist */
+.no-todos-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  color: #8a99a8;
+  text-align: center;
+}
+
+.controls-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  width: 100%;
+  
+  /* HIER DEN ABSTAND VERKLEINERN */
+  margin-bottom: 1px; /* Vorher war es 24px, wir halbieren es oder gehen noch weiter runter */
+  
+  flex-wrap: wrap;
+}
+
+/* Kleiner Feinschliff: Wir nehmen die Ränder und Abstände, die wir vorhin 
+   in den Einzelkomponenten zur Sicherheit eingebaut hatten, hier wieder raus, 
+   damit der Wrapper die volle Kontrolle übernimmt */
+app-filter, app-statistic {
+  display: block;
+}
+
+app-statistic {
+  flex-grow: 1; /* Die Statistik darf sich den restlichen Platz schnappen */
+  max-width: 600px; /* Verhindert, dass die Statistik auf Riesenbildschirmen zu lang gezogen wird */
+}
+
+h3 {
+  margin-top: 4px;     /* Reduziert den Abstand nach oben zu den Controls drastisch */
+  margin-bottom: 12px; /* Kontrolliert den Abstand nach unten zu den eigentlichen Kärtchen */
+  font-size: 18px;     /* Falls du die Größe auch direkt harmonisch anpassen willst */
+  color: #1e293b;      /* Ein schönes, knackiges Dunkelgrau */
+}
+
+.todo-list > div {
+  border-left: 5px solid transparent; /* Standard unsichtbar, damit nichts ruckelt */
+  transition: all 0.3s ease;
+  border-radius: 8px;
+  margin-bottom: 10px; /* Hält den Abstand beim Sliden sauber */
+}

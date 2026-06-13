@@ -1,0 +1,225 @@
+:host {
+  display: block;
+  width: 250px;
+  height: auto;
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   1. DER GRUND-ZETTEL (POST-IT)
+   ========================================================================== */
+.simple-card {
+  border-radius: 12px; 
+  padding: 32px 18px 14px 18px; 
+  width: 100%;
+  min-height: 160px;
+  height: auto;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column; 
+  position: relative;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08), 0 12px 20px rgba(0, 0, 0, 0.12);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.simple-card p {
+  margin: 0 0 12px 0;
+  font-size: 13.5px;
+  color: #4b5563;
+  line-height: 1.45;
+  flex-grow: 1;
+
+  display: -webkit-box;           
+  -webkit-box-orient: vertical;  
+  -webkit-line-clamp: 5; 
+  overflow: hidden; 
+} 
+
+/* ==========================================================================
+   2. TAG BADGE & FOOTER-LAYOUT (Hier wird die Reihenfolge bestimmt!)
+   ========================================================================== */
+.note-tag-badge {
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 600;
+  color: #4b5563;
+  background: rgba(0, 0, 0, 0.06);
+  padding: 3px 8px;
+  border-radius: 12px;
+  margin-bottom: 0px; /* Kleiner Abstand nach unten zum Footer */
+}
+
+.calculation-badge {
+  align-self: flex-start; /* Verhindert das Strecken über die ganze Breite */
+  font-size: 11px;
+  font-weight: 700;
+  background-color: #10b981; /* Knalliges Smaragd-Grün 🟢 */
+  color: white;
+  padding: 3px 8px;
+  border-radius: 12px; /* Identischer Post-It-Badge-Look wie das Tag! */
+  margin-top: 6px; /* Kleiner Abstand zum Tag darüber */
+  margin-bottom: 6px;
+  display: inline-block;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+}
+
+.card-footer {
+  display: flex;
+  justify-content: flex-end; 
+  align-items: center;
+  
+  /* 🌟 DAS SCHIEBT DEN FOOTER NACH UNTEN: 
+     Frisst den Leerraum auf und lässt den Tag schön darüber stehen! */
+  margin-top: auto; 
+  
+  padding-top: 4px;
+  width: 100%;
+}
+
+.action-buttons-group {
+  display: flex;
+  gap: 6px;
+  opacity: 0; /* Im Ruhezustand unsichtbar */
+  transition: opacity 0.2s ease;
+}
+
+.simple-card:hover .action-buttons-group {
+  opacity: 1; /* Sichtbar bei Hover */
+}
+
+.edit-mode-group {
+  opacity: 1 !important; /* Im Edit-Modus IMMER sichtbar! */
+}
+
+/* ==========================================================================
+   3. RUNDE HOCHWERTIGE BUTTONS MIT CSS-TOOLTIPS
+   ========================================================================== */
+.round-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.round-btn:hover {
+  background: rgba(255, 255, 255, 0.95);
+  transform: translateY(-1px);
+}
+
+/* Der schicke CSS-Tooltip */
+.round-btn[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 34px;
+  left: 50%;
+  transform: translateX(-50%) scale(0.8);
+  background: #1f2937;
+  color: white;
+  font-size: 10px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.15s ease;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.round-btn[data-tooltip]:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+
+/* ==========================================================================
+   4. FLIEGENDES POPUP (Z-INDEX OVERLAY)
+   ========================================================================== */
+.note-popup {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  right: -6px;
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+  
+  /* 🔥 Das legt sich über absolut ALLES im Zettel! */
+  z-index: 999; 
+  
+  border: 1px solid rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+}
+
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+.popup-header h3 { margin: 0; white-space: normal; }
+
+.close-popup-btn {
+  background: none; border: none; font-size: 16px; color: #9ca3af;
+  cursor: pointer; padding: 0 0 0 10px; line-height: 1;
+}
+.close-popup-btn:hover { color: #ef4444; }
+
+.note-popup p {
+  display: block; overflow-y: auto; max-height: 180px; color: #374151; margin: 0;
+}
+
+/* ==========================================================================
+   5. FARBEN & MATCHENDE TEXTFARBEN FÜR RUNDE BUTTONS
+   ========================================================================== */
+.note-yellow { background-color: #fff9c4; border: 1px solid #f8f1b0; }
+.note-yellow .note-popup { background-color: #fffde7; border-color: #fff59d; }
+.note-yellow .round-btn { color: #856404; }
+
+.note-green { background-color: #c8e6c9; border: 1px solid #b8dbba; }
+.note-green .note-popup { background-color: #f1f8e9; border-color: #a5d6a7; }
+.note-green .round-btn { color: #1b5e20; }
+
+.note-pink { background-color: #f8bbd0; border: 1px solid #efaec5; }
+.note-pink .note-popup { background-color: #fce4ec; border-color: #f48fb1; }
+.note-pink .round-btn { color: #880e4f; }
+
+.note-blue { background-color: #bbdefb; border: 1px solid #aed3f2; }
+.note-blue .note-popup { background-color: #e3f2fd; border-color: #90caf9; }
+.note-blue .round-btn { color: #0d47a1; }
+
+/* ==========================================================================
+   6. DIE MAGNETE & EDITIER STYLES
+   ========================================================================== */
+.pin {
+  position: absolute;
+  top: 8px; left: 50%; transform: translateX(-50%);
+  width: 14px; height: 14px; border-radius: 50%; z-index: 10;
+  box-shadow: inset -2px -2px 4px rgba(0, 0, 0, 0.3), inset 1px 1px 2px rgba(255, 255, 255, 0.4), 1px 2px 3px rgba(0, 0, 0, 0.25);
+}
+.pin-red    { background-color: #e63946; border: 1px solid #b71c1c; }
+.pin-green  { background-color: #2a9d8f; border: 1px solid #1a6259; }
+.pin-blue   { background-color: #457b9d; border: 1px solid #2a4d63; }
+.pin-yellow { background-color: #e9c46a; border: 1px solid #b38f3b; }
+
+.edit-input-title, .edit-textarea-content {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px dashed rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  font-family: inherit;
+  outline: none;
+  padding: 6px;
+  box-sizing: border-box;
+  margin-bottom: 8px;
+}
+.edit-input-title { font-size: 16px; font-weight: 600; }
+.edit-textarea-content { font-size: 13px; min-height: 80px; flex-grow: 1; resize: none; }

@@ -1,0 +1,111 @@
+.kanban-container {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  margin-top: 15px;
+  width: 100%;
+}
+
+.column { 
+  flex: 1;
+  background: #f9f9f9; 
+  border-radius: 8px; 
+  padding: 15px; 
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
+  border: 1px solid #eee;
+}
+
+.column h2 { 
+  text-align: center; 
+  color: #333; 
+  font-size: 16px;
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.list { 
+  /* HIER ERHÖHEN WIR AUF DIE GLEICHE GRÖSSE: 
+     380px minus die Abstände für Überschriften ergibt ca. 320px */
+  min-height: 350px; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 10px; 
+  background: #fff; 
+  padding: 10px; 
+  border-radius: 4px; 
+  border: 1px dashed #e2eaf0; /* Passend zu unseren neuen soften Rahmenfarben */
+}
+
+.todo-card {
+  padding: 12px;
+  background-color: #ffffff;
+  border: 1px solid #c8d6e0;
+  border-radius: 8px;
+  cursor: grab;
+  
+  /* EXAKT DER GLEICHE KRÄFTIGE SCHATTEN FÜR DAS BOARD: */
+  box-shadow: 0 3px 8px rgba(16, 42, 58, 0.12);
+  
+  transition: all 0.2s ease-in-out;
+}
+
+.todo-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 12px rgba(16, 42, 58, 0.18);
+  border-color: #00b4d8;
+}
+
+/* Wenn man die Karte gerade mit der Maus zieht (Drag) */
+.todo-card:active {
+  cursor: grabbing;
+  box-shadow: 0 8px 20px rgba(16, 42, 58, 0.25);
+  transform: scale(1.02);
+}
+.card.completed-card {
+  border-left-color: #2ecc71 !important; 
+}
+
+.badge-effort {
+  background-color: #e9ecef;
+  color: #495057;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: bold;
+}
+
+.completed-badge {
+  background-color: #d1e7dd;
+  color: #0f5132;
+}
+
+.empty-info {
+  text-align: center;
+  color: #aaa;
+  font-size: 13px;
+  padding: 20px 0;
+}
+
+/* ==========================================
+   CDK ANMATIONS (Erzwingt flüssiges Gleiten)
+   ========================================== */
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.cdk-drop-list-dragging .cdk-drag {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.3;
+  background: #ececec;
+  border: 2px dashed #999;
+}
+
+.cdk-drag-preview {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2) !important;
+  border-radius: 4px;
+  background-color: white;
+  opacity: 0.95;
+}

@@ -1,0 +1,150 @@
+/* Haupt-Filterbar Container - Haargenau an .top-bar (1000px) ausgerichtet! */
+.filter-bar {
+  width: 100%;
+  max-width: 1000px; /* 🎯 Exakt identisch mit deiner oberen Leiste! */
+  margin: 0 auto 24px auto; /* Perfekt zentriert im Screen, Abstand nach unten */
+  padding: 0 20px; /* Gleicht das Padding der .top-bar perfekt aus */
+  box-sizing: border-box;
+}
+
+/* Die farbige, edle Filter-Zonen-Box */
+.filter-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  /* 🎨 Haargenau dasselbe sichtbare Arktis-Blau-Grau wie beim Formular! */
+  background-color: #e2eaf4; 
+  /* Gleicher scharfer Rand */
+  border: 1px solid #cbd5e1; 
+  
+  padding: 12px 16px;
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+
+/* Suchfeld-Wrapper */
+.search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1; /* Nimmt sich den restlichen Platz links */
+  min-width: 240px;
+}
+
+/* 1️⃣ Die Lupe klebt nicht mehr am Rand */
+.filter-icon {
+  position: absolute;
+  left: 14px; /* Eleganter Abstand vom linken Rand */
+  font-size: 16px;
+  color: #64748b;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* 2️⃣ Das Eingabefeld (Jetzt mit stabiler Höhe und sicherem Padding) */
+.filter-search-input {
+  width: 100%;
+  height: 40px; /* 📐 Einheitliche Höhe für absolute Symmetrie! */
+  padding: 0 12px 0 40px; /* Platz links für die eingerückte Lupe */
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #1e293b;
+  background-color: #ffffff;
+  box-sizing: border-box; /* 🛡️ Zwingt Padding in die 40px hinein, verhindert Verzerrung! */
+  transition: all 0.2s ease;
+}
+
+.filter-search-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+/* Gruppe für die Dropdowns */
+.select-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Einheitliche Dropdowns */
+.filter-dropdown {
+  height: 40px; /* 📐 Exakt dieselbe Höhe wie das Suchfeld! */
+  padding: 0 32px 0 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #334155;
+  background-color: #ffffff;
+  cursor: pointer;
+  box-sizing: border-box; /* Verhindert das Aufblähen */
+  transition: all 0.2s ease;
+  
+  /* Modernen SVG-Pfeil einsetzen */
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 12px;
+}
+
+.filter-dropdown:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.filter-dropdown:hover {
+  border-color: #94a3b8;
+  background-color: #f8fafc;
+}
+
+.filter-mode-select {
+  min-width: 180px;
+}
+
+.filter-tag-select,
+.filter-color-select {
+  min-width: 130px;
+}
+
+/* Der Löschen-Button (Immer da für stabiles Layout!) */
+.clear-filter-btn {
+  height: 40px;
+  padding: 0 14px;
+  background-color: #fee2e2; /* Sanftes Rot im aktiven Zustand */
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  color: #991b1b;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  margin-left: auto; /* Schiebt den Button nach rechts */
+}
+
+.clear-filter-btn:not(.is-disabled):hover {
+  background-color: #fca5a5;
+  color: #7f1d1d;
+  transform: translateY(-1px);
+}
+
+.clear-filter-btn:not(.is-disabled):active {
+  transform: translateY(0);
+}
+
+/* 🎯 DER AUSGEGRAUTE ZUSTAND (Wenn kein Filter aktiv ist) */
+.clear-filter-btn.is-disabled {
+  background-color: #cbd5e1; /* Etwas dunkleres Grau-Blau, damit er lesbar bleibt */
+  border-color: #b1bfc2;
+  color: #64748b; /* Dunklere Schrift für den Kontrast */
+  cursor: not-allowed;
+  transform: none !important;
+  opacity: 0.8;
+}

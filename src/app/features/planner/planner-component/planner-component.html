@@ -1,0 +1,117 @@
+<div class="planner-container">
+  <header class="planner-header">
+    <div class="header-main-row">
+      <h2 class="gradient-title">Smart Planner — Deine Prioritäten-Matrix</h2>
+      <button class="magic-btn" (click)="calculateRecommendation()">
+        ✨ Welches To-Do jetzt tun?
+      </button>
+    </div>
+    
+    <p class="planner-subtitle">
+      Strategisch sortiert nach Dringlichkeit und Aufwand, völlig unabhängig von deinen Filtern.
+    </p>
+  </header>
+
+@if (recommendedTodo()) {
+    <div class="recommendation-card">
+      
+      @if (userEnergy() === 'low' && (recommendedTodo()?.effort || 0) > 2) {
+        <h3>📖 Recherche-Modus aktiviert:</h3>
+        <div class="todo-item-highlight research-style" style="border-color: #6366f1;"> <strong>{{ recommendedTodo()?.task }}</strong>
+          <p>Keine leichten Aufgaben mehr da. Nutze die Zeit, um dich entspannt in diesen großen Brocken einzulesen und Infos für morgen zu sammeln! ☕</p>
+          <span class="badge" style="background: #e0e7ff; color: #4338ca;">Aufwand: {{ recommendedTodo()?.effort }}pt</span>
+        </div>
+      } 
+      @else {
+        <h3>🚀 Smarte Empfehlung für genau jetzt:</h3>
+        <div class="todo-item-highlight">
+          <strong>{{ recommendedTodo()?.task }}</strong>
+          @if (recommendedTodo()?.description) {
+            <p>{{ recommendedTodo()?.description }}</p>
+          }
+          <span class="badge">Aufwand: {{ recommendedTodo()?.effort }}pt</span>
+        </div>
+      }
+
+    </div>
+  } @else {
+    <div class="recommendation-card clean-slate">
+      <h3>🎉 Alles erledigt!</h3>
+      <div class="todo-item-highlight oasis-style">
+        <p>Du hast absolut keine offenen Aufgaben mehr auf deinem Board. Ab in die Oase und Beine hochlegen! 🌴</p>
+      </div>
+    </div>
+  }
+
+  <div class="matrix-grid">
+    <div class="quadrant q-do-first">
+      <div class="q-header">🔥 Sofort Erledigen (Dringend & Leicht)</div>
+      <div class="q-body">
+        @for (todo of quadrantDoFirst(); track todo.id) {
+          <div class="matrix-todo-card">
+            <span class="todo-title">{{ todo.task }}</span>
+            <span class="todo-badge">{{ todo.effort }}pt</span>
+          </div>
+        } @empty {
+          <p class="empty-text">Keine dringenden "Quick Wins" offen. Gefahrenzone leer! 🙌</p>
+        }
+      </div>
+    </div>
+
+    <div class="quadrant q-schedule">
+      <div class="q-header">📅 Fokuszeit einplanen (Dringend & Aufwendig)</div>
+      <div class="q-body">
+        @for (todo of quadrantSchedule(); track todo.id) {
+          <div class="matrix-todo-card">
+            <span class="todo-title">{{ todo.task }}</span>
+            <span class="todo-badge">{{ todo.effort }}pt</span>
+          </div>
+        } @empty {
+          <p class="empty-text">Keine großen, dringenden Brocken auf dem Tisch.</p>
+        }
+      </div>
+    </div>
+
+    <div class="quadrant q-delegate">
+      <div class="q-header">⚡ Schnell wegatmen (Nicht dringend & Leicht)</div>
+      <div class="q-body">
+        @for (todo of quadrantDelegate(); track todo.id) {
+          <div class="matrix-todo-card">
+            <span class="todo-title">{{ todo.task }}</span>
+            <span class="todo-badge">{{ todo.effort }}pt</span>
+          </div>
+        } @empty {
+          <p class="empty-text">Keine kleinen Nebenaufgaben offen.</p>
+        }
+      </div>
+    </div>
+
+    <div class="quadrant q-eliminate">
+      <div class="q-header">⏳ Später / Strategisch (Nicht dringend & Aufwendig)</div>
+      <div class="q-body">
+        @for (todo of quadrantEliminate(); track todo.id) {
+          <div class="matrix-todo-card">
+            <span class="todo-title">{{ todo.task }}</span>
+            <span class="todo-badge">{{ todo.effort }}pt</span>
+          </div>
+        } @empty {
+          <p class="empty-text">Keine großen, unkritischen Aufgaben im Speicher.</p>
+        }
+      </div>
+    </div>
+  </div>
+
+  @if (quadrantRestZone().length > 0) {
+    <div class="quadrant q-rest-zone">
+      <div class="q-header">🌴 Deine Oase — Regeneration & Pausen für Heute</div>
+      <div class="q-body rest-body">
+        @for (todo of quadrantRestZone(); track todo.id) {
+          <div class="matrix-todo-card pause-card">
+            <span class="todo-title">☕ {{ todo.task }}</span>
+            <span class="todo-badge pause-badge">Aktiv</span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,110 @@
+<div class="projects-dashboard">
+    <div class="dashboard-header-action-row"
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <div>
+            <h2>🏗️ Aktive Projekt-Zentrale</h2>
+            <p class="subtitle" style="margin-bottom: 0;">Hier siehst du alle strategisch geplanten Projekte im
+                Überblick.</p>
+        </div>
+
+        <!-- Hinweis: Der alte Statistik-Button oben ist jetzt weg, da wir den genialen Zieh-Knopf am Panel haben! -->
+    </div>
+
+    <!-- 🧊 DAS PROJEKT-RASTER -->
+    <div class="projects-grid">
+        @for (project of projects(); track project.id) {
+        <div class="project-card" [class.is-active]="project.status === 'Active'">
+
+            <!-- 🏷️ HIMMELBLAUER HEADER -->
+            <div class="project-card-header">
+                <span class="project-area-tag">{{ project.area || 'Allgemein' }}</span>
+                <h3>{{ project.title }}</h3>
+            </div>
+
+            <!-- 📄 CARD BODY -->
+            <div class="project-card-body">
+                <p class="project-description">{{ project.content }}</p>
+
+                <!-- MEILENSTEIN PREVIEW -->
+                <div class="milestones-preview">
+                    <h4>📊 Geplante Meilensteine ({{ project.milestones.length }} Phase/n):</h4>
+                    <ul class="ms-list">
+                        @for (milestone of project.milestones; track milestone.id) {
+                        <li class="ms-clickable-item" (click)="openSpecificMilestone(milestone.id)">
+                            <div class="ms-left">
+                                <span class="bullet">🏁</span>
+                                <span class="ms-title">{{ milestone.title }}</span>
+                            </div>
+                            <span class="ms-duration-badge">{{ milestone.duration }} Tage</span>
+                        </li>
+                        } @empty {
+                        <li class="no-milestones">Noch keine Phasen definiert. Klicke auf Bearbeiten!</li>
+                        }
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 🛞 CARD FOOTER -->
+            <div class="project-card-footer">
+                <button (click)="openMilestones(project)" class="btn-footer btn-milestones"
+                    title="Meilensteine & Aufgaben verwalten">
+                    🎯 Phasen verwalten
+                </button>
+                <button (click)="openTeamBoard(project)" class="btn-footer btn-kanban-direct"
+                    title="Direkt zum Aufgaben-Board springen">
+                    🎪 Team-Board
+                </button>
+                <button (click)="openInCalculator(project)" class="btn-footer btn-recalc"
+                    title="Projekt im Kalkulator überarbeiten">
+                    🔄 Phasen anpassen
+                </button>
+                <button (click)="triggerDeletePopup(project)" class="btn-footer btn-delete" title="Projekt entfernen">
+                    🗑️
+                </button>
+            </div>
+        </div>
+        } @empty {
+        <!-- LEERZUSTAND -->
+        <div class="no-projects-fallback">
+            <span class="fallback-icon">🏗️</span>
+            <h3>Noch keine aktiven Projekte vorhanden</h3>
+            <p>Gehe zum Idea-Board und schiebe eine Idee in den Kalkulations-Schlitz, um das erste Projekt zu starten!
+                🎰</p>
+        </div>
+        }
+    </div>
+</div>
+
+<!-- 🌌 DEIN KOMPAKTES, SCHWEBENDES MINI-PANEL WITH HANDLE-TRIGGER -->
+<div class="side-stats-panel" [class.is-open]="isStatsPanelOpen()">
+
+    <!-- 🎛️ DER RUNDE ZIEH-KNOPF: Wandert automatisch an der Kante mit! -->
+    <button class="panel-handle-trigger" (click)="toggleStatsPanel()">
+        {{ isStatsPanelOpen() ? '×' : '📊' }}
+    </button>
+
+    <div class="panel-header">
+        <h3>📊 System-Statistiken</h3>
+    </div>
+
+    <div class="panel-body">
+        <!-- 🚀 DIE NEUE ENTLAS-KOMPONENTE: Zündet den Wasserfall-Effekt reaktiv beim Öffnen! -->
+        @if (isStatsPanelOpen()) {
+        <app-project-stats-component></app-project-stats-component>
+        }
+    </div>
+</div>
+
+<!-- TRANSPARENTER KLICKSCHUTZ IM HINTERGRUND -->
+@if (isStatsPanelOpen()) {
+<div class="panel-backdrop" (click)="closeStatsPanel()"></div>
+}
+
+<!-- EINSTAMPFEN POPUP -->
+@if (showDeletePopup()) {
+<app-universal-popup-component [animationIcon]="'🗑️'" [title]="'Projekt einstampfen?'"
+    [message]="'Das Projekt <strong>' + projectToDelete()?.title + '</strong> wird unwiderruflich gelöscht...'"
+    [cancelText]="'Nein, behalten! 🛑'" [confirmText]="null" [mode]="'danger'" [showLoadingBar]="true" [timerMs]="5000"
+    (confirm)="confirmDelete()" (cancel)="closeDeletePopup()">
+</app-universal-popup-component>
+}

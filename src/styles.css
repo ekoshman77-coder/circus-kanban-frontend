@@ -1,1 +1,6 @@
-/* You can add global styles to this file, and also import other style files */
+:root {
+  --note-yellow: #fff4d4;
+  --note-green: #d4edd4;
+  --note-blue: #e1f5fe;
+  --note-pink: #ffd1dc;;
+}

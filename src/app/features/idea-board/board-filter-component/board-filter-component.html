@@ -1,0 +1,52 @@
+<div class="filter-bar">
+  <div class="filter-container">
+    
+    <div class="search-wrapper">
+      <span class="filter-icon">🔍</span>
+      <input type="text" 
+             [ngModel]="searchQuery" 
+             (ngModelChange)="onSearchQueryChange($event)" 
+             placeholder="Begriffe mit Komma trennen..." 
+             class="filter-search-input" />
+    </div>
+    
+    <div class="select-group">
+      <select [ngModel]="searchMode" 
+              (ngModelChange)="onSearchModeChange($event)" 
+              class="filter-dropdown filter-mode-select">
+        <option value="AND">Alles trifft zu (UND) 🤝</option>
+        <option value="OR">Eins trifft zu (ODER) 🔀</option>
+      </select>
+      
+      <select [ngModel]="tagFilter" 
+              (ngModelChange)="onTagFilterChange($event)" 
+              class="filter-dropdown filter-tag-select">
+        <option value="">Alle Tags 🏷️</option>
+        @for (tag of availableTags(); track $index) {
+          @if (tag === 'none') {
+            <option value="none">(Kein Tag) ⚪</option>
+          } @else {
+            <option [value]="tag">#{{ tag }}</option>
+          }
+        }
+      </select>
+
+      <select [ngModel]="colorFilter" 
+              (ngModelChange)="onColorFilterChange($event)" 
+              class="filter-dropdown filter-color-select">
+        <option value="">Alle Farben 🌈</option>
+        @for (color of availableColors(); track $index) {
+          <option [value]="color">{{ getColorLabel(color) }}</option>
+        }
+      </select>
+    </div>
+
+    <button class="clear-filter-btn" 
+            [disabled]="!searchQuery && !tagFilter && !colorFilter"
+            [class.is-disabled]="!searchQuery && !tagFilter && !colorFilter"
+            (click)="resetAll()">
+      <span>❌ Filter löschen</span>
+    </button>  
+      
+  </div>
+</div>

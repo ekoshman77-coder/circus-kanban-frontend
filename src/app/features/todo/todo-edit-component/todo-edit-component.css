@@ -1,0 +1,520 @@
+/* ==========================================================================
+   🌐 FRESH LIGHT-STUDIO CONTAINER (Sanfter Mint-Hellblau-Verlauf)
+   ========================================================================== */
+.edit-container { 
+  display: flex; 
+  justify-content: center; 
+  padding: 60px 20px; 
+  /* 🌊 Ein traumhafter, ultra-sanfter Übergang von hellem Mintgrün zu frischem Hellblau */
+  background: linear-gradient(135deg, #e0f2fe 0%, #e0faf2 50%, #f0fdf4 100%); 
+  min-height: 85vh; 
+  font-family: 'Segoe UI', Roboto, sans-serif; 
+}
+
+/* ==========================================================================
+   🎛️ DIE EDIT-CARD (Mit edlem, hellblauen Neon-Glow-Border)
+   ========================================================================== */
+.edit-card { 
+  background: linear-gradient(145deg, #ffffff, #f8fafc); 
+  width: 100%; 
+  max-width: 650px; 
+  padding: 40px; 
+  border-radius: 24px; 
+  
+  /* 🔹 HIER IST DER MAGISCHE BLAUE SCHIMMER: 
+     Kombination aus weichem Schatten und blauem Neon-Glow (rgba(59, 130, 246, 0.25)) */
+  box-shadow: 
+    0 20px 40px -15px rgba(148, 163, 184, 0.25),
+    0 0 0 2px rgba(59, 130, 246, 0.15), /* Feine blaue Außenlinie */
+    0 0 25px rgba(59, 130, 246, 0.25),   /* Sanftes blaues Glühen nach außen */
+    inset 0 1px 0 #ffffff; 
+    
+  border: 1px solid #93c5fd; /* Hellblauer Rahmen */
+  position: relative;
+}
+
+/* ==========================================================================
+   HEADER-STYLING
+   ========================================================================== */
+.card-header { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  margin-bottom: 32px; 
+  border-bottom: 2px dashed #93c5fd; /* Passend hellblau gestrichelt */
+  padding-bottom: 16px; 
+}
+
+.card-header h2 { 
+  margin: 0; 
+  color: #1e3a8a; /* Tiefes Königsblau für edlen Kontrast */
+  font-size: 26px; 
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  text-shadow: 0 1px 2px rgba(59, 130, 246, 0.1);
+}
+
+.btn-close { 
+  background: #f0fdf4; 
+  border: 1px solid #93c5fd; 
+  font-size: 16px; 
+  color: #3b82f6; 
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease; 
+}
+
+.btn-close:hover { 
+  color: #ffffff; 
+  background: #ef4444;
+  border-color: #ef4444;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+}
+
+/* ==========================================================================
+   FORMULAR-ELEMENTE (Eingelassene Glas-Slots)
+   ========================================================================== */
+.form-group { 
+  margin-bottom: 26px; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 10px; 
+}
+
+.form-row { 
+  display: flex; 
+  gap: 24px; 
+}
+
+.flex-1 { 
+  flex: 1; 
+}
+
+label { 
+  font-weight: 700; 
+  font-size: 13px; 
+  color: #475569; /* Etwas dunkler für bessere Lesbarkeit auf hellem Grund */
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* 🎛️ DIE INPUTS: Frische, leicht bläuliche Kontroll-Slots */
+.form-control { 
+  padding: 14px 18px; 
+  background: #f0f9ff; /* Ganz zartes Hellblau in den Feldern */
+  border: 2px solid #bae6fd; 
+  border-radius: 12px; 
+  font-size: 15px; 
+  color: #0f172a; 
+  font-family: inherit;
+  box-shadow: inset 0 2px 4px rgba(14b, 163, 184, 0.08);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
+}
+
+/* ✨ NEON-GLOW BEIM REINKLICKEN: Synchronisiert mit dem Karten-Glow */
+.form-control:focus { 
+  outline: none; 
+  border-color: #3b82f6; 
+  background: #ffffff;
+  box-shadow: 
+    inset 0 1px 2px rgba(0, 0, 0, 0.05),
+    0 0 20px rgba(59, 130, 246, 0.3); 
+  transform: translateY(-1px); 
+}
+
+select.form-control option {
+  background: #ffffff;
+  color: #0f172a;
+}
+
+textarea.form-control { 
+  resize: vertical; 
+}
+
+/* ==========================================================================
+   ❌ SCHÜTTELEFFEKT (Fehlermeldung)
+   ========================================================================== */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+.form-control.ng-invalid.ng-touched {
+  border-color: #ef4444 !important;
+  background-color: #fff5f5; 
+  box-shadow: 
+    inset 0 2px 4px rgba(239, 68, 68, 0.1),
+    0 0 15px rgba(239, 68, 68, 0.15);
+  animation: shake 0.2s ease-in-out 2;
+}
+
+.error-msg { 
+  color: #ef4444; 
+  font-size: 12px; 
+  font-weight: 600; 
+}
+
+/* ==========================================================================
+   🎮 SLIDER & BADGE (Perfekt eingebettet)
+   ========================================================================== */
+.slider-wrapper { 
+  background: #f0f9ff; /* Gleicher Slot-Hintergrund wie bei .form-control */
+  border: 2px solid #bae6fd;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: all 0.3s ease;
+}
+
+.slider-wrapper:focus-within {
+  border-color: #3b82f6;
+  background: #ffffff;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
+}
+
+.funny-slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 12px;
+    border-radius: 6px;
+    /* Hier nutzen wir die Variable. Keine Berechnung mehr im TS! */
+    --color: hsl(var(--hue), 75%, 45%);
+    
+    /* Der Trick: Wir legen den Hintergrund als statischen Verlauf an, 
+       der sich nur durch die Variable verändert */
+    background: linear-gradient(to right, 
+        var(--color) var(--val, 0%), 
+        #e0f2fe var(--val, 0%));
+    will-change: background;
+    
+    /* Glättet das Rendering des Reglers */
+    backface-visibility: hidden;
+    perspective: 1000px;
+    touch-action: none;
+    transition: transform 0.1s ease-out;
+}
+
+/* TITAN-KNOPF MIT DYNAMISCHEM FARB-RING */
+/* ==========================================================================
+   💥 DER REGLERKNOPF: Jetzt voll in reaktiver Farbe mit Metallic-Glanz! 🎨🎛️
+   ========================================================================== */
+/* 💥 DER REGLERKNOPF: Jetzt in hellem, edlem Titan/Silber-Look 🎛️ */
+.funny-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid hsl(var(--hue, 160), 75%, 45%);
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    transition: border 0.1s ease-out;
+}
+
+/* Wenn man den Kreis anklickt und zieht */
+.funny-slider::-webkit-slider-thumb:active {
+  cursor: grabbing;
+  transform: scale(1.25); /* Wird elastisch etwas größer */
+  box-shadow: 
+    0 6px 12px rgba(0, 0, 0, 0.25),
+    0 0 10px currentColor; /* Erzeugt ein sanftes Glühen in der aktuellen Knopffarbe */
+}
+
+/* DAS LED-TEXT-BADGE */
+.funny-date-badge { 
+  font-weight: 700; 
+  font-size: 13px; 
+  padding: 12px 16px; 
+  border-radius: 12px; 
+  text-align: center; 
+  border: 1px solid transparent;
+  box-shadow: 0 2px 4px rgba(148, 163, 184, 0.05);
+  transition: all 0.2s ease;
+}
+
+/* ==========================================================================
+   BUTTONS (Die beleuchteten Hauptschalter)
+   ========================================================================== */
+.form-actions { 
+  display: flex; 
+  justify-content: flex-end; 
+  gap: 16px; 
+  margin-top: 40px; 
+  border-top: 2px solid #bae6fd; 
+  padding-top: 24px; 
+}
+
+/* BLAU-LILA SPEICHER-BUTTON */
+.btn-primary { 
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); /* Kraftvolles Gaming-Blau */
+  color: white; 
+  border: none; 
+  padding: 14px 28px; 
+  border-radius: 12px; 
+  font-weight: 700; 
+  font-size: 15px;
+  cursor: pointer; 
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+  transition: all 0.2s ease; 
+}
+
+.btn-primary:not(:disabled):hover { 
+  transform: translateY(-2px); 
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+}
+
+.btn-primary:disabled { 
+  background: #cbd5e1; 
+  color: #94a3b8;
+  cursor: not-allowed; 
+  box-shadow: none;
+}
+
+/* LASER-SHINE ANIMATION */
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -50%;
+  width: 25%; height: 100%;
+  background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+  transform: skewX(-25deg);
+  animation: shine 4s infinite linear;
+}
+
+@keyframes shine {
+  0% { left: -50%; }
+  12% { left: 120%; }
+  100% { left: 120%; }
+}
+
+/* ABBRECHEN-BUTTON IN HOCHWERTIGEM BLAU-GRAU */
+.btn-secondary { 
+  background: #ffffff; 
+  color: #3b82f6; 
+  border: 1px solid #93c5fd; 
+  padding: 14px 28px; 
+  border-radius: 12px; 
+  font-weight: 600; 
+  font-size: 15px;
+  cursor: pointer; 
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.05);
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: #f0f9ff;
+  color: #1d4ed8;
+  border-color: #3b82f6;
+}
+
+.loading-state { 
+  text-align: center; 
+  padding: 40px 0; 
+  color: #94a3b8; 
+}
+
+.fibonacci-tablo {
+    display: flex;
+    width: 100%;
+    background: #f1f5f9; /* Die neutrale, edle "Aufzug-Platte" */
+    padding: 4px;
+    border-radius: 14px;
+    gap: 4px;
+    border: 2px solid transparent;
+    background-image: linear-gradient(#f1f5f9, #f1f5f9), 
+                      linear-gradient(135deg, #3b82f6, #06b6d4, #8b5cf6);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+    box-sizing: border-box; 
+}
+
+/* Die Buttons */
+.fibonacci-tablo button {
+    flex: 1;
+    padding: 10px 0;
+    border: 2px solid transparent;
+    background: transparent;
+    border-radius: 10px;
+    font-weight: 700;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    filter: saturate(1.0); /* Zurück zum ursprünglichen Look */
+}
+
+/* 🖱️ HOVER-EFFEKT: Maus-Reaktion */
+.fibonacci-tablo button:hover:not(.active) {
+    /* Wir machen den Hintergrund deutlich heller/weißer */
+    background: rgba(255, 255, 255, 0.8); 
+    
+    /* Ein leichter Schein nach außen, der den Button "raushebt" */
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5), 0 2px 5px rgba(0,0,0,0.1);
+    
+    /* Der Button wird minimal größer, um die Reaktion zu verstärken */
+    transform: translateY(-2px);
+    
+    /* Die Umrandung wird jetzt dezent sichtbar, auch bevor man klickt */
+    border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+/* 👆 TOUCH-EFFEKT: Sofortige Reaktion beim Antippen */
+.fibonacci-tablo button:active {
+    transform: scale(0.95);
+    background: white;
+    filter: brightness(1.2); /* Noch stärkeres Aufleuchten beim Tippen */
+}
+
+/* Der Leuchteffekt für den aktiven Zustand bleibt bestehen */
+.fibonacci-tablo button.active {
+    background: white;
+    /* Die Farbe ist nun currentColor (definiert durch die nth-child Regeln) */
+    border: 2px solid currentColor; 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+/* Styling für das eingenähte Kategoriefeld im Edit-Modus */
+.edit-category-wrapper {
+  width: 100%;
+  background: #ffffff;
+  border: 2px solid #e2e8f0; /* Gleicher Rahmen wie .form-control */
+  border-radius: 12px;
+  box-sizing: border-box;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Wenn man in das Kategoriefeld klickt, bekommt die Kapsel den Fokus-Effekt */
+.edit-category-wrapper:focus-within {
+  border-color: #3b82f6; /* Blaues Aufleuchten passend zur Edit-Card */
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+/* Wir überschreiben die Innen-Inputs, damit sie perfekt mit der Edit-Card verschmelzen */
+.edit-category-wrapper ::v-deep .free-category-input {
+  height: 42px; /* Perfekte Höhe für den Edit-Modus */
+  font-family: inherit;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.edit-category-wrapper ::v-deep .arrow-toggle-btn {
+  height: 42px;
+}
+
+/* Das schwebende KI-Badge soll im Edit-Modus im schönen Design drüberstehen */
+.edit-category-wrapper ::v-deep .ai-hint-badge {
+  bottom: 120%;
+  background-color: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+/* Styling für den erarbeiteten Bonus-Punkte-Button */
+.fibonacci-tablo button.bonus-value {
+    border: 2px dashed #f39c12 !important; /* Gestrichelter Rand für den "Sonderstatus" */
+    background-color: rgba(243, 156, 18, 0.05);
+    color: #e67e22 !important;
+    font-weight: 800;
+}
+
+/* Wenn der Bonus-Button aktiv ausgewählt ist, glänzt er besonders schön */
+.fibonacci-tablo button.bonus-value.active {
+    background: linear-gradient(135deg, #f39c12, #d35400) !important;
+    color: white !important;
+    border: 2px solid #d35400 !important;
+    box-shadow: 0 4px 12px rgba(243, 156, 18, 0.4);
+}
+
+.offline-disabled {
+  opacity: 0.5;                /* Macht das Feld halbtransparent/ausgegraut */
+  pointer-events: none;        /* Verhindert JEDEN Klick oder Interaktion im Browser */
+  filter: grayscale(0.8);      /* Nimmt die Farbe fast vollständig raus */
+  cursor: not-allowed;         /* Zeigt das "Verboten"-Maus-Icon (Sicherheits-Backup) */
+}
+/* Dynamische Farben für die Buttons (Energie-Level) */
+.fibonacci-tablo button:nth-child(1) { color: hsl(160, 100%, 30%); } /* Mint */
+.fibonacci-tablo button:nth-child(2) { color: hsl(190, 100%, 30%); } /* Cyan */
+.fibonacci-tablo button:nth-child(3) { color: hsl(220, 90%, 30%); } /* Blau */
+.fibonacci-tablo button:nth-child(4) { color: hsl(250, 90%, 30%); } /* Indigo */
+.fibonacci-tablo button:nth-child(5) { color: hsl(280, 90%, 30%); } /* Violett */
+.fibonacci-tablo button:nth-child(6) { color: hsl(330, 90%, 30%); } /* Pink */
+.fibonacci-tablo button:nth-child(7) { color: hsl(350, 90%, 30%); } /* Kirschrot */
+.fibonacci-tablo button:nth-child(8) { color: hsl(0, 90%, 30%); }   /* Weinrot */
+
+/* ==========================================================================
+   🏷️ UNIVERSAL-INPUT INTEGRATION FÜR DIE EDIT-CARD
+   ========================================================================== */
+.edit-category-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.edit-category-wrapper app-universal-tag-input-component {
+  display: block;
+  width: 100%;
+}
+
+/* Wir radieren die Standard-Rahmen der KI-Komponenten-Hülle aus */
+.edit-category-wrapper ::v-deep .category-hybrid-zone,
+.edit-category-wrapper ::v-deep .universal-tag-input-wrapper {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  width: 100% !important;
+  padding: 0 !important;
+}
+
+/* 🌟 Wir zwingen das innere Input-Feld, sich EXAKT so zu verhalten 
+   wie deine restlichen ".form-control"-Klassen auf der Edit-Card */
+.edit-category-wrapper ::v-deep .form-control,
+.edit-category-wrapper ::v-deep input {
+  width: 100% !important;
+  height: auto !important;
+  padding: 14px 20px !important;
+  font-size: 16px !important;
+  font-family: inherit !important;
+  color: #1e293b !important;
+  background-color: #ffffff !important;
+  border: 2px solid #e2e8f0 !important;
+  border-radius: 14px !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* 🔵 Der edle Fokus-Effekt beim Reinklicken */
+.edit-category-wrapper ::v-deep .form-control:focus,
+.edit-category-wrapper ::v-deep input:focus {
+  border-color: #3b82f6 !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15) !important;
+}
+
+/* Platzhalter anpassen */
+.edit-category-wrapper ::v-deep input::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* 🤖 KI-DROPDOWN-MENÜ FÜR VORSCHLÄGE:
+   Klappt absolut nach unten auf, bricht das Layout der Edit-Card nicht 
+   und passt farblich perfekt zum edlen Blue-Glow der Card */
+.edit-category-wrapper ::v-deep .dropdown-selection-menu {
+  position: absolute !important;
+  top: 105% !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 999 !important;
+  background-color: #ffffff !important;
+  border: 2px solid #3b82f6 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.2) !important;
+  padding: 6px 0 !important;
+}

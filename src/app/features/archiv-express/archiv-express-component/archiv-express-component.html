@@ -1,0 +1,81 @@
+<div class="express-celebration-card">
+
+    <div class="express-badge-header">
+        <span class="celebrate-icon">🏆</span>
+        <div class="header-text">
+            <h3>Spontaner Erfolg!</h3>
+            <p>Aufgabe direkt erledigt? Feier es und schieb sie direkt ins Archiv!</p>
+        </div>
+    </div>
+
+    <form (ngSubmit)="submitExpressTodo()" class="express-vertical-form">
+
+        <div class="form-field-group">
+            
+            <app-milestone-selector-component
+            [initialMilestoneId]="milestoneId()"
+            (milestoneSelected)="onMilestoneSelected($any($event))"
+            >
+            </app-milestone-selector-component>
+            
+            <label class="field-label">Was hast du gerade gerockt? <span class="required">*</span></label>
+            <div class="input-wrapper">
+                <span class="input-icon">📝</span>
+                <input type="text" [(ngModel)]="expressTask" name="expressTask"
+                    placeholder="Titel der erledigten Aufgabe..." required />
+            </div>
+        </div>
+
+        <div class="form-field-group">
+            <label class="field-label">In welche Kategorie passt das? 🏷️</label>
+            <div class="express-category-wrapper">
+                <app-task-category 
+                    #categorySelector 
+                    [taskName]="expressTask()"
+                    (categoryChanged)="onCategoryChanged($event)">
+                </app-task-category>
+            </div>
+        </div>
+
+        <div class="form-field-group">
+            <label class="field-label">Kurze Notiz oder Beschreibung</label>
+            <div class="input-wrapper">
+                <span class="input-icon">📓</span>
+                <input type="text" [(ngModel)]="expressDescription" name="expressDescription"
+                    placeholder="Optional: Details, Stichpunkte oder warum es schnell gehen musste..." />
+            </div>
+        </div>
+
+        <div class="form-stats-grid">
+            <div class="form-field-group">
+                <label class="field-label">Geplanter Aufwand (Effort)</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">📈</span>
+                    <select [(ngModel)]="expressEffort" name="expressEffort">
+                        @for (value of fibonacciValues; track value) {
+                        <option [value]="value">{{ value }} P</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="form-field-group">
+                <label class="field-label">Tatsächlich gebrauchte Zeit</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">⏱️</span>
+                    <select [(ngModel)]="expressUsedEffort" name="expressUsedEffort">
+                        @for (value of fibonacciValues; track value) {
+                        <option [value]="value">{{ value }} P</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" [disabled]="!expressTask().trim()" class="celebrate-submit-btn">
+                🚀 Grandios! Ab ins Archiv
+            </button>
+        </div>
+
+    </form>
+</div>

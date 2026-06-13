@@ -1,0 +1,185 @@
+/* ==========================================================================\n   🎛️ HIGH-PERFORMANCE FLOATING PANEL WITH MULTI-ICON BUTTON\n   ========================================================================== */
+
+/* Der schwebende Button (Lugt im geschlossenen Zustand dezent hervor) */
+.floating-stats-btn {
+  position: fixed;
+  right: -15px; /* Sitzt am Rand, zeigt aber genug vom Icon */
+  top: 50%;
+  width: 58px; /* Etwas breiter, damit Pfeil + Grafik Platz haben */
+  height: 46px;
+  background-color: #1e293b;
+  border: 1px solid #cbd5e1;
+  border-radius: 23px 0 0 23px; /* Schöne abgerundete Kappe nach links */
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding-left: 10px;
+  box-shadow: -4px 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 101;
+
+  transform: translate3d(0, -50%, 0);
+  transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1),
+              background-color 0.2s ease,
+              right 0.2s ease;
+  will-change: transform;
+}
+
+/* Kommt beim Hovern ein Stückchen raus */
+.floating-stats-btn:hover {
+  background-color: #3b82f6;
+  right: -5px;
+}
+
+/* 🚀 DER BUTTON FLIEGT MIT: Zieht das Panel aus der Wand */
+.floating-stats-btn.is-active {
+  background-color: #3b82f6; /* Wunderschönes, aktives Digital-Blau */
+  border-color: #60a5fa;
+  right: 0;
+  border-radius: 50%; 
+  width: 46px; 
+  justify-content: center;
+  padding-left: 0;
+  transform: translate3d(-325px, -50%, 0); 
+  box-shadow: 4px 4px 15px rgba(59, 130, 246, 0.25); /* Sanfter blauer Leuchteffekt */
+}
+
+/* Hover-Effekt, WENN der Button links geöffnet ist */
+.floating-stats-btn.is-active:hover {
+  background-color: #2563eb; /* Ein etwas kräftigeres, dunkleres Blau beim Hovern */
+  transform: translate3d(-325px, -50%, 0) scale(1.05); /* Minimaler, lebendiger Zoom */
+}
+
+/* Behälter für die Icons – steuert die edle Rotation */
+.floating-stats-btn .btn-content {
+  display: flex;
+  align-items: center;
+  gap: 4px; /* Abstand zwischen Pfeil und Grafik */
+  transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* Icons einzeln formatiert */
+.floating-stats-btn .arrow-icon {
+  font-size: 14px;
+  font-weight: bold;
+}
+.floating-stats-btn .stats-icon {
+  font-size: 18px;
+}
+
+/* 🔄 DIE DREHUNG: Wenn offen, dreht sich der Pfeil nach rechts (zeigt Richtung Schließen) 
+   und das Statistikbildchen bleibt cool daneben! */
+.floating-stats-btn.is-active .btn-content {
+  transform: rotate(180deg);
+}
+
+/* Da sich im geöffneten Zustand alles um 180 Grad dreht, 
+   drehen wir das Statistik-Icon heimlich zurück, damit es nicht auf dem Kopf steht! 🤫 */
+.floating-stats-btn.is-active .stats-icon {
+  display: inline-block;
+  transform: rotate(180deg);
+}
+
+
+/* 💻 DAS SCHWEBENDE COMPACT-PANEL (Befreit die Notizen von der Rechenlast!) */
+.stats-sidebar {
+  position: fixed;
+  top: 50%;
+  right: 20px; /* Schöner schwebender Abstand */
+  width: 300px;
+  height: auto;
+  max-height: 82vh; 
+  background-color: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 16px;
+  z-index: 99; 
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  box-sizing: border-box;
+  
+  /* Startet sicher gelagert im Offscreen */
+  transform: translate3d(360px, -50%, 0);
+  transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+  will-change: transform;
+}
+
+.stats-sidebar.is-open {
+  transform: translate3d(0, -50%, 0);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
+}
+
+/* ⏳ DER INHALT: Startet erst bei 90% Wegstrecke */
+.sidebar-header,
+.sidebar-content {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.stats-sidebar.is-open .sidebar-header,
+.stats-sidebar.is-open .sidebar-content {
+  visibility: visible;
+  /* 0.28s Delay = Erst wenn das Panel fast steht, fließt der Daten-Wasserfall von oben ein! */
+  animation: waterfallReveal 0.5s cubic-bezier(0.25, 1, 0.5, 1) 0.28s forwards;
+}
+
+@keyframes waterfallReveal {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -12px, 0); /* Rutscht ganz zart von OBEN nach unten */
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.stats-sidebar:not(.is-open) .sidebar-header,
+.stats-sidebar:not(.is-open) .sidebar-content {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease-out;
+}
+
+/* 🧱 Ganz sanfter Hintergrund-Schleier */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(15, 23, 42, 0.04);
+  backdrop-filter: blur(0.5px);
+  z-index: 98;
+  animation: fadeIn 0.25s ease-out forwards;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* ==========================================================================\n   STABILE INNEN-STYLES\n   ========================================================================== */
+.sidebar-header { margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; }
+.sidebar-header h2 { margin: 0; font-size: 16px; font-weight: 700; color: #1e293b; }
+.sidebar-content { display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
+.sidebar-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.01); }
+.sidebar-card.chart-card { flex-direction: column; align-items: center; gap: 14px; }
+.sidebar-card.chart-card h3 { align-self: flex-start; margin: 0; font-size: 11px; text-transform: uppercase; color: #64748b; }
+.card-icon { font-size: 22px; background-color: #e2eaf4; padding: 6px; border-radius: 8px; }
+.card-info h3 { margin: 0; font-size: 11px; text-transform: uppercase; color: #64748b; }
+.card-value { margin: 0; font-size: 18px; font-weight: 700; color: #1e293b; }
+.badge { font-size: 11px; padding: 2px 6px; border-radius: 10px; font-weight: 600; }
+.badge.active { background-color: #dbeafe; color: #1e40af; }
+.badge.clean { background-color: #f1f5f9; color: #475569; }
+
+/* DONUT CHART */
+.chart-wheel { width: 110px; height: 110px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.chart-center-hole { width: 74px; height: 74px; background-color: #ffffff; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.chart-total-num { font-size: 20px; font-weight: 800; color: #1e293b; }
+.chart-total-label { font-size: 9px; color: #94a3b8; text-transform: uppercase; }
+.vertical-legend { display: flex; flex-direction: column; gap: 6px; width: 100%; border-top: 1px solid #f1f5f9; padding-top: 10px; }
+.legend-item { font-size: 12px; color: #475569; display: flex; align-items: center; }
+.legend-item strong { margin-left: auto; color: #1e293b; }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+.dot.yellow { background-color: #fde047; }
+.dot.green  { background-color: #4ade80; }
+.dot.pink   { background-color: #f472b6; }
+.dot.blue   { background-color: #60a5fa; }

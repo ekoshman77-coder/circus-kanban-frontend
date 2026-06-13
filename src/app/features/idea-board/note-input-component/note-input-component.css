@@ -1,0 +1,84 @@
+.note-input-card {
+  padding: 14px;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: background-color 0.4s ease;
+  max-width: 400px;
+  margin: 10px auto;
+}
+
+/* Farbklassen */
+.note-yellow { background-color: var(--note-yellow); }
+.note-green  { background-color: var(--note-green); }
+.note-pink   { background-color: var(--note-pink); }
+.note-blue   { background-color: var(--note-blue); }
+
+.form-group {
+  margin-bottom: 10px;
+}
+
+.form-row {
+  display: flex;
+  gap: 10px;
+}
+
+.flex-grow {
+  flex: 1;
+}
+
+.color-select-wrapper {
+  width: 110px;
+}
+
+.form-control, .select-field {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background-color: rgba(255, 255, 255, 0.45); /* Noch bisschen softer */
+  backdrop-filter: blur(4px);
+  color: #333;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+textarea.form-control {
+  min-height: 54px;
+}
+
+.form-control:focus, .select-field:focus {
+  outline: none;
+  background-color: rgba(255, 255, 255, 0.85);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+/* 🚀 DER NEUE PASTELL-HARMONISCHE BUTTON */
+.btn-save {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  
+  /* Nimmt die Farbe des Zettels und dunkelt sie ganz dezent ab */
+  background-color: rgba(0, 0, 0, 0.05); 
+  color: #444; /* Dunkelgrauer Text liest sich super auf Pastell */
+  
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-save:hover:not([disabled]) {
+  background-color: rgba(0, 0, 0, 0.1); /* Wird beim Hovern etwas kräftiger */
+  color: #222;
+}
+
+.btn-save:disabled {
+  background-color: rgba(0, 0, 0, 0.02);
+  color: rgba(0, 0, 0, 0.2);
+  border-color: rgba(0, 0, 0, 0.05);
+  cursor: not-allowed;
+}

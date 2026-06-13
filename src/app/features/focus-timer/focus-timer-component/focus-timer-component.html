@@ -1,0 +1,36 @@
+<div class="timer-container">
+  <header class="timer-header">
+    <h2>🎯 Fokus-Zone</h2>
+    <p>Wähle eine Aufgabe, starte den Timer und blende alle Ablenkungen aus.</p>
+  </header>
+
+  <div class="task-selector-zone">
+    <label for="todo-select">Mein aktueller Fokus:</label>
+    <select 
+      id="todo-select" 
+      [ngModel]="selectedTodo()" 
+      (ngModelChange)="selectedTodo.set($event)"
+      [disabled]="isRunning()">
+      <option [ngValue]="null" disabled>-- Bitte To-Do auswählen --</option>
+      @for (todo of openTodos(); track todo.id) {
+        <option [ngValue]="todo">{{ todo.task }} (Aktueller Aufwand: {{ todo.usedEffort }}pt)</option>
+      }
+    </select>
+  </div>
+
+  <div class="timer-display-card" [class.pulse]="isRunning()">
+    <div class="time-string">{{ displayTime() }}</div>
+    <div class="timer-status-text">
+      {{ isRunning() ? '🔥 Tiefe Arbeitsphase aktiv...' : '⏸️ Bereit zum Start' }}
+    </div>
+  </div>
+
+  <div class="timer-controls">
+    <button class="btn-primary" (click)="toggleTimer()">
+      {{ isRunning() ? '⏸️ Pause' : '▶️ Fokus Starten' }}
+    </button>
+    <button class="btn-secondary" (click)="resetTimer()" [disabled]="isRunning()">
+      🔄 Zurücksetzen
+    </button>
+  </div>
+</div>
