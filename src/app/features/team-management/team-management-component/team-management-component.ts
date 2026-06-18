@@ -1,46 +1,26 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TeamService } from '../../../core/services/team-service';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { UserModel } from '../../../core/models/user-model';
+import { TeamPoolComponent } from '../team-pool-component/team-pool-component';
+import { TeamAssigmentComponent } from '../team-assigment/team-assigment-component/team-assigment-component';
 
 @Component({
   selector: 'app-team-management',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TeamPoolComponent, TeamAssigmentComponent],
   templateUrl: './team-management-component.html',
   styleUrl: './team-management-component.css'
 })
 export class TeamManagementComponent {
-  // 🔌 Service-Injection
-  public teamService = inject(TeamService);
+  // 🎯 Der Lehrer-Tipp: Ein String-Signal steuert, was sichtbar ist.
+  // Startwert ist 'gallery' (deine Team-Pool-Ansicht)
+  public activeTab = signal<'gallery' | 'assignment'>('gallery');
 
-  // 📝 Lokale Formular-Zustände (Zwei-Wege-Binding über ngModel)
-  public firstNameInput = '';
-  public lastNameInput = '';
-
-  // 💾 Das reaktive Signal für das Template bereitstellen
-  public members = this.teamService.membersList;
-
-  /**
-   * ➕ Schickt die Daten an den Service, um einen Kollegen anzulegen
-   */
-  public onAddMember(event: Event): void {
-    event.preventDefault(); // Verhindert das Neuladen der Seite beim Abschicken
-
-    const fName = this.firstNameInput.trim();
-    const lName = this.lastNameInput.trim();
-
-    if (!fName || !lName) return;
-
-    // Ab in den Service!
-    this.teamService.createTeamMember(fName, lName);
-
-    // Formularfelder danach wieder elegant leeren
-    this.firstNameInput = '';
-    this.lastNameInput = '';
-  }
-
-  public randomizeMemberColor(memberId: string) {
-    this.teamService.randomizeMemberColor(memberId)
+  // Methode zum Umschalten
+  public setTab(tab: 'gallery' | 'assignment'): void {
+    this.activeTab.set(tab);
   }
 }

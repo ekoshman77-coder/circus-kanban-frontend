@@ -1,68 +1,61 @@
-// core/services/team-service.ts
-import { Injectable, signal, computed } from '@angular/core';
-import { TeamMember } from '../models/teammember';
+import { Injectable } from '@angular/core';
+import { Observable, map } from 'rxjs';
+import { TeamDataManager } from './team-data-manager';
+import { UserModel } from '../models/user-model';
 
 @Injectable({
-  providedIn: 'root',
+    providedIn: 'root',
 })
 export class TeamService {
-  // 🔒 Der private, reaktive Zustand (Die Quelle der Wahrheit)
-  private membersSignal = signal<TeamMember[]>([]);
 
-  // 🔓 Die öffentliche Lese-Schnittstelle für deine Komponenten
-  public membersList = computed(() => this.membersSignal());
+    // Wir injizieren den DataManager im Constructor
+    constructor(private dataManager: TeamDataManager) { }
 
-  constructor() {
-    this.loadInitialTeam();
-  }
+    /**
+     * 📡 Holt die Teammitglieder aus dem DataManager,
+     * jagt sie durch eine Pipeline und sortiert sie alphabetisch!
+     */
+    public getSortedMembers$(projectId: string | null): Observable<UserModel[]> {
+        return this.dataManager.getMembers$(projectId).pipe(
+            map((unsortedArray: UserModel[]) => {
+                return [...unsortedArray].sort((a, b) => a.firstName.localeCompare(b.firstName));
+            })
+        );
 
-  /**
-   * 👥 Start-Zustand: Wir legen direkt 3 coole Pastell-Testuser an,
-   * damit dein Board beim ersten Start nicht komplett leer ist!
-   */
-  private loadInitialTeam(): void {
-    const defaultMembers = [
-      new TeamMember({ id: 'tm_1_Anna', firstName: 'Anna', lastName: 'Schmidt' }),
-      new TeamMember({ id: 'tm_2_Max', firstName: 'Max', lastName: 'Mustermann' }),
-      new TeamMember({ id: 'tm_3_Julia', firstName: 'Julia', lastName: 'Coder' })
-    ];
-    this.membersSignal.set(defaultMembers);
-  }
+    }
 
-  /**
-   * ➕ Ein neues Teammitglied über ein Formular registrieren
-   */
-  public createTeamMember(firstName: string, lastName: string): void {
-    if (!firstName.trim() || !lastName.trim()) return;
+    public getSortedByLastName$(projectId: string | null): Observable<UserModel[]> {
+        return this.dataManager.getMembers$(projectId).pipe(
+            map((unsortedArray: UserModel[]) => {
+                return [...unsortedArray].sort((a, b) => a.lastName.localeCompare(b.lastName));
+            })
+        );
+    }
 
-    const newMember = new TeamMember({
-      id: 'tm_' + Math.random().toString(36).substring(2, 9) + firstName, // Zufalls-ID simuliert Server
-      firstName: firstName.trim(),
-      lastName: lastName.trim()
-    });
+    public updateMember(updatedMember: UserModel): void {
+        console.log("updateMember: Starte Profil-Update");
+        this.dataManager.updateGlobalMember(updatedMember);
+    }
 
-    // Reaktives Update: Alten Stand nehmen, neuen User hinten dran hängen
-    this.membersSignal.set([...this.membersSignal(), newMember]);
-    console.log('👥 Neues Teammitglied im RAM gespeichert:', newMember.fullName);
-  }
+    /** 💀 Löscht den User jetzt wirklich global! */
+    public deleteMember(projectId: string | null, id: string): void {
+        this.dataManager.deleteGlobalMember(id);
+    }
+    public createMember(member: UserModel, onError?: (errorMessage: string) => void) {
+        this.dataManager.createMember(member, onError)
+    }
 
-public randomizeMemberColor(memberId: string): void {
-    const randomHue = Math.floor(Math.random() * 360);
-    const newPastelColor = `hsl(${randomHue}, 75%, 85%)`;
-
-    // 🔥 Wir mappen das Array und ersetzen das alte Mitglied durch ein echtes, neues Datenmodell MIT Farbe!
-    this.membersSignal.set(
-      this.membersSignal().map(member => {
-        if (member.id === memberId) {
-          return new TeamMember({
-            id: member.id,
-            firstName: member.firstName,
-            lastName: member.lastName,
-            colorOverride: newPastelColor // 💾 Fest im neuen Zustand eingebrannt!
-          });
+    /** 💡 NEU: Splittet die Logik sauber auf! */
+    public removeMemberFromProject(projectId: string | null, id: string): void {
+        if (projectId) {
+            this.dataManager.removeMemberFromProject(projectId, id);
         }
-        return member;
-      })
-    );
-  }
+    }
+
+    /** ➕ NEU: Weist ein Mitglied einem bestimmten Projekt zu */
+    public addMemberToProject(projectId: string | null, member: UserModel): void {
+        if (projectId) {
+            this.dataManager.addMemberToProject(projectId, member);
+        }
+    }
 }

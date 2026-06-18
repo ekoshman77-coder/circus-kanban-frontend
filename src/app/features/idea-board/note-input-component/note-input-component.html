@@ -1,44 +1,49 @@
-<div class="note-input-card" [class]="'note-input-card ' + newColor()">
+<div class="note-input-card" [class]="'note-input-card ' + noteForm.get('colorType')?.value">
   
-  <div class="form-group">
-    <input 
-      type="text" 
-      [(ngModel)]="newTitle" 
-      placeholder="Titel deiner Idee..." 
-      class="form-control" />
-  </div>
-
-  <div class="form-group">
-    <textarea 
-      [(ngModel)]="newContent" 
-      placeholder="Beschreibung..." 
-      class="form-control" 
-      rows="2"></textarea> </div>
-
-  <div class="form-row">
-    <div class="form-group flex-grow">
-      <app-universal-tag-input-component 
-        [textToWatch]="newTitle()" 
-        [contextType]="'note'"
-        [placeholder]="'Kategorie...'" 
-        [initialValue]="newTag()"
-        (valueChanged)="onTagChanged($event)">
-      </app-universal-tag-input-component>
+  <form [formGroup]="noteForm" (ngSubmit)="saveNote()">
+    
+    <div class="form-group">
+      <input 
+        type="text" 
+        formControlName="title" 
+        placeholder="Titel deiner Idee..." 
+        class="form-control" />
     </div>
 
-    <div class="form-group color-select-wrapper">
-      <select [(ngModel)]="newColor" class="select-field">
-        @for (color of colorPalette; track color.value) {
-          <option [value]="color.value">{{ color.label }}</option>
-        }
-      </select>
+    <div class="form-group">
+      <textarea 
+        formControlName="content" 
+        placeholder="Beschreibung..." 
+        class="form-control" 
+        rows="2"></textarea> 
     </div>
-  </div>
 
-<button 
-    (click)="saveNote()" 
-    [disabled]="!newTitle().trim() || !newContent().trim()" 
-    class="btn-save">
-    Auf Pinnwand hämmern! 🚀
-  </button>
+    <div class="form-row">
+      <div class="form-group flex-grow">
+        <app-universal-tag-input-component 
+          [textToWatch]="noteForm.get('title')?.value || ''" 
+          [contextType]="'note'"
+          [placeholder]="'Kategorie...'" 
+          [initialValue]="noteForm.get('category')?.value || ''"
+          (valueChanged)="onTagChanged($event)">
+        </app-universal-tag-input-component>
+      </div>
+
+      <div class="form-group color-select-wrapper">
+        <select formControlName="colorType" class="select-field">
+          @for (color of colorPalette; track color.value) {
+            <option [value]="color.value">{{ color.label }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <button 
+      type="submit"
+      [disabled]="!noteForm.get('title')?.value?.trim() || !noteForm.get('content')?.value?.trim()" 
+      class="btn-save\">
+      Auf Pinnwand hämmern! 🚀
+    </button>
+
+  </form>
 </div>

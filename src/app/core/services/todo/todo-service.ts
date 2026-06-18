@@ -162,17 +162,36 @@ export class TodoService {
     });
   }
 
-  public updateTodo(updatedTodo: Todo): void {
-    console.log("TodoService:: updateTodo", updatedTodo)
-    // Delay nachempfunden durch setTimeout für ein flüssiges UI-Gefühl (300ms wie im Original)
+public updateTodo(updatedTodo: Todo, isDragAndDrop: boolean = false): void {
+    console.log(`TodoService:: updateTodo (DragAndDrop: ${isDragAndDrop})`, updatedTodo);
+
+    // 🚀 1. Optimistisches UI: Bei Drag & Drop das Signal SOFORT anpassen,
+    // damit das Timing-Loch auf den Boards augenblicklich gestopft wird!
+    if (isDragAndDrop) {
+      this.todosSignal.update(todos => 
+        todos.map(t => t.id === updatedTodo.id ? updatedTodo : t)
+      );
+    }
+
+    // ⏱️ 2. Deine geniale Idee: Die Verzögerung dynamisch bestimmen!
+    const delay = isDragAndDrop ? 0 : 300;
+
+    // 🔄 3. Nur noch EIN EINZIGER asynchroner Block dank deiner Weiche!
     setTimeout(() => {
       this.dataManager.updateTodo(updatedTodo, this.todosSignal(), updatedTodo.userId).subscribe({
         next: (neueListe) => {
           this.updateTodosState(neueListe);
         },
-        error: (err) => this.handleBackendError(err, false)
+        error: (err) => {
+          this.handleBackendError(err, false);
+          // Falls beim schnellen Drag & Drop ein Serverfehler auftritt, 
+          // holen wir den alten Zustand zurück
+          if (isDragAndDrop) {
+            this.handleBackendError(err, false); 
+          }
+        }
       });
-    }, 300); 
+    }, delay); // <-- Hier greift die dynamische Zeit!
   }
 
   public updateTodoEffort(todoId: string, newEffort: number) {

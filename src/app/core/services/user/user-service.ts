@@ -100,7 +100,6 @@ export class UserService {
     });
   }
 
-
   public changeWorkingTimeLeft(hours: number) {
     this.workingTimeLeft.set(hours);
   }
@@ -164,8 +163,8 @@ export class UserService {
     });
   }
 
-  public register(username: string): Observable<IUser> {
-    return this.userRepository.register(username).pipe(
+  public register(username: string, firstName: string, lastName: string): Observable<IUser> {
+    return this.userRepository.register(username, firstName, lastName).pipe(
       tap((user) => {
         this.saveSession(user);
         this.loadSettingsFromBackend(user.id);

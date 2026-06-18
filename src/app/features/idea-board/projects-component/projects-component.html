@@ -1,15 +1,13 @@
 <div class="projects-dashboard">
-    <div class="dashboard-header-action-row"
-        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-        <div>
-            <h2>🏗️ Aktive Projekt-Zentrale</h2>
-            <p class="subtitle" style="margin-bottom: 0;">Hier siehst du alle strategisch geplanten Projekte im
-                Überblick.</p>
+    <div class="board-header-premium">
+        <div class="header-title-section">
+            <h1 class="main-title">🏗️ Aktive Projekt-Zentrale</h1>
+            <p class="subtitle">Hier siehst du alle strategisch geplanten Projekte im Überblick.</p>
         </div>
 
-        <!-- Hinweis: Der alte Statistik-Button oben ist jetzt weg, da wir den genialen Zieh-Knopf am Panel haben! -->
+        <div class="header-selector-wrapper"></div>
     </div>
-
+    
     <!-- 🧊 DAS PROJEKT-RASTER -->
     <div class="projects-grid">
         @for (project of projects(); track project.id) {

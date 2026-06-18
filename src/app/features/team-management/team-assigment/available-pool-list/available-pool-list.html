@@ -1,0 +1,16 @@
+<div class="pool-list-container"
+    (dragover)="onDragOver($event)"
+     (drop)="onDrop($event)">
+  <h3>🟢 Verfügbare Mitarbeiter (Wartebank)</h3>
+  
+  @for (user of pool(); track user.id) {
+    <app-member-card-component
+      [user]="user"
+      actionType="add"
+      (actionClicked)="onAdd(user.id)"
+    >
+    </app-member-card-component>
+  } @empty {
+    <p class="empty-hint">Keine weiteren Mitarbeiter im globalen Pool verfügbar.</p>
+  }
+</div>

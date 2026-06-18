@@ -1,0 +1,136 @@
+<div class="pool-container">
+    
+    <div class="page-header">
+        <h1>👥 Globales Team-Management</h1>
+        <p>Hier verwaltest du die Mitglieder und Registrierungen des gesamten Systems.</p>
+    </div>
+
+    <div class="search-section">
+        <input type="text" name="fake_username" style="display:none;" autocomplete="username">
+        <input type="password" name="fake_password" style="display:none;" autocomplete="new-password">
+
+        <label for="searchMembers">🔍 Mitarbeiter suchen:</label>
+        <input type="text" id="searchMembers" placeholder="Vorname, Nachname oder Username..." [value]="searchInput()"
+            (input)="searchInput.set($event.target.value)" class="search-input">
+    </div>
+
+    <hr class="divider">
+
+    <div class="main-layout">
+        
+        <div class="form-section">
+            <h3>➕ Neuen Mitarbeiter registrieren</h3>
+
+            @if (errorFromServer()) {
+            <div class="alert-error-box">
+                <span class="error-text">🛑 <strong>Fehler:</strong> {{ errorFromServer() }}</span>
+                <button type="button" class="btn-close-error" (click)="closeError()">×</button>
+            </div>
+            }
+
+            <form [formGroup]="userForm" (ngSubmit)="onAddUser()" class="user-form">
+
+                <div class="input-group">
+                    <span class="input-icon" [style.color]="userForm.get('firstName')?.value ? 'inherit' : '#cbd5e1'">👤</span>
+                    <input type="text" formControlName="firstName" placeholder="Vorname">
+                </div>
+
+                <div class="input-group">
+                    <span class="input-icon" [style.color]="userForm.get('lastName')?.value ? 'inherit' : '#cbd5e1'">👤</span>
+                    <input type="text" formControlName="lastName" placeholder="Nachname">
+                </div>
+
+                <div class="input-group username-group">
+                    <span class="input-icon" [style.color]="userForm.get('username')?.value ? 'inherit' : '#cbd5e1'">🏷️</span>
+                    <input type="text" formControlName="username" placeholder="Username (z.B. max_m)">
+
+                    @if (isUsernameTaken()) {
+                    <span class="error-msg">⚠️ Username bereits vergeben!</span>
+                    }
+                </div>
+
+                <button type="submit" [disabled]="userForm.invalid || isUsernameTaken()" class="btn-submit">
+                    Mitarbeiter erstellen
+                </button>
+
+            </form>
+        </div>
+
+        <div class="gallery-section">
+            <h3>Registrierte Mitarbeiter ({{ filteredUsers().length }})</h3>
+
+            <div class="user-gallery">
+                @for (user of filteredUsers(); track user.id) {
+                <div class="user-card">
+                    <div class="avatar" [style.background-color]="user.getColorHash()">
+                        {{ user.firstName[0]?.toUpperCase() }}{{ user.lastName[0]?.toUpperCase() }}
+                    </div>
+                    
+                    <div class="user-info">
+                        <h4>{{ user.firstName }} {{ user.lastName }}</h4>
+                        <p class="username">&#64;{{ user.username }}</p>
+                    </div>
+
+                    <div class="card-actions">
+                        <button (click)="onOpenEditPopup(user)" class="btn-edit">✏️ Bearbeiten</button>
+                        <button (click)="onDeleteUser(user.id)" class="btn-delete">🗑️ Löschen</button>
+                    </div>
+                </div>
+                } @empty {
+                <div class="no-data-card">
+                    <p>Es wurden keine Mitarbeiter gefunden, die auf die Suche passen. 🤷‍♀️</p>
+                </div>
+                }
+            </div>
+        </div>
+
+    </div>
+
+    @if (selectedUserForEdit()) {
+    <div class="modal-backdrop" (click)="onClosePopup()">
+        <div class="modal-box" (click)="$event.stopPropagation()">
+
+            <div class="modal-header">
+                <h2>✏️ Mitarbeiter bearbeiten</h2>
+                <p>Ändere die Daten des Benutzers im globalen System.</p>
+            </div>
+
+            <form [formGroup]="editForm" (ngSubmit)="onSaveEdit()">
+                
+                <div class="edit-avatar-container">
+                    <div class="modal-avatar" [style.background-color]="selectedUserForEdit()?.getColorHash()">
+                        {{ selectedUserForEdit()?.getInitials() || '👤' }}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Vorname:</label>
+                    <input type="text" formControlName="firstName">
+                </div>
+
+                <div class="form-group">
+                    <label>Nachname:</label>
+                    <input type="text" formControlName="lastName">
+                </div>
+
+                <div class="form-group">
+                    <label>Username:</label>
+                    <input type="text" formControlName="username" readonly class="readonly-input">
+                    <small class="hint">Der Username kann aus Sicherheitsgründen nicht geändert werden.</small>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" (click)="onClosePopup()">
+                        Abbrechen
+                    </button>
+                    <button type="submit" class="btn-save" [disabled]="editForm.invalid">
+                        Änderungen speichern
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+    }
+
+</div>

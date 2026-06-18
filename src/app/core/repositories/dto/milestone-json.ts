@@ -1,4 +1,4 @@
-import { User } from "../../models/user";
+import { UserModel } from "../../models/user-model";
 
 export type TodoTeamStatus = 'Offen' | 'In Arbeit' | 'Erledigt';
 
@@ -9,6 +9,6 @@ export interface IMilestoneJSON {
   usedDuration: number;
   status: TodoTeamStatus; // 'Offen' | 'In Arbeit' | 'Erledigt'
   assignedUserId?: string | null;
-  assignedUser?: User | null; // Falls du das voll aufgelöste User-Objekt hast
+  assignedUser?: UserModel | null; // Falls du das voll aufgelöste User-Objekt hast
   projectId?: string | null;     // 📁 NEU: Die Verbindung zum Projekt für unser Backend!
 }

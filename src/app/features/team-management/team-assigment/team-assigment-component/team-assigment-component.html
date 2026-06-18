@@ -1,0 +1,49 @@
+<div class="assignment-container">
+  <div class="team-kanban-pool" cdkDropList ...>
+  </div>
+  
+  <div class="project-selector">
+    <label for="projectSelect">📅 Projekt auswählen:</label>
+    <select id="projectSelect" (change)="onProjectChange($event)">
+      <option [value]="null" [selected]="selectedProjectId() === null">
+      -- Bitte Projekt wählen --
+    </option>
+
+    @for (project of allProjects(); track project.id) {
+      <option [value]="project.id" [selected]="selectedProjectId() === 'project.id'">
+        {{ project.title }}
+      </option>
+    }
+
+
+      </select>
+  </div>
+
+  <hr class="divider">
+
+  <div class="assignment-content">
+    <h3 class="section-title">👥 Projektmitglieder & Zuweisung</h3>
+
+  @if (selectedProjectId()) {
+    <div class="assignment-split-view">
+      
+      <app-project-members-list 
+        [members]="activeMembers()" 
+        (removeUser)="onRemoveUserFromProject($event)"
+        (addUser)="onAddUserToProject($event)"
+        >
+      </app-project-members-list>
+
+      <app-available-pool-list 
+        [pool]="availablePool()" 
+        (addUser)="onAddUserToProject($any($event))"
+        (removeUser)="onRemoveUserFromProject($any($event))"
+        >
+      </app-available-pool-list>
+
+    </div>
+  } @else {
+    <p class="hint-msg">Bitte wähle oben ein Projekt aus, um die Teammitglieder zu verwalten.</p>
+  }
+
+</div>

@@ -1,20 +1,47 @@
 <div class="milestones-manager">
 
-    <div class="selector-header-row">
-        <span class="focus-label">🎯 Gewählter Fokus:</span>
-        <app-milestone-selector-component [initialMilestoneId]="activeMilestoneId()"
-            (milestoneSelected)="onMilestoneChanged($event)">
-        </app-milestone-selector-component>
+    <div class="board-header">
+
+        <div class="header-title-section">
+            <h1 class="main-title">🎯 Meilenstein-Planung</h1>
+            <p class="subtitle">Organisiere Projektphasen und verteile deine Aufgaben spielend leicht per Drag & Drop.
+            </p>
+        </div>
+
+<div class="header-action-section">
+            
+            <app-milestone-selector-component 
+                [initialMilestoneId]="activeMilestoneId()" 
+                [initialProjectId]="null"
+                [canChooseProject]="false"
+                [filterByActiveProject]="false"
+                [appearance]="'modal'"
+                (milestoneSelected)="onMilestoneChanged($event)">
+            </app-milestone-selector-component>
+
+            <button type="button" 
+                    class="btn-team-board" 
+                    [disabled]="!activeMilestoneId()"
+                    (click)="openTeamBoardForMilestone(activeMilestoneId()!)">
+                <span class="btn-icon">🎪</span>
+                <span class="btn-text">Zum TeamBoard</span>
+            </button>
+            
+        </div>
     </div>
 
     <hr class="section-divider">
 
-    @if (currentMatch(); as match) {    
+    @if (currentMatch(); as match) {
     <div class="details-card">
+        <div class="milestone-card-header">
+            <div class="header-main-info">
+                <div class="project-tag">📁 {{ match.project.title }}</div>
+                <h2 class="milestone-title">🏁 {{ match.milestone.title }}</h2>
+                <p class="milestone-status">Status: <strong>{{ liveMilestoneStatus() }}</strong></p>
+            </div>
 
-        <div class="project-tag">📁 Projekt: {{ match.project.title }}</div>
-        <h2 class="milestone-title">🏁 {{ match.milestone.title }}</h2>
-        <p class="milestone-status">Status: <strong>{{ liveMilestoneStatus() }}</strong></p>
+        </div>
 
         <div class="progress-container">
             <div class="progress-bar-wrapper">
@@ -22,64 +49,49 @@
             </div>
             <span class="progress-text">{{ milestoneProgress() }}% abgeschlossen</span>
         </div>
-                     <button (click)="openTeamBoardForMilestone(match.milestone.id)" class="btn-team-board">
-  <span>🎪</span> Team-Kanban
-</button>
 
         <div class="split-workspace" cdkDropListGroup>
-
             <div class="workspace-column">
                 <h3 class="workspace-title">📝 Aufgaben in dieser Phase</h3>
-                
-                <div id="milestone-todo-list"
-                     cdkDropList
-                     [cdkDropListData]="match.milestoneTodos"
-                     (cdkDropListDropped)="onTodoDropped($event)"
-                     class="drag-drop-zone">
+
+                <div id="milestone-todo-list" cdkDropList [cdkDropListData]="match.milestoneTodos"
+                    (cdkDropListDropped)="onTodoDropped($event)" class="drag-drop-zone">
                     @for (todoViewModel of match.milestoneTodos; track todoViewModel.id) {
-                        <app-todo-item 
-                            [item]="todoViewModel" 
-                            [isKanbanMode]="true" 
-                            [ngClass]="'status-' + todoViewModel.visualStatus"
-                            cdkDrag 
-                            [cdkDragData]="todoViewModel.todo"
-                            (delete)="removeTodoFromMilestone(todoViewModel.id)">
-                        </app-todo-item>
+                    <app-todo-item [item]="todoViewModel" [isKanbanMode]="true"
+                        [ngClass]="'status-' + todoViewModel.visualStatus" cdkDrag [cdkDragData]="todoViewModel.todo"
+                        (delete)="removeTodoFromMilestone(todoViewModel.id)">
+                    </app-todo-item>
                     } @empty {
-                        <div class="todo-empty-state">
-                            Zieh eine Aufgabe hierher, um sie der Phase zuzuordnen! 🚀
-                        </div>
+                    <div class="todo-empty-state">
+                        Zieh eine Aufgabe hierher, um sie der Phase zuzuordnen! 🚀
+                    </div>
                     }
                 </div>
             </div>
 
             <div class="workspace-column">
                 <h3 class="workspace-title">➕ Unzugeordnete Aufgaben</h3>
-                
-                <div id="free-todo-list"
-                     cdkDropList
-                     [cdkDropListData]="unassignedTodos()"
-                     (cdkDropListDropped)="onTodoDropped($event)"
-                     class="drag-drop-zone">
-                     
+
+                <div class="workspace-form-wrapper">
+                    <app-todo-form [forcedMilestoneId]="activeMilestoneId()" layout="compact">
+                    </app-todo-form>
+                </div>
+
+                <div id="free-todo-list" cdkDropList [cdkDropListData]="unassignedTodos()"
+                    (cdkDropListDropped)="onTodoDropped($event)" class="drag-drop-zone">
+
                     @for (todoViewModel of unassignedTodos(); track todoViewModel.id) {
-                        <app-todo-item 
-                            [item]="todoViewModel" 
-                            [isKanbanMode]="true" 
-                            [ngClass]="'status-' + todoViewModel.visualStatus"
-                            cdkDrag 
-                            [cdkDragData]="todoViewModel.todo">
-                        </app-todo-item>
+                    <app-todo-item [item]="todoViewModel" [isKanbanMode]="true"
+                        [ngClass]="'status-' + todoViewModel.visualStatus" cdkDrag [cdkDragData]="todoViewModel.todo">
+                    </app-todo-item>
                     } @empty {
-                        <div class="unassigned-empty-state">
-                            Keine freien Aufgaben im System gefunden.
-                        </div>
+                    <div class="unassigned-empty-state">
+                        Keine freien Aufgaben im System gefunden.
+                    </div>
                     }
                 </div>
             </div>
 
-        </div> <div class="workspace-form-wrapper">
-            <app-todo-form [forcedMilestoneId]="activeMilestoneId()"></app-todo-form>
         </div>
 
     </div>
@@ -88,7 +100,8 @@
         <div class="welcome-card">
             <span class="empty-icon-neon">🎯</span>
             <h3>Willkommen im Meilenstein-Workspace!</h3>
-            <p>Aktuell ist kein Meilenstein im Fokus. Wähle einfach oben über die Suche eine Phase aus, um deine Aufgaben per Drag & Drop zu strukturieren!</p>
+            <p>Aktuell ist kein Meilenstein im Fokus. Wähle einfach oben über die Suche eine Phase aus, um deine
+                Aufgaben per Drag & Drop zu strukturieren!</p>
         </div>
     </div>
     }

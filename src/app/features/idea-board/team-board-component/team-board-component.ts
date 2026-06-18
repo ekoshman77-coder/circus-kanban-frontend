@@ -11,7 +11,10 @@ import { TodoItemComponent } from '../../../core/shared/components/todo-item-com
 import { CdkDragDrop, DragDropModule, transferArrayItem } from '@angular/cdk/drag-drop';
 import { MilestoneSelectorComponent } from '../../../core/shared/components/milestone-selector-component/milestone-selector-component';
 import { ProjectService } from '../../../core/services/project-service';
-import { BoardStateService } from '../../../core/services/board-state-service';
+import { IdeaSortingService } from '../../../core/services/board-state-service';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { UserModel } from '../../../core/models/user-model';
+import { map, of, switchMap } from 'rxjs';
 
 export type BoardFilterState = {
   type: 'project' | 'milestone' | null;
@@ -37,19 +40,56 @@ export class TeamBoardComponent {
   public todoWaitingForPopup = signal<Todo | null>(null);
   public popupEffortValue = signal<number>(0);
 
-  public boardFilter = signal<BoardFilterState>({type: null, id: null})
+  public boardFilter = signal<BoardFilterState>({ type: null, id: null })
 
   constructor() {
+    const projectService = inject(ProjectService);
+    const tabNavigationService = inject(TabNavigationService);
+    
+    // 🎯 Gestern-Fix: Meilenstein-Tab-Leuchten zurücksetzen
+    projectService.setActiveMilestoneId(null);
+
+    // 🚀 STABILER REAKTIVER EFFECT FÜR UNSERE WEITERLEITUNG:
     effect(() => {
-       const naviState = this.navigationService.currentNavigationState();
-       if (!naviState || !naviState.id || this.boardFilter().id) {
-         return
-       } 
-       if (naviState.type === "milestone" || naviState.type === "project") {
-        this.boardFilter.set({type: naviState.type, id: naviState.id})
-       }
-    })
+      // Wir abonnieren das Signal! Sobald die Daten da sind, springt der Effekt an.
+      const navState = tabNavigationService.currentNavigationState();
+      
+      if (navState && navState.type === 'milestone') {
+        console.log('📥 REAKTIV EMPFANGEN: Filter wird gesetzt auf Meilenstein:', navState.id);
+        
+        // Lokalen Filter setzen
+        this.boardFilter.set({
+          type: 'milestone',
+          id: navState.id
+        });
+        
+        // State im Service wieder leeren (untracked verhindert Endlosschleifen)
+        // Angular erlaubt es, Signals in Effekten zu schreiben, solange es sauber terminiert.
+        tabNavigationService.currentNavigationState.set(null);
+      }
+    });
   }
+  
+  public currentProjectId = computed(() => {
+    const filter = this.boardFilter();
+    if (!filter.type || !filter.id) return null;
+    if (filter.type === 'project') return filter.id;
+
+    const allProjects = this.projectService.projectsList();
+    const matchingProject = allProjects.find(p => p.milestones?.some(m => m.id === filter.id));
+    return matchingProject ? matchingProject.id : null;
+  });
+
+  // B) Die Pipeline, die das Observable automatisch auflöst!
+  public currentProjectMembers = toSignal(
+    toObservable(this.currentProjectId).pipe(
+      switchMap(projectId => {
+        if (!projectId) return of([]); // Wenn keine ID da ist, schicke leeres Array
+        return this.teamService.getSortedMembers$(projectId); // Ruft das Observable ab!
+      })
+    ),
+    { initialValue: [] } // WICHTIG: Damit ist es NIEMALS undefined, sondern startet als leeres Array!
+  );
 
   private getTodosForBoard(): Todo[] {
     const filter = this.boardFilter();
@@ -80,7 +120,7 @@ export class TeamBoardComponent {
       .filter(t => t.teamStatus === "Erledigt")
       .map(t => new TodoViewModel(t, false));
   });
-  
+
   /**
    * Die zentrale Drag & Drop Steuerung
    */
@@ -110,7 +150,7 @@ export class TeamBoardComponent {
 
       // Die Karte schnappt visuell zurück, aber das Backend speichert es im Hintergrund.
       // Sobald Docker antwortet, wandert die Karte reaktiv nach links!
-      this.todoService.updateTodo(movedViewModel.todo);
+      this.todoService.updateTodo(movedViewModel.todo, true);
     }
 
     // 🟡 IN DIE MITTE: In Arbeit
@@ -127,7 +167,7 @@ export class TeamBoardComponent {
         return;
       } else {
         // Mitarbeiter ist da -> Karte schnappt zurück, speichert, und fliegt via Docker reaktiv in die Mitte!
-        this.todoService.updateTodo(movedViewModel.todo);
+        this.todoService.updateTodo(movedViewModel.todo, true);
       }
     }
 
@@ -144,7 +184,7 @@ export class TeamBoardComponent {
     const todo = this.todoWaitingForPopup();
     if (todo) {
       todo.assignedUserId = memberId;
-      this.todoService.updateTodo(todo);
+      this.todoService.updateTodo(todo, true);
     }
     this.showAssigneePopup.set(false);
     this.todoWaitingForPopup.set(null);
@@ -161,34 +201,35 @@ export class TeamBoardComponent {
   }
 
   // Hilfsmethode für den alten Template-Rest unten im HTML
-  public getAssignedMember(memberId: string | null) {
-    if (!memberId) return null;
-    return this.teamService.membersList().find(m => m.id === memberId);
-  }
+  // public getAssignedMember(memberId: string | null) {
+  //   if (!memberId) return null;
+  //   const members = toSignal( this.teamService.getSortedByLastName$)
+  //   return this.teamService.getSortedByLastName$.find(m => m.id === memberId);
+  // }
 
   public onAssigneeChange(todo: Todo, event: Event): void {
     const select = event.target as HTMLSelectElement;
     todo.assignedUserId = select.value || null;
-    this.todoService.updateTodo(todo);
+    this.todoService.updateTodo(todo, true);
   }
 
   public onMilestoneSelectedFromWelcome(milestoneId: string): void {
     if (milestoneId) {
       // Wir sagen dem Navigationsdienst: "Setze den Zustand auf diesen Meilenstein!"
-       this.boardFilter.set({
+      this.boardFilter.set({
         type: "milestone",
         id: milestoneId
-       })
+      })
     }
   }
 
   public onProjectSelectedFromWelcome(projectId: string): void {
     if (projectId) {
       // Wir sagen dem Navigationsdienst: "Setze den Zustand auf diesen Meilenstein!"
-       this.boardFilter.set({
+      this.boardFilter.set({
         type: "project",
         id: projectId
-       })
+      })
     }
   }
 }

@@ -7,6 +7,7 @@ import { TodoViewModel } from '../../../viewmodel/todo-view-model';
 import { FormsModule } from '@angular/forms';
 import { animate, style, transition, trigger } from '@angular/animations';
 import { TeamService } from '../../../services/team-service';
+import { UserModel } from '../../../models/user-model';
 
 @Component({
   selector: 'app-todo-item',
@@ -39,6 +40,7 @@ export class TodoItemComponent {
   @Input() isDescriptionOpen: boolean = false;
   @Input() isKanbanMode: boolean = false;
   public isTeamsPopupEnabled = input<boolean>(false);
+  public assignableUsers = input<UserModel[]>([]);
 
   @Output() toggleDescription = new EventEmitter<void>();
   @Output() toggleComplete = new EventEmitter<void>();
@@ -95,13 +97,11 @@ export class TodoItemComponent {
   /**
  * Wird aufgerufen, wenn im eingebetteten Popup ein Mitarbeiter ausgewählt wird!
  */
-public onAssigneeSelected(memberId: string): void {
-  const currentTodo = this.item().todo;
-  currentTodo.assignedUserId = memberId; // ID direkt auf dem echten Objekt setzen
-  console.log("onAssigneeSelected currentTodo", currentTodo)
-  this.todoService.updateTodo(currentTodo); // Sofort ans Backend senden!
-  
-  // Wir schließen das Popup wieder, indem wir das neue Signal im ViewModel ausschalten
-  this.item().showAssigneePopup.set(false);
-}
+public onAssigneeSelected(userId: string): void {
+    const currentTodo = this.item().todo;
+    currentTodo.assignedUserId = userId; // ID auf dem Todo setzen
+    
+    this.todoService.updateTodo(currentTodo); // Ab ans Backend!
+    this.item().showAssigneePopup.set(false); // Popup zu
+  }
 }

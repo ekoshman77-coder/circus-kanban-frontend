@@ -13,6 +13,24 @@ export class NoteService {
   private notesSignal = signal<Note[]>([]);
   public readonly notesList = this.notesSignal.asReadonly();
 
+  private readonly DRAFT_KEY = 'draft_note';
+
+  /** 📝 Sichert den aktuellen Entwurf im LocalStorage */
+  public saveDraft(noteData: any): void {
+    localStorage.setItem(this.DRAFT_KEY, JSON.stringify(noteData));
+  }
+
+  /** 🔍 Holt den gespeicherten Entwurf ab (falls vorhanden) */
+  public getDraft(): any | null {
+    const draft = localStorage.getItem(this.DRAFT_KEY);
+    return draft ? JSON.parse(draft) : null;
+  }
+
+  /** 🗑️ Löscht den Entwurf nach erfolgreichem Absenden */
+  public clearDraft(): void {
+    localStorage.removeItem(this.DRAFT_KEY);
+  }
+
   // Automatisch ermittelte User-ID aus deinem UserService-Signal
   private get currentUserId(): string {
     const user = this.userService.currentUser();

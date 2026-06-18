@@ -1,12 +1,14 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { catchError, Observable, tap, throwError } from 'rxjs';
 import { GamificationResult } from '../models/gamification';
 import { gamificationApiUrl, settingsApiUrl, userApiUrl } from './links';
 
 export interface IUser {
   id: string;
   username: string;
+  firstName: string;
+  lastName: string;
 }
 
 // 📋 Das passende Interface für dein Kotlin-DTO
@@ -27,8 +29,18 @@ export class UserRepository {
     return this.http.post<IUser>(`${userApiUrl}/login`, { username });
   }
 
-  public register(username: string): Observable<IUser> {
-    return this.http.post<IUser>(`${userApiUrl}/register`, { username });
+  public register(username: string, firstName: string, lastName: string): Observable<IUser> {
+  console.log('📦 Angular schickt zur Registrierung:', { username, firstName, lastName })
+    return this.http.post<IUser>(`${userApiUrl}/register`, { username, firstName, lastName }).pipe(
+    tap(response => {
+      // 🔍 2. SPUR: Was kommt wirklich vom Kotlin-Server zurück?
+      console.log('📡 Kotlin-Server antwortet mit:', response);
+    }),
+    catchError((err: HttpErrorResponse) => {
+      const serverErrorMessage = err.error?.message || "Ein unerwarteter Server-Fehler ist aufgetreten.";
+      return throwError(() => serverErrorMessage)
+    })
+  );
   }
 
   // 📥 NEU: Holt die Einstellungen aus dem Backend
@@ -43,5 +55,30 @@ export class UserRepository {
 
   public getGamification(userId: string): Observable<GamificationResult> {
     return this.http.get<GamificationResult>(`${gamificationApiUrl}/${userId}`);
+  }
+
+  /**
+   * 📤 NEU: Aktualisiert die Profildaten eines Benutzers auf dem Server
+   * URL: z.B. `/api/users/user_123`
+   */
+  public updateProfile$(userId: string, username: string, firstName: string, lastName: string): Observable<IUser> {
+    console.log('📡 [UserRepo] PUT updateProfile$ abgefeuert für:', { userId, username, firstName, lastName });
+    const body = { username, firstName, lastName };
+
+    return this.http.put<IUser>(`${userApiUrl}/${userId}`, body).pipe(
+      tap(response => console.log('📥 [UserRepo] PUT Antwort vom Server:', response))
+    );
+  }
+
+  /**
+   * 💀 NEU: Löscht einen Benutzer komplett global aus der Datenbank
+   * URL: z.B. `/api/users/user_123`
+   */
+public deleteGlobalUser$(userId: string): Observable<void> {
+    console.log('📡 [UserRepo] GLOBAL DELETE deleteGlobalUser$ abgefeuert für ID:', userId);
+
+    return this.http.delete<void>(`${userApiUrl}/${userId}`).pipe(
+      tap(() => console.log(`📥 [UserRepo] GLOBAL DELETE erfolgreich vom Server bestätigt für User-ID: ${userId}`))
+    );
   }
 }

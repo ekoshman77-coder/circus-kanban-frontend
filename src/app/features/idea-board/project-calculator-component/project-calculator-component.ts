@@ -30,8 +30,10 @@ export class ProjectCalculatorComponent {
   // Formular-Zustände für neue Aufgaben
   public taskTitle: string = '';
   public taskTime: number | null = null;
-
-  // Speicherplatz für das fertige Projekt, das nach dem Countdown abgeschickt wird
+  private readonly MAX_DURATION_DAYS = 10;
+  public minTaskTime: number = 1; // 🎯 Startet standardmäßig mit 1 Tag!
+  
+  public availableDays: number[] = Array.from({ length: this.MAX_DURATION_DAYS }, (_, i) => i + 1);
   private projectToSend: Project | null = null;
 
   // 1️⃣ Das reaktive Signal für den lokalen Arbeits-Entwurf (wird im Template editiert)

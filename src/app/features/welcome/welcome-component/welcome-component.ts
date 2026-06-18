@@ -11,13 +11,16 @@ import { UserService } from '../../../core/services/user/user-service';
   templateUrl: './welcome-component.html',
   styleUrl: './welcome-component.css'
 })
-export class WelcomeComponent implements OnInit { // 👈 2. HIER "implements OnInit" hinzugefügt!
+export class WelcomeComponent implements OnInit { 
   public userService = inject(UserService);
   public usernameInput = signal<string>('');
+  public firstNameInput = signal<string>('');
+  public lastNameInput = signal<string>('');
+
   public errorMessage = signal<string>(''); 
-  public isLoading = signal<boolean>(false);
-  public recentUsers = signal<string[]>([]);
-  
+  public isLoading = signal<boolean>(false); 
+  public recentUsers = signal<string[]>([]);   
+
   ngOnInit(): void {
     // Wird jetzt garantiert beim Start ausgeführt!
     const saved = localStorage.getItem('recent_todos_users');
@@ -94,22 +97,35 @@ public onLogin(): void {
     });
   }
 
-  public onRegister(): void {
-    const name = this.usernameInput().trim();
-    if (!name) return;
+public onRegister(): void {
+    const username = this.usernameInput().trim();
+    const firstName = this.firstNameInput().trim();
+    const lastName = this.lastNameInput().trim();
 
-    this.isLoading.set(true);
+    // Validierung: Für die Registrierung brauchen wir jetzt alle drei!
+    if (!username || !firstName || !lastName) {
+      this.errorMessage.set('Bitte fülle alle Felder (Username, Vorname, Nachname) aus! ✨');
+      return;
+    }
 
-    this.userService.register(name).subscribe({
+    this.isLoading.set(true); //[cite: 4]
+
+    // 🔄 Wir übergeben alle drei Parameter an deinen Service!
+    this.userService.register(username, firstName, lastName).subscribe({
       next: (user) => {
-        this.saveUserToRecent(user.username); // Speichert den registrierten User
-        this.errorMessage.set('');
-        this.usernameInput.set('');
-        this.isLoading.set(false);
+        this.saveUserToRecent(user.username); //[cite: 4]
+        this.errorMessage.set(''); //[cite: 4]
+        
+        // Alle Felder nach erfolgreicher Registrierung leeren 🧹
+        this.usernameInput.set(''); //[cite: 4]
+        this.firstNameInput.set('');
+        this.lastNameInput.set('');
+        
+        this.isLoading.set(false); //[cite: 4]
       },
-      error: (err) => {
-        this.errorMessage.set(err.error?.error || 'Registrierung fehlgeschlagen.');
-        this.isLoading.set(false);
+      error: (err: string) => {
+        this.errorMessage.set(err || 'Registrierung fehlgeschlagen.'); //[cite: 4]
+        this.isLoading.set(false); //[cite: 4]
       }
     });
   }

@@ -3,7 +3,7 @@
    ========================================================================== */
 :host {
     display: block;
-    padding: 40px 20px;
+    padding: 20px 20px 40px 20px;
     background: radial-gradient(circle at top left, #f3e8ff 0%, #e0f2fe 100%); /* Lila zu Blau Pastell-Verlauf */
     border-radius: 12px;
     border: 1px solid #e2e8f0;
@@ -11,31 +11,63 @@
     font-family: system-ui, -apple-system, sans-serif;
 }
 
+/* ==========================================================================
+   👑 DER NEUE, GROSSZÜGIGE HEADER-BEREICH
+   ========================================================================== */
+
+.board-header {
+    display: flex;
+    justify-content: space-between; /* Schiebt Text nach links, Buttons nach rechts */
+    align-items: flex-end;         /* Richtet die Elemente unten bündig an der Linie aus */
+    gap: 24px;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 1000; /* Sorgt dafür, dass das Such-Modal über allem schwebt */
+}
+
+/* Linke Seite: Titel & Untertitel */
+.header-title-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.main-title {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 800;
+    color: #0f172a; /* Ein edles, tiefes Dunkelblau-Schwarz */
+    letter-spacing: -0.5px;
+}
+
+.subtitle {
+    margin: 0;
+    font-size: 14px;
+    color: #475569; /* Elegantes Schiefergrau */
+    font-weight: 500;
+}
+
+/* Rechte Seite: Buttons nebeneinander */
+.header-action-section {
+    display: flex;
+    align-items: center;
+    gap: 12px; /* Perfekter Abstand zwischen TeamBoard-Button und Selector */
+}
+
+/* 🗺️ DER MODERNE DIVIDER */
+.section-divider {
+    border: none;
+    /* Ein feiner, cleaner Strich, der super mit deinem lila-blauen Pastell-Hintergrund harmoniert */
+    border-top: 1px solid rgba(15, 23, 42, 0.08); 
+    margin-top: 0;
+    margin-bottom: 30px;
+}
+
 .milestones-manager {
     max-width: 1000px; /* Etwas breiter für das Splitscreen-Layout */
     margin: 0 auto;
 }
 
-/* 🎛️ FOKUS-WÄHLER (OBEN) */
-.selector-header-row {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    margin-bottom: 25px;
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(8px);
-    padding: 14px 20px;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 4px 15px rgba(148, 163, 184, 0.05);
-    position: relative;
-    z-index: 50;
-}
-
-.focus-label {
-    font-weight: 700;
-    color: #475569;
-}
 
 .section-divider {
     border: none;
@@ -86,6 +118,28 @@
     font-weight: 600;
 }
 
+/* 🏢 DAS KONTROLL-DACH (Flexbox verteilt Info nach links und Button nach rechts) */
+.milestone-card-header {
+    display: flex;
+    justify-content: space-between; /* Schiebt Inhalt nach links und rechts außen */
+    align-items: flex-start;        /* Richtet alles sauber nach oben aus */
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+/* Die linke Info-Box */
+.header-main-info {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Die rechte Button-Box */
+.header-actions {
+    display: flex;
+    align-items: center;
+    padding-top: 10px; /* Leichtes Feintuning für die Höhe */
+}
+
 /* 📊 PROGRESS BAR */
 .progress-container {
     display: flex;
@@ -124,25 +178,48 @@
     margin-bottom: 25px;
 }
 
+/* 🪟 SPLITSCREEN LAYOUT FOR SPALTEN */
 .workspace-column {
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: rgba(255, 255, 255, 0.5); /* Semi-transparente Spalten */
-    border: 1px solid rgba(226, 232, 240, 0.8);
-    border-radius: 14px;
-    padding: 16px 12px;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+    /* Der harte weiße Hintergrund fliegt raus! */
+    border-radius: 16px; /* Etwas rundere, modernere Ecken */
+    padding: 20px 16px;   /* Mehr Luft zum Atmen für die Items */
+    box-shadow: 0 4px 15px rgba(148, 163, 184, 0.03);
+    transition: all 0.3s ease;
+}
+
+/* 📝 LINKE SPALTE: Aufgaben in dieser Phase (Ein sanfter, produktiver Pastell-Blau-Ton) */
+.workspace-column:first-child {
+    background: rgba(240, 246, 255, 0.7); /* Wunderschönes, reines Pastell-Blau mit Transparenz */
+    border: 1px solid #dbeafe;            /* Perfekt passender, weicher blauer Rahmen */
+}
+
+/* ➕ RECHTE SPALTE: Unzugeordnete Aufgaben (Ein edler, ruhiger Sand/Nebel-Ton) */
+.workspace-column:last-child {
+    background: rgba(248, 250, 252, 0.6);  /* Sehr dezentes, edles Hellgrau-Weiß */
+    border: 1px solid #e2e8f0;             /* Unaufdringlicher Rahmen */
+}
+
+/* 🏷️ DIE SPALTEN-TITEL (Machen wir auch farblich passend und knackiger) */
+.workspace-column:first-child .workspace-title {
+    color: #1e40af; /* Dunkelblau für hervorragende Lesbarkeit */
+}
+
+.workspace-column:last-child .workspace-title {
+    color: #475569; /* Schiefergrau für die "Ablage" */
 }
 
 .workspace-title {
     margin-top: 0;
-    margin-bottom: 15px;
-    color: #475569;
-    font-size: 15px;
+    margin-bottom: 16px;
+    font-size: 16px; /* Schön knackig */
+    color: #1e293b; /* Einheitliches edles Dunkelgrau */
     font-weight: 700;
-    text-align: center;
-    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .drag-drop-zone {
@@ -252,23 +329,50 @@
     line-height: 1.5;
 }
 
+/* 🎪 DER NEUE, GROSSE KANBAN-BUTTON (RECHTS) */
+/* 🎪 DER SÄTTIGERE, KNACKIGE KANBAN-BUTTON */
 .btn-team-board {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background-color: #f0fdf4; /* Sanftes Pastell-Grün */
-  color: #166534;
-  border: 1px solid #bbf7d0;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    /* Vorher sehr blass, jetzt ein sattes, gesundes Pastell-Grün */
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); 
+    color: #14532d; /* Dunkleres Grün für perfekten Text-Kontrast */
+    /* Vorher #bbf7d0 (sehr hell), jetzt ein knackiger, sichtbarer Rahmen */
+    border: 1px solid #86efac; 
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    /* Der Schatten bekommt ein klein wenig Grün-Anteil, damit er "saftig" wirkt */
+    box-shadow: 0 4px 12px rgba(22, 101, 52, 0.08), 
+                0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.btn-team-board:hover {
-  background-color: #dcfce7;
-  border-color: #86efac;
-  transform: translateY(-1px);
+.btn-team-board .btn-icon {
+    font-size: 18px;
+    transition: transform 0.2s ease;
 }
+
+/* ✨ REAKTIVER HOVER-EFFEKT (Wird noch ein Stück satter beim Drüberfahren) */
+.btn-team-board:hover {
+    background: linear-gradient(135deg, #bbf7d0 0%, #86efac 100%);
+    border-color: #4ade80; /* Rahmen wird beim Hover noch schärfer */
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(22, 101, 52, 0.15);
+}
+
+/* Wenn man den Button drückt */
+.btn-team-board:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(22, 101, 52, 0.08);
+}
+
+.btn-team-board:hover .btn-icon {
+    transform: scale(1.2) rotate(-5deg);
+}
+
+
+

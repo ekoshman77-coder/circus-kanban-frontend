@@ -1,8 +1,19 @@
 <div class="calculator-container">
 
-    @if (localProjectDraft()) {
+  <div class="board-header-premium">
+      <div class="header-title-section">
+          <h1 class="main-title">🧮 Projekt-Kalkulator</h1>
+          <p class="subtitle">Berechnung der Meilenstein-Phasen und Ermittlung der Gesamtdauer.</p>
+      </div>
+      
+      <div class="header-selector-wrapper"></div>
+  </div>
+
+  @if (localProjectDraft()) {
     <div class="calculator-active-container">
-        <h2>Meilenstein-Phasenanalyse für: <span>{{ localProjectDraft()?.title }}</span></h2>
+        <div class="active-project-subbar">
+          Aktiver Entwurf für: <span>{{ localProjectDraft()?.title }}</span>
+        </div>
 
         <table class="project-table">
             <details open class="phase-section">
@@ -64,11 +75,18 @@
                     </div>
                     <div class="input-block small">
                         <label>Dauer (Tage)</label>
-                        <input type="number" step="0.5" [(ngModel)]="taskTime" placeholder="z.B. 2.5"
-                            class="calc-input">
+                        <select [(ngModel)]="taskTime" class="calc-dropdown">
+                            @for (day of availableDays; track day) {
+                            <option [value]="day">
+                                {{ day }} {{ day === 1 ? 'Tag' : 'Tage' }}
+                            </option>
+                            }
+                        </select>
                     </div>
                 </div>
-                <button (click)="addTask()" class="calc-btn">Aufgabe in Tabelle hämmern! 🔨</button>
+                <button (click)="addTask()" [disabled]="!taskTitle.trim() || !taskTime || taskTime <= 0"
+                    class="calc-btn">Aufgabe in Tabelle hämmern! 🔨
+                </button>
             </div>
         </details>
 
@@ -81,12 +99,12 @@
             </button>
         </div>
     </div>
-    } @else {
+  } @else {
     <div class="no-project-selected-container">
         <div class="welcome-card">
             <span class="empty-icon-neon">🧮</span>
-            <h3>Willkommen im Projekt-Kalkulator!</h3>
-            <p>Die Berechnungs-Maschine ist bereit. Bitte wähle ein bestehendes Projekt aus, um loszulegen:</p>
+            <h3>Berechnungs-Maschine ist bereit</h3>
+            <p>Bitte wähle ein bestehendes Projekt aus der Liste aus, um mit der Phasenanalyse zu starten:</p>
 
             <div class="projects-selection-list">
                 @for (project of projects(); track project.id) {
@@ -108,7 +126,7 @@
             </div>
         </div>
     </div>
-    }
+  }
 </div>
 
 @if (showSuccessPopup()) {

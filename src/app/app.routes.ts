@@ -12,6 +12,7 @@ import { IdeaBoardComponent } from './features/idea-board/idea-board-component/i
 import { IdeaPageComponent } from './features/idea-board/idea-page-component/idea-page-component';
 import { ProjectCalculatorComponent } from './features/idea-board/project-calculator-component/project-calculator-component';
 import { TeamManagementComponent } from './features/team-management/team-management-component/team-management-component';
+import { TeamPoolComponent } from './features/team-management/team-pool-component/team-pool-component';
 
 export const routes: Routes = [
     { 

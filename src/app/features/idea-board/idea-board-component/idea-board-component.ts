@@ -6,7 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { NoteComponent } from '../note-component/note-component';
 import { NoteService } from '../../../core/services/note-service';
 import { NoteViewModel } from '../../../core/viewmodel/note-view-model';
-import { BoardStateService } from '../../../core/services/board-state-service';
+import { IdeaSortingService } from '../../../core/services/board-state-service';
 import { NoteSortOrder } from '../../../core/models/note-sort-order';
 import { BoardFilterComponent, FilterState } from '../board-filter-component/board-filter-component';
 import { NotesStatisticsComponent } from '../notes-statistics-component/notes-statistics-component';
@@ -34,7 +34,7 @@ import { NoteInputComponent } from '../note-input-component/note-input-component
 })
 export class IdeaBoardComponent {
   private noteService = inject(NoteService);
-  private boardStateService = inject(BoardStateService);
+  private boardStateService = inject(IdeaSortingService);
   // 2. 🔌 Den neuen Service injizieren
   private projectService = inject(ProjectService);
   //  private router = inject(Router)

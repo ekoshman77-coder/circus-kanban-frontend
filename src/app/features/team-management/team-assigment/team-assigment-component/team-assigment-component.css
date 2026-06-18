@@ -1,0 +1,95 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background-color: #9be9f047; /* 🎉 Dein fantastischer Aqua-Hintergrund! */
+  padding: 30px;
+  font-family: 'Segoe UI', Roboto, sans-serif;
+}
+
+.assignment-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Der obere Bereich für die Projektauswahl */
+.project-selector {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+  background: white;
+  padding: 16px 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
+  border: 1px solid #e2e8f0;
+}
+
+.project-selector label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #334155;
+  min-width: 150px;
+}
+
+.project-selector select {
+  width: 100%;
+  max-width: 350px;
+  height: 40px;
+  padding: 0 10px;
+  font-size: 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background-color: #f8fafc;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.project-selector select:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+.divider {
+  border: 0;
+  border-top: 1px solid #e2e8f0;
+  margin: 25px 0;
+}
+
+/* Der weiße Dashboard-Karton unter dem Dropdown */
+.assignment-content {
+  background: white;
+  border-radius: 16px;
+  padding: 25px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.02);
+  border: 1px solid #e2e8f0;
+}
+
+.section-title {
+  font-size: 18px;
+  color: #0f172a;
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+/* 🔥 DAS KANBAN SPLIT-VIEW GRID: Teilt den Platz in 2 gleich große Spalten auf! */
+.assignment-split-view {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Spalte 1 und Spalte 2 teilen sich den Platz 50/50 */
+  gap: 25px; /* Abstand zwischen den beiden Kanban-Säulen */
+}
+
+@media (max-width: 768px) {
+  .assignment-split-view {
+    grid-template-columns: 1fr; /* Schiebt sich auf Handys automatisch untereinander */
+  }
+}
+
+.hint-msg {
+  text-align: center;
+  color: #64748b;
+  font-size: 14px;
+  padding: 40px 0;
+  font-weight: 500;
+}

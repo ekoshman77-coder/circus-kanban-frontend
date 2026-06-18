@@ -6,7 +6,7 @@ import { NoteService } from './note-service'; // Pfad ggf. anpassen
 @Injectable({
   providedIn: 'root'
 })
-export class BoardStateService {
+export class IdeaSortingService {
   private userService = inject(UserService);
   private noteService = inject(NoteService); // 🌟 Wir injizieren den NoteService!
   

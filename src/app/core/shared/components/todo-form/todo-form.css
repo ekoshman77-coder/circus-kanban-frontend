@@ -222,3 +222,74 @@
   transform: none;
   box-shadow: none;
 }
+
+/* ==========================================================================
+   📱 🔄 SPEZIELLES LAYOUT: COMPACT-VERSION (FÜR KANBAN-SPALTEN)
+   ========================================================================== */
+
+/* Das Gehäuse im Kompaktmodus kriegt ein frisches, dezentes Grün/Grau */
+.modern-two-line-form.compact-layout {
+  background: linear-gradient(135deg, #f0faf1 0%, #e8f5e9 100%);
+  border-color: #86efac;
+  box-shadow: 0 4px 12px rgba(22, 101, 52, 0.05);
+  gap: 10px; /* Perfekter Abstand zwischen den 3 Zeilen */
+}
+
+/* Jede der 3 Wunsch-Zeilen verhält sich wie eine saubere Flexbox-Reihe */
+.compact-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 8px; /* Knackiger Abstand zwischen den Feldern im Kompaktmodus */
+}
+
+/* 📐 AUFTEILUNG ZEILE 1: Milestone bleibt klein, Task nimmt den Rest */
+.compact-milestone { flex: 0 0 auto; }
+.compact-task { flex: 1; }
+
+/* 📐 AUFTEILUNG ZEILE 2: Kategorie feste Breite, Beschreibung nimmt den Rest */
+.compact-category { 
+  flex: 0 0 120px; 
+  width: 120px;
+}
+.compact-descr { flex: 1; }
+
+/* 📐 AUFTEILUNG ZEILE 3: Datum, Aufwand und Button schön verteilt */
+.compact-date { flex: 1.3; }
+.compact-effort { flex: 0.8; }
+.compact-submit-btn {
+  flex: 1.1;
+  height: 38px;
+  padding: 0 10px;
+  background-color: #10b981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  box-shadow: 0 3px 6px rgba(16, 185, 129, 0.15);
+  transition: all 0.2s ease-in-out;
+}
+
+.compact-submit-btn:hover:not(:disabled) {
+  background-color: #059669;
+}
+.compact-submit-btn:disabled {
+  background-color: #cbd5e1;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* 🔄 Eingabefelder im Kompaktmodus minimal schlanker für die Optik */
+.modern-two-line-form.compact-layout input,
+.modern-two-line-form.compact-layout select,
+.modern-two-line-form.compact-layout ::v-deep .form-control {
+  height: 38px !important;
+  font-size: 13px !important;
+  padding: 0 10px !important;
+}

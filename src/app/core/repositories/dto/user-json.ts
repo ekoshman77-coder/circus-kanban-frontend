@@ -1,4 +1,7 @@
 export interface IUserJSON {
   id: string;
-  username: string;
+  firstName: string;
+  lastName: string;
+  username: string; // 🔑 Das ist der eindeutige LOGIN-Name (z.B. "elena_h")
+  projectIds: string[];
 }

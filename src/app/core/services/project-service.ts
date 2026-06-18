@@ -17,7 +17,7 @@ export class ProjectService {
   private dataManager = inject(ProjectDataManagerService);
   private userService = inject(UserService);
 
-  private projectsSignal = signal<Project[]>([]);
+  public projectsSignal = signal<Project[]>([]);
   public readonly projectsList = this.projectsSignal.asReadonly();
 
   private todoService = inject(TodoService);

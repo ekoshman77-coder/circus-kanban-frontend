@@ -1,0 +1,433 @@
+/* ==========================================
+   🌐 1. GLOBALER HINTERGRUND & INTERFACE-STRUKTUR
+   ========================================== */
+:host {
+  display: block;
+  min-height: 100vh;
+  background-color: #9be9f047; /* Sanfter, augenfreundlicher Slate-Hintergrund */
+  padding: 30px;
+  font-family: 'Segoe UI', Roboto, sans-serif;
+}
+
+.page-header {
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #e2e8f0ec;
+}
+
+.page-header h1 {
+  font-size: 26px;
+  color: #0f172a; /* Edles Tiefblau/Dunkelgrau */
+  margin: 0 0 4px 0;
+}
+
+.page-header p {
+  color: #64748b;
+  margin: 0;
+  font-size: 14px;
+}
+
+.divider {
+  border: 0;
+  border-top: 1px solid #e2e8f0;
+  margin: 20px 0;
+}
+
+/* --- SEKTION 1: LIVE SUCHE --- */
+.search-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.search-section label {
+  font-size: 15px;
+  font-weight: 500;
+  color: #334155;
+  min-width: 160px;
+}
+
+.search-input {
+  width: 100%;
+  max-width: 350px;
+  height: 42px;
+  padding: 8px 14px;
+  font-size: 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+/* ==========================================
+    GRID LAYOUT (FORMULAR LINKS, GALERIE RECHTS)
+   ========================================== */
+.main-layout {
+  display: grid;
+  grid-template-columns: 340px 1fr; /* Formular fest, Galerie flexibel */
+  gap: 30px;
+  align-items: start;
+}
+
+@media (max-width: 950px) {
+  .main-layout {
+    grid-template-columns: 1fr; /* Untereinander auf kleinen Bildschirmen */
+  }
+}
+
+/* ==========================================
+   ✍️ 2. SEKTION FORMULAR (LINKS)
+   ========================================== */
+.form-section {
+  background: white;
+  border-radius: 14px;
+  padding: 22px;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03), 0 2px 4px -1px rgba(0,0,0,0.02);
+  border: 1px solid #e2e8f0;
+}
+
+.form-section h3 {
+  font-size: 16px;
+  color: #1e293b;
+  margin-top: 0;
+  margin-bottom: 18px;
+  font-weight: 600;
+}
+
+.user-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.input-group {
+  position: relative;
+  width: 100%;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 11px 12px 11px 40px; /* Platz für das Icon */
+  font-size: 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background-color: #f8fafc; /* Schicker, leicht grauer Input-Hintergrund */
+  box-sizing: border-box;
+  transition: all 0.2s;
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: #4f46e5;
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.input-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 15px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.username-group {
+  margin-bottom: 5px;
+}
+
+.error-msg {
+  color: #ef4444;
+  font-size: 11px;
+  display: block;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.btn-submit {
+  width: 100%;
+  padding: 11px;
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s;
+  box-shadow: 0 4px 6px rgba(79, 70, 229, 0.15);
+}
+
+.btn-submit:disabled {
+  background: #cbd5e1;
+  color: #94a3b8;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ==========================================
+   🗂️ 3. SEKTION GALERIE (RECHTS)
+   ========================================== */
+.gallery-section h3 {
+  font-size: 16px;
+  color: #1e293b;
+  margin-top: 0;
+  margin-bottom: 18px;
+  font-weight: 600;
+}
+
+.user-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.user-card {
+  background: white;
+  border-radius: 14px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  
+  /* 🌟 1. SCHATTEN IM RUHEZUSTAND:
+     Ein feiner, aber sichtbarer Schatten nach unten, der die Karte vom Aqua-Hintergrund abhebt. */
+  box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 
+              0 2px 4px -2px rgba(15, 23, 42, 0.04);
+  
+  /* ⏱️ WICHTIG FÜR DIE ANIMATION: 
+     0.3 Sekunden Dauer mit 'cubic-bezier' sorgt dafür, dass das "Abheben" extrem geschmeidig wirkt */
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), 
+              box-shadow 0.3s ease-in-out, 
+              border-color 0.3s ease;
+}
+
+  /* 🚀 2. SCHATTEN BEIM DRÜBERFAHREN (HOVER):
+   Wenn die Maus auf die Karte zeigt, fliegt sie 6 Pixel nach oben und der Schatten 
+   wird deutlich größer, weicher und dunkler – als ob die Karte der Maus entgegenkommt! */
+.user-card:hover {
+  transform: translateY(-6px); /* Karte fliegt ein Stückchen höher */
+  border-color: #cbd5e1;
+  
+  /* Ein satter, tieferer Schatten, der eine echte Lichtquelle von oben simuliert */
+  box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.12), 
+              0 8px 10px -6px rgba(15, 23, 42, 0.08);
+}
+
+.avatar {
+  width: 62px;
+  height: 62px;
+  color: #1e293b;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 18px;
+  margin-bottom: 14px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.user-info h4 {
+  margin: 0 0 3px 0;
+  font-size: 15px;
+  color: #0f172a;
+}
+
+.user-info p.username {
+  margin: 0;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.card-actions {
+  margin-top: auto;
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  padding-top: 15px;
+}
+
+.btn-edit, .btn-delete {
+  flex: 1;
+  padding: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  background: #f8fafc;
+  transition: all 0.2s;
+}
+
+.btn-edit { color: #334155; }
+.btn-edit:hover { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+
+.btn-delete { color: #dc2626; background: #fef2f2; border-color: #fee2e2; }
+.btn-delete:hover { background: #fee2e2; border-color: #fca5a5; }
+
+.no-data-card {
+  grid-column: 1 / -1;
+  background: #f1f5f9;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  padding: 30px;
+  text-align: center;
+  color: #64748b;
+}
+
+/* ==========================================
+   🪟 4. SEKTION POPUP (MODAL) & REAKTIONEN
+   ========================================== */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(15, 23, 42, 0.4); /* Slate-Dunkel abgedunkelt */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  backdrop-filter: blur(4px);
+}
+
+.modal-box {
+  background: white;
+  padding: 30px;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  animation: flyIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.modal-header {
+  margin-bottom: 20px;
+}
+
+.modal-header h2 {
+  margin: 0 0 4px 0;
+  font-size: 20px;
+  color: #0f172a;
+}
+
+.modal-header p {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.edit-avatar-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.modal-avatar {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1e293b;
+  font-weight: bold;
+  font-size: 20px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #4f46e5;
+}
+
+.readonly-input {
+  background-color: #f1f5f9;
+  color: #64748b;
+  cursor: not-allowed;
+  border-color: #e2e8f0 !important;
+}
+
+.hint {
+  color: #94a3b8;
+  display: block;
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 25px;
+}
+
+.btn-cancel, .btn-save {
+  flex: 1;
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s;
+}
+
+.btn-cancel { background: #f1f5f9; color: #475569; }
+.btn-cancel:hover { background: #e2e8f0; }
+
+.btn-save { background: #4f46e5; color: white; }
+.btn-save:hover { background: #4338ca; }
+.btn-save:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
+
+/* 🚨 SEKTION ALERTS */
+.alert-error-box {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.error-text { color: #991b1b; font-size: 12px; }
+.btn-close-error { background: none; border: none; color: #991b1b; font-size: 16px; cursor: pointer; padding: 0; }
+
+@keyframes flyIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}

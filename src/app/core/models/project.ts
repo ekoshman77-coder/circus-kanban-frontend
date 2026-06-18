@@ -1,6 +1,6 @@
 import { computed } from "@angular/core";
 import { Milestone } from "./milestone";
-import { User } from "./user";
+import { UserModel } from "./user-model";
 import { IProjectJSON } from "../repositories/dto/project-json";
 
 export interface IProjectInit {
@@ -11,7 +11,7 @@ export interface IProjectInit {
   content?: string;
   status?: 'Calculation' | 'Active' | 'Zip';
   milestones?: Milestone[]; // 👁️ Hier im Init bleibt es optional für bequemes Erstellen!
-  teamMembers?: User[];     // 👁️ Hier auch.
+  teamMembers?: UserModel[];     // 👁️ Hier auch.
 }
 
 export class Project implements IProjectJSON {
@@ -22,7 +22,7 @@ export class Project implements IProjectJSON {
   public content?: string;
   public status: 'Calculation' | 'Active' | 'Zip';
   public milestones: Milestone[];
-  public teamMembers: User[];
+  public teamMembers: UserModel[];
 
   constructor(init: IProjectInit) {
     this.id = init.id ? init.id : String(Date.now() + Math.floor(Math.random() * 1000));

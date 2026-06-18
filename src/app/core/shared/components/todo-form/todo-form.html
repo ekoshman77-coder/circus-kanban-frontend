@@ -1,52 +1,111 @@
 <div class="form-container">
-  <form [formGroup]="todoForm" (ngSubmit)="onSubmit()" class="modern-two-line-form">
 
-    <div class="form-row main-inputs-row">
-      <div class="field-group flex-milestone-trigger" style="flex: 0 0 auto;">
-        <app-milestone-selector-component 
-            [initialMilestoneId]="newMilestoneId()"
-            [isDisabled]="isEmbeddedInMilestone()"
-            (milestoneSelected)="onMilestoneSelected($any($event))">
-        </app-milestone-selector-component>
+  <!-- 🌟 =====================================================================
+       1️⃣ BREITES LAYOUT (Für das große Team-Board)
+       ===================================================================== -->
+  @if (layoutMode() === 'wide') {
+    <form [formGroup]="todoForm" (ngSubmit)="onSubmit()" class="modern-two-line-form">
+      
+      <!-- 🥇 REIHE 1 (Wide): Milestone + Task + Kategorie -->
+      <div class="form-row main-inputs-row">
+        <div class="field-group flex-milestone-trigger" style="flex: 0 0 auto;">
+          <app-milestone-selector-component 
+              [initialMilestoneId]="newMilestoneId()"
+              [isDisabled]="isEmbeddedInMilestone()"
+              (milestoneSelected)="onMilestoneSelected($any($event))">
+          </app-milestone-selector-component>
+        </div>
+
+        <div class="field-group flex-task" [ngClass]="{ 'has-error': taskControl?.invalid && taskControl?.touched }">
+          <input id="task" type="text" formControlName="task" placeholder="Was steht an? (z.B. Rechnungen sortieren...)" />
+        </div>
+
+        <div class="field-group flex-category">
+          <app-universal-tag-input-component [textToWatch]="todoForm.get('task')?.value || ''" [contextType]="'todo'"
+            [placeholder]="'Kategorie...'" [initialValue]="newTodoCategory()" (valueChanged)="onCategoryChanged($event)">
+          </app-universal-tag-input-component>
+        </div>
+      </div>
+      
+      <!-- 🥈 REIHE 2 (Wide): Beschreibung + Datum + Punkte + Button -->
+      <div class="form-row detail-inputs-row">
+        <div class="field-group flex-descr">
+          <input id="description" type="text" formControlName="description" placeholder="Optionale Details...">
+        </div>
+
+        <div class="field-group flex-date"
+          [ngClass]="{ 'has-error': (dueDateControl?.invalid && dueDateControl?.touched) || dueDateControl?.hasError('dateInPast') }">
+          <input #dateInput id="dueDate" type="date" formControlName="dueDate" (change)="onDateChange(dateInput)">
+        </div>
+
+        <div class="field-group flex-effort">
+          <select id="effort" formControlName="effort">
+            @for (num of fibonacciSequence; track num) {
+            <option [ngValue]="num">{{ num }} P</option>
+            }
+          </select>
+        </div>
+
+        <button type="submit" [disabled]="todoForm.invalid" class="submit-btn-inline">
+          ➕ Aufgabe erstellen
+        </button>
+      </div>
+    </form>
+  }
+
+  <!-- 📱 =====================================================================
+       2️⃣ KOMPAKTES LAYOUT (Für die Meilenstein-Kanban-Spalte)
+       ===================================================================== -->
+  @if (layoutMode() === 'compact') {
+    <form [formGroup]="todoForm" (ngSubmit)="onSubmit()" class="modern-two-line-form compact-layout">
+      
+      <!-- 🥇 WUNSCH-ZEILE 1: Milestone + Task -->
+      <div class="compact-row">
+        <div class="field-group compact-milestone">
+          <app-milestone-selector-component 
+              [initialMilestoneId]="newMilestoneId()"
+              [isDisabled]="isEmbeddedInMilestone()"
+              (milestoneSelected)="onMilestoneSelected($any($event))">
+          </app-milestone-selector-component>
+        </div>
+        <div class="field-group compact-task" [ngClass]="{ 'has-error': taskControl?.invalid && taskControl?.touched }">
+          <input type="text" formControlName="task" placeholder="Was steht an?..." />
+        </div>
       </div>
 
-      <div class="field-group flex-task" [ngClass]="{ 'has-error': taskControl?.invalid && taskControl?.touched }">
-        <input id="task" type="text" formControlName="task"
-          placeholder="Was steht an? (z.B. Rechnungen sortieren...)" />
+      <!-- 🥈 WUNSCH-ZEILE 2: Kategorie + Beschreibung -->
+      <div class="compact-row">
+        <div class="field-group compact-category">
+          <app-universal-tag-input-component [textToWatch]="todoForm.get('task')?.value || ''" [contextType]="'todo'"
+            [placeholder]="'Kategorie...'" [initialValue]="newTodoCategory()" (valueChanged)="onCategoryChanged($event)">
+          </app-universal-tag-input-component>
+        </div>
+        <div class="field-group compact-descr">
+          <input type="text" formControlName="description" placeholder="Optionale Details...">
+        </div>
       </div>
 
-      <div class="field-group flex-category">
-        <app-universal-tag-input-component [textToWatch]="todoForm.get('task')?.value || ''" [contextType]="'todo'"
-          [placeholder]="'Kategorie...'" [initialValue]="newTodoCategory()" (valueChanged)="onCategoryChanged($event)">
-        </app-universal-tag-input-component>
-      </div>
-    </div>
-
-    <div class="form-row detail-inputs-row">
-      <div class="field-group flex-descr">
-        <input id="description" type="text" formControlName="description" placeholder="Optionale Details...">
-      </div>
-
-      <div class="field-group flex-date"
-        [ngClass]="{ 'has-error': (dueDateControl?.invalid && dueDateControl?.touched) || dueDateControl?.hasError('dateInPast') }">
-        <input #dateInput id="dueDate" type="date" formControlName="dueDate" (change)="onDateChange(dateInput)">
-      </div>
-
-      <div class="field-group flex-effort">
-        <select id="effort" formControlName="effort">
-          @for (num of fibonacciSequence; track num) {
-          <option [ngValue]="num">{{ num }} P</option>
-          }
-        </select>
+      <!-- 🥉 WUNSCH-ZEILE 3: Datum + Punkte + Button -->
+      <div class="compact-row action-row">
+        <div class="field-group compact-date" [ngClass]="{ 'has-error': (dueDateControl?.invalid && dueDateControl?.touched) || dueDateControl?.hasError('dateInPast') }">
+          <input #dateInputCompact type="date" formControlName="dueDate" (change)="onDateChange(dateInputCompact)">
+        </div>
+        <div class="field-group compact-effort">
+          <select formControlName="effort">
+            @for (num of fibonacciSequence; track num) {
+            <option [ngValue]="num">{{ num }} P</option>
+            }
+          </select>
+        </div>
+        <button type="submit" [disabled]="todoForm.invalid" class="compact-submit-btn">
+          ➕ Erstellen
+        </button>
       </div>
 
-      <button type="submit" [disabled]="todoForm.invalid" class="submit-btn-inline">
-        ➕ Aufgabe erstellen
-      </button>
-    </div>
+    </form>
+  }
 
-  </form>
-
+  <!-- 🚨 Gemeinsamer Fehler-Container (Bleibt für beide gleich) -->
   <div class="error-container">
     <div *ngIf="taskControl?.invalid && taskControl?.touched" class="form-error-msg">
       ⚠️ Der Aufgabenname muss mindestens 3 Zeichen lang sein!

@@ -1,0 +1,21 @@
+<div class="mini-user-card" 
+     draggable="true" 
+     (dragstart)="onDragStart($event)">
+  
+  <div class="mini-avatar" [style.background-color]="user().getColorHash()">
+    {{ user().firstName[0]?.toUpperCase() }}{{ user().lastName[0]?.toUpperCase() }}
+  </div>
+  
+  <div class="mini-user-info">
+    <h5>{{ user().firstName }} {{ user().lastName }}</h5>
+    <p>&#64;{{ user().username }}</p>
+  </div>
+
+  <div class="mini-card-action">
+    @if (actionType() === 'add') {
+      <button (click)="onButtonClick()" class="btn-mini-add">➕</button>
+    } @else {
+      <button (click)="onButtonClick()" class="btn-mini-remove">❌</button>
+    }
+  </div>
+</div>

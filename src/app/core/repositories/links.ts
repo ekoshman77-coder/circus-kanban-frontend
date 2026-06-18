@@ -10,4 +10,5 @@
   export const aiPredictionApiUrl = `${baseUrl}/ai/predict`
   export const aiCategoriesApiUrl = `${baseUrl}/ai/categories`
   export const milestoneApiUrl = `${baseUrl}/milestones`
+  export const teamApiUrl = `${baseUrl}/teams`
   

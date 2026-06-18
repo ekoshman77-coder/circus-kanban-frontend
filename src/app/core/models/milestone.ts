@@ -1,6 +1,6 @@
 import { IMilestoneJSON, TodoTeamStatus } from "../repositories/dto/milestone-json";
 import { Todo } from "./todo";
-import { User } from "./user";
+import { UserModel } from "./user-model";
 
 export interface IMilestoneInit {
   id?: string; // 🆕 Optional für ganz neue Meilensteine
@@ -9,7 +9,7 @@ export interface IMilestoneInit {
   usedDuration?: number; // 🆕 Optional beim Erstellen (wird zu 0)
   status?: TodoTeamStatus; // 🆕 Optional (wird zu 'Offen')
   assignedUserId?: string | null;
-  assignedUser?: User | null; // Falls du das voll aufgelöste User-Objekt hast
+  assignedUser?: UserModel | null; // Falls du das voll aufgelöste User-Objekt hast
   projectId?: string | null;  // 📁 NEU: Die Verbindung zum Projekt für unser Backend!
 }
 
@@ -20,7 +20,7 @@ export class Milestone implements IMilestoneJSON {
   public usedDuration: number;
   public status: TodoTeamStatus;
   public assignedUserId?: string | null;
-  public assignedUser?: User | null;
+  public assignedUser?: UserModel | null;
   public projectId?: string | null; 
 
   private localIdPrefix: string = 'local-';

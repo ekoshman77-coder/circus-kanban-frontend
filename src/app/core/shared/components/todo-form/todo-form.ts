@@ -22,6 +22,14 @@ export class TodoFormComponent {
     }
   }
 
+  public layoutMode = signal<'wide' | 'compact'>('wide');
+
+  @Input() set layout(mode: 'wide' | 'compact') {
+    if (mode) {
+      this.layoutMode.set(mode);
+    }
+  }
+  
   private todoService = inject(TodoService);
 
   public fibonacciSequence: number[];

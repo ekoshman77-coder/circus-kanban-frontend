@@ -17,12 +17,18 @@ export class MilestoneSelectorComponent {
   
   public initialMilestoneId = input<string | null>(null);
   public initialProjectId = input<string | null>(null);
-  public canChooseProject = input<boolean>(false)
+  public canChooseProject = input<boolean>(false);
+  // Wenn true: Altes Verhalten (schneidet andere Projekte weg)
+  // Wenn false: Neues Verhalten (zeigt alles an, hebt es nur optisch hervor)
+  public filterByActiveProject = input<boolean>(true);
+  public appearance = input<'dropdown' | 'modal'>('dropdown');
+
   public milestoneSelected = output<string>();
   public projectSelected = output<string>();
   
   public isOpen = signal<boolean>(false);
   public searchQuery = signal<string>("");
+  public isClosing = signal<boolean>(false);
 
   //DER UNFEHLBARE SCHLIESSER: Fängt JEDEN Klick auf dem Bildschirm ab
   @HostListener('document:click', ['$event'])
@@ -58,10 +64,17 @@ export class MilestoneSelectorComponent {
      this.isOpen.update(value => !value )
   }
 
-  public closeDropdown(): void {
-    this.isOpen.set(false);
+public closeDropdown(): void {
+    // 1. Wir sagen dem CSS: Start-Schließanimation!
+    this.isClosing.set(true);
+    
+    // 2. Wir warten 200ms, bis die Animation fertig ist, und machen DANN erst ganz zu
+    setTimeout(() => {
+      this.isOpen.set(false);
+      this.isClosing.set(false); // Zurücksetzen für das nächste Mal
+    }, 200);
   }
-
+  
   public onInputBlur(): void {
   // ⏱️ Wir warten 150ms, damit ein eventueller Mausklick auf einen Meilenstein-Eintrag 
   // zuerst verarbeitet werden kann, bevor das Fenster zuschnappt!
@@ -71,36 +84,38 @@ export class MilestoneSelectorComponent {
 }
 
   // 🧮 Unser reaktiver Daten-Filter
-  public filteredProjectsWithMilestones = computed(() => {
-    // 1. Wir holen uns die aktuelle Projektliste aus dem Service
+public filteredProjectsWithMilestones = computed(() => {
     const allProjects = this.projectService.projectsList();
     const query = this.searchQuery().toLowerCase().trim();
+    const activeProjectId = this.initialProjectId();
 
-    // 2. Wir gehen durch jedes Projekt und filtern seine Meilensteine
-    return allProjects.map(project => {
-      // Wir wollen nur Meilensteine, die:
-      // - zum Suchbegriff passen (falls einer eingetippt wurde)
-      // - UND deren Status NICHT 'Erledigt' ist!
-      const matchingMilestones = project.milestones.filter(milestone => {
-        const matchesSearch = milestone.title.toLowerCase().includes(query);
-        const isNotDone = milestone.status !== 'Erledigt'; // 🏁 Nur offene!
-        
-        return matchesSearch && isNotDone;
-      });
+    return allProjects
+      .filter(project => {
+        // 🌟 Wenn der Filter-Modus AKTIV ist, schneiden wir andere Projekte weg
+        if (this.filterByActiveProject() && activeProjectId) {
+          return project.id === activeProjectId;
+        }
+        // Wenn der Filter-Modus DEAKTIVIERT ist, lassen wir alle Projekte durch!
+        return true;
+      })
+      .map(project => {
+        const matchingMilestones = project.milestones.filter(milestone => {
+          const matchesSearch = milestone.title.toLowerCase().includes(query);
+          const isNotDone = milestone.status !== 'Erledigt'; 
+          
+          return matchesSearch && isNotDone;
+        });
 
-      // Wir geben ein neues, temporäres Projekt-Objekt zurück, 
-      // das NUR noch die Meilensteine enthält, die unseren Filter überlebt haben!
-      return {
-        ...project,
-        milestones: matchingMilestones
-      };
-    }).filter(project => project.milestones.length > 0); 
-    // 🔥 Dieser letzte Filter sorgt dafür, dass Projekte ohne passende Meilensteine 
-    // gar nicht erst im Popup auftauchen. Das hält die UI super sauber!
+        return {
+          ...project,
+          milestones: matchingMilestones
+        };
+      })
+      .filter(project => project.milestones.length > 0);
   });
 
   // 🏁 Welcher Titel soll auf dem Button stehen?: select
-public currentMilestoneTitle = computed(() => {
+  public currentMilestoneTitle = computed(() => {
     // 1. Zuerst prüfen: Hat das Board uns eine Projekt-ID übergeben?
     const activeProjectId = this.initialProjectId();
     if (activeProjectId) {
@@ -133,6 +148,7 @@ public currentMilestoneTitle = computed(() => {
     this.projectSelected.emit(projectId)
     this.toggleDropdown()
   } 
+  
 }
 
 

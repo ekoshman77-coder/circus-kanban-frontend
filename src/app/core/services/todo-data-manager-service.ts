@@ -288,6 +288,7 @@ public updateTodo(updatedTodo: Todo, currentList: Todo[], userId: string): Obser
       catchError((err) => throwError(() => err))
     );
   }
+  
 
   /**
    * 🪣 ALLE TODOS LÖSCHEN (Komplettes Board leeren)
@@ -318,4 +319,6 @@ public updateTodo(updatedTodo: Todo, currentList: Todo[], userId: string): Obser
   private saveToLocalStorage(userId: string, todos: Todo[]): void {
     this.localStorageService.setItem(`todos_${userId}`, todos);
   }
+
+  
 }

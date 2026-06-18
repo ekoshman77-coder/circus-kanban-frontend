@@ -1,6 +1,22 @@
 /* ==========================================================================
    🏗️ COCKPIT: PROJEKT-ZENTRALE DYNAMIC STYLES
    ========================================================================== */
+:host {
+    display: block;
+    /* 👑 Oben flach (10px) für die perfekte Titel-Symmetrie zu den anderen Boards */
+    padding: 10px 20px 40px 20px; 
+    background: radial-gradient(circle at top left, #f3e8ff 0%, #e0f2fe 100%);
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    min-height: 85vh; /* Füllt den Bildschirm perfekt aus */
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+.projects-dashboard {
+    max-width: 1200px;
+    margin: 0 auto; /* 👑 KORREKTUR: Margin oben/unten auf 0, da das jetzt der :host übernimmt! */
+    padding: 0;      /* 👑 KORREKTUR: Padding auf 0, damit der Header links bündig sitzt */
+}
 
 .projects-dashboard {
     max-width: 1200px;
@@ -9,17 +25,44 @@
     font-family: system-ui, -apple-system, sans-serif;
 }
 
-.projects-dashboard h2 {
-    font-size: 26px;
-    color: #0f172a;
-    margin-bottom: 4px;
+/* ==========================================================================
+   👑 EDLE TITEL-ZONE (Zu 100% identisch zu allen anderen Boards!)
+   ========================================================================== */
+
+.board-header-premium {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 24px; /* Perfekter, einheitlicher Abstand zum Raster */
+    padding: 0;
+    position: relative;
+    z-index: 1000;
+}
+
+.header-title-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.main-title {
+    margin: 0;
+    font-size: 28px;
     font-weight: 800;
+    color: #0f172a; /* Das tiefe, edle Dunkelblau-Schwarz */
+    letter-spacing: -0.5px;
 }
 
 .subtitle {
-    color: #64748b;
-    font-size: 15px;
-    margin-bottom: 30px;
+    margin: 0;
+    font-size: 14px;
+    color: #475569; /* Elegantes Schiefergrau */
+    font-weight: 500;
+}
+
+.header-selector-wrapper {
+    display: flex;
+    align-items: center;
 }
 
 /* 🧊 DAS RASTER: Ordnet die Karten reaktiv nebeneinander an */

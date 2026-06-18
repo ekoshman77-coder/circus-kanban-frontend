@@ -4,16 +4,79 @@
 
 :host {
   display: block;
-  padding: 40px 20px;
-  background: radial-gradient(circle at top left, #f3e8ff 0%, #e0f2fe 100%); /* Sanfter Pastell-Hintergrund für die ganze Seite */
+  /* 👑 KORREKTUR: Oben flach gemacht für die perfekte Symmetrie zu den anderen Boards! */
+  padding: 20px 20px 40px 20px; 
+  background: radial-gradient(circle at top left, #f3e8ff 0%, #e0f2fe 100%);
   border-radius: 12px;
   border: 1px solid #e2e8f0;
-  min-height: 80vh; /* Sorgt dafür, dass der Hintergrund auch bei wenig Inhalt den Bildschirm füllt */
+  min-height: 85vh; /* Einheitliche Höhe */
+  font-family: system-ui, -apple-system, sans-serif;
 }
 
-/* Falls du im HTML einen Haupt-Container hast, wenn das Projekt AKTIV ist (z.B. .calculator-active-container) */
+/* Der Haupt-Container zentriert sich genau wie das Meilenstein-Board */
+.calculator-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+/* ==========================================================================
+   👑 EDLE TITEL-ZONE (Zu 100% identisch zu den anderen Boards!)
+   ========================================================================== */
+
+.board-header-premium {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 24px; 
+    padding: 0;
+    position: relative;
+    z-index: 1000;
+}
+
+.header-title-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.main-title {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.5px;
+}
+
+.subtitle {
+    margin: 0;
+    font-size: 14px;
+    color: #475569;
+    font-weight: 500;
+}
+
+/* 📊 Die neue, feine Sub-Leiste für das aktive Projekt */
+.active-project-subbar {
+  font-size: 15px;
+  color: #475569;
+  font-weight: 600;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.active-project-subbar span {
+  color: #2563eb;
+  background-color: #eff6ff;
+  padding: 4px 12px;
+  border-radius: 8px;
+  border: 1px solid #bfdbfe;
+  font-weight: 700;
+}
+
+/* Ab hier folgt dein restliches CSS (.calculator-active-container abändern / altes h2 löschen) */
 .calculator-active-container {
-  background: rgba(255, 255, 255, 0.9); /* Macht den Hintergrund der Tabelle weiß, aber leicht transparent */
+  background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(8px);
   padding: 30px;
   border-radius: 16px;
@@ -136,24 +199,6 @@
   border: 2px dashed #fef3c7;
   border-radius: 12px;
   color: #b45309;
-}
-
-h2 {
-  color: #1e293b;
-  margin-bottom: 25px;
-  font-size: 24px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-h2 span {
-  color: #2563eb;
-  background-color: #eff6ff;
-  padding: 4px 12px;
-  border-radius: 8px;
-  border: 1px solid #bfdbfe;
 }
 
 /* ==========================================================================
