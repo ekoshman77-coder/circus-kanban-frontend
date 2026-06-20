@@ -1,0 +1,78 @@
+<div class="team-cards-grid">
+  @for (member of members(); track member.id) {
+    <div class="hero-card" 
+         [class.is-editing]="editingUserId() === member.id"
+         [class.card-disabled]="isMemberGesperrt(member)">
+      
+      @if (editingUserId() !== member.id) {
+        <div class="card-header-row">
+          <span class="hero-emoji">{{ member.emoji }}</span>
+          <span class="hero-balance" [ngClass]="member.coffeeBalance >= 0 ? 'positive' : 'negative'">
+            {{ member.coffeeBalance | number:'1.2-2' }} €
+          </span>
+        </div>
+
+        <h3>
+          {{ member.fullName }}
+          @if (currentUserId() === member.id) {
+            <span class="me-badge">(Du)</span>
+          }
+        </h3>
+
+        <p class="hero-role">{{ member.role }}</p>
+
+        <div class="coffee-status">
+          <span>Konto-Status</span>
+          <strong [ngClass]="isMemberGesperrt(member) ? 'status-red' : 'status-green'">
+            {{ getMemberStatusText(member) }}
+          </strong>
+        </div>
+
+        <div class="card-actions">
+          <button 
+            class="coffee-pay-btn btn-drink" 
+            [disabled]="isMemberGesperrt(member)"
+            (click)="onDrinkCoffee(member)">
+            ☕ Kaffee
+          </button>
+          
+          <button class="coffee-pay-btn btn-deposit" (click)="onAddMoney(member)">💵 +5€</button>
+          <button class="btn-edit" (click)="startEditing(member)" title="Profil bearbeiten">✏️</button>
+        </div>
+      }
+
+      @else {
+        <div class="edit-form">
+          <h4>Profil anpassen</h4>
+          
+          <label>Wähle dein Emoji:</label>
+          <div class="emoji-selector-grid">
+            @for (emo of EMOJI_POOL; track emo) {
+              <button 
+                type="button" 
+                class="emoji-option-btn"
+                [class.selected]="tempEmoji === emo"
+                (click)="tempEmoji = emo">
+                {{ emo }}
+              </button>
+            }
+          </div>
+
+          <label for="roleSelect">Deine Rolle im Team:</label>
+          <select id="roleSelect" [(ngModel)]="tempRole" class="role-dropdown">
+            <option value="Teammitglied">-- Wähle eine epische Rolle --</option>
+            @for (role of ROLES_POOL; track role) {
+              <option [value]="role">{{ role }}</option>
+            }
+          </select>
+
+          <div class="edit-actions">
+            <button class="btn-save" (click)="saveProfile(member)">Speichern</button>
+            <button class="btn-cancel" (click)="cancelEditing()">Abbrechen</button>
+          </div>
+        </div>
+      }
+
+    </div>
+  }
+</div>

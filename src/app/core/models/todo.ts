@@ -25,50 +25,50 @@ export class Todo {
   usedEffort: number;
   createdAt: number;
   userId: string;
-  syncState: TodoSyncState; 
+  syncState: 'fine' | 'dirty' | 'new'; // Direkt als Typ statt extra Interface!
   category: string | null;
   effortChangesCount: number | null;
   milestoneId: string | null;
   assignedUserId?: string | null;
   isStarted?: boolean;
 
-constructor(init: {
-    task: string, 
-    description: string | null, 
-    effort: number, 
-    dueDate: number,
-    userId: string,
-    usedEffort?: number,
-    createdAt?: number,
-    id?: string, // <-- Das "?" macht die ID optional!
-    syncState?: TodoSyncState,
-    done?: boolean,
-    completedAt?: number | null,
-    category?: string | null,
-    effortChangesCount?: number | null,
-    milestoneId?: string | null,
-    assignedUserId?: string | null,
-    isStarted: boolean
+  // 💡 DEIN NEUER ANSATZ: Nur das absolut Wichtigste (task) ist Pflicht. Alles andere optional (?)!
+  constructor(init: {
+    task: string;
+    id?: string;
+    description?: string | null;
+    done?: boolean;
+    dueDate?: number;
+    completedAt?: number | null;
+    effort?: number;
+    usedEffort?: number;
+    userId?: string;
+    syncState?: 'fine' | 'dirty' | 'new';
+    createdAt?: number;
+    category?: string | null;
+    effortChangesCount?: number | null;
+    milestoneId?: string | null;
+    assignedUserId?: string | null;
+    isStarted?: boolean;
   }) {
+    // 🛡️ Wenn ein Wert im 'init' fehlt, greift automatisch das '??' mit dem Standardwert!
     this.task = init.task;
-    this.description = init.description;
-    this.done = init.done?? false;
-    this.dueDate = init.dueDate;
-    this.completedAt = init.completedAt?? null;
-    this.effort = init.effort;
-    this.usedEffort = init.usedEffort?? 0;
-    this.userId = init.userId;
-    this.createdAt = init.createdAt?? Date.now()
-    this.syncState = init.syncState?? 'new'
-    // Wenn eine ID mitgegeben wurde (aus der DB), nimm diese. Sonst generiere eine.
-    this.id = init.id ? init.id : String(Date.now() + Math.floor(Math.random() * 1000));
-    this.category = init.category?? "";
-    this.effortChangesCount = init.effortChangesCount?? null;
-    this.milestoneId = init.milestoneId?? null;
-    this.assignedUserId = init.assignedUserId
-    this.isStarted = init.isStarted
+    this.id = init.id ?? 'local-' + String(Date.now() + Math.floor(Math.random() * 1000));
+    this.description = init.description ?? null;
+    this.done = init.done ?? false;
+    this.dueDate = init.dueDate ?? Date.now();
+    this.completedAt = init.completedAt ?? null;
+    this.effort = init.effort ?? 1; // Standardmäßig 1 Aufwandspunkt
+    this.usedEffort = init.usedEffort ?? 0;
+    this.createdAt = Date.now();
+    this.userId = init.userId ?? 'local-user'; // Phantastisch für Tests!
+    this.syncState = init.syncState ?? 'new';
+    this.category = init.category ?? null;
+    this.effortChangesCount = init.effortChangesCount ?? 0;
+    this.milestoneId = init.milestoneId ?? null;
+    this.assignedUserId = init.assignedUserId ?? null;
+    this.isStarted = init.isStarted ?? false;
   }
-
   public toJson(): ITodoJSON {
      return {
       id: this.id?? null,
@@ -168,7 +168,7 @@ constructor(init: {
    * 👥 Gibt an, ob die Aufgabe bereits einem Teammitglied zugewiesen wurde
    */
   public get isAssigned(): boolean {
-    return this.assignedUserId !== null && this.assignedUserId !== undefined && this.assignedUserId.trim() !== '';
+    return this.assignedUserId !== null && this.assignedUserId !== undefined && this.assignedUserId .trim() !== '';
   }
 
   /**

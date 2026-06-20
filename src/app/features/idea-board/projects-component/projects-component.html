@@ -44,18 +44,19 @@
 
             <!-- 🛞 CARD FOOTER -->
             <div class="project-card-footer">
-                <button (click)="openMilestones(project)" class="btn-footer btn-milestones"
-                    title="Meilensteine & Aufgaben verwalten">
-                    🎯 Phasen verwalten
+                <button (click)="openInCalculator(project)" class="btn-footer btn-recalc"
+                    title="Projekt im Kalkulator überarbeiten">
+                    🔄 Phasen anpassen
                 </button>
                 <button (click)="openTeamBoard(project)" class="btn-footer btn-kanban-direct"
                     title="Direkt zum Aufgaben-Board springen">
                     🎪 Team-Board
                 </button>
-                <button (click)="openInCalculator(project)" class="btn-footer btn-recalc"
-                    title="Projekt im Kalkulator überarbeiten">
-                    🔄 Phasen anpassen
+                <button (click)="openMilestones(project)" class="btn-footer btn-milestones"
+                    title="Meilensteine & Aufgaben verwalten">
+                    🎯 Phasen verwalten
                 </button>
+
                 <button (click)="triggerDeletePopup(project)" class="btn-footer btn-delete" title="Projekt entfernen">
                     🗑️
                 </button>

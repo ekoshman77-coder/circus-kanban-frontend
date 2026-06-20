@@ -16,7 +16,7 @@ export class TeamRepository {
    * Hole alle Teammitglieder, die dem Projekt mit der 'projectId' zugewiesen sind.
    * Die URL auf dem Kotlin-Server lautet: `${teamApiUrl}/${projectId}/members`
    */
-public getMembersForProject$(projectId?: string | null): Observable<UserModel[]> {
+  public getMembersForProject$(projectId?: string | null): Observable<UserModel[]> {
     console.log('📡 [TeamRepo] GET getMembersForProject$ aufgerufen für Projekt:', projectId);
     let params = new HttpParams();
 
@@ -33,17 +33,17 @@ public getMembersForProject$(projectId?: string | null): Observable<UserModel[]>
   /**
   * ➕ Weist einen bestehenden User einem bestimmten Projekt zu
   */
-/**
-  * ➕ POST: Weist einen bestehenden User einem bestimmten Projekt zu
-  * Schießt jetzt sauber auf die Basis-Route des Controllers!
-  */
-/**
-  * ➕ POST: Weist einen bestehenden User einem bestimmten Projekt zu
-  * Schießt jetzt sauber auf die Basis-Route des Controllers!
-  */
+  /**
+    * ➕ POST: Weist einen bestehenden User einem bestimmten Projekt zu
+    * Schießt jetzt sauber auf die Basis-Route des Controllers!
+    */
+  /**
+    * ➕ POST: Weist einen bestehenden User einem bestimmten Projekt zu
+    * Schießt jetzt sauber auf die Basis-Route des Controllers!
+    */
   public assignUserToProject$(projectId: string, member: UserModel): Observable<UserModel> {
     console.log('📡 [TeamRepo] POST assignUserToProject$ abgefeuert:', { projectId, memberId: member.id });
-    
+
     // Wir packen die projectId als Query-Parameter an die Basis-URL (?projectId=...)
     const params = new HttpParams().set('projectId', projectId);
 
@@ -56,21 +56,21 @@ public getMembersForProject$(projectId?: string | null): Observable<UserModel[]>
       tap(model => console.log('🎯 [TeamRepo] POST erfolgreich verarbeitet:', model))
     );
   }
-  
+
   /**
    * 🗑️ DELETE: User aus dem Projekt entfernen
    * Schießt auf: http://localhost:8080/api/teams/{memberId}?projectId={projectId}
    */
   public deleteFromProject$(projectId: string, memberId: string): Observable<void> {
     console.log('📡 [TeamRepo] DELETE deleteFromProject$ abgefeuert:', { projectId, memberId });
-    
+
     const params = new HttpParams().set('projectId', projectId);
 
     return this.http.delete<void>(`${teamApiUrl}/${memberId}`, { params }).pipe(
       tap(() => console.log(`📥 [TeamRepo] DELETE erfolgreich vom Server bestätigt!`))
     );
   }
-      
+
   /**
    * 🪣 AUFGABE 4: BULK-SYNC POST-Request (Offline-Änderungen abgleichen)
    * URL: `${teamApiUrl}/${projectId}/members/bulk-sync`
@@ -92,6 +92,17 @@ public getMembersForProject$(projectId?: string | null): Observable<UserModel[]>
   public getAllGlobalUsers$(): Observable<UserModel[]> {
     return this.http.get<IUserJSON[]>(`${userApiUrl}`).pipe(
       map(jsonArray => jsonArray.map(user => UserModel.fromJson(user)))
+    );
+  }
+
+  public updateCoffeeAccount$(userId: string, balance: number, role: string, emoji: string): Observable<UserModel> {
+    const params = new HttpParams()
+      .set('balance', balance.toString())
+      .set('role', role)
+      .set('emoji', emoji);
+
+    return this.http.put<IUserJSON>(`${teamApiUrl}/${userId}/coffee-account`, null, { params }).pipe(
+      map(json => UserModel.fromJson(json))
     );
   }
 }

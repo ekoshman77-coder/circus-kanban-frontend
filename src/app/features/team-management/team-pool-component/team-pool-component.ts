@@ -54,49 +54,19 @@ export class TeamPoolComponent {
     return this.allUsersServerSignal().some(user => user.username.toLowerCase() === typedUsername);
   });
 
-  public filteredUsers = toSignal(
-    toObservable(this.searchInput).pipe(
-      debounceTime(300),
-      distinctUntilChanged(),
-      switchMap(input => {
-        const users = this.allUsersServerSignal()
-        if (!input) {
-          return of(users)
-        }
-        const inputLower = input.toLowerCase()
-        const filtered = this.allUsersServerSignal().filter((user) => {
-          const userModel = user as UserModel
-          if (
-            userModel.firstName.toLowerCase().includes(inputLower) ||
-            userModel.lastName.toLowerCase().includes(inputLower) ||
-            userModel.username.toLowerCase().includes(inputLower)
-          ) {
-            return true
-          }
-          if (userModel.getInitials().toLowerCase().includes(inputLower)) {
-            return true
-          }
-          return false
-        });
-        return of(filtered)
-      }),
+public filteredUsers = computed(() => {
+    const users = this.allUsersServerSignal();
+    const search = this.searchInput().toLowerCase().trim();
 
+    if (!search) return users;
 
-      map(users => {
-        return users.map(user => {
-          const UserUpper = new UserModel({
-            firstName: user.firstName.toUpperCase(),
-            lastName: user.lastName.toUpperCase(),
-            username: user.username,
-            id: user.id,
-            projectIds: user.projectIds
-          })
-          return UserUpper
-        })
-      })
-    ), { initialValue: [] }
-  )
-
+    return users.filter(u => 
+      u.firstName.toLowerCase().includes(search) ||
+      u.lastName.toLowerCase().includes(search) ||
+      u.username.toLowerCase().includes(search)
+    );
+  });
+  
   constructor() {
     this.registerClicks$.pipe(
       throttleTime(2000)

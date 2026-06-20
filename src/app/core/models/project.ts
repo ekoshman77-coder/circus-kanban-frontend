@@ -39,10 +39,11 @@ export class Project implements IProjectJSON {
 
   // 🧮 Geplante Zeit (Soll)
   public getTotalDuration(): number {
-    return this.milestones.reduce((sum, m) => sum + m.duration, 0);
+    return this.milestones.reduce((sum: number, m: Milestone) => sum + Number(m.duration), 0);
   }
 
-  // 🧮 Tatsächlich verbrauchte Zeit (Ist)
+  // 📐 Berechnet reaktiv die Gesamtdauer aller Meilensteine.
+  // WICHTIG: Number() fängt HTML-String-Konvertierungen ab, damit nicht "1" + "2" = "12" passiert!
   public getTotalUsedDuration(): number {
     return this.milestones.reduce((sum, m) => sum + m.usedDuration, 0);
   }

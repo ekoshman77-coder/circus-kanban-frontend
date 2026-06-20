@@ -17,6 +17,12 @@
       [class.active]="activeTab() === 'assignment'">
       💼 Projekte zuweisen
     </button>
+
+    <button 
+      (click)="setTab('Kaffeekasse')" 
+      [class.active]="activeTab() === 'Kaffeekasse'">
+      ☕ Team Kaffeekasse
+    </button>
   </div>
 
   <div class="tab-content">
@@ -24,6 +30,8 @@
       <app-team-pool></app-team-pool>
     } @else if (activeTab() === 'assignment') {
       <app-team-assignment></app-team-assignment>
+    } @else if (activeTab() === 'Kaffeekasse') {
+      <app-coffee-kasse></app-coffee-kasse>
     }
   </div>
 </div>

@@ -45,6 +45,10 @@ export class TeamService {
         this.dataManager.createMember(member, onError)
     }
 
+    public updateCoffeeAccount(userId: string, newBalance: number, role: string, emoji: string): void {
+        this.dataManager.updateCoffeeAcount(userId, newBalance, role, emoji);
+    }
+
     /** 💡 NEU: Splittet die Logik sauber auf! */
     public removeMemberFromProject(projectId: string | null, id: string): void {
         if (projectId) {

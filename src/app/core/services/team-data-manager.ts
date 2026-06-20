@@ -26,7 +26,7 @@ export class TeamDataManager {
 
   constructor() {
     /**
-     * 👁️ DER USER-WACHHUND:
+     * DER USER-WACHHUND:
      * Sobald sich ein User registriert oder einloggt, springt das Signal an.
      * Wir leeren den lokalen State, damit alle Daten im Flug neu geladen werden!
      */
@@ -172,9 +172,11 @@ export class TeamDataManager {
       }
       return
     }
+    console.log(`🚀 [TeamDataManager] Sende Registrierung für ${member.username} ans Backend...`);
 
     this.userRepository.register(member.username, member.firstName, member.lastName).subscribe({
       next: (user: IUser) => {
+        console.log(`📬 [TeamDataManager] Backend-Antwort erhalten! User-ID: ${user.id}`);    
         const member = new UserModel({
           id: user.id,
           username: user.username,
@@ -189,6 +191,8 @@ export class TeamDataManager {
         this.projectTeamsSubject.next(currentMap)
 
         localStorage.setItem(`${this.teamCacheKey}${this.globalKey}`, JSON.stringify(updatedList));
+        console.log(`✨ [TeamDataManager] ${user.username} lokal hinzugefügt. Starte jetzt finalen Server-Hintergrund-Sync...`);
+        this.syncWithServer(null);
       },
       error: (err: string) => {
         console.log("error bei registrieren neuen user", err)
@@ -200,6 +204,45 @@ export class TeamDataManager {
 
   }
 
+  /**
+   * REAKTIVER UPDATE-MANAGER: Aktualisiert das Kaffeeguthaben eines Benutzers lokal
+   * im Cache sowie auf dem Server, und triggert die reaktive UI-Kette.
+   */
+  public updateCoffeeAcount(userId: string, newBalance: number, role: string, emoji:string): void {
+    const currentMap = new Map(this.projectTeamsSubject.value);
+    
+    // Da die Kaffeekasse auf der 'global'-Liste operiert (this.globalKey)
+    const key = this.globalKey; 
+    const currentList = currentMap.get(key) || [];
+
+    // 1. Lokales Optimistic Update im Cache durchführen
+    const updatedList = currentList.map(member => {
+      if (member.id === userId) {
+        // Wir erzeugen eine neue Instanz des UserModels mit dem aktualisierten Wert
+        return new UserModel({ ...member, coffeeBalance: newBalance });
+      }
+      return member;
+    });
+
+    // In den Subject-Tresor schieben & LocalStorage aktualisieren
+    currentMap.set(key, updatedList);
+    this.projectTeamsSubject.next(currentMap);
+    localStorage.setItem(`${this.teamCacheKey}${key}`, JSON.stringify(updatedList));
+    console.log(`💾 [TeamDataManager] Kaffeestand lokal für User ${userId} auf ${newBalance} € gesetzt.`);
+
+    // 2. SERVER-UPDATE: Nur wenn wir online sind, synchronisieren wir es mit der DB
+    if (this.connectionService.isOnline()) {
+      this.teamRepository.updateCoffeeAccount$(userId, newBalance, role, emoji).subscribe({
+        next: (serverUser) => {
+          console.log(`✅ [TeamDataManager] Server hat Kaffeekasse für ${serverUser.username} erfolgreich bestätigt.`);
+          // Bei Bedarf können wir hier einen stillen Hintergrund-Sync machen, 
+          // um sicherzustellen, dass alles synchron ist.
+          this.syncWithServer(null); 
+        },
+        error: (err) => console.error('❌ [TeamDataManager] Fehler beim Server-Kaffeekassen-Update:', err)
+      });
+    }
+  }
 
   /**
    * 📦 Hilfsmethode: Liest den Offline-Cache sicher aus dem LocalStorage aus

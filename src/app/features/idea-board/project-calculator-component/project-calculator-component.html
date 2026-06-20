@@ -33,21 +33,47 @@
 
                 <tbody>
                     @for (task of (localProjectDraft()?.milestones ?? []); track task.id) {
-                    <tr>
-                        <td><strong>{{ task.title }}</strong></td>
-                        <td><span class="tag-badge">{{ localProjectDraft()?.area || 'Allgemein' }}</span></td>
-                        <td>{{ task.duration }} Tage</td>
-                        <td>
-                            <button (click)="deleteTask(task.id)" class="delete-task-btn"
-                                title="Aufgabe löschen">🗑️</button>
-                        </td>
-                    </tr>
+                        @if (editingMilestoneId === task.id) {
+                            <tr class="edit-row-pastel">
+                                <td>
+                                    <input type="text" [(ngModel)]="editTitle" class="calc-input table-edit-input" />
+                                </td>
+                                <td>
+                                    <span class="tag-badge">{{ localProjectDraft()?.area }}</span>
+                                </td>
+                                <td>
+                                    <select [(ngModel)]="editTime" class="calc-dropdown table-edit-dropdown">
+                                        @for (day of availableDays; track day) {
+                                            <option [value]="day">{{ day }} {{ day === 1 ? 'Tag' : 'Tage' }}</option>
+                                        }
+                                    </select>
+                                </td>
+                                <td>
+                                    <div class="action-btns-group">
+                                        <button class="calc-action-btn save" (click)="saveEditMilestone(task.id)" title="Speichern">💾</button>
+                                        <button class="calc-action-btn cancel" (click)="cancelEditMilestone()" title="Abbrechen">❌</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        } @else {
+                            <tr>
+                                <td><strong>{{ task.title }}</strong></td>
+                                <td><span class="tag-badge">{{ localProjectDraft()?.area }}</span></td>
+                                <td><span class="days-counter">{{ task.duration }} {{ task.duration === 1 ? 'Tag' : 'Tage' }}</span></td>
+                                <td>
+                                    <div class="action-btns-group">
+                                        <button class="calc-action-btn edit" (click)="startEditMilestone(task)" title="Bearbeiten">✏️</button>
+                                        <button class="calc-delete-btn-pastel" (click)="deleteTask(task.id)" title="Löschen">🗑️</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
                     } @empty {
-                    <tr>
-                        <td colspan="4" style="text-align: center; color: #94a3b8; padding: 30px;">
-                            Noch keine Meilensteine eingetragen. Tippe unten eine Aufgabe ein! 🚀
-                        </td>
-                    </tr>
+                        <tr>
+                            <td colspan="4" class="empty-table-state">
+                                Noch keine Meilenstein-Aufgaben für diese Phase definiert.
+                            </td>
+                        </tr>
                     }
                 </tbody>
                 <tfoot>

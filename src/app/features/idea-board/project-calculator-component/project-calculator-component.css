@@ -314,6 +314,9 @@
 /* ==========================================================================
    ✍️ 4. FORMULAR ELEMENTE
    ========================================================================== */
+/* ==========================================================================
+   ✍️ 4. FORMULAR ELEMENTE (Symmetrie-Korrektur für Textfeld & Dropdown)
+   ========================================================================== */
 .calc-form-group {
   display: flex;
   gap: 20px;
@@ -339,16 +342,23 @@
   letter-spacing: 0.05em;
 }
 
-.calc-input {
+/* 🟢 HIER WIRKT DIE SYMMETRIE: Beide Felder bekommen exakt denselben Style & dieselbe Höhe! */
+.calc-input,
+.calc-dropdown {
   padding: 12px 16px;
   border: 2px solid #e2e8f0;
   border-radius: 8px;
   font-size: 14px;
   color: #0f172a;
+  background-color: #ffffff; /* Sorgt für ein sauberes Weiß beim Dropdown */
+  height: 48px;              /* Erzwingt eine absolut identische, perfekte Höhe! */
+  box-sizing: border-box;    /* Verhindert, dass Padding die Boxen unterschiedlich groß macht */
   transition: all 0.2s ease;
 }
 
-.calc-input:focus {
+/* Schicker Focus-Effekt für beide Elemente */
+.calc-input:focus,
+.calc-dropdown:focus {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
@@ -628,4 +638,40 @@
   border: 2px dashed #fef3c7;
   border-radius: 12px;
   color: #b45309;
+}
+
+/* ✏️ Inline-Editing Tabellen-Styles */
+.edit-row-pastel {
+  background-color: #fef08a !important; /* Ganz zartes Gelb, um zu zeigen, dass editiert wird */
+}
+
+.table-edit-input {
+  width: 100%;
+  height: 36px !important; /* Etwas kompakter für die Tabelle */
+  padding: 6px 12px !important;
+}
+
+.table-edit-dropdown {
+  width: 100%;
+  height: 36px !important;
+  padding: 6px 12px !important;
+}
+
+.action-btns-group {
+  display: flex;
+  gap: 8px;
+}
+
+.calc-action-btn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.calc-action-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
 }

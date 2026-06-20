@@ -6,7 +6,10 @@ export interface IUserInit {
   username: string;
   firstName: string;
   lastName: string;
-  projectIds: string[]
+  projectIds: string[],
+  coffeeBalance?: number,
+  role?: string,
+  emoji?: string
 }
 
 export class UserModel {
@@ -14,8 +17,10 @@ export class UserModel {
   firstName: string;
   lastName: string;
   username: string;
-
+  coffeeBalance: number;
   projectIds: string[];
+  role: string;
+  emoji: string;
 
   constructor(data: IUserInit) {
     this.id = data.id || generateLocalId();
@@ -23,8 +28,12 @@ export class UserModel {
     this.lastName = data.lastName || '';
     this.username = data.username || '';
     this.projectIds = data.projectIds || [];
+    this.coffeeBalance = data.coffeeBalance?? 0;
+    this.role = data.role?? "teammember"
+    this.emoji = data.emoji?? "🦊"
   }
 
+  
   get fullName(): string {
     return `${this.firstName} ${this.lastName}`.trim();
   }
@@ -67,25 +76,33 @@ export class UserModel {
     return `hsl(${h}, ${s}%, ${l}%)`;
   }
 
-  static fromJson(json: IUserJSON): UserModel {
+public static fromJson(json: any): UserModel {
     return new UserModel({
+      id: json.id,
       firstName: json.firstName,
       lastName: json.lastName,
       username: json.username,
-      id: json.id,
-      projectIds: json.projectIds || []
-    })
+      // 🟢 HIER IST DIE MAGIE: Exakt matchen mit dem Namen aus deinem Kotlin UserResponseDTO!
+      coffeeBalance: json.coffeeBalance !== undefined ? json.coffeeBalance : 0,
+      projectIds: json.projectIds || [],
+      // Falls das Backend diese Felder irgendwann mitschickt, liest er sie aus, sonst greift der Konstruktor-Fallback
+      emoji: json.emoji?? "🦊",
+      role: json.role?? "Teammember"
+    });
   }
 
-  public toJson(): IUserJSON {
-
+public toJson(): any {
     return {
-      id: isLocalId(this.id) ? "" : this.id,
+      id: this.id,
       firstName: this.firstName,
       lastName: this.lastName,
       username: this.username,
-      projectIds: this.projectIds || []
-    }
-
+      // 🟢 HIER ERGÄNZEN: Damit der Server die Balance beim Senden auch versteht
+      coffeeBalance: this.coffeeBalance,
+      projectIds: this.projectIds,
+      // Falls die Rolle und das Emoji auch wieder zurückgespeichert werden sollen:
+      emoji: this.emoji,
+      role: this.role
+    };
   }
 }

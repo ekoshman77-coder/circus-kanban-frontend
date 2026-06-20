@@ -79,10 +79,20 @@
 
 /* 🎯 Wir wenden die Animation auf den Inhalt des aktiven Tabs an */
 .tab-content {
-  background: #ffffff;
+  background: transparent;
   border-radius: 8px;
   padding-top: 15px; 
 
   /* Hier zündet die Animation jedes Mal, wenn Angular die Komponente neu ins @if rendert! */
   animation: fadeInFly 0.25s ease-out forwards;
+}
+
+:host {
+  display: block;
+  padding: 10px 20px 40px 20px;
+  box-sizing: border-box; /* 👈 DER RETTER: Zwingt den Abstand, sich nach innen zu setzen! */
+  width: 100%;
+  background: radial-gradient(circle at top left, hwb(189 42% 9% / 0.368) 0%, #e0feee65 100%); 
+  border-radius: 12px;
+  border: 3px solid hsl(150, 100%, 50%); /* Zeigt uns exakt, wo die Box aufhört! */
 }

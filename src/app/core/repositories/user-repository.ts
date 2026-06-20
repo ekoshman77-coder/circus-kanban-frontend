@@ -58,20 +58,20 @@ export class UserRepository {
   }
 
   /**
-   * 📤 NEU: Aktualisiert die Profildaten eines Benutzers auf dem Server
-   * URL: z.B. `/api/users/user_123`
+   * Aktualisiert die Profildaten eines Benutzers auf dem Server
+   * URL: z.B. `/api/users/profile/user_123`
    */
   public updateProfile$(userId: string, username: string, firstName: string, lastName: string): Observable<IUser> {
     console.log('📡 [UserRepo] PUT updateProfile$ abgefeuert für:', { userId, username, firstName, lastName });
     const body = { username, firstName, lastName };
 
-    return this.http.put<IUser>(`${userApiUrl}/${userId}`, body).pipe(
+  return this.http.put<IUser>(`${userApiUrl}/profile/${userId}`, body).pipe(
       tap(response => console.log('📥 [UserRepo] PUT Antwort vom Server:', response))
     );
   }
 
   /**
-   * 💀 NEU: Löscht einen Benutzer komplett global aus der Datenbank
+   * Löscht einen Benutzer komplett global aus der Datenbank
    * URL: z.B. `/api/users/user_123`
    */
 public deleteGlobalUser$(userId: string): Observable<void> {
