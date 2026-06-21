@@ -11,4 +11,5 @@ export interface IMilestoneJSON {
   assignedUserId?: string | null;
   assignedUser?: UserModel | null; // Falls du das voll aufgelöste User-Objekt hast
   projectId?: string | null;     // 📁 NEU: Die Verbindung zum Projekt für unser Backend!
+  orderIndex?: number;
 }

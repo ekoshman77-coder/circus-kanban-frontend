@@ -1,6 +1,6 @@
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { catchError, map, tap } from 'rxjs/operators';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { Project } from '../models/project';
 import { ProjectDataManagerService } from './project-data-mananger-service';
 import { UserService } from './user/user-service';
@@ -9,6 +9,7 @@ import { TodoTeamStatus } from '../repositories/dto/milestone-json';
 import { TodoViewModel } from '../viewmodel/todo-view-model';
 import { TodoService } from './todo/todo-service';
 import { Todo } from '../models/todo';
+import { NoteService } from './note-service';
 
 @Injectable({
   providedIn: 'root'
@@ -16,19 +17,45 @@ import { Todo } from '../models/todo';
 export class ProjectService {
   private dataManager = inject(ProjectDataManagerService);
   private userService = inject(UserService);
+  private noteService = inject(NoteService)
 
-  public projectsSignal = signal<Project[]>([]);
-  public readonly projectsList = this.projectsSignal.asReadonly();
+  // Das reaktive Speicherbecken für unseren unfertigen Entwurf
+  private temporaryDraftSignal = signal<Project | null>(null);
+  public readonly temporaryDraft = this.temporaryDraftSignal.asReadonly();
+
+  private readonly STORAGE_KEY = 'pending_project_calculation';
+
+  private _projectsSignal = signal<Project[]>([]);
+
+  // 🕶️ 2. Die öffentliche Lese-Brille sortiert die Meilensteine vollautomatisch!
+  public readonly projectsList = computed(() => {
+    const rawProjects = this._projectsSignal();
+
+    return rawProjects.map(project => {
+      if (project.milestones && project.milestones.length > 0) {
+        // 🔄 Wir sortieren die Meilensteine direkt im Flug nach orderIndex!
+        project.milestones.sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0));
+      }
+      return project;
+    });
+  });
 
   private todoService = inject(TodoService);
 
-// Das reaktive Fokus-Signal
-private activeMilestoneIdSignal = signal<string | null>(null);
-public readonly activeMilestoneId = this.activeMilestoneIdSignal.asReadonly();
+  // Das reaktive Fokus-Signal
+  private activeMilestoneIdSignal = signal<string | null>(null);
+  public readonly activeMilestoneId = this.activeMilestoneIdSignal.asReadonly();
 
-public setActiveMilestoneId(id: string | null) {
-  this.activeMilestoneIdSignal.set(id);
-}
+  public setActiveMilestoneId(id: string | null) {
+    this.activeMilestoneIdSignal.set(id);
+  }
+
+  /**
+   * Die offizielle Schnittstelle, um den Entwurf sicher zu aktualisieren
+   */
+  public updateTemporaryDraft(project: Project | null): void {
+    this.temporaryDraftSignal.set(project);
+  }
 
   private get currentUserId(): string {
     const user = this.userService.currentUser();
@@ -37,14 +64,95 @@ public setActiveMilestoneId(id: string | null) {
   }
 
   constructor() {
+    // 🔄 DER AUTOMATISCHE WÄCHTER: Sichert jede Änderung im Entwurf sofort im LocalStorage
+    effect(() => {
+      const currentDraft = this.temporaryDraftSignal();
+      // Wir sichern nur im LocalStorage, wenn es ein NEUER Entwurf ohne Datenbank-ID ist!
+      if (currentDraft) {
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(currentDraft));
+      }
+    });
+
     effect(() => {
       const user = this.userService.currentUser();
       if (user) {
         this.loadProjects();
       } else {
-        this.projectsSignal.set([]);
+        this._projectsSignal.set([]);
       }
     });
+  }
+
+  /**
+   * 🔍 REINES SCHAUFENSTER: Schaut auf die Festplatte, ob ein Entwurf da ist,
+   * ohne das RAM-Signal zu belasten oder zu aktivieren!
+   */
+  public getSavedDraftTitle(): string | null {
+    const savedRawData = localStorage.getItem(this.STORAGE_KEY);
+    if (!savedRawData) return null;
+    try {
+      const parsed = JSON.parse(savedRawData);
+      return parsed && parsed.title ? parsed.title : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /**
+   * 🚑 DIE REANIMATION: Erst wenn der Nutzer aktiv "Ja" sagt,
+   * laden wir die Daten wirklich in den Arbeitsspeicher (RAM)!
+   */
+  public restoreDraftFromStorage(): void {
+    const savedRawData = localStorage.getItem(this.STORAGE_KEY);
+    if (savedRawData) {
+      try {
+        this.temporaryDraftSignal.set(new Project(JSON.parse(savedRawData)));
+        console.log('🚑 [Service] Entwurf erfolgreich ins RAM geladen.');
+      } catch (e) {
+        this.clearTemporaryDraft();
+      }
+    }
+  }
+
+  /**
+     * 🛡️ DAS INTELLIGENTE SCHUTZSCHILD (Fall 2 und Fall 4)
+     * Prüft das Backup: Passt es zur ausgewählten Idee?
+     */
+  public initializeOrRestoreDraft(targetIdeaId: string, ideaTitle: string): void {
+    const savedRawData = localStorage.getItem(this.STORAGE_KEY);
+
+    if (savedRawData) {
+      try {
+        const parsed = JSON.parse(savedRawData);
+
+        // 🎯 FALL 4: Stimmt die ideaId des Backups überein? -> Wiederbeleben!
+        if (parsed.ideaId === targetIdeaId) {
+          console.log('🚑 Fall 4: Passendes Backup gefunden! Zustand wird im RAM wiederbelebt.');
+          this.temporaryDraftSignal.set(new Project(parsed));
+          return;
+        } else {
+          // 🎯 FALL 2: Es ist eine ANDERE Idee -> Altes Backup verwerfen!
+          console.warn('⚠️ Fall 2: Altes Backup einer anderen Idee gefunden. Wird überschrieben!');
+          this.clearTemporaryDraft();
+        }
+      } catch (e) {
+        this.clearTemporaryDraft();
+      }
+    }
+
+    // Wenn kein Backup da war oder es eine andere Idee war: Frisch starten!
+    console.log('🆕 Starte frische Kalkulation für Idee:', ideaTitle);
+    this.temporaryDraftSignal.set(new Project({
+      ideaId: targetIdeaId,
+      title: ideaTitle || '',
+      milestones: [],
+      area: 'Allgemein'
+    }));
+  }
+
+  public clearTemporaryDraft(): void {
+    this.temporaryDraftSignal.set(null);
+    localStorage.removeItem(this.STORAGE_KEY);
   }
 
   /**
@@ -85,7 +193,7 @@ public setActiveMilestoneId(id: string | null) {
   public loadProjects(): void {
     try {
       this.dataManager.getProjects(this.currentUserId).subscribe({
-        next: (projects) => this.projectsSignal.set(projects),
+        next: (projects) => this._projectsSignal.set(projects),
         error: (err) => console.error('Fehler beim Laden der Projekte:', err)
       });
     } catch (e) {
@@ -94,10 +202,10 @@ public setActiveMilestoneId(id: string | null) {
   }
 
   public updateMilestoneInProject(projectId: string, updatedMilestone: Milestone): Observable<boolean> {
-    const currentProject = this.projectsSignal().find(p => p.id === projectId);
+    const currentProject = this._projectsSignal().find(p => p.id === projectId);
     if (!currentProject) return of(false);
 
-    const updatedMilestones = currentProject.milestones.map(ms => 
+    const updatedMilestones = currentProject.milestones.map(ms =>
       ms.id === updatedMilestone.id ? updatedMilestone : ms
     );
 
@@ -105,7 +213,7 @@ public setActiveMilestoneId(id: string | null) {
 
     return this.dataManager.updateProject(updatedProject, this.currentUserId).pipe(
       tap(() => {
-        this.projectsSignal.update(projects =>
+        this._projectsSignal.update(projects =>
           projects.map(p => p.id === projectId ? updatedProject : p)
         );
       }),
@@ -116,7 +224,12 @@ public setActiveMilestoneId(id: string | null) {
 
   public saveCalculatedProject(project: Project): Observable<string> {
     return this.dataManager.createProject(project, this.currentUserId).pipe(
-      tap((savedProject) => this.projectsSignal.update(projects => [...projects, savedProject])),
+      tap((savedProject) => {
+        this._projectsSignal.update(projects => [...projects, savedProject]);
+
+        // 🎯 HIER DIE BRÜCKE: Wenn das Projekt angelegt wurde, sperren wir die Idee!
+        this.noteService.updateNoteStatus(project.ideaId, true);
+      }),
       map((savedProject) => savedProject.id)
     );
   }
@@ -124,21 +237,21 @@ public setActiveMilestoneId(id: string | null) {
   public updateCalculatedProject(updatedProject: Project): Observable<Project | undefined> {
     return this.dataManager.updateProject(updatedProject, this.currentUserId).pipe(
       tap(() => {
-        this.projectsSignal.update(projects =>
+        this._projectsSignal.update(projects =>
           projects.map(p => p.id === updatedProject.id ? updatedProject : p)
         );
       })
     );
   }
-  
+
   public removeProject(projectId: string): void {
-    this.projectsSignal.update(projects => projects.filter(p => p.id !== projectId));
+    this._projectsSignal.update(projects => projects.filter(p => p.id !== projectId));
     this.dataManager.deleteProject(projectId, this.currentUserId).subscribe();
   }
 
   public getProjectTodos(projectId: string | null) {
     if (!projectId) {
-      return[]
+      return []
     }
     const project = this.projectsList().find((pr) => pr.id === projectId);
 
@@ -147,9 +260,9 @@ public setActiveMilestoneId(id: string | null) {
     }
 
     const todos = project.milestones
-           .reduce((result: Todo[], ms: Milestone) => 
-            result.concat(this.todoService.getTodosForMilestone(ms.id))
-          , [])
+      .reduce((result: Todo[], ms: Milestone) =>
+        result.concat(this.todoService.getTodosForMilestone(ms.id))
+        , [])
     return todos
   }
 }

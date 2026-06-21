@@ -1,8 +1,9 @@
 // 🟢 Das absolut minimale, saubere Business-Modell für dein Kotlin-Backend!
 
 import { INoteJson } from "../repositories/dto/note-json";
+import { generateLocalId } from "../shared/constants/id-const";
 
-export class Note implements INoteJson {
+export class Note {
     id?: string;
     userId: string;
     title: string;
@@ -23,7 +24,7 @@ export class Note implements INoteJson {
         this.userId = init.userId?? ""
         this.title = init.title
         this.content = init.content
-        this.id = init.id?? String(Date.now() + Math.floor(Math.random() * 1000));
+        this.id = init.id?? generateLocalId()
         this.colorType = init.colorType
         this.tag = init.tag?? "" 
         this.isInCalculation = init.isInCalculation?? false

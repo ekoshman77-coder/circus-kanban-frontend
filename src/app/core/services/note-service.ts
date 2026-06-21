@@ -2,6 +2,7 @@ import { inject, Injectable, signal, computed } from '@angular/core';
 import { Note } from '../models/note';
 import { NoteDataManagerService } from './note-data-mananger-service';
 import { UserService } from './user/user-service';
+import { Observable } from 'rxjs';
 @Injectable({
   providedIn: 'root'
 })
@@ -84,10 +85,7 @@ export class NoteService {
   }
 
   /**
-   * 3. Zettel verändern (Titel/Inhalt editiert oder per Drag&Drop verschoben)
-   */
-  /**
-     * 3. Zettel verändern (Jetzt mit sofortigem Signal-Turbo!)
+     * Zettel verändern (Jetzt mit sofortigem Signal-Turbo!)
      */
   public updateNote(updatedNote: Note): void {
     console.log('⚡ LOG 2 :: NoteService empfängt Update für:', updatedNote.title, 'Flag:', updatedNote.isInCalculation);
@@ -106,7 +104,7 @@ export class NoteService {
     });
   }
   /**
-   * 4. Zettel von der Wand reißen
+   * Zettel von der Wand reißen
    */
   public removeNote(id: string): void {
     console.log("NoteService:: removeNote")
@@ -116,5 +114,19 @@ export class NoteService {
         this.notesSignal.update(notes => notes.filter(n => n.id !== id));
       }
     });
+  }
+
+  public updateNoteStatus(noteId: string, inCalculation: boolean){
+    const note = this.notesSignal().find(n => n.id)
+    if (!note) {
+      console.warn(`Zettel mit ID ${noteId} wurde im NoteService nicht gefunden.`);
+      return;
+    }
+    const updatedNote = new Note({
+      ...note,
+      isInCalculation: inCalculation
+    })
+
+    this.dataManager.updateNote(updatedNote)
   }
 }

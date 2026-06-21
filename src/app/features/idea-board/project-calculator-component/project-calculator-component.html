@@ -1,93 +1,125 @@
 <div class="calculator-container">
 
-  <div class="board-header-premium">
-      <div class="header-title-section">
-          <h1 class="main-title">🧮 Projekt-Kalkulator</h1>
-          <p class="subtitle">Berechnung der Meilenstein-Phasen und Ermittlung der Gesamtdauer.</p>
-      </div>
-      
-      <div class="header-selector-wrapper"></div>
-  </div>
+    <div class="board-header-premium">
+        <div class="header-title-section">
+            <h1 class="main-title">🧮 Projekt-Kalkulator</h1>
+            <p class="subtitle">Berechnung der Meilenstein-Phasen und Ermittlung der Gesamtdauer.</p>
+        </div>
+        <div class="header-selector-wrapper"></div>
+    </div>
 
-  @if (localProjectDraft()) {
+    @if (showRestoreBanner() && draftTitleFromStorage()) {
+      <div class="restore-banner-card animate-fade-in">
+        <div class="restore-banner-content">
+          <span class="restore-banner-icon">💡</span>
+          <div class="restore-banner-text">
+            <h4>Ungespeicherter Entwurf gefunden</h4>
+            <p>Möchtest du die unfertige Kalkulation für <strong>"{{ draftTitleFromStorage() }}"</strong> fortsetzen?</p>
+          </div>
+        </div>
+        <div class="restore-banner-actions">
+          <button (click)="restoreDraftFromBanner()" class="restore-btn-confirm">
+            🛠️ Ja, laden
+          </button>
+          <button (click)="rejectDraftFromBanner()" class="restore-btn-reject">
+            ⏳ Später erinnern
+          </button>
+        </div>
+      </div>
+    }
+
+    @if (localProjectDraft()) {
     <div class="calculator-active-container">
         <div class="active-project-subbar">
-          Aktiver Entwurf für: <span>{{ localProjectDraft()?.title }}</span>
+            <span>Aktiver Entwurf für: <strong>{{ localProjectDraft()?.title }}</strong></span>
+
+            <button class="magic-template-btn" [class.general-btn]="getSuggestedArea() === 'Allgemein'"
+                [class.loading]="isMagicLoading()" [disabled]="isMagicLoading()" (click)="applySmartTemplates()">
+
+                @if (isMagicLoading()) {
+                <span class="magic-spinner">🔮</span> Analysiere Projekttitel...
+                } @else {
+                @if (getSuggestedArea() === 'Allgemein') {
+                🔮 Allgemeine Vorschläge laden
+                } @else {
+                🪄 Smart {{ getSuggestedArea() }}-Vorschläge laden
+                }
+                }
+            </button>
         </div>
 
-        <table class="project-table">
-            <details open class="phase-section">
-                <summary class="phase-header">
-                    <span class="phase-title">🚀 Phase: {{ localProjectDraft()?.area }}</span>
-                    <span class="phase-badge">{{ (localProjectDraft()?.milestones ?? []).length }} Aufgaben</span>
-                </summary>
+        <table class="calc-table" cdkDropList (cdkDropListDropped)="onDrop($event)">
+            <thead>
+                <tr>
+                    <th>Aufgabe / Meilenstein</th>
+                    <th>Bereich</th>
+                    <th>Geplante Zeit</th>
+                    <th>Aktionen</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (task of (localProjectDraft()?.milestones ?? []); track $index) {
 
-                <thead>
-                    <tr>
-                        <th>Aufgabe (To-Do)</th>
-                        <th>Bereich</th>
-                        <th>Dauer (in Tagen)</th>
-                        <th>Aktionen</th>
-                    </tr>
-                </thead>
+                @if (editingMilestoneId === task.id) {
+                <tr class="edit-row-pastel">
+                    <td>
+                        <input type="text" [(ngModel)]="editTitle" class="calc-input table-edit-input" />
+                    </td>
+                    <td>
+                        <span class="tag-badge">{{ localProjectDraft()?.area || 'Allgemein' }}</span>
+                    </td>
+                    <td>
+                        <select [(ngModel)]="editTime" class="calc-dropdown table-edit-dropdown">
+                            @for (day of availableDays; track day) {
+                            <option [value]="day">{{ day }} {{ day === 1 ? 'Tag' : 'Tage' }}</option>
+                            }
+                        </select>
+                    </td>
+                    <td>
+                        <div class="action-btns-group">
+                            <button class="calc-action-btn save" (click)="saveEditMilestone(task.id)"
+                                title="Speichern">💾</button>
+                            <button class="calc-action-btn cancel" (click)="cancelEditMilestone()"
+                                title="Abbrechen">❌</button>
+                        </div>
+                    </td>
+                </tr>
+                } @else {
+                <tr cdkDrag class="draggable-row">
+                    <td>
+                        <span class="drag-handle">:::</span>
+                        <strong>{{ task.title }}</strong>
+                    </td>
+                    <td><span class="tag-badge">{{ localProjectDraft()?.area || 'Allgemein' }}</span></td>
+                    <td>{{ task.duration }} Tage</td>
+                    <td>
+                        <div class="action-btns-group">
+                            <button class="calc-action-btn edit" (click)="startEditMilestone(task)"
+                                title="Bearbeiten">✏️</button>
+                            <button (click)="deleteTask(task.id)" class="delete-task-btn"
+                                title="Aufgabe löschen">🗑️</button>
+                        </div>
+                    </td>
+                </tr>
+                }
+                } @empty {
+                <tr>
+                    <td colspan="4" style="text-align: center; color: #94a3b8; padding: 30px;">
+                        Noch keine Meilensteine eingetragen. Tippe unten eine Aufgabe ein! 🚀
+                    </td>
+                </tr>
+                }
 
-                <tbody>
-                    @for (task of (localProjectDraft()?.milestones ?? []); track task.id) {
-                        @if (editingMilestoneId === task.id) {
-                            <tr class="edit-row-pastel">
-                                <td>
-                                    <input type="text" [(ngModel)]="editTitle" class="calc-input table-edit-input" />
-                                </td>
-                                <td>
-                                    <span class="tag-badge">{{ localProjectDraft()?.area }}</span>
-                                </td>
-                                <td>
-                                    <select [(ngModel)]="editTime" class="calc-dropdown table-edit-dropdown">
-                                        @for (day of availableDays; track day) {
-                                            <option [value]="day">{{ day }} {{ day === 1 ? 'Tag' : 'Tage' }}</option>
-                                        }
-                                    </select>
-                                </td>
-                                <td>
-                                    <div class="action-btns-group">
-                                        <button class="calc-action-btn save" (click)="saveEditMilestone(task.id)" title="Speichern">💾</button>
-                                        <button class="calc-action-btn cancel" (click)="cancelEditMilestone()" title="Abbrechen">❌</button>
-                                    </div>
-                                </td>
-                            </tr>
-                        } @else {
-                            <tr>
-                                <td><strong>{{ task.title }}</strong></td>
-                                <td><span class="tag-badge">{{ localProjectDraft()?.area }}</span></td>
-                                <td><span class="days-counter">{{ task.duration }} {{ task.duration === 1 ? 'Tag' : 'Tage' }}</span></td>
-                                <td>
-                                    <div class="action-btns-group">
-                                        <button class="calc-action-btn edit" (click)="startEditMilestone(task)" title="Bearbeiten">✏️</button>
-                                        <button class="calc-delete-btn-pastel" (click)="deleteTask(task.id)" title="Löschen">🗑️</button>
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                    } @empty {
-                        <tr>
-                            <td colspan="4" class="empty-table-state">
-                                Noch keine Meilenstein-Aufgaben für diese Phase definiert.
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-                <tfoot>
-                    <tr class="table-footer-row">
-                        <td colspan="2" style="text-align: right; font-weight: 600; color: #475569;">
-                            Voraussichtliche Gesamtdauer:
-                        </td>
-                        <td class="table-footer-sum">
-                            ⏱️ {{ totalTime() }} Tage
-                        </td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-            </details>
+            </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <td colspan="2"><strong>Gesamtdauer des Entwurfs:</strong></td>
+                    <td>
+                        <span class="total-badge">{{ totalTime() }} Tage</span>
+                    </td>
+                    <td></td>
+                </tr>
+            </tfoot>
         </table>
 
         <details class="add-task-drawer" style="margin-top: 20px;">
@@ -125,7 +157,7 @@
             </button>
         </div>
     </div>
-  } @else {
+    } @else {
     <div class="no-project-selected-container">
         <div class="welcome-card">
             <span class="empty-icon-neon">🧮</span>
@@ -152,7 +184,7 @@
             </div>
         </div>
     </div>
-  }
+    }
 </div>
 
 @if (showSuccessPopup()) {
@@ -161,4 +193,31 @@
     [cancelText]="'Doch noch nicht starten! 🛑'" [confirmText]="null" [mode]="'success'" [showLoadingBar]="true"
     (confirm)="handleAutoSaveConfirm()" (cancel)="cancelPopupCountdown()">
 </app-universal-popup-component>
+}
+
+@if (showRestoreBanner() && draftTitleFromStorage()) {
+<div class="restore-banner-container"
+    style="background: var(--surface-card, #fff); border-left: 4px solid var(--primary-color, #3B82F6); padding: 1rem; margin-bottom: 1.5rem; border-radius: 6px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center;">
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <span style="font-size: 1.5rem;">💡</span>
+        <div>
+            <h4 style="margin: 0; font-weight: 600; color: var(--text-color, #1F2937);">
+                Ungespeicherter Entwurf für "{{ draftTitleFromStorage() }}" gefunden
+            </h4>
+            <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem; color: var(--text-secondary, #6B7280);">
+                Möchtest du die unfertige Kalkulation fortsetzen?
+            </p>
+        </div>
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+        <button (click)="restoreDraftFromBanner()"
+            style="background: var(--primary-color, #3B82F6); color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-weight: 500;">
+            🛠️ Ja, laden
+        </button>
+        <button (click)="rejectDraftFromBanner()"
+            style="background: transparent; color: var(--red-500, #EF4444); border: 1px solid var(--red-500, #EF4444); padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-weight: 500;">
+            🗑️ Nein, löschen
+        </button>
+    </div>
+</div>
 }

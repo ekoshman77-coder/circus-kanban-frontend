@@ -32,7 +32,7 @@ export class ProjectMilestonesComponent {
       const navState = this.tabService.currentNavigationState();
       if (!navState) return;
 
-      const allProjects = this.projectService.projectsSignal();
+      const allProjects = this.projectService.projectsList();
       // Falls die Projektdaten noch nicht geladen sind, warten wir reaktiv auf den nächsten Cycle!
       if (allProjects.length === 0) return; 
 
@@ -72,7 +72,7 @@ export class ProjectMilestonesComponent {
    * Gibt true zurück, wenn die Zuordnung erfolgreich war.
    */
   private setFilterByMilestoneId(milestoneId: string): boolean {
-    const allProjects = this.projectService.projectsSignal();
+    const allProjects = this.projectService.projectsList();
     const foundProject = allProjects.find((p) => 
       p.milestones.some((m) => m.id === milestoneId)
     );
@@ -112,7 +112,7 @@ export class ProjectMilestonesComponent {
     const filter = this.boardFilter();
     if (!filter) return null;
 
-    const allProjects = this.projectService.projectsSignal();
+    const allProjects = this.projectService.projectsList();
     const allTodos = this.todoService.allTodos();
 
     const foundProject = allProjects.find((p) => p.id === filter.projectId);

@@ -2,37 +2,37 @@ import { computed } from "@angular/core";
 import { Milestone } from "./milestone";
 import { UserModel } from "./user-model";
 import { IProjectJSON } from "../repositories/dto/project-json";
+import { generateLocalId } from "../shared/constants/id-const";
 
-export interface IProjectInit {
-  id?: string;
-  ideaId: string;
-  title: string;
-  area: string;
-  content?: string;
-  status?: 'Calculation' | 'Active' | 'Zip';
-  milestones?: Milestone[]; // 👁️ Hier im Init bleibt es optional für bequemes Erstellen!
-  teamMembers?: UserModel[];     // 👁️ Hier auch.
-}
-
-export class Project implements IProjectJSON {
+export class Project {
   public id: string;
   public ideaId: string;
   public title: string;
   public area: string;
-  public content?: string;
+  public content: string;
   public status: 'Calculation' | 'Active' | 'Zip';
   public milestones: Milestone[];
   public teamMembers: UserModel[];
 
-  constructor(init: IProjectInit) {
-    this.id = init.id ? init.id : String(Date.now() + Math.floor(Math.random() * 1000));
-    this.ideaId = init.ideaId;
+  // 💡 INLINE-KONSTRUKTOR: Keine extra Interfaces mehr nötig!
+  constructor(init: {
+    ideaId: string;
+    title: string;
+    area: string;
+    id?: string;
+    content?: string;
+    status?: 'Calculation' | 'Active' | 'Zip';
+    milestones?: Milestone[];
+    teamMembers?: UserModel[];
+  }) {
     this.title = init.title;
     this.area = init.area;
+    this.ideaId = init.ideaId;
+    
+    // 🛡️ Sichere Defaults für alles Optionale
+    this.id = init.id ?? generateLocalId();
     this.status = init.status ?? 'Calculation';
-    this.content = init.content ?? ""
-    // 🔥 Hier greift dein genialer Standardwert: Wenn im Init nichts übergeben wurde,
-    // machen wir ein absolut sicheres, leeres Array daraus. Niemals null!
+    this.content = init.content ?? "";
     this.milestones = init.milestones ?? [];
     this.teamMembers = init.teamMembers ?? [];
   }
