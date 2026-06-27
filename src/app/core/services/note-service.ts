@@ -117,7 +117,10 @@ export class NoteService {
   }
 
   public updateNoteStatus(noteId: string, inCalculation: boolean){
-    const note = this.notesSignal().find(n => n.id)
+    console.log("NoteService:: updateNoteStatus, status =", inCalculation)
+    console.log("NoteService:: updateNoteStatus, noteId =", noteId)
+    const note = this.notesSignal().find(n => n.id === noteId)
+    console.log("NoteService:: updateNoteStatus, note =", note)
     if (!note) {
       console.warn(`Zettel mit ID ${noteId} wurde im NoteService nicht gefunden.`);
       return;
@@ -127,6 +130,12 @@ export class NoteService {
       isInCalculation: inCalculation
     })
 
-    this.dataManager.updateNote(updatedNote)
+    this.dataManager.updateNote(updatedNote).subscribe({
+      next: (fromDB: Note) => {
+        this.notesSignal.update(notes => 
+            notes.map(note => note.id === fromDB.id ? fromDB : note)
+          )
+       }
+    })
   }
 }

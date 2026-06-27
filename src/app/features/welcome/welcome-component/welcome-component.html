@@ -12,7 +12,7 @@
     />
   </div>
 
-  @if (errorMessage() && !recentUsers().includes(usernameInput().trim())) {
+  @if (isNewUser()) {
     <div class="registration-extra-fields" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
       <p style="font-size: 12px; color: #64748b; margin: 0 0 5px 0;">Erstelle ein neues Board! Bitte trage deine Daten ein:</p>
       

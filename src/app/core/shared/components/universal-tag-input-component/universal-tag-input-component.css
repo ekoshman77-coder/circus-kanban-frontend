@@ -129,3 +129,82 @@
   from { opacity: 0; transform: translateY(8px) scale(0.95); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
+
+.ai-loading-skeleton {
+  position: absolute;
+  bottom: 115%;
+  left: 0;
+  right: 0;
+  z-index: 10000;
+  
+  /* 💡 DER GLÜHBIRNEN-EFFEKT:
+     #fffbeb ist ein ganz helles, warmes Creme-Gelb. 
+     #fef08a ist das warme, leuchtende Gelb einer eingeschalteten Glühbirne! */
+  background: linear-gradient(90deg, #fffbeb 25%, #fef08a 50%, #fffbeb 75%);
+  background-size: 200% 100%;
+  animation: loading-pulse 1.2s infinite ease-in-out; /* Ticken schneller (1.2s) für mehr Energie! */
+  
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px dashed #ca8a04; /* Ein schicker, warmer Gold-Vulkan-Rahmen */
+  color: #854d0e;             /* Ein sattes, dunkles Honig-Braun für perfekten Text-Kontrast */
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  box-shadow: 0 6px 20px rgba(234, 179, 8, 0.15); /* Ein warmer, gelber Glüh-Schatten */
+}
+
+.skeleton-sparkle {
+  display: inline-block;
+  animation: spin-slow 2s infinite linear;
+}
+
+.skeleton-bar {
+  width: 100px;
+  height: 12px;
+  background-color: #fef08a; /* Der Ladebalken glüht im selben warmen Ton */
+  border-radius: 4px;
+  opacity: 0.7;
+}
+
+/* --- ANIMATIONEN --- */
+
+/* Sanftes Pulsieren des Hintergrunds */
+@keyframes loading-pulse {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Die funkelnden Sterne drehen sich im Uhrzeigersinn */
+@keyframes spin-slow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Knackiger elastischer Pop-Effekt für die fertige Anzeige */
+.animate-pop {
+  animation: popInSecond 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes popInSecond {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes popIn {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

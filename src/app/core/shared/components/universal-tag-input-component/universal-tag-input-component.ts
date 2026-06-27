@@ -1,7 +1,9 @@
-import { Component, effect, EventEmitter, inject, input, OnInit, Output, signal } from '@angular/core';
+import { Component, effect, EventEmitter, inject, input, OnInit, Output, signal, OnDestroy } from '@angular/core';
 import { UniversalPredictorService } from '../../../services/universal-predictor-service';
 import { UserService } from '../../../services/user/user-service';
 import { FormsModule } from '@angular/forms';
+import { Subject, Subscription } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 @Component({
   selector: 'app-universal-tag-input-component',
@@ -10,44 +12,46 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './universal-tag-input-component.html',
   styleUrl: './universal-tag-input-component.css',
 })
-export class UniversalTagInputComponent implements OnInit {
+export class UniversalTagInputComponent implements OnInit, OnDestroy {
   private predictorService = inject(UniversalPredictorService);
   private userService = inject(UserService);
 
-  // Die schlanken Inputs von der Mutter-Komponente (z.B. IdeaBoard)
   public textToWatch = input<string>('');
   public contextType = input<'todo' | 'note'>('todo');
   public placeholder = input<string>('Kategorie...');
   public initialValue = input<string>('');
-  
-  // Die fertigen Kategorien-Strings vom Board für den Offline-Fall
-  public currentCategories = input<string[]>([]); 
+  public currentCategories = input<string[]>([]);
 
   // Interne UI-Signale
   public textInput = signal<string>('');
   public suggestedTag = signal<string | null>(null);
   public isDropdownOpen = signal<boolean>(false);
-  public availableTags = signal<string[]>([]); // Hält die Optionen für das Template
+  public availableTags = signal<string[]>([]);
+  public isAiLoading = signal<boolean>(false);
+  public isUserTyping = signal<boolean>(false);
 
-  private lastPredictedText = '';
+  // 🧠 NEU: Ein RxJS-Strom für das Tippen und die Abo-Verwaltung
+  private searchSubject = new Subject<string>();
+  private searchSubscription!: Subscription;
 
   constructor() {
-    // 🔮 NUR NOCH EIN EFFEKT: KI-Vorschlag beim Tippen überwachen
+    // Der Effekt triggert jetzt nicht mehr die AI direkt, sondern füttert nur den RxJS-Strom
     effect(() => {
+      // 1. Wir überwachen den Aufgabentext für die KI
       const text = this.textToWatch().trim();
       if (text.length > 2) {
-        this.fetchAiSuggestion(text);
+        this.isUserTyping.set(true);
+        this.suggestedTag.set(null); 
+        this.searchSubject.next(text); 
       } else {
         this.suggestedTag.set(null);
+        this.isUserTyping.set(false);
+        this.isAiLoading.set(false);
       }
-    });
 
-    // 🧹 Reset-Wachhund nach dem Speichern
-    effect(() => {
-      if (this.initialValue() === '') {
-        this.textInput.set('');
-        this.suggestedTag.set(null);
-      }
+      // 2. 🚀 DIE BUG-RETTUNG: Wir lauschen JETZT HIER reaktiv auf das Zurücksetzen von außen!
+      // Wenn das Formular die Kategorie leert (''), leeren wir sofort das interne Eingabefeld.
+      this.textInput.set(this.initialValue());
     });
   }
 
@@ -55,29 +59,37 @@ export class UniversalTagInputComponent implements OnInit {
     if (this.initialValue()) {
       this.textInput.set(this.initialValue());
     }
+
+    // 🚦 Hier bremsen wir das Tippen aus!
+    this.searchSubscription = this.searchSubject.pipe(
+      debounceTime(400),        // ⏳ Warte 400ms nach dem LETZTEN Tastendruck
+      distinctUntilChanged()    // 🎯 Schieße nur los, wenn sich der Text wirklich verändert hat
+    ).subscribe(text => {
+      this.fetchAiSuggestion(text);
+    });
   }
 
-  /**
-   * 🔓 GENIALES TIMING: Wird aufgerufen, wenn der User den Pfeil klickt!
-   */
+  ngOnDestroy(): void {
+    // 🧼 Saubermachen, wenn die Komponente zerstört wird
+    if (this.searchSubscription) {
+      this.searchSubscription.unsubscribe();
+    }
+  }
+
   public async toggleDropdown(): Promise<void> {
     const wirdGeoeffnet = !this.isDropdownOpen();
     this.isDropdownOpen.set(wirdGeoeffnet);
 
-    // 🔥 Genau hier passiert das Update live beim Öffnen:
     if (wirdGeoeffnet) {
       const userId = this.userService.getCurrentUserId();
       if (!userId) return;
 
       try {
-        // Wir übergeben dem Service einfach nur die 3 sauberen Infos
         const frischeKategorien = await this.predictorService.getAvailableCategories(
           userId,
           this.contextType(),
-          this.currentCategories() // Das String-Array als Offline-Sicherheitsnetz
+          this.currentCategories()
         );
-
-        // Signal updaten -> UI rendert parallel die Optionen
         this.availableTags.set(frischeKategorien);
       } catch (err) {
         console.error('Fehler beim Laden der Dropdown-Kategorien:', err);
@@ -85,29 +97,38 @@ export class UniversalTagInputComponent implements OnInit {
     }
   }
 
-  /**
-   * KI-Suggestion beim Tippen abrufen (Radikal vereinfacht auf 3 Parameter!)
-   */
   private async fetchAiSuggestion(text: string): Promise<void> {
     const userId = this.userService.getCurrentUserId();
     if (!userId) return;
 
-    if (text === this.lastPredictedText) return;
-    this.lastPredictedText = text;
+    // 🚀 Erst JETZT, nach der Denkpause, schalten wir die UI-Animationen an!
+    this.isAiLoading.set(true);
 
     try {
-      // Keine Listen, kein Suchen nach Feldern – der Service macht das jetzt autonom!
+//      await new Promise(resolve => setTimeout(resolve, 1000));
       const vorschlag = await this.predictorService.predict(text, userId, this.contextType());
-      this.suggestedTag.set(vorschlag || null);
+
+      // Nur wenn der neue Vorschlag anders ist als der aktuelle, updaten wir (verhindert zappeln)
+      if (this.suggestedTag() !== vorschlag) {
+        this.suggestedTag.set(vorschlag || null);
+      }
     } catch (err) {
       console.error('Fehler bei Service-Vorhersage:', err);
       this.suggestedTag.set(null);
+    } finally {
+      // 🧼 Wenn alles fertig ist, schalten wir BEIDE Lade-Zustände aus
+      this.isAiLoading.set(false);
+      this.isUserTyping.set(false); // 🌟 NEU!
     }
   }
 
   public updateValue(value: string): void {
     this.textInput.set(value);
     this.valueChanged.emit(value);
+
+    if (this.isDropdownOpen()) {
+      this.isDropdownOpen.set(false);
+    }
   }
 
   public acceptAiSuggestion(): void {

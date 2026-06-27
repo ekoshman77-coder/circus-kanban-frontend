@@ -1,0 +1,116 @@
+.recommendation-card {
+  background: linear-gradient(90deg, #f0fdf4 0%, #e6fffa 100%);
+  border: 1px solid #b4fdd6;
+  border-radius: 8px;
+  padding: 12px 20px; /* ⚡ Viel weniger Innenabstand! */
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* ⚡ Elemente nebeneinander statt untereinander! */
+  gap: 16px;
+  max-width: 100%; /* ⚡ Nutzt die volle Breite der Matrix aus */
+  margin: 0 0 16px 0; /* ⚡ Kleiner Abstand nach unten zur Matrix */
+}
+
+/* Titel und Untertitel kompakt zusammenfassen */
+.card-title { 
+  margin: 0; 
+  font-size: 15px; 
+  font-weight: bold;
+  color: #0f172a; 
+  white-space: nowrap;
+}
+.card-subtitle { display: none; } /* ⚡ Text weglassen, spart massig Platz! */
+
+.content-state {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  gap: 16px;
+}
+
+/* Das vorgeschlagene To-Do als flache Zeile */
+.todo-highlight {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.todo-effort {
+  position: static; /* ⚡ Nicht mehr absolut oben drüber klebend! */
+  transform: none;
+  background: #0ea5e9;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.todo-task { 
+  margin: 0; 
+  font-size: 15px; 
+  color: #1e293b; 
+  font-weight: 600;
+  text-align: left;
+}
+
+/* Die Buttons dezent und schmal nebeneinander */
+.action-buttons { 
+  display: flex; 
+  gap: 8px; 
+}
+.btn-accept { 
+  padding: 6px 14px; 
+  background: #10b981; 
+  color: white; 
+  border: none; 
+  border-radius: 6px; 
+  font-weight: 600; 
+  font-size: 13px; 
+  cursor: pointer; 
+  white-space: nowrap;
+}
+.btn-accept:hover { background: #059669; }
+
+.btn-reject { 
+  padding: 6px 12px; 
+  background: #f1f5f9; /* ⚡ Dezentes Grau statt aggressivem Rot! */
+  color: #475569; 
+  border: 1px solid #cbd5e1; 
+  border-radius: 6px; 
+  font-weight: 500; 
+  font-size: 13px; 
+  cursor: pointer; 
+  white-space: nowrap;
+}
+.btn-reject:hover { background: #e2e8f0; }
+
+/* Kleines Overlay für die Feedback-Gründe, falls abgelehnt wird */
+.feedback-overlay { 
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8fafc; 
+  padding: 4px;
+}
+.feedback-prompt { font-weight: 600; color: #475569; font-size: 13px; margin: 0; white-space: nowrap; }
+.reason-grid { display: flex; gap: 6px; }
+.reason-btn { padding: 4px 10px; background: white; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px; cursor: pointer; }
+.reason-btn:hover { background: #f1f5f9; }
+.reason-btn.cancel { background: #e2e8f0; border: none; font-weight: bold; }
+
+/* Ladezustand & Fehler ebenfalls kompakt */
+.loading-state, .empty-state { display: flex; align-items: center; gap: 8px; padding: 0; margin: 0; font-size: 14px; }
+.empty-text { margin: 0; font-size: 14px; }
+.refresh-btn { padding: 4px 10px; font-size: 12px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; }
+.spinner { border: 2px solid #f3f3f3; border-top: 2px solid #10b981; border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite; margin: 0; }
+
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }

@@ -244,8 +244,19 @@
 }
 
 /* 📐 AUFTEILUNG ZEILE 1: Milestone bleibt klein, Task nimmt den Rest */
-.compact-milestone { flex: 0 0 auto; }
-.compact-task { flex: 1; }
+.compact-milestone { 
+  flex-grow: 0;
+  flex-shrink: 0;        /* 🚫 0 statt 1! Auf keinen Fall quetschen lassen! */
+  flex-basis: 130px;     /* 📐 Eine solide Grundbreite für den Meilenstein */
+  max-width: 130px; 
+  width: 130px;          /* Festnageln */
+  overflow: hidden;      /* ✂️ Alles was drüber steht, wird abgeschnitten */
+}
+
+.compact-task { 
+  flex-grow: 1;
+  flex-shrink:  1; 
+}
 
 /* 📐 AUFTEILUNG ZEILE 2: Kategorie feste Breite, Beschreibung nimmt den Rest */
 .compact-category { 
@@ -292,4 +303,50 @@
   height: 38px !important;
   font-size: 13px !important;
   padding: 0 10px !important;
+}
+
+/* 🔮 DER MAGISCHE KI-HOVER-KREIS */
+.ai-hover-whisper-circle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0px;
+  
+  background: lab(41.03% 50.39 -79.18 / 0.468) !important; 
+  border: 1px solid hwb(243 20% 30%) !important; 
+  
+  padding: 5px;
+  border-radius: 30px;
+  cursor: pointer;
+  user-select: none;
+  
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important; 
+  max-width: 28px;
+  height: 28px;
+  overflow: hidden;
+  white-space: nowrap;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  
+  /* Damit er sich im Formular sauber einfügt */
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.ai-hover-whisper-circle:hover {
+  max-width: 240px !important; /* Etwas breiter für die Benchmark-Nachricht */
+  background: hwb(243 28% 10% / 0.85) !important; 
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3) !important; 
+}
+
+.ai-hover-whisper-circle .hover-text {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  padding-left: 6px;
+  padding-right: 6px;
+  color: #ffffff !important; 
+  font-weight: 500;
+  font-size: 11px;
+}
+
+.ai-hover-whisper-circle:hover .hover-text {
+  opacity: 1 !important;
 }

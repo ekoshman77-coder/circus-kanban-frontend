@@ -1,0 +1,52 @@
+<div class="recommendation-card" 
+     [ngClass]="{
+       'research-mode-style': plannerService.aiResponseCode()?.modeCode === 'RECHERCHE',
+       'clean-slate-style': plannerService.aiResponseCode()?.modeCode === 'CLEAN_SLATE'
+     }">
+     
+  <h3 class="card-title">{{ PLANNER_MESSAGES[currentLanguage][titleKey] }}</h3>
+  
+  <p class="card-subtitle" *ngIf="!PLANNER_MESSAGES[currentLanguage][descKey]">
+    {{ PLANNER_MESSAGES[currentLanguage]['DEFAULT_DESC'] }}
+  </p>
+
+  <div *ngIf="plannerService.isLoading()" class="loading-state">
+    <div class="spinner"></div>
+    <p>KI berechnet die beste Aufgabe...</p>
+  </div>
+
+  <div *ngIf="!plannerService.isLoading() && !plannerService.recommendedTodo()" class="empty-state">
+    <p class="empty-text">
+      {{ PLANNER_MESSAGES[currentLanguage][descKey] || 'Keine passenden Aufgaben mehr da!' }}
+    </p>
+    <button (click)="loadNextRecommendation()" class="refresh-btn">Erneut prüfen</button>
+  </div>
+
+  <div *ngIf="!plannerService.isLoading() && plannerService.recommendedTodo() as todo" class="content-state">
+    
+    <div class="todo-highlight">
+      <span class="todo-effort" *ngIf="todo.effort > 0">⏳ {{ todo.effort }} Std.</span>
+      <h2 class="todo-task">{{ todo.task }}</h2>
+      
+      <p class="research-desc" *ngIf="plannerService.aiResponseCode()?.modeCode === 'RECHERCHE'">
+        {{ PLANNER_MESSAGES[currentLanguage][descKey] }}
+      </p>
+    </div>
+
+    <div *ngIf="!showFeedbackReasons()" class="action-buttons">
+      <button (click)="acceptTodo(todo)" class="btn-accept">🚀 Starten!</button>
+      <button (click)="rejectTodo()" class="btn-reject">👎 Passt gerade nicht</button>
+    </div>
+
+    <div *ngIf="showFeedbackReasons()" class="feedback-overlay">
+      <p class="feedback-prompt">Schade! Warum passt es gerade nicht? 🤔</p>
+      <div class="reason-grid">
+        <button (click)="sendDetailedFeedback(todo, 'no_motivation')" class="reason-btn">🥱 Keine Lust darauf</button>
+        <button (click)="sendDetailedFeedback(todo, 'too_heavy')" class="reason-btn">🧠 Zu schwer für jetzt</button>
+        <button (click)="sendDetailedFeedback(todo, 'too_long')" class="reason-btn">⏱️ Dauert mir zu lange</button>
+        <button (click)="cancelReject()" class="reason-btn cancel">Zurück</button>
+      </div>
+    </div>
+
+  </div>
+</div>

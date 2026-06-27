@@ -9,23 +9,24 @@
     </div>
 
     @if (showRestoreBanner() && draftTitleFromStorage()) {
-      <div class="restore-banner-card animate-fade-in">
+    <div class="restore-banner-card animate-fade-in">
         <div class="restore-banner-content">
-          <span class="restore-banner-icon">💡</span>
-          <div class="restore-banner-text">
-            <h4>Ungespeicherter Entwurf gefunden</h4>
-            <p>Möchtest du die unfertige Kalkulation für <strong>"{{ draftTitleFromStorage() }}"</strong> fortsetzen?</p>
-          </div>
+            <span class="restore-banner-icon">💡</span>
+            <div class="restore-banner-text">
+                <h4>Ungespeicherter Entwurf gefunden</h4>
+                <p>Möchtest du die unfertige Kalkulation für <strong>"{{ draftTitleFromStorage() }}"</strong>
+                    fortsetzen?</p>
+            </div>
         </div>
         <div class="restore-banner-actions">
-          <button (click)="restoreDraftFromBanner()" class="restore-btn-confirm">
-            🛠️ Ja, laden
-          </button>
-          <button (click)="rejectDraftFromBanner()" class="restore-btn-reject">
-            ⏳ Später erinnern
-          </button>
+            <button (click)="restoreDraftFromBanner()" class="restore-btn-confirm">
+                🛠️ Ja, laden
+            </button>
+            <button (click)="rejectDraftFromBanner()" class="restore-btn-reject">
+                ⏳ Später erinnern
+            </button>
         </div>
-      </div>
+    </div>
     }
 
     @if (localProjectDraft()) {
@@ -47,6 +48,11 @@
                 }
             </button>
         </div>
+
+        @if (projectService.recommendedSuggestions().length > 0) {
+        <app-milestone-suggestions-component [projectTitle]="localProjectDraft()?.title ?? ''"
+            (milestoneAccepted)="addAiMilestone($event)">
+        </app-milestone-suggestions-component>}
 
         <table class="calc-table" cdkDropList (cdkDropListDropped)="onDrop($event)">
             <thead>
@@ -195,29 +201,35 @@
 </app-universal-popup-component>
 }
 
-@if (showRestoreBanner() && draftTitleFromStorage()) {
-<div class="restore-banner-container"
-    style="background: var(--surface-card, #fff); border-left: 4px solid var(--primary-color, #3B82F6); padding: 1rem; margin-bottom: 1.5rem; border-radius: 6px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center;">
-    <div style="display: flex; align-items: center; gap: 0.75rem;">
-        <span style="font-size: 1.5rem;">💡</span>
-        <div>
-            <h4 style="margin: 0; font-weight: 600; color: var(--text-color, #1F2937);">
-                Ungespeicherter Entwurf für "{{ draftTitleFromStorage() }}" gefunden
-            </h4>
-            <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem; color: var(--text-secondary, #6B7280);">
-                Möchtest du die unfertige Kalkulation fortsetzen?
+@if (currentIdea()) {
+<div class="idea-sliding-sidebar" [class.open]="isSidebarOpen()"
+    [style.background]="currentIdea()?.colorType ? 'var(--' + currentIdea()?.colorType + ')' : 'rgba(255, 255, 255, 0.85)'">
+
+    <button class="sidebar-pull-tab" (click)="toggleSidebar()" title="Original-Idee anzeigen">
+        <span class="tab-icon idea-bulb">💡</span>
+        <span class="tab-text">{{ isSidebarOpen() ? 'Schließen' : 'Idee anzeigen' }}</span>
+    </button>
+
+    <div class="sidebar-header">
+        <h3>💡 Originale Idee</h3>
+        <button class="sidebar-close-btn" (click)="toggleSidebar()">❌</button>
+    </div>
+
+    <div class="sidebar-content">
+        <div class="idea-premium-card">
+            <h4 class="idea-card-title">{{ currentIdea()?.title }}</h4>
+            <span class="idea-card-tag">{{ currentIdea()?.tag || 'Allgemein' }}</span>
+
+            <hr class="sidebar-divider" />
+
+            <p class="idea-card-description">
+                {{ currentIdea()?.content || 'Keine Beschreibung oder Notizen hinterlegt.' }}
             </p>
         </div>
     </div>
-    <div style="display: flex; gap: 0.5rem;">
-        <button (click)="restoreDraftFromBanner()"
-            style="background: var(--primary-color, #3B82F6); color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-weight: 500;">
-            🛠️ Ja, laden
-        </button>
-        <button (click)="rejectDraftFromBanner()"
-            style="background: transparent; color: var(--red-500, #EF4444); border: 1px solid var(--red-500, #EF4444); padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-weight: 500;">
-            🗑️ Nein, löschen
-        </button>
-    </div>
 </div>
+
+@if (isSidebarOpen()) {
+<div class="sidebar-backdrop" (click)="toggleSidebar()"></div>
+}
 }

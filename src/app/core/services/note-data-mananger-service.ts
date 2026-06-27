@@ -73,7 +73,7 @@ export class NoteDataManagerService {
    * ✏️ ZETTEL AKTUALISIEREN
    */
   public updateNote(updatedNote: Note): Observable<Note> {
-    console.log("DataManager:: UpdateNote")
+    console.log("DataManager:: UpdateNote", updatedNote)
 
     const userId = updatedNote.userId;
     const lokaleListe = this.getFromLocalStorage(userId);
@@ -87,6 +87,7 @@ export class NoteDataManagerService {
       return of(updatedNote);
     }
 
+   console.log("DataManager:: UpdateNote for NoteRepository", updatedNote)
     return this.noteRepository.updateNote(updatedNote.id!, updatedNote).pipe(
       catchError(err => {
         console.warn('Zettel-Update konnte nicht an Server gesendet werden (wird offline gehalten):', err);

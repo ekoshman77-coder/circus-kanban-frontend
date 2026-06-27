@@ -25,6 +25,9 @@ export class NoteRepository {
 
   // ✏️ PUT /api/notes/{id}
   updateNote(id: string, note: Note): Observable<Note> {
+       console.log("NoteRepository :: UpdateNote", note)
+        console.log("NoteRepository :: UpdateNoteId", id)
+
     return this.http.put<Note>(`${noteApiUrl}/${id}`, note);
   }
 

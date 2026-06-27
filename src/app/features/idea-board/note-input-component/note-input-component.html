@@ -1,49 +1,46 @@
 <div class="note-input-card" [class]="'note-input-card ' + noteForm.get('colorType')?.value">
-  
+
   <form [formGroup]="noteForm" (ngSubmit)="saveNote()">
-    
-    <div class="form-group">
-      <input 
-        type="text" 
-        formControlName="title" 
-        placeholder="Titel deiner Idee..." 
-        class="form-control" />
-    </div>
 
-    <div class="form-group">
-      <textarea 
-        formControlName="content" 
-        placeholder="Beschreibung..." 
-        class="form-control" 
-        rows="2"></textarea> 
+    @if (showTodoSuggestion()) {
+    <div class="ai-hover-whisper-circle" (click)="convertIdeaToTodo()">
+      <span>💡</span>
+      <span class="hover-text">In Task verwandeln ⚡</span>
     </div>
+    }
+    <div class="form-row margin-bottom">
+      <div class="form-group flex-3">
+        <input type="text" formControlName="title" placeholder="Titel deiner Idee..." class="form-control" />
+      </div>
 
-    <div class="form-row">
-      <div class="form-group flex-grow">
-        <app-universal-tag-input-component 
-          [textToWatch]="noteForm.get('title')?.value || ''" 
-          [contextType]="'note'"
-          [placeholder]="'Kategorie...'" 
-          [initialValue]="noteForm.get('category')?.value || ''"
+      <div class="form-group flex-2">
+        <app-universal-tag-input-component [textToWatch]="noteForm.get('title')?.value || ''" [contextType]="'note'"
+          [placeholder]="'Kategorie...'" [initialValue]="noteForm.get('category')?.value || ''"
           (valueChanged)="onTagChanged($event)">
         </app-universal-tag-input-component>
       </div>
+    </div>
 
+    <div class="form-group margin-bottom">
+      <textarea formControlName="content" placeholder="Beschreibung..." class="form-control" rows="3"></textarea>
+    </div>
+
+    <div class="form-row align-center">
       <div class="form-group color-select-wrapper">
         <select formControlName="colorType" class="select-field">
           @for (color of colorPalette; track color.value) {
-            <option [value]="color.value">{{ color.label }}</option>
+          <option [value]="color.value">{{ color.label }}</option>
           }
         </select>
       </div>
+
+      <button type="submit" [disabled]="!noteForm.get('title')?.value" class="submit-btn-premium">
+        📌 Anpinnen
+      </button>
     </div>
 
-    <button 
-      type="submit"
-      [disabled]="!noteForm.get('title')?.value?.trim() || !noteForm.get('content')?.value?.trim()" 
-      class="btn-save\">
-      Auf Pinnwand hämmern! 🚀
-    </button>
-
   </form>
+</div>
+
+<div class="form-row align-center">
 </div>

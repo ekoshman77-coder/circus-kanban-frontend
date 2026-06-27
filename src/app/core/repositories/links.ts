@@ -9,6 +9,15 @@
   export const projectApiUrl = `${baseUrl}/projects`
   export const aiPredictionApiUrl = `${baseUrl}/ai/predict`
   export const aiCategoriesApiUrl = `${baseUrl}/ai/categories`
+  export const aiPredictionEffortUrl = `${baseUrl}/ai/predict-effort`
   export const milestoneApiUrl = `${baseUrl}/milestones`
   export const teamApiUrl = `${baseUrl}/teams`
+  export const smartPlannerUrl =`${baseUrl}/ai/planner/recommend`
+  export const smartPlannerFeedbackUrl = `${baseUrl}/ai/planner/feedback`; 
+  export const getAiMilestonesUrl = `${baseUrl}/projects/suggest`;
+  export const trackAiMilestoneSelectionUrl = `${baseUrl}/projects/track-selection`;
+  export const trackAiMilestoneDegradationUrl = `${baseUrl}/projects/track-degradation`;
+ export const trackAiIgnoredMilestoneUrl = `${baseUrl}/projects/track-ignorance`;
+  export const aiNotePredictionUrl = `${baseUrl}/ai/notes/predict`;
+  export const aiNoteCategoriesUrl = `${baseUrl}/ai/notes/categories`;
   

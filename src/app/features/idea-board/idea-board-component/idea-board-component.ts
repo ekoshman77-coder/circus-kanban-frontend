@@ -110,13 +110,13 @@ export class IdeaBoardComponent {
      * 🔄 DER ZENTRALE DRAG & DROP VERTEILER
      */
   public onDropped(event: CdkDragDrop<any[]>): void {
-    // Sektor 1: Im Mülleimer gelandet 🗑️
+    // Sektor 1: Im Mülleimer gelandet 
     if (event.container.id === 'trashList') {
       this.handleTrashDrop(event.item.data);
       return;
     }
 
-    // Sektor 2: Im Automaten-Schlitz gelandet 🎰
+    // Sektor 2: Im Automaten-Schlitz gelandet 
     if (event.container.id === 'calculatorList') {
       this.handleCalculatorDrop(event.item.data);
       return;

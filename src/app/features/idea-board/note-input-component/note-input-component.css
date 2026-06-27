@@ -1,10 +1,10 @@
 .note-input-card {
-  padding: 14px;
-  border-radius: 10px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
   border: 1px solid rgba(0, 0, 0, 0.05);
   transition: background-color 0.4s ease;
-  max-width: 400px;
+  max-width: 500px; /* 📐 Etwas breiter gemacht, damit Zeile 1 perfekt nebeneinander passt */
   margin: 10px auto;
 }
 
@@ -15,70 +15,139 @@
 .note-blue   { background-color: var(--note-blue); }
 
 .form-group {
-  margin-bottom: 10px;
+  margin-bottom: 0; /* Abstände regeln wir jetzt sauber über die Rows */
+}
+
+.margin-bottom {
+  margin-bottom: 12px;
 }
 
 .form-row {
   display: flex;
-  gap: 10px;
+  gap: 12px;
+  width: 100%;
 }
 
-.flex-grow {
-  flex: 1;
+.align-center {
+  align-items: center;
+}
+
+/* 📊 Proportionale Aufteilung für Zeile 1 */
+.flex-3 {
+  flex: 3;
+}
+
+.flex-2 {
+  flex: 2;
 }
 
 .color-select-wrapper {
-  width: 110px;
+  width: 130px; /* Minimal breiter für stabiles Dropdown */
 }
 
 .form-control, .select-field {
   width: 100%;
-  padding: 8px 10px;
-  border-radius: 6px;
+  padding: 9px 12px;
+  border-radius: 8px;
   border: 1px solid rgba(0, 0, 0, 0.08);
-  background-color: rgba(255, 255, 255, 0.45); /* Noch bisschen softer */
+  background-color: rgba(255, 255, 255, 0.5);
   backdrop-filter: blur(4px);
-  color: #333;
+  color: #1e293b;
   font-size: 0.9rem;
   transition: all 0.2s ease;
   box-sizing: border-box;
 }
 
 textarea.form-control {
-  min-height: 54px;
+  min-height: 65px;
+  resize: vertical; /* Erlaubt dem User, die Box bei Bedarf größer zu ziehen */
 }
 
 .form-control:focus, .select-field:focus {
   outline: none;
-  background-color: rgba(255, 255, 255, 0.85);
-  border-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(255, 255, 255, 0.9);
+  border-color: rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
 }
 
-/* 🚀 DER NEUE PASTELL-HARMONISCHE BUTTON */
-.btn-save {
-  width: 100%;
-  padding: 10px;
-  border-radius: 6px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  
-  /* Nimmt die Farbe des Zettels und dunkelt sie ganz dezent ab */
-  background-color: rgba(0, 0, 0, 0.05); 
-  color: #444; /* Dunkelgrauer Text liest sich super auf Pastell */
-  
-  font-weight: 600;
+/* 🚀 DER PREMIUM BUTTON (schön bündig rechts neben der Farbe) */
+.submit-btn-premium {
+  flex: 1;
+  padding: 9px 16px;
+  background-color: #1e293b;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
   font-size: 0.9rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(30, 41, 59, 0.15);
 }
 
-.btn-save:hover:not([disabled]) {
-  background-color: rgba(0, 0, 0, 0.1); /* Wird beim Hovern etwas kräftiger */
-  color: #222;
+.submit-btn-premium:hover:not(:disabled) {
+  background-color: #0f172a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(30, 41, 59, 0.25);
 }
 
-.btn-save:disabled {
-  background-color: rgba(0, 0, 0, 0.02);
-  color: rgba(0, 0, 0, 0.2);
-  border-color: rgba(0, 0, 0, 0.05);
+.submit-btn-premium:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.submit-btn-premium:disabled {
+  background-color: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.3);
+  box-shadow: none;
   cursor: not-allowed;
+}
+
+/* 1. Der Ruhezustand: Die kleine, einsame, glühende lila Kugel links oben */
+.ai-hover-whisper-circle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0px;
+  margin-bottom: 8px;
+  
+  /* Deine neue HWB-Farbe als Basis, im Ruhezustand noch dezenter */
+  background: lab(41.03% 50.39 -79.18 / 0.468) !important; 
+  border: 1px solid hwb(243 20% 30%) !important; /* Ein feiner, passender Rahmen */
+  
+  padding: 5px;
+  border-radius: 30px;
+  cursor: pointer;
+  user-select: none;
+  
+  /* Flüssige Animation für das spätere Aufklappen */
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important; 
+  max-width: 28px;
+  height: 28px;
+  overflow: hidden;
+  white-space: nowrap;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* 2. Der Hover-Zustand: Wenn Elena mit der Maus drüberwischt! 🪄 */
+.ai-hover-whisper-circle:hover {
+  max-width: 180px !important; /* Weitet sich geschmeidig */
+  background: hwb(243 28% 10% / 0.7) !important; /* Wird beim Hovern etwas deckender für bessere Lesbarkeit */
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2) !important; /* Magischer Glow-Effekt */
+}
+
+/* 3. Der Text im Inneren: Dunkles Indigo/Blau für perfekten Kontrast */
+.ai-hover-whisper-circle .hover-text {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  padding-left: 6px;
+  padding-right: 6px;
+  color: #ffffff !important; /* Ein dunklerer Indigo-Ton, damit man es super lesen kann! */
+  font-weight: 500;
+}
+
+/* Wenn gehoverrt wird, blenden wir den Text ein */
+.ai-hover-whisper-circle:hover .hover-text {
+  opacity: 1 !important;
 }

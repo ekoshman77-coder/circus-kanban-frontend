@@ -5,6 +5,8 @@ import { TodoService } from '../../../services/todo/todo-service';
 import { futureDateValidator } from '../../../validators/future-date-validator';
 import { UniversalTagInputComponent } from '../universal-tag-input-component/universal-tag-input-component';
 import { MilestoneSelectorComponent } from '../milestone-selector-component/milestone-selector-component';
+import { UniversalPredictorService } from '../../../services/universal-predictor-service';
+import { debounceTime, distinctUntilChanged } from 'rxjs';
 
 @Component({
   selector: 'app-todo-form',
@@ -14,6 +16,12 @@ import { MilestoneSelectorComponent } from '../milestone-selector-component/mile
   styleUrl: './todo-form.css'
 })
 export class TodoFormComponent {
+  private predictorService = inject(UniversalPredictorService);
+
+  private suggestedEffortValue = 0;
+  // Signal für die UI-Nachricht der KI
+  public aiEffortMessage = signal<string>('');
+
   public isEmbeddedInMilestone = signal<boolean>(false);
   @Input() set forcedMilestoneId(id: string | null | undefined) {
     if (id) {
@@ -45,8 +53,37 @@ export class TodoFormComponent {
     dueDate: new FormControl('', [Validators.required, futureDateValidator()])
   });
 
-  constructor() {
+constructor() {
     this.fibonacciSequence = this.todoService.fibonacciSequence;
+
+    this.todoForm.get('task')?.valueChanges.pipe(
+      debounceTime(400),
+      distinctUntilChanged()
+    ).subscribe(async (text) => {
+      if (text && text.trim().length >= 3) {
+        // Hol die nackte Zahl vom Service
+        const points = await this.predictorService.predictEffort(text);
+        
+        if (points !== null && points > 0) {
+          this.suggestedEffortValue = points;
+          
+          // 🌍 HIER baut das Frontend den Text! Absolut sauber und neutral.
+          // Später kannst du hier auch ein Übersetzungssystem wie ngx-translate dranhängen!
+          this.aiEffortMessage.set(`Team-Schnitt: ${points} P`);
+        } else {
+          this.aiEffortMessage.set('');
+        }
+      } else {
+        this.aiEffortMessage.set('');
+      }
+    });
+  }
+  
+  // 🪄 Klick-Funktion: Übernimmt den Wert, wenn der User es wünscht!
+  public applyAiEffort(): void {
+    if (this.suggestedEffortValue > 0) {
+      this.todoForm.get('effort')?.setValue(this.suggestedEffortValue);
+    }
   }
 
   public onSubmit(): void {

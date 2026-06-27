@@ -5,6 +5,12 @@ import { ConnectionService } from './connection-service';
 import { ProjectRepository } from '../repositories/project-repository';
 import { Project } from '../models/project';
 import { Milestone } from '../models/milestone';
+import { AiRepository, MilestoneSuggestion, MilestoneSuggestionsResponse } from '../repositories/ai-repository';
+import { MILESTONE_TEMPLATES } from '../shared/constants/milestone-template';
+import { UnifiedSuggestion } from '../models/unified-suggestion';
+import { MilestoneSuggestionsModel } from '../models/milestone-suggestions-model';
+import { Title } from '@angular/platform-browser';
+
 
 @Injectable({
   providedIn: 'root'
@@ -12,6 +18,7 @@ import { Milestone } from '../models/milestone';
 export class ProjectDataManagerService {
   private projectRepository = inject(ProjectRepository);
   private connectionService = inject(ConnectionService);
+  private aiRepository = inject(AiRepository)
 
   private readonly STORAGE_KEY_PREFIX = 'local_projects_';
 
@@ -169,4 +176,116 @@ export class ProjectDataManagerService {
       teamMembers: bp.teamMembers || []
     });
   }
+
+  /**
+   * erzeugt milestones von offline templates
+   */
+  private getMilestonesOffline(): Observable<MilestoneSuggestionsModel> {
+      console.log('📶 Fallback greift: Lade statische Frontend-Templates');
+      
+      const offlineSuggestions: UnifiedSuggestion[] = [];
+      Object.keys(MILESTONE_TEMPLATES).forEach(category => {
+        MILESTONE_TEMPLATES[category].forEach(template => {
+          offlineSuggestions.push({
+            title: template.title,
+            duration: template.duration,
+            source: 'TEMPLATE',
+            isRecommended: true
+          });
+        });
+      });
+      
+      const suggestions = {
+        recommended: offlineSuggestions,
+        degraded: []
+      }
+
+      return of(suggestions);
+  }
+
+  /**
+   * mapped milestoneDto zu innere model UnifiedSuggestion
+   */
+  private getMappedSuggestion(suggestionDto: MilestoneSuggestion, isRecommended: boolean): UnifiedSuggestion {
+      return {
+        title: suggestionDto.title,
+        score: suggestionDto.score,
+        source: 'KI' as const,
+        isRecommended: isRecommended
+      }
+  }
+  
+  /**
+   * DIE HYBRID-WEICHE: Entscheidet intelligent zwischen KI und Offline-Templates
+   */
+  public getMilestoneSuggestions(title: string, area: string, userId: string): Observable<MilestoneSuggestionsModel> {
+    
+    // 📶 PRÜFUNG: Was sagt der ConnectionService?
+    const offlineStatus = this.connectionService.isOffline();
+    console.log('🔄 getMilestoneSuggestions aufgerufen. ConnectionService sagt offline =', offlineStatus);
+    
+    if (offlineStatus) {
+      return this.getMilestonesOffline();
+    }
+
+    // 🚀 ONLINE-MODUS: Triggere Backend-KI-Vorschläge
+    console.log('🚀 Online-Modus aktiv! Sende Request an AiRepository für Titel:', title);
+    
+    return this.aiRepository.getMilestoneSuggestions(title, area, userId).pipe(
+      map((suggestionsFromServer: MilestoneSuggestionsResponse) => {
+        console.log('[KI-SCORES VOM SERVER EMPFANGEN]:');
+        console.table(suggestionsFromServer.recommended.map(s => ({ Meilenstein: s.title, Score: s.score })));
+        console.table(suggestionsFromServer.degraded.map(s => ({ Meilenstein: s.title, Score: s.score })));
+
+        const recommended = suggestionsFromServer.recommended.map(s => this.getMappedSuggestion(s, true))
+        const degraded = suggestionsFromServer.degraded.map(s => this.getMappedSuggestion(s, false))
+        return { recommended, degraded };
+      }),
+      catchError(err => {
+        console.error(' KI-Endpunkt fehlgeschlagen!');
+        console.log(' [SPIONAGE] Kompletter HTTP-Fehler:', err);
+        
+        if (err.error) {
+          console.log(' [SPIONAGE] Roher Server-Inhalt (err.error):', err.error);
+        }
+                
+        return this.getMilestonesOffline();
+      })
+  )};
+  
+  /**
+   * 📈 Erfolgs-Tracking: Meldet der KI ein erfolgreiches Hinzufügen (nur wenn online)
+   */
+  public trackMilestoneSelection(projectTitle: string, milestoneTitle: string, userId: string): Observable<void> {
+    if (this.connectionService.isOffline()) {
+      console.log('Offline: Auswahl-Feedback wird nicht an den Server gesendet.');
+      return of(undefined); // Gibt ein leeres Observable zurück, damit .subscribe() nicht bricht
+    }
+    
+    return this.aiRepository.trackMilestoneSelection(projectTitle, milestoneTitle, userId); 
+  }
+
+  /**
+   * Strafbank-Tracking: Schickt einen Vorschlag auf die Server-Strafbank (nur wenn online)
+   */
+  public trackMilestoneDegradation(projectTitle: string, milestoneTitle: string, userId: string): Observable<void> {
+    if (this.connectionService.isOffline()) {
+      console.log('Offline: Ablehnungs-Feedback wird nicht an den Server gesendet.');
+      return of(undefined);
+    }
+    
+    return this.aiRepository.trackMilestoneDegradation(projectTitle, milestoneTitle, userId);
+  }
+
+  /**
+   * Strafbank-Tracking: Schickt einen Vorschlag auf die Server-Strafbank (nur wenn online)
+   */
+  public trackMilestoneIgnorance(projectTitle: string, userId: string, milestoneTitles: string[]): Observable<void> {
+     if (this.connectionService.isOffline()) {
+        console.log("offline: Ignorance-Feedbakc wird nicht an den Server gesendet.")
+        return of(undefined)
+     }
+     return this.aiRepository.trackMilestonesIgnore(projectTitle, userId, milestoneTitles)
+  }
+
 }

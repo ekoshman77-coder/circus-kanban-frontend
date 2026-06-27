@@ -1,3 +1,19 @@
+@if (showAiRecommendation()) {
+  <app-planner-recommendation (closeRequest)="handleRecommendationResult($event)"></app-planner-recommendation>
+}
+
+@if (recommendedTodo()) {
+  <div class="active-todo-banner">
+    <div class="active-left">
+      <span class="active-badge">⚡ Aktueller Fokus</span>
+      <strong class="active-title">{{ recommendedTodo()?.task }}</strong>
+    </div>
+    <button (click)="recommendedTodo.set(null)" class="btn-complete-focus">
+      ✅ Erledigt!
+    </button>
+  </div>
+}
+
 <div class="planner-container">
   <header class="planner-header">
     <div class="header-main-row">
@@ -11,37 +27,6 @@
       Strategisch sortiert nach Dringlichkeit und Aufwand, völlig unabhängig von deinen Filtern.
     </p>
   </header>
-
-@if (recommendedTodo()) {
-    <div class="recommendation-card">
-      
-      @if (userEnergy() === 'low' && (recommendedTodo()?.effort || 0) > 2) {
-        <h3>📖 Recherche-Modus aktiviert:</h3>
-        <div class="todo-item-highlight research-style" style="border-color: #6366f1;"> <strong>{{ recommendedTodo()?.task }}</strong>
-          <p>Keine leichten Aufgaben mehr da. Nutze die Zeit, um dich entspannt in diesen großen Brocken einzulesen und Infos für morgen zu sammeln! ☕</p>
-          <span class="badge" style="background: #e0e7ff; color: #4338ca;">Aufwand: {{ recommendedTodo()?.effort }}pt</span>
-        </div>
-      } 
-      @else {
-        <h3>🚀 Smarte Empfehlung für genau jetzt:</h3>
-        <div class="todo-item-highlight">
-          <strong>{{ recommendedTodo()?.task }}</strong>
-          @if (recommendedTodo()?.description) {
-            <p>{{ recommendedTodo()?.description }}</p>
-          }
-          <span class="badge">Aufwand: {{ recommendedTodo()?.effort }}pt</span>
-        </div>
-      }
-
-    </div>
-  } @else {
-    <div class="recommendation-card clean-slate">
-      <h3>🎉 Alles erledigt!</h3>
-      <div class="todo-item-highlight oasis-style">
-        <p>Du hast absolut keine offenen Aufgaben mehr auf deinem Board. Ab in die Oase und Beine hochlegen! 🌴</p>
-      </div>
-    </div>
-  }
 
   <div class="matrix-grid">
     <div class="quadrant q-do-first">

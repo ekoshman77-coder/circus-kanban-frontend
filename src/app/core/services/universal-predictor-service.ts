@@ -20,8 +20,7 @@ public async predict(text: string, userId: string, contextType: 'todo' | 'note')
     // 🌐 Online-Pfad: Schickt die 3 Daten zum Server
     if (this.connectionService.status() === 'ONLINE') {
       try {
-        const payload = { text, contextType, userId };
-        return (await firstValueFrom(this.aiRepository.getServerPrediction(payload))).suggestedCategory;
+        return (await firstValueFrom(this.aiRepository.getServerPrediction(text, contextType))).suggestedCategory;
       } catch (err) {
         console.warn('⚡ Server-KI zickt, wechsle reibungslos in den Offline-Modus...');
         return this.predictOffline(text, userId, contextType);
@@ -33,13 +32,37 @@ public async predict(text: string, userId: string, contextType: 'todo' | 'note')
   }
 
   /**
+   * ⏱️ DER GLOBALE AUFWANDS-DETEKTIV (Komplett ohne userId!)
+   * Schaut im Team-Benchmark nach, wie viele Stunden ähnliche Aufgaben brauchten.
+   */
+public async predictEffort(text: string): Promise<number | null> {
+    if (!text || text.trim().length < 3) return null;
+
+    if (this.connectionService.status() === 'ONLINE') {
+      try {
+        const res = await firstValueFrom(this.aiRepository.getServerEffortPrediction({
+          text: text,
+          contextType: "todo"
+        }));
+
+        // Wir extrahieren die Zahl (das Repo gibt uns z.B. ein Objekt mit { suggestedEffort: number } zurück)
+        return res.suggestedEffort;
+      } catch (err) {
+        console.warn('⚡ Server-KI für Aufwand nicht erreichbar.');
+        return null;
+      }
+    }
+    return null;
+  }
+
+  /**
    * 📋 Funktion 2: Kategorieliste fürs Dropdown beim Öffnen
    * Spiegelt und funkt – holt entweder Server-Daten oder nutzt das lokale Backup.
    */
   public async getAvailableCategories(userId: string, contextType: 'todo' | 'note', localCategories: string[]): Promise<string[]> {
     if (this.connectionService.status() === 'ONLINE') {
       try {
-        return await firstValueFrom(this.aiRepository.getServerCategories(contextType, userId));
+        return await firstValueFrom(this.aiRepository.getServerCategories(contextType));
       } catch (err) {
         console.warn('⚠️ Server-Kategorien nicht erreichbar, nutze lokale Kategorieliste...');
       }
@@ -101,7 +124,7 @@ public async predict(text: string, userId: string, contextType: 'todo' | 'note')
   }
 
   /**
-   * 💾 Reiner Offline-Kanal: Holt die echten Zettel/Todos aus dem LocalStorage und zieht die Tags raus
+   * Reiner Offline-Kanal: Holt die echten Zettel/Todos aus dem LocalStorage und zieht die Tags raus
    */
   private getCategoriesFromLocalStorage(userId: string, contextType: 'todo' | 'note'): string[] {
     const storageKey = contextType === 'note' ? `local_notes_${userId}` : `local_todos_${userId}`;

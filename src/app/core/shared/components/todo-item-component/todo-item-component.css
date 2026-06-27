@@ -1,38 +1,36 @@
 /* ==========================================================================
    DAS KÄRTCHEN-GEHÄUSE (Gilt für Liste UND Kanban-Board!)
    ========================================================================== */
+/* ==========================================================================\n   DAS KÄRTCHEN-GEHÄUSE (Gilt für Liste UND Kanban-Board!)\n   ========================================================================== */
 :host {
   display: flex;
   flex-direction: column; 
   width: 100%;
   box-sizing: border-box;
   
-  /* 🟢 WICHTIG: Das Gehäuse selbst kriegt fast kein Padding, 
-     damit der Rahmen schön dünn und präzise wird! */
   padding: 3px; 
   
-  /* Der Rahmen außen rum kann ganz dezent sein */
   border: 1px solid #3b82f6;
   border-radius: 8px;        
-  margin-bottom: 8px; /* Abstand zum nächsten To-Do-Paket */
+  margin-bottom: 8px; 
   box-shadow: 0 1px 3px rgba(16, 42, 58, 0.05);
   cursor: grab;
-  transition: all 0.2s ease;
+  
+  /* 🎯 RETTUNG 1: Verhindert, dass innere Elemente/Hintergründe \n     durch Subpixel-Fehler über den Rahmen blitzen! */
+  overflow: hidden; 
+
+  /* 🎯 RETTUNG 2: Nur die echten Farbänderungen animieren, \n     das verhindert, dass der Browser das Layout "zappeln" lässt */
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 :host-context(.todo-list-container) {
-  transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out !important;
+  /* Auch hier die All-Transition bremsen */
+  transition: box-shadow 0.2s ease-in-out, border-color 0.2s ease-in-out !important;
 }
 
 :host:hover {
   box-shadow: 0 6px 14px rgba(16, 42, 58, 0.18);
-  
-  /* 🔵 HIER BLEIBT DEIN DUNKELES BLAU: Schaltet beim Hovern auf das tiefe, edle Navy-Blau */
-  border-color: hsl(215, 90%, 31%); 
-}
-
-:host-context(.todo-list-container):hover {
-  transform: translateY(-1px) !important;
+  border-color: hsl(215, 90%, 30.5%); /* Dein edles Navy-Blau */
 }
 
 :host:active {

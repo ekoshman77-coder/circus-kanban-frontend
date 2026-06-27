@@ -1,0 +1,29 @@
+@if (projectService.recommendedSuggestions().length > 0) {
+  <div class="suggestions-section">
+    <h3 class="suggestions-title">💡 Empfohlene Meilensteine</h3>
+    <div class="suggestions-grid">
+      @for (suggestion of suggestions(); track suggestion.title) {
+        <div class="suggestion-pill-wrapper">
+          <button class="suggestion-pill-btn add-btn" 
+                  (click)="handleAccept(suggestion.title)"
+                  title="Zum Projekt hinzufügen">
+            ➕ {{ suggestion.title }}
+          </button>
+          <button class="degrade-pill-btn" 
+                  (click)="handleDegrade(suggestion.title)"
+                  title="Nicht mehr vorschlagen">
+            ❌
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+@if (suggestions().length > 0) {
+  <div class="more-suggestions-toggle-zone">
+    <button class="toggle-keller-btn" (click)="toggleShowMore()">
+      {{ showAll() ? '🔼 Oft abgelenkte Optionen ausblenden' : '🔽 Mehr Vorschläge anzeigen (Strafbank)' }}
+    </button>
+  </div>
+}

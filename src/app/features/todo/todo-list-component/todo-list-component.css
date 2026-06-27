@@ -160,3 +160,11 @@ h3 {
   border-radius: 8px;
   margin-bottom: 10px; /* Hält den Abstand beim Sliden sauber */
 }
+
+.todo-list > div {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  /* Erzwingt eine saubere Render-Ebene auf der Grafikkarte (GPU) \n     während das Element reingeslidet kommt! */
+  will-change: transform, opacity; 
+}

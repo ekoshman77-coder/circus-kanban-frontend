@@ -19,7 +19,8 @@ export class WelcomeComponent implements OnInit {
 
   public errorMessage = signal<string>(''); 
   public isLoading = signal<boolean>(false); 
-  public recentUsers = signal<string[]>([]);   
+  public recentUsers = signal<string[]>([]);  
+  public isNewUser = signal<boolean>(false); 
 
   ngOnInit(): void {
     // Wird jetzt garantiert beim Start ausgeführt!
@@ -57,6 +58,7 @@ public onLogin(): void {
     if (!name) return;
 
     this.isLoading.set(true);
+    this.isNewUser.set(false); // 🧹 Erstmal zurücksetzen
 
     this.userService.login(name).subscribe({
       next: (user) => {
@@ -69,28 +71,26 @@ public onLogin(): void {
         this.isLoading.set(false);
 
         if (err.status === 404 || err.status === 401) {
-          // 🔍 HIER PRÜFEN WIR: War der Name in unseren "Zuletzt eingeloggt"-Badges?
+          // 🔔 Der Server sagt: User existiert nicht -> Registrierung aufmachen!
+          this.isNewUser.set(true); 
+          
           const wasInLocalStorage = this.recentUsers().includes(name);
 
           if (wasInLocalStorage) {
-            // Fall 1: Der User war im LocalStorage, existiert aber in der DB nicht mehr (z.B. nach DB-Reset)
-            this.errorMessage.set(`Es tut mir leid, der Benutzer "${name}" existiert nicht mehr in unserer Datenbank. Bitte erstelle ein neues Board! ✨`);
+            this.errorMessage.set(`Der Benutzer "${name}" existiert nicht mehr in der Datenbank. Bitte fülle die Felder unten aus, um dein Board neu zu erstellen! ✨`);
             
-            // 🧹 Aus der lokalen Liste entfernen
+            // Aus der lokalen Liste entfernen
             const filteredList = this.recentUsers().filter(u => u !== name);
             this.recentUsers.set(filteredList);
             localStorage.setItem('recent_todos_users', JSON.stringify(filteredList));
-            
-            // Input leeren, da der alte Name hinfällig ist
-            this.usernameInput.set('');
           } else {
-            // Fall 2: Ein ganz neuer Name wurde eingetippt, den die DB einfach (noch) nicht kennt
-            this.errorMessage.set(`Der Name "${name}" wurde nicht gefunden. Wenn du neu hier bist, klicke einfach auf "Neues Board erstellen"! 🚀`);
-            // Hier lassen wir den Namen im Input stehen, damit der User direkt auf "Registrieren" klicken kann!
+            this.errorMessage.set(`Der Name "${name}" wurde nicht gefunden. Bitte trage deine Daten unten ein, um ein neues Board zu erstellen! 🚀`);
           }
+          
+          // Name im Input stehen lassen
+          this.usernameInput.set(name);
 
         } else {
-          // Ein anderer Fehler (z.B. Server komplett offline)
           this.errorMessage.set(err.error?.error || 'Verbindung zum Server fehlgeschlagen.');
         }
       }
@@ -99,33 +99,44 @@ public onLogin(): void {
 
 public onRegister(): void {
     const username = this.usernameInput().trim();
-    const firstName = this.firstNameInput().trim();
-    const lastName = this.lastNameInput().trim();
-
-    // Validierung: Für die Registrierung brauchen wir jetzt alle drei!
-    if (!username || !firstName || !lastName) {
-      this.errorMessage.set('Bitte fülle alle Felder (Username, Vorname, Nachname) aus! ✨');
+    if (!username) {
+      this.errorMessage.set('Bitte gib zuerst einen Benutzernamen ein! ✨');
       return;
     }
 
-    this.isLoading.set(true); //[cite: 4]
+    // 🌟 SCHRITT 1: Wenn die Felder noch ZU sind, machen wir sie jetzt einfach AUF!
+    if (!this.isNewUser()) {
+      this.isNewUser.set(true);
+      this.errorMessage.set(''); // Eventuelle alte Fehler löschen
+      return; // Hier stoppen wir! Der User soll erst tippen.
+    }
 
-    // 🔄 Wir übergeben alle drei Parameter an deinen Service!
+    // 🌟 SCHRITT 2: Wenn die Felder schon AUF sind, validieren und registrieren wir echt!
+    const firstName = this.firstNameInput().trim();
+    const lastName = this.lastNameInput().trim();
+
+    if (!firstName || !lastName) {
+      this.errorMessage.set('Bitte fülle alle Felder (Vorname und Nachname) aus! ✨');
+      return;
+    }
+
+    this.isLoading.set(true);
+
     this.userService.register(username, firstName, lastName).subscribe({
       next: (user) => {
-        this.saveUserToRecent(user.username); //[cite: 4]
-        this.errorMessage.set(''); //[cite: 4]
+        this.saveUserToRecent(user.username);
+        this.errorMessage.set('');
+        this.isNewUser.set(false); // Formular wieder einklappen
         
-        // Alle Felder nach erfolgreicher Registrierung leeren 🧹
-        this.usernameInput.set(''); //[cite: 4]
+        // Felder leeren
+        this.usernameInput.set('');
         this.firstNameInput.set('');
         this.lastNameInput.set('');
-        
-        this.isLoading.set(false); //[cite: 4]
+        this.isLoading.set(false);
       },
       error: (err: string) => {
-        this.errorMessage.set(err || 'Registrierung fehlgeschlagen.'); //[cite: 4]
-        this.isLoading.set(false); //[cite: 4]
+        this.errorMessage.set(err || 'Registrierung fehlgeschlagen.');
+        this.isLoading.set(false);
       }
     });
   }

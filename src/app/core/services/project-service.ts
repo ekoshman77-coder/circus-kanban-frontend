@@ -10,6 +10,8 @@ import { TodoViewModel } from '../viewmodel/todo-view-model';
 import { TodoService } from './todo/todo-service';
 import { Todo } from '../models/todo';
 import { NoteService } from './note-service';
+import { UnifiedSuggestion } from '../models/unified-suggestion';
+import { MilestoneSuggestionsModel } from '../models/milestone-suggestions-model';
 
 @Injectable({
   providedIn: 'root'
@@ -23,6 +25,24 @@ export class ProjectService {
   private temporaryDraftSignal = signal<Project | null>(null);
   public readonly temporaryDraft = this.temporaryDraftSignal.asReadonly();
 
+  private _aiSuggestionsSignal = signal<MilestoneSuggestionsModel | null>(null);
+
+  private _showAll = signal<boolean>(false)
+  public showAll = computed(() => this._showAll())
+
+  // 🕶️ Die Component holt sich hieraus blind die empfohlenen Meilensteine
+  public readonly recommendedSuggestions = computed(() => {
+    const model = this._aiSuggestionsSignal();
+    if (!model) {
+      return []
+    }
+    return this._showAll()
+        ? [ ...model.recommended, ...model.degraded]
+        : model.recommended
+  });
+
+  // Signal-Typ anpassen auf unser neues, einheitliches Modell
+//  public readonly aiSuggestions = this._aiSuggestionsSignal.asReadonly();
   private readonly STORAGE_KEY = 'pending_project_calculation';
 
   private _projectsSignal = signal<Project[]>([]);
@@ -140,13 +160,15 @@ export class ProjectService {
       }
     }
 
+    const idee = this.noteService.notesList().find(idee => idee.id === targetIdeaId)
+
     // Wenn kein Backup da war oder es eine andere Idee war: Frisch starten!
-    console.log('🆕 Starte frische Kalkulation für Idee:', ideaTitle);
+    console.log('Starte frische Kalkulation für Idee:', ideaTitle);
     this.temporaryDraftSignal.set(new Project({
       ideaId: targetIdeaId,
       title: ideaTitle || '',
       milestones: [],
-      area: 'Allgemein'
+      area: idee?.tag ?? "Allgemein"
     }));
   }
 
@@ -156,7 +178,7 @@ export class ProjectService {
   }
 
   /**
-   * 🧮 LIVE-STATUS BERECHNUNG (On-The-Fly):
+   * LIVE-STATUS BERECHNUNG (On-The-Fly):
    * Nimmt die aktuellen To-Dos der Komponente und sagt blitzschnell,
    * welcher Status gilt. Keine Abhängigkeiten zwischen den Services!
    */
@@ -174,7 +196,7 @@ export class ProjectService {
   }
 
   /**
-   * 📊 LIVE-FORTSCHRITT BERECHNUNG (On-The-Fly):
+   * LIVE-FORTSCHRITT BERECHNUNG (On-The-Fly):
    */
   public calculateMilestoneProgress(milestoneTodos: TodoViewModel[]): number {
     if (!milestoneTodos || milestoneTodos.length === 0) return 0;
@@ -264,5 +286,113 @@ export class ProjectService {
         result.concat(this.todoService.getTodosForMilestone(ms.id))
         , [])
     return todos
+  }
+
+  /**
+   * 📈 Meilenstein akzeptieren und über den DataManager tracken
+   */
+  public acceptSuggestion(projectTitle: string, milestoneTitle: string): void {
+    // Sofort lokal aus dem Signal löschen für eine blitzschnelle UI
+    const allSuggestions = [
+      ...(this._aiSuggestionsSignal()?.recommended || []),
+      ...(this._aiSuggestionsSignal()?.degraded || [])
+    ]
+
+    const milestone = allSuggestions.find(m => m.title === milestoneTitle)
+
+    this._aiSuggestionsSignal.update(model => {
+      if (!model) return null;
+      return {
+        recommended: model.recommended.filter(s => s.title !== milestoneTitle),
+        degraded: model.degraded.filter(s => s.title !== milestoneTitle)
+      };
+    });
+
+    const userId = this.userService.getCurrentUserId();
+    if (!userId || !milestone) return;
+    
+    if (milestone.source === 'KI') {
+    this.dataManager.trackMilestoneSelection(projectTitle, milestoneTitle, userId).subscribe();
+    }
+  }
+
+  /**
+   * 📉 Meilenstein ablehnen (Wegklicken) und über den DataManager tracken
+   */
+  public degradeSuggestion(projectTitle: string, milestoneTitle: string): void {
+    // Sofort visuell aus beiden Listen kicken
+    const allSuggestions = [
+      ...(this._aiSuggestionsSignal()?.recommended || []),
+      ...(this._aiSuggestionsSignal()?.degraded || [])
+    ]
+    const milestone = allSuggestions.find(m => m.title === milestoneTitle)
+    this._aiSuggestionsSignal.update(model => {
+      if (!model) return null;
+      return {
+        recommended: model.recommended.filter(s => s.title !== milestoneTitle),
+        degraded: model.degraded.filter(s => s.title !== milestoneTitle) 
+      };
+    });
+
+    const userId = this.userService.getCurrentUserId();
+    if (!userId || !milestone) return;
+
+    if (milestone.source === 'KI') {
+       this.dataManager.trackMilestoneDegradation(projectTitle, milestoneTitle, userId).subscribe();
+    }
+  }
+
+  /**
+   * sendet ignorierte milescones zur KI
+   * @param projectTitle
+   * @param userId 
+   * @param milestoneTitles 
+   */
+  public ignoreSuggestions(projectTitle: string) {
+    const userId = this.userService.getCurrentUserId();
+    if (!userId) {
+      return
+    }
+
+    const titles = this.recommendedSuggestions()
+                          .filter(milestone => milestone.source === 'KI')
+                          .map(milestone => milestone.title)
+
+    this.dataManager.trackMilestoneIgnorance(projectTitle, userId, titles).subscribe()
+  }
+
+  public showMore() {
+    this._showAll.set(true)
+  }
+
+  public showLess() {
+    this._showAll.set(false)
+  }
+
+  /**
+   * ⚡ Lädt Vorschläge über die intelligente DataManager-Weiche
+   */
+  public loadMilestoneSuggestions(title: string, area: string): void {
+    if (!title || title.trim().length < 3) {
+      this._aiSuggestionsSignal.set({recommended: [], degraded: []});
+      return;
+    }
+    const userId = this.userService.getCurrentUserId()
+    if (!userId) {
+      return
+    }
+
+    // Hier rufen wir jetzt den DataManager auf! (Nutzt das Signal mit Klammern: currentUserId())
+    this.dataManager.getMilestoneSuggestions(title, area, userId).subscribe({
+      next: (suggestions: MilestoneSuggestionsModel) => this._aiSuggestionsSignal.set(suggestions),
+      error: (err) => console.error('Fehler beim Laden der Meilenstein-Vorschläge:', err)
+    });
+  }
+
+  /**
+   * Leert die KI-Vorschläge komplett (wird beim Speichern/Abbrechen aufgerufen)
+   */
+  public cleanSuggestions(): void {
+    this._aiSuggestionsSignal.set({ recommended: [], degraded: [] });
   }
 }

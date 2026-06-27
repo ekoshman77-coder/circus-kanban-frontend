@@ -1,24 +1,32 @@
-<div class="category-hybrid-zone"> @if (suggestedTag()) {
-    <div class="ai-hint-badge animate-pop"> <span>💡 KI-Tipp: <strong>{{ suggestedTag() }}</strong></span> <button type="button" class="btn-confirm-ai" (click)="acceptAiSuggestion()"> Ja-passt 👍
-      </button>
-    </div>
+<div class="category-hybrid-zone">
+
+  @if (isUserTyping() || isAiLoading()) {
+  <div class="ai-hint-badge ai-loading-skeleton">
+    <div class="skeleton-sparkle">✨</div>
+    <div class="skeleton-bar"></div>
+  </div>
+  }
+  @else if (suggestedTag()) {
+  <div class="ai-hint-badge animate-pop">
+    <span>💡 KI-Tipp: <strong>{{ suggestedTag() }}</strong></span>
+    <button type="button" class="btn-confirm-ai" (click)="acceptAiSuggestion()"> Ja-passt 👍
+    </button>
+  </div>
   }
 
-  <div class="input-with-arrow-group"> <input 
-      type="text" 
-      [ngModel]="textInput()" 
-      (input)="updateValue($any($event.target).value)"
-      [placeholder]="placeholder()" 
-      class="free-category-input" 
-    />
-    
+  <div class="input-with-arrow-group">
+    <input type="text" [ngModel]="textInput()" (input)="updateValue($any($event.target).value)"
+      [placeholder]="placeholder()" class="free-category-input" />
+
     <button type="button" class="arrow-toggle-btn" (click)="toggleDropdown()"> ▼
     </button>
   </div>
 
   @if (isDropdownOpen()) {
-    <ul class="dropdown-selection-menu"> @for (tag of availableTags(); track tag) {
-        <li (click)="selectFromDropdown(tag)">{{ tag }}</li> }
-    </ul>
+  <ul class="dropdown-selection-menu">
+    @for (tag of availableTags(); track tag) {
+    <li (click)="selectFromDropdown(tag)">{{ tag }}</li>
+    }
+  </ul>
   }
 </div>

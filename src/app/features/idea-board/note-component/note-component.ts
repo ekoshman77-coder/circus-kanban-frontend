@@ -11,7 +11,7 @@ import { NoteViewModel } from '../../../core/viewmodel/note-view-model';
   styleUrl: './note-component.css',
 })
 export class NoteComponent {
-  // 📥 Das schlaue, langlebige ViewModel kommt von der Pinnwand rein
+  // Das schlaue, langlebige ViewModel kommt von der Pinnwand rein
   @Input({ required: true }) vm!: NoteViewModel;
 
   // 📢 Event nach oben für die PostgreSQL-Datenbank

@@ -401,6 +401,7 @@
     will-change: right;
     transform: translateZ(0);
     transition: right 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+    z-index: 1000;
 }
 
 /* 🟢 DER RUNDE ZIEH-KNOPF: Perfekt an die linke Kante gepresst */
