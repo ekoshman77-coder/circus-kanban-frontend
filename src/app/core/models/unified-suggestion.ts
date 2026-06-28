@@ -3,5 +3,6 @@ export interface UnifiedSuggestion {
   score?: number;      // Kommt von der KI (Online)
   duration?: number;   // Kommt vom Template (Offline)
   source: 'KI' | 'TEMPLATE';
-  isRecommended: boolean
+  isRecommended: boolean;
+  words: string[]
 }

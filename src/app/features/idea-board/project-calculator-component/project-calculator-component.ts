@@ -48,6 +48,7 @@ export class ProjectCalculatorComponent implements OnInit {
 
   // Ein eigenes, internes Signal NUR für das Editieren eines echten Projekts
   private localEditProject = signal<Project | null>(null);
+
   // Die reaktive Lese-Brille für die gesamte Komponente:
   // Schnappt sich automatisch das editierte Projekt ODER den Entwurf aus dem Service!
   public localProjectDraft = computed(() => {
@@ -76,6 +77,7 @@ export class ProjectCalculatorComponent implements OnInit {
   public editingMilestoneId: string | null = null;
   public editTitle: string = '';
   public editTime: number | null = null;
+  private allMilestonesAreShown: boolean = false
   private initialNavState = signal<'idea' | 'project' | null>(null);
 
   constructor() {
@@ -332,8 +334,9 @@ export class ProjectCalculatorComponent implements OnInit {
       this.projectService.saveCalculatedProject(this.projectToSend).subscribe({
         next: (projectId) => {
           console.log('🚀 [Backend] Neues Projekt erfolgreich erstellt! ID:', projectId);
+          console.log("projekt ist gespeichert: allMilestonesAreShown = ", this.allMilestonesAreShown)
           if ( this.projectToSend ) { 
-            this.projectService.ignoreSuggestions(this.projectToSend.title)
+            this.projectService.ignoreSuggestions(this.projectToSend.title, this.allMilestonesAreShown)
           }
           this.projectToSend = null;
           this.projectService.cleanSuggestions()
@@ -350,6 +353,10 @@ export class ProjectCalculatorComponent implements OnInit {
       });
 
     }
+  }
+
+  public degradedAreShown(shown: boolean) {
+    this.allMilestonesAreShown = shown
   }
 
   /**

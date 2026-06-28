@@ -1,3 +1,4 @@
+/* --- BASIS-LAYOUT --- */
 .suggestions-section {
   margin-top: 20px;
   padding: 16px;
@@ -19,28 +20,95 @@
   gap: 8px;
 }
 
+/* 🟢 ALLGEMEINES STYLING FÜR ALLE PILLEN-WRAPPER */
 .suggestion-pill-wrapper {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
   border-radius: 20px;
-  overflow: hidden;
   transition: all 0.2s ease;
 }
 
-.suggestion-pill-wrapper:hover {
-  border-color: #94a3b8;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+
+/* =================================================== */
+/* 🧠 WELT 1: DIE EXTRA FARBIGEN KI-VORSCHLÄGE (GRÜN)   */
+/* =================================================== */
+
+.suggestion-pill-wrapper.has-ki-reason {
+  background-color: #f0fdf4; /* Zarter, moderner Grünton */
+  border: 1px solid #86efac;  /* Mintgrüner Rand */
 }
+
+.suggestion-pill-wrapper.has-ki-reason:hover {
+  border-color: #22c55e;
+  background-color: #dcfce7;
+  box-shadow: 0 2px 6px rgba(34, 197, 94, 0.15);
+}
+
+.suggestion-pill-wrapper.has-ki-reason .suggestion-pill-btn {
+  color: #166534; /* Textfarbe Dunkelgrün für perfekte Lesbarkeit */
+  font-weight: 600;
+}
+
+/* 🟢 DER KI-TOOLTIP: Passend im edlen Dunkelgrün gestylt */
+.suggestion-pill-wrapper.has-ki-reason .custom-tooltip {
+  background-color: #064e3b; /* Sattes, tiefes KI-Waldgrün */
+  border: 1px solid #059669;
+}
+
+.suggestion-pill-wrapper.has-ki-reason .custom-tooltip::after {
+  border-color: #064e3b transparent transparent transparent; /* Pfeilfarbe grün */
+}
+
+.suggestion-pill-wrapper.has-ki-reason .tooltip-header {
+  color: #34d399; /* Mintgrüne Überschrift im Tooltip */
+}
+
+
+/* =================================================== */
+/* ✨ WELT 2: DIE NEUTRALEN STANDARD-TEMPLATES (GRAU)  */
+/* =================================================== */
+
+.suggestion-pill-wrapper.is-standard {
+  background-color: #f8fafc; /* Neutrales, sauberes Schiefer-Hellgrau */
+  border: 1px solid #cbd5e1;
+}
+
+.suggestion-pill-wrapper.is-standard:hover {
+  border-color: #94a3b8;
+  background-color: #f1f5f9;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.suggestion-pill-wrapper.is-standard .suggestion-pill-btn {
+  color: #475569; /* Solides Anthrazit für Standard-Vorschläge */
+  font-weight: 500;
+}
+
+/* ⚪ DER STANDARD-TOOLTIP: Klassisch im edlen Dunkelgrau gestylt */
+.suggestion-pill-wrapper.is-standard .custom-tooltip {
+  background-color: #1e293b; /* Schickes Dunkelgrau/Blau */
+  border: 1px solid #475569;
+}
+
+.suggestion-pill-wrapper.is-standard .custom-tooltip::after {
+  border-color: #1e293b transparent transparent transparent; /* Pfeilfarbe grau */
+}
+
+.suggestion-pill-wrapper.is-standard .tooltip-header {
+  color: #94a3b8; /* Dezente graue Überschrift */
+}
+
+
+/* =================================================== */
+/* 🛠️ GEMEINSAME CODES (BUTTONS & SCHWEBENDER TOOLTIP)  */
+/* =================================================== */
 
 .suggestion-pill-btn {
   background: none;
   border: none;
   padding: 6px 14px;
   font-size: 0.85rem;
-  font-weight: 500;
-  color: #334155;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -63,7 +131,67 @@
   color: #ef4444;
 }
 
-/* Button Zone */
+.score-indicator {
+  font-size: 0.75rem;
+  opacity: 0.6;
+  margin-left: 4px;
+}
+
+/* 🎨 DIE SCHWEBENDE TOOLTIP-BOX (STRUKTUR) */
+.custom-tooltip {
+  position: absolute;
+  bottom: 42px; /* Schwebt exakt über der Pille */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 260px;
+  color: #f8fafc;
+  padding: 10px 14px;
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.25);
+  z-index: 100;
+  pointer-events: none;
+  
+  /* Startzustand: Unsichtbar */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+}
+
+.custom-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px;
+  border-style: solid;
+}
+
+/* HOVER-TRIGGER */
+.suggestion-pill-wrapper:hover .custom-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.tooltip-header {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.tooltip-body {
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: #e2e8f0;
+}
+
+.highlight-words {
+  color: #34d399; /* Die Wörter leuchten im KI-Tooltip neongrün heraus */
+  font-weight: 700;
+}
+
+/* --- KELLER ZONE --- */
 .more-suggestions-toggle-zone {
   margin: 16px 0;
   text-align: center;
@@ -84,30 +212,4 @@
 .toggle-keller-btn:hover {
   background: #e2e8f0;
   color: #334155;
-}
-
-/* Strafbank Styles */
-.degraded-section {
-  background: rgba(241, 245, 249, 0.4);
-  border-style: dashed;
-}
-
-.degraded-title {
-  margin: 0 0 12px 0;
-  font-size: 0.85rem;
-  color: #64748b;
-  font-weight: 600;
-}
-
-.degraded-pill .suggestion-pill-btn {
-  color: #64748b;
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.25s ease-out;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
 }

@@ -1,26 +1,43 @@
-@if (projectService.recommendedSuggestions().length > 0) {
+@if (shownSuggestions().length > 0) {
   <div class="suggestions-section">
     <h3 class="suggestions-title">💡 Empfohlene Meilensteine</h3>
     <div class="suggestions-grid">
-      @for (suggestion of suggestions(); track suggestion.title) {
-        <div class="suggestion-pill-wrapper">
-          <button class="suggestion-pill-btn add-btn" 
-                  (click)="handleAccept(suggestion.title)"
-                  title="Zum Projekt hinzufügen">
+      @for (suggestion of shownSuggestions(); track suggestion.title) {
+        
+        <div class="suggestion-pill-wrapper"
+             [class.has-ki-reason]="suggestion.words && suggestion.words.length > 0"
+             [class.is-standard]="!suggestion.words || suggestion.words.length === 0">
+          
+          <button class="suggestion-pill-btn add-btn" (click)="handleAccept(suggestion.title)">
             ➕ {{ suggestion.title }}
+            
+            @if (suggestion.score !== undefined) {
+              <span class="score-indicator">({{ suggestion.score }})</span>
+            }
           </button>
-          <button class="degrade-pill-btn" 
-                  (click)="handleDegrade(suggestion.title)"
-                  title="Nicht mehr vorschlagen">
+          
+          <button class="degrade-pill-btn" (click)="handleDegrade(suggestion.title)">
             ❌
           </button>
+
+          <div class="custom-tooltip">
+            @if (suggestion.words && suggestion.words.length > 0) {
+              <div class="tooltip-header">💡 KI-BEGRÜNDUNG</div>
+              <div class="tooltip-body">Empfohlen wegen: <strong class="highlight-words">{{ suggestion.words.join(', ') }}</strong></div>
+            } @else {
+              <div class="tooltip-header">✨ TEMPLATE</div>
+              <div class="tooltip-body">Basis-Empfehlung aus den Standard-Templates</div>
+            }
+          </div>
+
         </div>
+
       }
     </div>
   </div>
 }
 
-@if (suggestions().length > 0) {
+@if (mustShowButtonMore()) {
   <div class="more-suggestions-toggle-zone">
     <button class="toggle-keller-btn" (click)="toggleShowMore()">
       {{ showAll() ? '🔼 Oft abgelenkte Optionen ausblenden' : '🔽 Mehr Vorschläge anzeigen (Strafbank)' }}

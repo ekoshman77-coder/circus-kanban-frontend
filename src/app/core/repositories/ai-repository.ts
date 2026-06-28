@@ -18,6 +18,7 @@ export interface RecommendedTodoResponse {
 export interface MilestoneSuggestion {
   title: string;
   score: number;
+  words: string[]
 }
 
 export interface MilestoneSuggestionsResponse {

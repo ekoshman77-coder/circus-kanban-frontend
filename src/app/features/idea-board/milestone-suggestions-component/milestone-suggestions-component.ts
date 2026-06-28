@@ -15,22 +15,35 @@ export class MilestoneSuggestionsComponent {
 
   // 📢 Die Verbindung nach draußen! Schickt den Titel des Meilensteins an den Calculator
   public milestoneAccepted = output<string>();
+  public degradedAreShown = output<boolean>()
 
-  public suggestions = computed(() => this.projectService.recommendedSuggestions())
+  public suggestions = computed(() => this.projectService.suggestions())
 
-  public showAll = computed(() => this.projectService.showAll())
+  public showAll = signal<boolean>(false)
+
+  public mustShowButtonMore = computed(() => {
+    if (!this.suggestions()) {
+      return false
+    }
+    return this.suggestions()!.degraded.length > 0
+  })
 
   public toggleShowMore(): void {
-    if (this.showAll()) {
-      this.projectService.showLess()
-    } else {
-      this.projectService.showMore()
-    }
+    this.showAll.set(!this.showAll())
+    this.degradedAreShown.emit(this.showAll())
   }
 
-  public showLess(): void {
-    this.projectService.showLess()
-  }
+  // Die Component holt sich hieraus blind die empfohlenen Meilensteine
+  public readonly shownSuggestions = computed(() => {
+    const model = this.suggestions();
+    if (!model) {
+      return []
+    }
+    return this.showAll()
+        ? [ ...model.recommended, ...model.degraded]
+        : model.recommended
+  });
+
   // Diese Methode wird jetzt von den "+" Buttons aufgerufen
   public handleAccept(milestoneTitle: string): void {
     this.projectService.acceptSuggestion(this.projectTitle(), milestoneTitle);

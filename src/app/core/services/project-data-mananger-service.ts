@@ -190,7 +190,8 @@ export class ProjectDataManagerService {
             title: template.title,
             duration: template.duration,
             source: 'TEMPLATE',
-            isRecommended: true
+            isRecommended: true,
+            words: []
           });
         });
       });
@@ -211,7 +212,8 @@ export class ProjectDataManagerService {
         title: suggestionDto.title,
         score: suggestionDto.score,
         source: 'KI' as const,
-        isRecommended: isRecommended
+        isRecommended: isRecommended,
+        words: suggestionDto.words
       }
   }
   

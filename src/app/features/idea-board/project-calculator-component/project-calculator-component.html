@@ -49,10 +49,11 @@
             </button>
         </div>
 
-        @if (projectService.recommendedSuggestions().length > 0) {
         <app-milestone-suggestions-component [projectTitle]="localProjectDraft()?.title ?? ''"
-            (milestoneAccepted)="addAiMilestone($event)">
-        </app-milestone-suggestions-component>}
+            (milestoneAccepted)="addAiMilestone($event)"
+            (degradedAreShown)="degradedAreShown($event)"
+            >
+        </app-milestone-suggestions-component>
 
         <table class="calc-table" cdkDropList (cdkDropListDropped)="onDrop($event)">
             <thead>

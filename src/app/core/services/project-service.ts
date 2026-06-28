@@ -26,23 +26,8 @@ export class ProjectService {
   public readonly temporaryDraft = this.temporaryDraftSignal.asReadonly();
 
   private _aiSuggestionsSignal = signal<MilestoneSuggestionsModel | null>(null);
-
-  private _showAll = signal<boolean>(false)
-  public showAll = computed(() => this._showAll())
-
-  // 🕶️ Die Component holt sich hieraus blind die empfohlenen Meilensteine
-  public readonly recommendedSuggestions = computed(() => {
-    const model = this._aiSuggestionsSignal();
-    if (!model) {
-      return []
-    }
-    return this._showAll()
-        ? [ ...model.recommended, ...model.degraded]
-        : model.recommended
-  });
-
-  // Signal-Typ anpassen auf unser neues, einheitliches Modell
-//  public readonly aiSuggestions = this._aiSuggestionsSignal.asReadonly();
+  public suggestions = computed(() => this._aiSuggestionsSignal()) 
+  
   private readonly STORAGE_KEY = 'pending_project_calculation';
 
   private _projectsSignal = signal<Project[]>([]);
@@ -348,26 +333,34 @@ export class ProjectService {
    * @param userId 
    * @param milestoneTitles 
    */
-  public ignoreSuggestions(projectTitle: string) {
+  public ignoreSuggestions(projectTitle: string, allMilestoneswereShown: boolean) {
     const userId = this.userService.getCurrentUserId();
     if (!userId) {
       return
     }
+    if (!this._aiSuggestionsSignal) {
+      return
+    }
+    
+    const visibleSuggestions = allMilestoneswereShown 
+                                 ? [...(this._aiSuggestionsSignal()?.recommended)?? [],
+                                  ...(this._aiSuggestionsSignal()?.degraded)?? []]
+                                 : this._aiSuggestionsSignal()?.recommended?? []
 
-    const titles = this.recommendedSuggestions()
+    const titles = visibleSuggestions
                           .filter(milestone => milestone.source === 'KI')
                           .map(milestone => milestone.title)
 
     this.dataManager.trackMilestoneIgnorance(projectTitle, userId, titles).subscribe()
   }
 
-  public showMore() {
-    this._showAll.set(true)
-  }
+  // public showMore() {
+  //   this._showAll.set(true)
+  // }
 
-  public showLess() {
-    this._showAll.set(false)
-  }
+  // public showLess() {
+  //   this._showAll.set(false)
+  // }
 
   /**
    * ⚡ Lädt Vorschläge über die intelligente DataManager-Weiche
