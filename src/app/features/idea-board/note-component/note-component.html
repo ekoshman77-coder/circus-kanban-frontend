@@ -22,6 +22,11 @@
       @if (vm.note.isInCalculation) {
         <div class="calculation-badge">🧮 In Kalkulation</div>
       }
+      @if (vm.note.temperature !== undefined && vm.note.temperature !== null) {
+        <div class="note-tag-badge" style="background-color: rgba(255, 255, 255, 0.4); border: 1px solid rgba(0, 0, 0, 0.05);">
+          {{ vm.note.weatherCode | weatherIcon }} {{ vm.note.temperature }}°C
+        </div>
+      }
     </div>
   }
 

@@ -3,10 +3,11 @@ import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angul
 import { UniversalTagInputComponent } from '../../../core/shared/components/universal-tag-input-component/universal-tag-input-component';
 import { NoteService } from '../../../core/services/note-service';
 import { NOTE_COLORS, NOTE_COLOR_PALETTE } from '../../../core/shared/constants/colors';
-import { debounceTime, distinctUntilChanged, tap } from 'rxjs';
+import { debounceTime, distinctUntilChanged, firstValueFrom, tap } from 'rxjs';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { TodoService } from '../../../core/services/todo/todo-service';
 import { AiSuggestionService } from '../../../core/services/ai-suggestion-service';
+import { WeatherService } from '../../../core/services/weather-service';
 
 @Component({
   selector: 'app-note-input',
@@ -19,6 +20,7 @@ export class NoteInputComponent {
   private noteService = inject(NoteService);
   private todoService = inject(TodoService);
   private aiSuggestionService = inject(AiSuggestionService);
+  private weatherService  = inject(WeatherService)
 
   public newTitle = signal<string>('');
   public newContent = signal<string>('');
@@ -88,14 +90,33 @@ export class NoteInputComponent {
     });
   }
 
-  public saveNote(): void {
+  public async saveNote(): Promise<void> {
     const formValues = this.noteForm.value; // Holt die aktuellen Werte aus der Form
 
+let temperature: number | undefined = undefined;
+    let weatherCode: number | undefined = undefined;
+
+    try {
+      const weatherData = await firstValueFrom(this.weatherService.getWEatherCurrentLocation());
+      
+      if (weatherData && weatherData.current_weather) {
+        temperature = weatherData.current_weather.temperature;
+        weatherCode = weatherData.current_weather.weathercode;
+        console.log(`🌤️ Wetter erfolgreich ermittelt: ${temperature}°C, Code: ${weatherCode}`);
+      }
+    } catch (error) {
+      // Falls der User GPS blockiert oder der Wetter-Server offline ist, 
+      // fangen wir den Fehler ab, damit die Notiz TROTZDEM gespeichert wird!
+      console.warn('⚠️ Wetter konnte nicht geladen werden, Notiz wird ohne Wetter gespeichert:', error);
+    }
+    
     this.noteService.addNote({
       title: formValues.title || '',
       content: formValues.content || '',
       tag: formValues.category || '',
-      colorType: formValues.colorType || NOTE_COLORS.YELLOW
+      colorType: formValues.colorType || NOTE_COLORS.YELLOW,
+      temperature: temperature,
+      weatherCode: weatherCode
     });
 
     this.noteService.clearDraft();

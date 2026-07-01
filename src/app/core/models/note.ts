@@ -11,6 +11,8 @@ export class Note {
     colorType: string;
     tag?: string;
     isInCalculation?: boolean;
+    temperature?: number;
+    weatherCode?: number;
     
     constructor(init: {
         title: string, 
@@ -19,7 +21,9 @@ export class Note {
         userId: string,
         tag?: string | null, 
         id?: string | null,
-        isInCalculation?: boolean
+        isInCalculation?: boolean,
+        temperature?: number | null;
+        weatherCode?: number | null;
     }) {
         this.userId = init.userId?? ""
         this.title = init.title
@@ -28,5 +32,7 @@ export class Note {
         this.colorType = init.colorType
         this.tag = init.tag?? "" 
         this.isInCalculation = init.isInCalculation?? false
+        this.temperature = init.temperature?? undefined
+        this.weatherCode = init.weatherCode?? undefined
     }
 }

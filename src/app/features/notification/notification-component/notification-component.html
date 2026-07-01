@@ -1,0 +1,18 @@
+<div class="notification-container">
+  @if (notifications().length > 0) {
+    @for(notification of notifications(); track notification.id){
+    <div class="message-box">
+      @let n = notification; 
+      @switch(n.type) {
+        @case ('success') {<span>✅</span>}
+        @case ('info') {<span>ℹ️</span>}
+        @case ('error') {<span>❌</span>}
+      }
+      <span class="message-text" [ngClass]="'message-' + n?.type">
+        {{ n?.message }}
+      </span>
+      <button class="closeNotification" (click)="close(n.id)">×</button>
+    </div>
+  }  
+}
+</div>

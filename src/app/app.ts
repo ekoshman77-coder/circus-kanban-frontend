@@ -6,10 +6,11 @@ import { ConnectionService } from './core/services/connection-service';
 import { filter } from 'rxjs';
 import { NavigationHistoryService } from './core/services/navigation-history-service';
 import { IdeaBoardComponent } from './features/idea-board/idea-board-component/idea-board-component';
+import { NotificationComponent } from './features/notification/notification-component/notification-component';
 
 @Component({
   selector: 'app-root',
-  imports: [Apptitle, RouterLink, RouterOutlet, RouterLinkActive], // 'Home' und 'TodoPageComponent' fliegen hier raus, da sie über den Router geladen werden!
+  imports: [Apptitle, RouterLink, RouterOutlet, RouterLinkActive, NotificationComponent], // 'Home' und 'TodoPageComponent' fliegen hier raus, da sie über den Router geladen werden!
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

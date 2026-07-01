@@ -14,6 +14,7 @@ import { MILESTONE_TEMPLATES, TemplateMilestone } from '../../../core/shared/con
 import { I } from '@angular/cdk/keycodes';
 import { BoardFilterState } from '../team-board-component/team-board-component';
 import { MilestoneSuggestionsComponent } from '../milestone-suggestions-component/milestone-suggestions-component';
+import { DraftProjectWrapper } from '../../../core/models/draft-project-wrapper';
 
 @Component({
   selector: 'app-project-calculator-component',
@@ -432,7 +433,6 @@ export class ProjectCalculatorComponent implements OnInit {
     );
 
     // Signal updaten
-    // Ersetze am Ende von saveEditMilestone() das .set() durch:
     this.updateDraftSignal(new Project({
       ...currentDraft,
       milestones: updatedMilestones

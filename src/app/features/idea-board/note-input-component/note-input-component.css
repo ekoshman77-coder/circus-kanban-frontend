@@ -70,28 +70,52 @@ textarea.form-control {
   box-shadow: 0 2px 8px rgba(0,0,0,0.02);
 }
 
-/* 🚀 DER PREMIUM BUTTON (schön bündig rechts neben der Farbe) */
+.note-input-card.note-yellow { 
+  background-color: var(--note-yellow); 
+  --btn-bg: #b58900 !important;       /* Dunkles, warmes Honig-Gold */
+  --btn-hover: #9c7600 !important;
+}
+
+.note-input-card.note-green { 
+  background-color: var(--note-green);  
+  --btn-bg: #15803d !important;       /* Edles Smaragd-Grün */
+  --btn-hover: #166534 !important;
+}
+
+.note-input-card.note-pink { 
+  background-color: var(--note-pink);   
+  --btn-bg: #be185d !important;       /* Kräftiges Himbeer-Pink */
+  --btn-hover: #9d174d !important;
+}
+
+.note-input-card.note-blue { 
+  background-color: var(--note-blue);   
+  --btn-bg: #1d4ed8 !important;       /* Tiefes, klares Ozean-Blau */
+  --btn-hover: #1e40af !important;
+}
+
+/* 🚀 DER PREMIUM BUTTON (Holt sich die Variable jetzt garantiert vom Eltern-Element) */
 .submit-btn-premium {
   flex: 1;
   padding: 9px 16px;
-  background-color: #1e293b;
+  background-color: var(--btn-bg, #1e293b); /* Fallback auf Alt-Schwarz, falls keine Klasse matcht */
   color: #ffffff;
-  border: none;
+  border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 8px;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 6px rgba(30, 41, 59, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .submit-btn-premium:hover:not(:disabled) {
-  background-color: #0f172a;
+  background-color: var(--btn-hover, #0f172a);
   transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(30, 41, 59, 0.25);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
 }
 
 .submit-btn-premium:active:not(:disabled) {
@@ -99,8 +123,9 @@ textarea.form-control {
 }
 
 .submit-btn-premium:disabled {
-  background-color: rgba(0, 0, 0, 0.06);
-  color: rgba(0, 0, 0, 0.3);
+  background-color: rgba(0, 0, 0, 0.05);
+  color: rgba(0, 0, 0, 0.25);
+  border-color: transparent;
   box-shadow: none;
   cursor: not-allowed;
 }
@@ -112,7 +137,7 @@ textarea.form-control {
   gap: 0px;
   margin-bottom: 8px;
   
-  /* Deine neue HWB-Farbe als Basis, im Ruhezustand noch dezenter */
+  /* HWB-Farbe als Basis, im Ruhezustand noch dezenter */
   background: lab(41.03% 50.39 -79.18 / 0.468) !important; 
   border: 1px solid hwb(243 20% 30%) !important; /* Ein feiner, passender Rahmen */
   
@@ -150,4 +175,123 @@ textarea.form-control {
 /* Wenn gehoverrt wird, blenden wir den Text ein */
 .ai-hover-whisper-circle:hover .hover-text {
   opacity: 1 !important;
+}
+
+/* ✨ Ein magischer, dezenter Farbschimmer passend zur Kartenfarbe beim Hover */
+.note-input-card.note-yellow .submit-btn-premium:hover:not(:disabled) {
+  box-shadow: 0 6px 20px rgba(181, 137, 0, 0.4) !important;
+}
+.note-input-card.note-green .submit-btn-premium:hover:not(:disabled) {
+  box-shadow: 0 6px 20px rgba(21, 128, 61, 0.4) !important;
+}
+.note-input-card.note-pink .submit-btn-premium:hover:not(:disabled) {
+  box-shadow: 0 6px 20px rgba(190, 24, 93, 0.4) !important;
+}
+.note-input-card.note-blue .submit-btn-premium:hover:not(:disabled) {
+  box-shadow: 0 6px 20px rgba(29, 77, 216, 0.4) !important;
+}
+
+/* 🪄 Sanftes Pulsieren für die AI-Kugel, damit man sieht, dass sie interaktiv ist */
+.ai-hover-whisper-circle {
+  animation: gentle-pulse 3s infinite ease-in-out;
+}
+
+@keyframes gentle-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+
+/* ==========================================================================
+   ✨ KLEINE, ABER FEINE FINALE UPGRADES 
+   ========================================================================== */
+
+/* ⚡ 1. Die Eingabefelder passen ihr Leuchten jetzt reaktiv an die Kartenfarbe an! */
+.note-input-card.note-yellow .form-control:focus, 
+.note-input-card.note-yellow .select-field:focus {
+  border-color: rgba(181, 137, 0, 0.4) !important;
+  box-shadow: 0 0 8px rgba(181, 137, 0, 0.15) !important;
+}
+
+.note-input-card.note-green .form-control:focus, 
+.note-input-card.note-green .select-field:focus {
+  border-color: rgba(21, 128, 61, 0.4) !important;
+  box-shadow: 0 0 8px rgba(21, 128, 61, 0.15) !important;
+}
+
+.note-input-card.note-pink .form-control:focus, 
+.note-input-card.note-pink .select-field:focus {
+  border-color: rgba(190, 24, 93, 0.4) !important;
+  box-shadow: 0 0 8px rgba(190, 24, 93, 0.15) !important;
+}
+
+.note-input-card.note-blue .form-control:focus, 
+.note-input-card.note-blue .select-field:focus {
+  border-color: rgba(29, 77, 216, 0.4) !important;
+  box-shadow: 0 0 8px rgba(29, 77, 216, 0.15) !important;
+}
+
+/* Weicherer Übergang für den Focus-Wechsel */
+.form-control, .select-field {
+  transition: all 0.25s ease-in-out !important;
+}
+
+.form-control:focus, .select-field:focus {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  outline: none;
+}
+
+/* 🏷️ 2. Der edle Zeichenzähler */
+.character-counter {
+  display: block;
+  font-size: 0.75rem;
+  color: rgba(30, 41, 59, 0.4); /* Dezentes Slate-Grau */
+  text-align: right;
+  margin-top: 4px;
+  padding-right: 4px;
+  font-weight: 500;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ⚡ Die Eingabefelder passen ihr Leuchten jetzt reaktiv an die Kartenfarbe an */
+.note-input-card.note-yellow .form-control:focus, 
+.note-input-card.note-yellow .select-field:focus {
+  border-color: rgba(181, 137, 0, 0.4) !important;
+  box-shadow: 0 0 8px rgba(181, 137, 0, 0.15) !important;
+}
+
+.note-input-card.note-green .form-control:focus, 
+.note-input-card.note-green .select-field:focus {
+  border-color: rgba(21, 128, 61, 0.4) !important;
+  box-shadow: 0 0 8px rgba(21, 128, 61, 0.15) !important;
+}
+
+.note-input-card.note-pink .form-control:focus, 
+.note-input-card.note-pink .select-field:focus {
+  border-color: rgba(190, 24, 93, 0.4) !important;
+  box-shadow: 0 0 8px rgba(190, 24, 93, 0.15) !important;
+}
+
+.note-input-card.note-blue .form-control:focus, 
+.note-input-card.note-blue .select-field:focus {
+  border-color: rgba(29, 77, 216, 0.4) !important;
+  box-shadow: 0 0 8px rgba(29, 77, 216, 0.15) !important;
+}
+
+/* Weicherer Übergang für den Focus-Wechsel */
+.form-control, .select-field {
+  transition: all 0.25s ease-in-out !important;
+}
+
+.form-control:focus, .select-field:focus {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  outline: none;
 }

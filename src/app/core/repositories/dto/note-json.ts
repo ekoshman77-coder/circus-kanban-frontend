@@ -6,4 +6,6 @@ export interface INoteJson {
   colorType: string;
   tag?: string;
   isInCalculation?: boolean;
+  temperature?: number;
+  weatherCode?: number;
 }

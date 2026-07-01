@@ -2,7 +2,7 @@ import { inject, Injectable, signal, computed } from '@angular/core';
 import { Note } from '../models/note';
 import { NoteDataManagerService } from './note-data-mananger-service';
 import { UserService } from './user/user-service';
-import { Observable } from 'rxjs';
+
 @Injectable({
   providedIn: 'root'
 })
@@ -10,29 +10,25 @@ export class NoteService {
   private dataManager = inject(NoteDataManagerService);
   private userService = inject(UserService);
 
-  // 🌟 Der Zustand an der Tafel
+  // 🌟 Der zentrale Zustand an der Tafel (Der Notizen-Pool)
   private notesSignal = signal<Note[]>([]);
   public readonly notesList = this.notesSignal.asReadonly();
 
   private readonly DRAFT_KEY = 'draft_note';
 
-  /** 📝 Sichert den aktuellen Entwurf im LocalStorage */
   public saveDraft(noteData: any): void {
     localStorage.setItem(this.DRAFT_KEY, JSON.stringify(noteData));
   }
 
-  /** 🔍 Holt den gespeicherten Entwurf ab (falls vorhanden) */
   public getDraft(): any | null {
     const draft = localStorage.getItem(this.DRAFT_KEY);
     return draft ? JSON.parse(draft) : null;
   }
 
-  /** 🗑️ Löscht den Entwurf nach erfolgreichem Absenden */
   public clearDraft(): void {
     localStorage.removeItem(this.DRAFT_KEY);
   }
 
-  // Automatisch ermittelte User-ID aus deinem UserService-Signal
   private get currentUserId(): string {
     const user = this.userService.currentUser();
     if (!user) throw new Error('Kein Benutzer angemeldet!');
@@ -55,29 +51,32 @@ export class NoteService {
   }
 
   /**
-   * 2. Neuen Zettel hinzufügen (Farbe, Titel, Beschreibung)
+   * 2. Neuen Zettel hinzufügen
    */
   public addNote(input: {
     title: string,
     content: string,
     colorType: string,
-    tag?: string | null
+    tag?: string | null,
+    temperature?: number | null,
+    weatherCode?: number | null 
   }): void {
     const activeUser = this.userService.currentUser();
-    if (!activeUser) {
-      return;
-    }
+    if (!activeUser) return;
 
-    const newNote: Note = {
-      userId: activeUser!.id, // 👤 Wird hier automatisch injiziert!
+    // Erzeuge direkt eine saubere Instanz der Note-Klasse
+    const newNote = new Note({
+      userId: activeUser.id,
       title: input.title,
       content: input.content,
       colorType: input.colorType,
       tag: input.tag ?? "",
-      isInCalculation: false
-    };
+      isInCalculation: false,
+      temperature: input.temperature ?? null,
+      weatherCode: input.weatherCode ?? null
+    });
 
-    this.dataManager.createNote(newNote).subscribe({
+    this.dataManager.createNote(newNote, this.notesSignal()).subscribe({
       next: (savedNote) => {
         this.notesSignal.update(notes => [...notes, savedNote]);
       }
@@ -85,57 +84,65 @@ export class NoteService {
   }
 
   /**
-     * Zettel verändern (Jetzt mit sofortigem Signal-Turbo!)
-     */
-  public updateNote(updatedNote: Note): void {
-    console.log('⚡ LOG 2 :: NoteService empfängt Update für:', updatedNote.title, 'Flag:', updatedNote.isInCalculation);
-
-    this.notesSignal.update(notes => {
-      const neueListe = notes.map(n => n.id === updatedNote.id ? updatedNote : n);
-      console.log('📊 LOG 3 :: Signal-Array wurde aktualisiert. Neue Liste:', neueListe);
-      return neueListe;
-    });
-
-    this.dataManager.updateNote(updatedNote).subscribe({
-      next: (savedFromServer) => {
-        console.log('✅ LOG 4 :: Server/DataManager hat das Update bestätigt:', savedFromServer);
-      },
-      error: (err) => console.error('❌ Fehler beim Speichern:', err)
-    });
-  }
-  /**
-   * Zettel von der Wand reißen
+   * 3. Zettel verändern (Mit Signal-Vorabaktualisierung für maximale Performance)
    */
-  public removeNote(id: string): void {
-    console.log("NoteService:: removeNote")
-    const userId = this.currentUserId;
-    this.dataManager.deleteNote(id, userId).subscribe({
-      next: () => {
-        this.notesSignal.update(notes => notes.filter(n => n.id !== id));
+  public updateNote(updatedNote: Note): void {
+    const alteListe = this.notesSignal();
+
+    // Optimistisches UI-Update
+    this.notesSignal.update(notes => notes.map(n => n.id === updatedNote.id ? updatedNote : n));
+
+    this.dataManager.updateNote(updatedNote, alteListe).subscribe({
+      next: (savedFromServer) => {
+        // Ersetze das optimistische Objekt mit dem finalen Serverstand (z.B. falls IDs oder DB-Werte miterzeugt wurden)
+        this.notesSignal.update(notes => notes.map(n => n.id === updatedNote.id ? savedFromServer : n));
+      },
+      error: (err) => {
+        console.error('❌ Fehler beim Speichern, rollBack auf alten Zustand:', err);
+        this.notesSignal.set(alteListe);
       }
     });
   }
 
-  public updateNoteStatus(noteId: string, inCalculation: boolean){
-    console.log("NoteService:: updateNoteStatus, status =", inCalculation)
-    console.log("NoteService:: updateNoteStatus, noteId =", noteId)
-    const note = this.notesSignal().find(n => n.id === noteId)
-    console.log("NoteService:: updateNoteStatus, note =", note)
+  /**
+   * 4. Zettel löschen
+   */
+  public removeNote(id: string): void {
+    const alteListe = this.notesSignal();
+    
+    // Optimistisches UI-Update
+    this.notesSignal.update(notes => notes.filter(n => n.id !== id));
+
+    this.dataManager.deleteNote(id, alteListe).subscribe({
+      error: (err) => {
+        console.error('Fehler beim Löschen, stelle Liste wieder her:', err);
+        this.notesSignal.set(alteListe);
+      }
+    });
+  }
+
+  /**
+   * 5. Berechnungs-Status toggeln
+   */
+  public updateNoteStatus(noteId: string, inCalculation: boolean) {
+    const note = this.notesSignal().find(n => n.id === noteId);
     if (!note) {
-      console.warn(`Zettel mit ID ${noteId} wurde im NoteService nicht gefunden.`);
+      console.warn(`Zettel mit ID ${noteId} wurde nicht gefunden.`);
       return;
     }
-    const updatedNote = new Note({
-      ...note,
-      isInCalculation: inCalculation
-    })
 
-    this.dataManager.updateNote(updatedNote).subscribe({
-      next: (fromDB: Note) => {
-        this.notesSignal.update(notes => 
-            notes.map(note => note.id === fromDB.id ? fromDB : note)
-          )
-       }
-    })
+    const updatedNote = new Note({
+      title: note.title,
+      content: note.content,
+      colorType: note.colorType,
+      userId: note.userId,
+      tag: note.tag,
+      id: note.id,
+      isInCalculation: inCalculation,
+      temperature: note.temperature,
+      weatherCode: note.weatherCode
+    });
+
+    this.updateNote(updatedNote);
   }
 }

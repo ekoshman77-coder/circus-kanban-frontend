@@ -34,55 +34,63 @@ export class ProjectDataManagerService {
     return rawArray.map(json => this.mapToFrontendProject(json));
   }
 
-  public getProjects(userId: string): Observable<Project[]> {
+public getProjects(): Observable<Project[]> { // <-- Parameter 'userId' entfernt!
+    // Wir übergeben 'null' ans Repository, um die globalen Team-Projekte zu holen
     if (this.connectionService.isOffline()) {
-      return of(this.getFromLocalStorage(userId));
+      // Für den Offline-Modus nutzen wir temporär ein globales Bucket im LocalStorage
+      const data = localStorage.getItem(this.STORAGE_KEY_PREFIX + 'global_pool');
+      if (!data) return of([]);
+      const rawArray: any[] = JSON.parse(data);
+      return of(rawArray.map(json => this.mapToFrontendProject(json)));
     }
 
-    return this.projectRepository.getProjectsByUserId(userId).pipe(
+    return this.projectRepository.getProjectsByUserId(null).pipe(
       map(backendProjects => {
         const liveProjects = backendProjects.map(bp => this.mapToFrontendProject(bp));
-        this.saveToLocalStorage(userId, liveProjects);
+        // Offline-Cache aktualisieren
+        localStorage.setItem(this.STORAGE_KEY_PREFIX + 'global_pool', JSON.stringify(liveProjects));
         return liveProjects;
       }),
       catchError(err => {
-        console.error('Fehler beim Online-Laden, weiche auf LocalStorage aus:', err);
-        return of(this.getFromLocalStorage(userId));
+        console.error('Fehler beim Online-Laden der Projekte, weiche auf LocalStorage aus:', err);
+        const data = localStorage.getItem(this.STORAGE_KEY_PREFIX + 'global_pool');
+        if (!data) return of([]);
+        const rawArray: any[] = JSON.parse(data);
+        return of(rawArray.map(json => this.mapToFrontendProject(json)));
       })
     );
   }
-
-  public createProject(project: Project, userId: string): Observable<Project> {
-    const body = this.mapToCreateDto(project, userId);
+  
+public createProject(project: Project, actualList: Project[]): Observable<Project> { // <-- Parameter 'userId' entfernt, 'actualList' hinzugefügt!
+    // Wir nehmen die userId einfach direkt aus dem Projekt oder setzen einen Fallback, falls nötig.
+    // Da das Mapping-Helper 'mapToCreateDto' die userId verlangt, holen wir sie uns dort aus dem teamMember-Array oder dem DTO.
+    const projectUserId = (project as any).userId || 'global_user';
+    const body = this.mapToCreateDto(project, projectUserId);
 
     if (this.connectionService.isOffline()) {
-      const lokaleListe = this.getFromLocalStorage(userId);
-      lokaleListe.push(project);
-      this.saveToLocalStorage(userId, lokaleListe);
+      const neueListe = [...actualList, project];
+      localStorage.setItem(this.STORAGE_KEY_PREFIX + 'global_pool', JSON.stringify(neueListe));
       return of(project);
     }
 
     return this.projectRepository.createProject(body).pipe(
       map(backendProject => {
         const saved = this.mapToFrontendProject(backendProject);
-        const aktuelleListe = this.getFromLocalStorage(userId).filter(p => p.id !== project.id);
+        const aktuelleListe = actualList.filter(p => p.id !== project.id);
         aktuelleListe.push(saved);
-        this.saveToLocalStorage(userId, aktuelleListe);
+        localStorage.setItem(this.STORAGE_KEY_PREFIX + 'global_pool', JSON.stringify(aktuelleListe));
         return saved;
       })
     );
   }
 
-  public updateProject(project: Project, userId: string): Observable<Project | undefined> {
-    const body = this.mapToCreateDto(project, userId);
+  public updateProject(project: Project, actualList: Project[]): Observable<Project | undefined> { // <-- Parameter 'userId' entfernt, 'actualList' hinzugefügt!
+    const projectUserId = (project as any).userId || 'global_user';
+    const body = this.mapToCreateDto(project, projectUserId);
 
     if (this.connectionService.isOffline()) {
-      const lokaleListe = this.getFromLocalStorage(userId);
-      const index = lokaleListe.findIndex(p => p.id === project.id);
-      if (index !== -1) {
-        lokaleListe[index] = project;
-        this.saveToLocalStorage(userId, lokaleListe);
-      }
+      const neueListe = actualList.map(p => p.id === project.id ? project : p);
+      localStorage.setItem(this.STORAGE_KEY_PREFIX + 'global_pool', JSON.stringify(neueListe));
       return of(project);
     }
 
@@ -93,17 +101,17 @@ export class ProjectDataManagerService {
     return this.projectRepository.updateProject(project.id, body).pipe(
       map(backendProject => {
         const updated = this.mapToFrontendProject(backendProject);
-        const lokaleListe = this.getFromLocalStorage(userId).filter(p => p.id !== project.id);
-        lokaleListe.push(updated);
-        this.saveToLocalStorage(userId, lokaleListe);
+        const aktuelleListe = actualList.filter(p => p.id !== project.id);
+        aktuelleListe.push(updated);
+        localStorage.setItem(this.STORAGE_KEY_PREFIX + 'global_pool', JSON.stringify(aktuelleListe));
         return updated;
       })
     );
   }
 
-  public deleteProject(id: string, userId: string): Observable<void | undefined> {
-    const lokaleListe = this.getFromLocalStorage(userId).filter(p => p.id !== id);
-    this.saveToLocalStorage(userId, lokaleListe);
+public deleteProject(id: string, actualList: Project[]): Observable<void | undefined> { // <-- Parameter 'userId' entfernt, 'actualList' hinzugefügt!
+    const neueListe = actualList.filter(p => p.id !== id);
+    localStorage.setItem(this.STORAGE_KEY_PREFIX + 'global_pool', JSON.stringify(neueListe));
 
     if (id.startsWith('OFFLINE') || id.startsWith('tmp_')) {
       return of(undefined);
@@ -111,7 +119,7 @@ export class ProjectDataManagerService {
 
     return this.projectRepository.deleteProject(id);
   }
-
+  
   public synchronizeData(userId: string): Observable<Project[]> {
     const lokaleListe = this.getFromLocalStorage(userId);
     if (lokaleListe.length === 0) return of([]);

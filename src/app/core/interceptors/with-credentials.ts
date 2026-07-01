@@ -2,6 +2,11 @@ import { HttpInterceptorFn } from '@angular/common/http';
 
 export const withCredentialsInterceptor: HttpInterceptorFn = (req, next) => {
 
+// Wenn die Anfrage an die externe Wetter-API geht, lassen wir sie komplett unberührt!
+  if (req.url.includes('api.open-meteo.com')) {
+    return next(req);
+  }
+
   const getCookie = (name: string): string | null => {
     const nameLenPlus = (name.length + 1);
     return document.cookie

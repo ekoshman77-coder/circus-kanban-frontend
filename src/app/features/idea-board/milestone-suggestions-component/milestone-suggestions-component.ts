@@ -15,6 +15,7 @@ export class MilestoneSuggestionsComponent {
 
   // 📢 Die Verbindung nach draußen! Schickt den Titel des Meilensteins an den Calculator
   public milestoneAccepted = output<string>();
+  public milestoneDegraded = output<string>()
   public degradedAreShown = output<boolean>()
 
   public suggestions = computed(() => this.projectService.suggestions())

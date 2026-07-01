@@ -1,45 +1,66 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { Note } from '../models/note';
 import { noteApiUrl } from './links';
+import { INoteJson } from './dto/note-json';
 
 @Injectable({
   providedIn: 'root'
 })
 export class NoteRepository {
   private http = inject(HttpClient);
-  // Passe die URL an dein Docker-Setup an (z.B. Port 8080 oder über ein Gateway)
 
-
-  // 🔍 GET /api/notes?userId=...
-  getNotesByUserId(userId: string): Observable<Note[]> {
-    const params = new HttpParams().set('userId', userId);
-    return this.http.get<Note[]>(noteApiUrl, { params });
+  // 🔍 GET /api/notes?userId=... (Jetzt mit Klassen-Mapping!)
+  getNotesByUserId(userId: string | null): Observable<Note[]> {
+    let params = new HttpParams();
+    if (userId) {
+      params = new HttpParams().set('userId', userId);
+    }
+    return this.http.get<INoteJson[]>(noteApiUrl, { params }).pipe(
+      map(jsonArray => (jsonArray || []).map(json => this.mapToNoteClass(json)))
+    );
   }
 
   // ➕ POST /api/notes
   createNote(note: Note): Observable<Note> {
-    return this.http.post<Note>(noteApiUrl, note);
+    return this.http.post<INoteJson>(noteApiUrl, note).pipe(
+      map(json => this.mapToNoteClass(json))
+    );
   }
 
   // ✏️ PUT /api/notes/{id}
   updateNote(id: string, note: Note): Observable<Note> {
-       console.log("NoteRepository :: UpdateNote", note)
-        console.log("NoteRepository :: UpdateNoteId", id)
-
-    return this.http.put<Note>(`${noteApiUrl}/${id}`, note);
+    return this.http.put<INoteJson>(`${noteApiUrl}/${id}`, note).pipe(
+      map(json => this.mapToNoteClass(json))
+    );
   }
 
   // 🗑️ DELETE /api/notes/{id}
   deleteNote(id: string): Observable<void> {
-    console.log("NoteRepository:: DeleteNote")
-
     return this.http.delete<void>(`${noteApiUrl}/${id}`);
   }
 
-  // get note by id
+  // 🔍 GET Einzelne Note
   getNoteById(id: string): Observable<Note> {
-    return this.http.get<Note>(`${noteApiUrl}/${id}`)
+    return this.http.get<INoteJson>(`${noteApiUrl}/${id}`).pipe(
+      map(json => this.mapToNoteClass(json))
+    );
+  }
+
+  // 🧪 Hilfsmethode: Garantiert uns echte Klasseninstanzen mit Methoden
+  private mapToNoteClass(json: INoteJson): Note {
+    return new Note({
+      id: json.id,
+      userId: json.userId,
+      title: json.title,
+      content: json.content,
+      colorType: json.colorType,
+      tag: json.tag,
+      isInCalculation: json.isInCalculation,
+      temperature: json.temperature,
+      weatherCode: json.weatherCode
+    });
   }
 }

@@ -6,7 +6,8 @@ import { futureDateValidator } from '../../../validators/future-date-validator';
 import { UniversalTagInputComponent } from '../universal-tag-input-component/universal-tag-input-component';
 import { MilestoneSelectorComponent } from '../milestone-selector-component/milestone-selector-component';
 import { UniversalPredictorService } from '../../../services/universal-predictor-service';
-import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { debounceTime, distinctUntilChanged, timeout } from 'rxjs';
+import { NotificationService } from '../../../services/notification-service';
 
 @Component({
   selector: 'app-todo-form',
@@ -17,6 +18,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
 })
 export class TodoFormComponent {
   private predictorService = inject(UniversalPredictorService);
+  private notificationService = inject(NotificationService)
 
   private suggestedEffortValue = 0;
   // Signal für die UI-Nachricht der KI

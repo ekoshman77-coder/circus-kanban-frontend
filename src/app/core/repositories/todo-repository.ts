@@ -19,9 +19,12 @@ export class TodoRepository {
   constructor(private http: HttpClient) {}
 
   // 📥 Alle To-Dos für diesen User-Namen/ID laden
-  getTodos(userId: string): Observable<Todo[]> {
+  getTodos(userId: string | null): Observable<Todo[]> {
     console.log("TodoRepository: getTodos")
-    const params = new HttpParams().set('userId', userId);
+    let params = new HttpParams()
+    if (userId) {
+       params = new HttpParams().set('userId', userId);
+    }
     const result = this.http.get<ITodoJSON[]>(todoApiUrl, { params }).pipe(
       map(jsonArray => jsonArray.map(json => this.mapToTodoClass(json)))
     );
@@ -71,6 +74,10 @@ public updateTodo(todo: Todo): Observable<TodoUpdateResponse> {
     return this.http.delete<void>(`${todoApiUrl}/completed`, { params });
   }
 
+  deleteBulk(ids: string[]): Observable<void> {
+     return this.http.post<void>(`${todoApiUrl}/delete-bulk`, ids)
+  }
+
   private mapToTodoClass(json: ITodoJSON): Todo {
     const todo = new Todo({
       task: json.task,
@@ -88,7 +95,7 @@ public updateTodo(todo: Todo): Observable<TodoUpdateResponse> {
       milestoneId: json.milestoneId,
       isStarted: json.isStarted?? false,
       assignedUserId: json.assignedUserId?? null
-    });    
+    });  
     return todo;
   }
 
@@ -97,10 +104,15 @@ public updateTodo(todo: Todo): Observable<TodoUpdateResponse> {
    */
   public syncBulkTodos(userId: string, offlineTodos: Todo[]): Observable<SyncResult> {
     // Wichtig: userId wird als Query-Param (?userId=...) übergeben, die Liste als JSON-Body
-    return this.http.post<SyncResult>(
-      `${bulkApiUrl}?userId=${userId}`, 
-      offlineTodos
-    );
+    return this.http.post<SyncResult>(`${bulkApiUrl}?userId=${userId}`, offlineTodos).pipe(
+      map((result) => {
+        const mappedList = result.liste.map((json: any) => this.mapToTodoClass(json))
+        return {
+          gamificationResult: result.gamificationResult,
+          liste: mappedList
+        }
+      })
+    )
   }
 
   /**
