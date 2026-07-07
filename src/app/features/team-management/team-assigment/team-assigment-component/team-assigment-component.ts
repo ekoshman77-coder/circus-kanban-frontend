@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TeamService } from '../../../../core/services/team-service';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -6,80 +6,105 @@ import { ProjectMembersListComponent } from '../project-members-list/project-mem
 import { AvailablePoolListComponent } from '../available-pool-list/available-pool-list';
 import { ProjectService } from '../../../../core/services/project-service';
 import { MemberCardComponent } from '../../../../core/shared/components/member-card/member-card-component/member-card-component';
+import { ProjectRole } from '../../../../core/models/user-model';
+import { FormsModule } from '@angular/forms'; // 🎯 Wichtig fürs Dropdown-Binding!
 
 @Component({
   selector: 'app-team-assignment',
   standalone: true,
-  // 📦 Wir importieren unsere beiden neuen Mini-Kind-Komponenten direkt hier!
-  imports: [CommonModule, ProjectMembersListComponent, AvailablePoolListComponent, MemberCardComponent],
+  imports: [CommonModule, FormsModule, ProjectMembersListComponent, AvailablePoolListComponent],
   templateUrl: './team-assigment-component.html',
   styleUrl: './team-assigment-component.css'
 })
-export class TeamAssigmentComponent {
+export class TeamAssigmentComponent implements OnInit {
   private teamService = inject(TeamService);
-  private projectService = inject(ProjectService)
+  private projectService = inject(ProjectService);
 
-  // 📂 Zustand: Welches Projekt hat der Admin im Dropdown ausgewählt?
-  // Wir starten mit 'null' (kein Projekt ausgewählt)
   public selectedProjectId = signal<string | null>(null);
 
-  // 📡 Datenquelle 1: Alle Projekte vom Server holen
-  public allProjects = computed(() =>this.projectService.projectsList());
+  public allProjects = computed(() => this.projectService.projectsList());
 
-  // 📡 Datenquelle 2: Alle globalen User (null-Pipeline) für den Gesamtpool
-  private allUsers = toSignal(this.teamService.getSortedMembers$(null), { initialValue: [] });
+  public allUsers = this.teamService.globalMembersSignal;
 
-  // 👥 KIND 1 DATEN (computed): Wer ist SCHON IM PROJEKT?
   public activeMembers = computed(() => {
-    const projId = this.selectedProjectId();
-    if (!projId) return [];
-    
-    // Filter: Alle User, die dieses Projekt in ihrer projectIds-Liste haben
-    return this.allUsers().filter(user => user.projectIds.includes(projId));
+    return this.teamService.currentProjectMembersSignal();
   });
 
-  // 👥 KIND 2 DATEN (computed): Wer sitzt noch auf der WARTEBANK (Verfügbarer Pool)?
+  // 📂 Zustand für das fliegende Rollen-Popup
+  public showRoleModal = signal<boolean>(false);
+  public userIdPendingAssignment = signal<string | null>(null);
+  public selectedRoleForAssignment = signal<ProjectRole>('DEVELOPER'); // Standardwert im Dropdown
+
+  ngOnInit(): void {
+    console.log('👥 [TeamAssignment] Triggere globalen Pool im OnInit');
+    this.teamService.loadGlobalPool();
+  }
+  constructor() {
+    /**
+     * 🎯 DER AUTOMATISCHE PROJEKT-TRIGGER
+     * Sobald sich 'selectedProjectId' im Dropdown ändert, sagen wir dem
+     * TeamService Bescheid, welcher dann das Projekt-Signal austauscht!
+     */
+    effect(() => {
+      const projectId = this.selectedProjectId();
+      console.log(`📂 [TeamAssignment] Dropdown gewechselt auf Projekt-ID: ${projectId}`);
+      
+      // Nutzt unsere saubere Methode im Service, die ID zu setzen & die Mitglieder zu laden!
+      this.teamService.setCurrentProject(projectId);
+    });
+  }
+  
   public availablePool = computed(() => {
     const projId = this.selectedProjectId();
-    if (!projId) return this.allUsers(); // Wenn kein Projekt gewählt, zeig alle
+    if (!projId) return this.allUsers().map(member => member.user);
 
-    // Filter: Alle User, die dieses Projekt NOCH NICHT in ihrer Liste haben
-    return this.allUsers().filter(user => !user.projectIds.includes(projId));
+    // Die aktiven IDs aus dem ProjectMember[] extrahieren
+    const activeIds = this.activeMembers().map(m => m.user.id);
+    
+    // Nur User anzeigen, die noch NICHT im Projekt sind
+    return this.allUsers().filter(member => !activeIds.includes(member.user.id)).map(member => member.user);
   });
 
-
-  /**
-   * 🔴 Event-Handler: Ein Kind meldet, dass ein User aus dem Projekt fliegen soll
-   */
   public onRemoveUserFromProject(userId: string): void {
     const projId = this.selectedProjectId();
     if (!projId) return;
-
-    // Aus dem Projekt löschen bedeutet im Service: deleteMember(projectId, userId)
     this.teamService.removeMemberFromProject(projId, userId);
   }
+
   /**
-   * 🟢 Event-Handler: Ein Kind meldet, dass ein User zum Projekt hinzugefügt werden soll
+   * 🟢 Fängt das Hinzufügen ab und öffnet das Popup, statt direkt zu speichern!
    */
   public onAddUserToProject(userId: string): void {
-    console.log("TeamAssigmentComponent:: onAddUserToProject start") 
-    const projId = this.selectedProjectId();
-    if (!projId) return;
-
-    // Wir rufen deinen Service auf: updateMember(projectId, user)
-    // Der Service weiß dann, dass er diesen User in das Projekt schieben muss!
-    const user = this.allUsers().find(u => u.id === userId);
-    if (user) {
-    console.log("TeamAssigmentComponent:: onAddUserToProject call updateMember") 
-      this.teamService.addMemberToProject(projId, user);
-    }
+    this.userIdPendingAssignment.set(userId);
+    this.selectedRoleForAssignment.set('DEVELOPER'); // Reset auf Standard
+    this.showRoleModal.set(true); // Popup öffnen!
   }
 
-   /**
-   * Dropdown-Wechsel abfangen
+  /**
+   * 💾 Bestätigung im Popup: Jetzt wird die Rolle an den Service übergeben!
    */
-  public onProjectChange(event: Event): void {
-    const value = (event.target as HTMLSelectElement).value;
-    this.selectedProjectId.set(value ? value : null);
+  public onConfirmRoleAssignment(): void {
+    const projId = this.selectedProjectId();
+    const userId = this.userIdPendingAssignment();
+    const role = this.selectedRoleForAssignment();
+
+    if (!projId || !userId) return;
+
+    const user = this.allUsers().find(u => u.user.id === userId);
+    if (user) {
+      this.teamService.addMemberToProject(projId, user.user, role);
+    }
+
+    this.onCloseRoleModal();
+  }
+
+  public onCloseRoleModal(): void {
+    this.showRoleModal.set(false);
+    this.userIdPendingAssignment.set(null);
+  }
+
+  public onProjectChange(event: any): void {
+    const val = event.target.value;
+    this.selectedProjectId.set(val === 'null' ? null : val);
   }
 }

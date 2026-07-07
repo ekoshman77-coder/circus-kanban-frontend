@@ -1,0 +1,97 @@
+/* ==========================================================================
+   RAUCHGLAS-DESIGN (Dark Glassmorphism)
+   ========================================================================== */
+
+:host {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.search-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  
+  /* 🌟 DER DUNKLE GLAS-EFFEKT: Ein sattes, halbtransparentes Schwarz */
+  background-color: rgba(15, 23, 42, 0.45); 
+  
+  /* Der magische Weichzeichner, der den Header-Hintergrund verschwimmen lässt */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  
+  /* Ein feiner, cleaner Rand für den Glas-Look */
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 4px 10px;
+  transition: all 0.25s ease;
+}
+
+/* Hover & Fokus: Das Glas wird etwas klarer und strahlt minimal */
+.search-bar-container:hover,
+.search-bar-container:focus-within {
+  background-color: rgba(15, 23, 42, 0.6);
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+/* === 1. Das Dropdown (Select) === */
+.search-bar-container select {
+  background: transparent;
+  border: none;
+  color: #ffffff; /* 🌟 Mehr Kontrast: Knackiges Weiß statt blassem Blau */
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 4px;
+  cursor: pointer;
+  outline: none;
+  font-family: inherit;
+}
+
+/* Die Optionen im Dropdown brauchen einen festen, dunklen Hintergrund */
+.search-bar-container select option {
+  background-color: #0f172a; /* Schönes, sattes Dunkelblau/Schwarz */
+  color: #ffffff;
+}
+
+/* === 2. Das Text-Eingabefeld (Input) === */
+.search-bar-container input {
+  background: transparent;
+  border: none;
+  color: #ffffff; /* 🌟 Knackiges Weiß für perfekten Kontrast */
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 6px;
+  outline: none;
+  font-family: inherit;
+  
+  /* 🌟 Feste, kompakte Breite – kein nerviges Vergrößern mehr! */
+  width: 80px; 
+}
+
+/* 🌟 Mehr Kontrast für den Platzhalter-Text, damit man ihn gut lesen kann */
+.search-bar-container input::placeholder {
+  color: rgba(255, 255, 255, 0.55); 
+}
+
+/* Wenn der Bildschirm schmaler als 1050px wird (z.B. kleines Laptop oder Tablet) */
+@media (max-width: 1050px) {
+  .search-bar-container input {
+    width: 70px; /* Schrumpft das Textfeld von 140px auf 100px */
+  }
+}
+
+/* Wenn es richtig eng wird (schmaler als 900px) */
+@media (max-width: 900px) {
+  .search-bar-container {
+    padding: 4px 6px; /* Macht den Container noch etwas kompakter */
+  }
+
+  .search-bar-container input {
+    width: 60px; /* Sehr kompaktes Suchfeld */
+  }
+  
+  .search-bar-container select {
+    font-size: 12px; /* Schrift minimal kleiner, um Platz zu sparen */
+    padding: 6px 2px;
+  }
+}

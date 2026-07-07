@@ -4,7 +4,7 @@ import { TodoRepository } from '../repositories/todo-repository';
 import { ConnectionService } from './connection-service';
 import { LocalStorageService } from './local-storage-service';
 import { Observable, of, throwError } from 'rxjs';
-import { map, catchError, tap, switchMap } from 'rxjs/operators';
+import { map, catchError, tap, switchMap } from 'rxjs/operators'; // 💡 tap importiert!
 import { GamificationResult } from '../models/gamification';
 import { SyncResult } from '../repositories/dto/sync-result';
 import { UserService } from './user/user-service';
@@ -20,72 +20,44 @@ export class TodoDataManagerService {
   private userService = inject(UserService)
   private localStorageService = inject(LocalStorageService);
   
-  private readonly CACHE_KEY = 'global_todos_pool';        // Der permanente Cache für offline/online
-  private readonly OFFLINE_CHANGES_KEY = 'offline_todos_queue'; // NUR für die Warteschlange der Offline-Änderungen
+  private readonly CACHE_KEY = 'global_todos_pool';        
+  private readonly OFFLINE_CHANGES_KEY = 'offline_todos_queue'; 
+
+  // 🌍 Das Signal ist jetzt beschreibbar (nicht mehr 'readonly' für diesen Service)
+  public allTodosPool = signal<Todo[]>([]);
 
   public gamificationSignal = signal<GamificationResult | null>(null);
   public syncCompleted = signal<SyncResult | null>(null);
   private loggerService = Inject(LoggerService)
 
   constructor() {
-    /**
-     * 👁️ DER WACHHUND:
-     * Reagiert vollautomatisch, sobald das Connection-Signal seinen Wert ändert!
-     */
     effect(() => {
       const status = this.connectionService.status();
+      if (status === 'UNKNOWN') return;
 
-      // 🛡️ Schutzschild: Kaltstart abfangen, solange der Ping läuft
-      if (status === 'UNKNOWN') {
-        return;
-      }
-
-      const isOnline = status === 'ONLINE';
-
-      if (isOnline) {
-
-        // 🌟 3. DIE ECHTE USER-ID NUTZEN statt 'mein-test-user-123'!
+      if (status === 'ONLINE') {
         const currentUser = this.userService.currentUser();
-
-        if (!currentUser) {
-          return;
-        }
-
-        // Jetzt synchronisieren wir mit der echten ID aus der Session!
+        if (!currentUser) return;
         this.triggerBulkSync(currentUser.id);
-      } else {
       }
     });
   }
 
-  /**
-   * 🔄 Führt den eigentlichen Sync-Prozess gegen dein Kotlin-Backend aus
-   */
   private triggerBulkSync(userId: string): void {
     const offlineTodos = this.getOfflineTodosFromStorage();
-
-    // 🛡️ SICHERHEITS-CHECK: Wenn keine Offline-Todos da sind, SOFORT abbrechen!
-    // Wir loggen das, um im F12-Fenster genau zu sehen, was passiert.
-    if (!offlineTodos || offlineTodos.length === 0) {
-      return;
-    }
-
+    if (!offlineTodos || offlineTodos.length === 0) return;
 
     this.todoRepository.syncBulkTodos(userId, offlineTodos).subscribe({
       next: (result) => {
         this.syncCompleted.set(result);
-
-        // Erst wenn der Server "Danke" gesagt hat, leeren wir den Offline-Speicher
+        // 💡 HIER! Wenn der Groß-Sync durch ist, befüllen wir den Pool mit der neuen Liste
+        this.allTodosPool.set(result.liste.map(t => new Todo(t)));
         return this.clearLocalOfflineStorage();
-      },
-      error: (err) => {
       }
     });
   }
 
-  // --- Hilfsmethoden für deinen lokalen Offline-Speicher (musst du anpassen) ---
   private getOfflineTodosFromStorage(): Todo[] {
-    // Beispielhaft aus dem LocalStorage ziehen
     const data = localStorage.getItem(this.OFFLINE_CHANGES_KEY);
     return data ? JSON.parse(data) : [];
   }
@@ -94,77 +66,42 @@ export class TodoDataManagerService {
     localStorage.removeItem(this.OFFLINE_CHANGES_KEY);
   }
 
-  /**
-   * CLEANUP-METHODE:
-   * Hier gehört alles rein, was nach dem erfolgreichen Konsumieren 
-   * im DataManager aufgeräumt werden muss!
-   */
   public clearSyncResult(): void {
-    console.log('🧹 DataManager räumt auf...');
     this.syncCompleted.set(null);
   }
 
   /**
-   * 📋 DATEN LADEN (Kaltstart-sicher)
+   * 📋 DATEN LADEN
    */
   public loadTodos(): Observable<Todo[]> {
-    // 🪵 LOG 1: Start des Ladevorgangs
-
     const cachedJSON = this.localStorageService.getItem<any[]>(this.CACHE_KEY) || [];
-
-    // 🪵 LOG 2: Zeigt die rohen Daten aus dem LocalStorage
-
     let echteTodoObjekte: Todo[] = [];
     try {
-      echteTodoObjekte = cachedJSON.map((t, index) => {
-        // Wir bauen das Objekt explizit für den Konstruktor zusammen
-        const initParam = {
-          id: t.id,
-          task: t.task,
-          description: t.description,
-          effort: t.effort,
-          dueDate: t.dueDate,
-          userId: t.userId,
-          usedEffort: t.usedEffort,
-          createdAt: t.createdAt,
-          syncState: t.syncState,
-          done: t.done,
-          completedAt: t.completedAt,
-          category: t.category || 'Allgemein',
-          isStarted: t.isStarted ?? false
-        };
-
-        const todoKlasse = new Todo(initParam);
-
-        // 🪵 LOG 3: Kontrolliert jedes einzelne gemappte To-Do
-        return todoKlasse;
-      });
+      echteTodoObjekte = cachedJSON.map((t) => new Todo(t));
     } catch (e) {
-      console.error('❌ [DataManager] CRITICAL: Fehler beim Instanziieren der Todo-Klasse im Map-Prozess:', e);
+      console.error('Fehler beim Instanziieren:', e);
     }
 
-    // 🪵 LOG 4: Gesamtanzahl der lokal rekonstruierten Objekte
-
-    const status = this.connectionService.status();
-
-    if (status === 'OFFLINE') {
+    if (this.connectionService.status() === 'OFFLINE') {
+      // 💡 HIER! Wenn offline, befüllen wir das Signal sofort aus dem Cache
+      this.allTodosPool.set(echteTodoObjekte);
       return of(echteTodoObjekte);
     }
 
     return this.todoRepository.getTodos(null).pipe(
       map(serverTodos => {
-
-        // 🛡️ DER SCHUTZSCHILD: Nur überschreiben, wenn der Server wirklich Aufgaben liefert!
-        if (serverTodos && serverTodos.length > 0) {
-          this.saveToLocalStorage(serverTodos);
-          return serverTodos;
-        } else {
-          // 🎯 HIER RETTEN WIR DEINE AUFGABEN:
-          // Wenn der Server 0 Todos schickt, werfen wir deine lokalen Daten nicht weg!
-          return echteTodoObjekte;
-        }
+        const geladeneTodos = serverTodos && serverTodos.length > 0 ? serverTodos : echteTodoObjekte;
+        const mappedTodos = geladeneTodos.map(t => new Todo(t));
+        
+        this.saveToLocalStorage(mappedTodos);
+        
+        // 💡 HIER! Sobald die Daten vom Server (oder Cache) da sind, schreiben wir sie ins Signal!
+        this.allTodosPool.set(mappedTodos);
+        
+        return mappedTodos;
       }),
-      catchError((error) => {
+      catchError(() => {
+        this.allTodosPool.set(echteTodoObjekte);
         return of(echteTodoObjekte);
       })
     );
@@ -172,25 +109,26 @@ export class TodoDataManagerService {
 
   /**
    * ➕ TODO ERSTELLEN
-   * Nutzt jetzt die zentrale Speicher-Logik!
    */
   public createTodo(todo: Todo, aktuelleListe: Todo[]): Observable<Todo[]> {
-    const userId = todo.userId;
-
     if (this.connectionService.status() === 'OFFLINE') {
       todo.syncState = 'new';
-      const neueListe = [...aktuelleListe, todo];
-
-      // 💾 Direkt im LocalStorage sichern und neue Gesamtliste zurückgeben
+      const neueListe = [...aktuelleListe, todo].map(t => new Todo(t));
       this.saveToLocalStorage(neueListe);
+      
+      // 💡 HIER! Signal offline aktualisieren
+      this.allTodosPool.set(neueListe);
       return of(neueListe);
     }
 
     return this.todoRepository.createTodo(todo).pipe(
       map(savedTodo => {
         savedTodo.syncState = 'fine';
-        const neueListe = [...aktuelleListe, savedTodo];
+        const neueListe = [...aktuelleListe, savedTodo].map(t => new Todo(t));
         this.saveToLocalStorage(neueListe);
+        
+        // 💡 HIER! Signal online aktualisieren
+        this.allTodosPool.set(neueListe);
         return neueListe;
       })
     );
@@ -200,7 +138,7 @@ export class TodoDataManagerService {
    * ❌ TODO LÖSCHEN
    */
   public deleteTodo(id: string, aktuelleListe: Todo[], userId: string): Observable<Todo[]> {
-    const gefilterteListe = aktuelleListe.filter(t => t.id !== id);
+    const gefilterteListe = aktuelleListe.filter(t => t.id !== id).map(t => new Todo(t));
 
     if (this.connectionService.status() === 'OFFLINE') {
       return throwError(() => new Error('Löschen ist im Offline-Modus nicht erlaubt!'));
@@ -209,94 +147,88 @@ export class TodoDataManagerService {
     return this.todoRepository.deleteTodo(id).pipe(
       map(() => {
         this.saveToLocalStorage(gefilterteListe);
+        
+        // 💡 HIER! Signal nach dem Löschen aktualisieren
+        this.allTodosPool.set(gefilterteListe);
         return gefilterteListe;
       })
     );
   }
 
   /**
-   * 📝 TODO BEARBEITEN - EFFORT ÄNDERUNG OFFLINE GESPERRT!
+   * 📝 TODO BEARBEITEN
    */
   public updateTodo(updatedTodo: Todo, currentList: Todo[]): Observable<Todo[]> {
-    //    this.loggerService.info("TodoDataManager", `Starting update pipeline for Todo ID: ${updatedTodo.id}`);
-
-    // A: OFFLINE PATH
     if (this.connectionService.status() === 'OFFLINE') {
-      // Offline blocking: Effort modifications are not allowed while offline
       const originalTodo = currentList.find(t => t.id === updatedTodo.id);
       if (originalTodo && Number(originalTodo.effort) !== Number(updatedTodo.effort)) {
         return throwError(() => new Error('Effort estimations cannot be changed while offline!'));
       }
 
-      // Map the updated todo into our local list
       const updatedOfflineList = currentList.map(todo => {
         if (todo.id === updatedTodo.id) {
-          // Keep 'new' if it wasn't synced yet, otherwise mark as 'dirty'
           updatedTodo.syncState = updatedTodo.syncState === 'new' ? 'new' : 'dirty';
-          return updatedTodo;
+          return new Todo(updatedTodo);
         }
-        return todo;
+        return new Todo(todo);
       });
 
-      // Save the state locally in the browser
       this.saveToLocalStorage(updatedOfflineList);
+      
+      // 💡 HIER! Signal offline bearbeiten
+      this.allTodosPool.set(updatedOfflineList);
       return of(updatedOfflineList);
     }
 
-    // B: ONLINE PATH
     return this.todoRepository.updateTodo(updatedTodo).pipe(
-      map((response: TodoUpdateResponse) => { // 🌟 Strong typing with our new interface!
-
-        // Extract the server-validated todo
+      map((response: TodoUpdateResponse) => {
         const serverTodo = response.todo as unknown as Todo;
         serverTodo.syncState = 'fine';
 
-        // Update the current list with the final server state
-        const finalUpdatedList = currentList.map(todo => todo.id === serverTodo.id ? serverTodo : todo);
+        const finalUpdatedList = currentList.map(todo => 
+          todo.id === serverTodo.id ? new Todo(serverTodo) : new Todo(todo)
+        );
 
-        // GAMIFICATION PROCESS: If Kotlin calculated XP, trigger the user profile update!
         if (response.gamificationResult) {
-          console.log("TodoDataManager", "Gamification XP received from server. Updating user profile.");
           this.userService.updateGamification(response.gamificationResult);
         }
 
-        // Secure backup copy locally
         this.saveToLocalStorage(finalUpdatedList);
-
-        return finalUpdatedList; // Returns the clean, updated list to the TodoService
+        
+        // 💡 HIER! Signal online bearbeiten
+        this.allTodosPool.set(finalUpdatedList);
+        return finalUpdatedList;
       }),
       catchError((err) => throwError(() => err))
     );
   }
 
   /**
-   * TODOS LÖSCHEN
+   * TODOS LÖSCHEN (BULK)
    */
   public deleteTodosBulk(deletedTodos: Todo[], actualList: Todo[]): Observable<Todo[]> {
-    // Da wir die erledigten Todos löschen wollen, behalten wir nur die offenen (!t.done)
-    if (deletedTodos.length === 0) {
-      return of([])
-    }
+    if (deletedTodos.length === 0) return of([]);
+    
     const deletedMap = deletedTodos.map(t => t.id)
-    const filtered = actualList.filter(t => !deletedMap.includes(t.id))
+    const filtered = actualList.filter(t => !deletedMap.includes(t.id)).map(t => new Todo(t));
 
     if (this.connectionService.status() === 'OFFLINE') {
       this.saveToLocalStorage(filtered);
+      // 💡 HIER! Signal bei Bulk-Delete offline aktualisieren
+      this.allTodosPool.set(filtered);
       return of(filtered);
     }
 
-    // Online-Pfad: Löscht die fertigen Todos synchron auf der Datenbank
-    return this.todoRepository.deleteBulk(deletedMap).pipe( // Je nachdem, wie du das Repository ansteuerst
+    return this.todoRepository.deleteBulk(deletedMap).pipe(
       map(() => {
         this.saveToLocalStorage(filtered);
+        // 💡 HIER! Signal bei Bulk-Delete online aktualisieren
+        this.allTodosPool.set(filtered);
         return filtered
       })
     );
   }
 
-  /**
-   * 🛡️ Die zentrale Hilfsmethode für das Speichern (Deine "Execute"-Erweiterung)
-   */
   private saveToLocalStorage(todos: Todo[]): void {
     this.localStorageService.setItem(this.CACHE_KEY, todos);
   }

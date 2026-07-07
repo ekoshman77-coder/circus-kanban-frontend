@@ -8,7 +8,6 @@
   export const noteApiUrl = `${baseUrl}/notes`
   export const projectApiUrl = `${baseUrl}/projects`
   export const aiPredictionApiUrl = `${baseUrl}/ai/predict`
-  export const aiCategoriesApiUrl = `${baseUrl}/ai/categories`
   export const aiPredictionEffortUrl = `${baseUrl}/ai/predict-effort`
   export const milestoneApiUrl = `${baseUrl}/milestones`
   export const teamApiUrl = `${baseUrl}/teams`
@@ -19,5 +18,6 @@
   export const trackAiMilestoneDegradationUrl = `${baseUrl}/projects/track-degradation`;
  export const trackAiIgnoredMilestoneUrl = `${baseUrl}/projects/track-ignorance`;
   export const aiNotePredictionUrl = `${baseUrl}/ai/notes/predict`;
+  export const aiCategoriesApiUrl = `${baseUrl}/ai/todos/categories`;
   export const aiNoteCategoriesUrl = `${baseUrl}/ai/notes/categories`;
   

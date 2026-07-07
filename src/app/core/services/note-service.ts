@@ -1,4 +1,4 @@
-import { inject, Injectable, signal, computed } from '@angular/core';
+import { inject, Injectable, signal, computed, effect } from '@angular/core';
 import { Note } from '../models/note';
 import { NoteDataManagerService } from './note-data-mananger-service';
 import { UserService } from './user/user-service';
@@ -27,6 +27,16 @@ export class NoteService {
 
   public clearDraft(): void {
     localStorage.removeItem(this.DRAFT_KEY);
+  }
+
+  constructor() {
+     effect(() => {
+      if (this.userService.currentUser()) {
+        this.loadNotes()
+      } else{
+        this.notesSignal.set([])
+      }
+     }) 
   }
 
   private get currentUserId(): string {

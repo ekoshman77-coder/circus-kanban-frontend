@@ -1,7 +1,8 @@
-import { IUserJSON } from "../repositories/dto/user-json";
 import { generateLocalId, isLocalId } from "../shared/constants/id-const";
 
-export interface IUserInit {
+  export type ProjectRole = 'OWNER' | 'PROJECT_MANAGER' | 'DEVELOPER' | 'DESIGNER' | 'VIEWER' | 'NONE';
+
+  export interface IUserInit {
   id: string;
   username: string;
   firstName: string;
@@ -29,7 +30,7 @@ export class UserModel {
     this.username = data.username || '';
     this.projectIds = data.projectIds || [];
     this.coffeeBalance = data.coffeeBalance?? 0;
-    this.role = data.role?? "teammember"
+    this.role = data.role?? ''
     this.emoji = data.emoji?? "🦊"
   }
 
@@ -87,7 +88,7 @@ public static fromJson(json: any): UserModel {
       projectIds: json.projectIds || [],
       // Falls das Backend diese Felder irgendwann mitschickt, liest er sie aus, sonst greift der Konstruktor-Fallback
       emoji: json.emoji?? "🦊",
-      role: json.role?? "Teammember"
+      role: json.role?? "DEVELOPER"
     });
   }
 

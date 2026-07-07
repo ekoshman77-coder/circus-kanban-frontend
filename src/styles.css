@@ -1,6 +1,55 @@
 :root {
+  /* 📝 Deine bestehenden Notiz-Farben (bleiben unberührt!) */
   --note-yellow: #fff4d4;
   --note-green: #d4edd4;
   --note-blue: #e1f5fe;
-  --note-pink: #ffd1dc;;
+  --note-pink: #ffd1dc;
+
+  /* ─── 1. DIE APP-TYPOGRAFIE ✍️ ─── */
+  --font-main: 'Segoe UI', Roboto, -apple-system, sans-serif;
+  
+  /* Schriftgrößen (Streng hierarchisch) */
+  --font-size-h1: 26px;      /* Große Seitentitel */
+  --font-size-h2: 20px;      /* Modals / Große Sektionen */
+  --font-size-h3: 16px;      /* Karten-Überschriften */
+  --font-size-body: 14px;    /* Standard-Text */
+  --font-size-small: 12px;   /* Labels, Nebensächliches */
+
+  /* Schriftdicken */
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* ─── 2. TEXT-FARBEN ☕ ─── */
+  --color-text-main: #0f172a;    /* Edles Tiefblau/Dunkelgrau für h1 & h2 */
+  --color-text-muted: #64748b;   /* Das ruhige Grau-Blau für Beschreibungen */
+  --color-text-dark: #1e293b;    /* Für h3 und wichtige UI-Elemente */
+
+  /* ─── 3. STRUKTUREN & GEOMETRIE 📐 ─── */
+  --radius-card: 20px;           /* Perfekt abgerundete Ecken für alle großen Karten */
+  --radius-element: 8px;         /* Ecken für Inputs, Buttons, kleine Badges */
+  
+  /* Abstände (Padding & Margins) */
+  --spacing-page: 30px;          /* Abstand zum Bildschirmrand */
+  --spacing-card: 24px;          /* Innerer Abstand in den Karten */
+  --spacing-gap: 20px;           /* Abstand ZWISCHEN den Karten */
+
+  /* ─── 4. GEMEINSAMES GLAS-MATERIAL 💎 ─── */
+  --glass-background: rgba(255, 255, 255, 0.85);
+  --glass-blur: none;
+  --glass-border: 1px solid rgba(255, 255, 255, 0.6);
+  --glass-shadow: 0 10px 25px -5px rgba(148, 163, 184, 0.12), 
+                  0 8px 10px -6px rgba(148, 163, 184, 0.12);
+
+  /* Der gemeinsame Leuchteffekt beim Drüberfahren */
+  --glass-hover-bg: #ffffff;
+  --glass-hover-shadow: 0 20px 30px -10px rgba(100, 116, 139, 0.2);
+
+  /* ─── 5. FUNKTIONALE FARBEN 🟢🔵 ─── */
+  --color-primary: #4f46e5;      /* Sattes Indigo für Haupt-Buttons */
+  --color-primary-hover: #4338ca;
+  --color-success: #10b981;      /* Smaragdgrün für Fortschritt */
+  --color-info: #3b82f6;         /* Ozeanblau für Team/Aktionen */
+  --color-danger: #dc2626;       /* Rot für Löschen-Aktionen */
 }

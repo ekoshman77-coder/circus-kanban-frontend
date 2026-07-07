@@ -374,5 +374,19 @@
     transform: scale(1.2) rotate(-5deg);
 }
 
+/* Wenn das Drag & Drop gesperrt ist, verändern wir den Mauszeiger für die Kärtchen */
+.drag-drop-zone[ng-reflect-cdk-drop-list-disabled="true"] app-todo-item {
+    cursor: not-allowed !important;
+}
+
+.viewer-locked-hint {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    color: #94a3b8;
+    text-align: center;
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+}
 
 

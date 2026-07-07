@@ -1,63 +1,60 @@
-import { Component, inject, computed, signal, HostListener } from '@angular/core';
+import { Component, inject, computed, signal, HostListener, OnInit, OnDestroy } from '@angular/core'; // 🎯 OnDestroy hinzugefügt
 import { CommonModule } from '@angular/common';
-// 📝 NEU: ReactiveFormsModule für Model-Driven Forms, Validators für die Überprüfung
 import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
 import { TeamService } from '../../../core/services/team-service';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { UserModel } from '../../../core/models/user-model';
-import { UserService } from '../../../core/services/user/user-service';
-import { debounceTime, distinct, distinctUntilChanged, filter, map, of, Subject, switchMap, throttleTime } from 'rxjs';
+import { Subject, Subscription, throttleTime } from 'rxjs'; // 🎯 Subscription importieren
+import { FilterService } from '../../../core/services/filter-service';
 
 @Component({
   selector: 'app-team-pool',
   standalone: true,
-  // 📝 NEU: Wir importieren ReactiveFormsModule statt FormsModule!
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './team-pool-component.html',
   styleUrl: './team-pool-component.css'
 })
-export class TeamPoolComponent {
+export class TeamPoolComponent implements OnInit, OnDestroy { // 🎯 OnDestroy für sauberes Aufräumen
   private teamService = inject(TeamService);
+  private filterService = inject(FilterService);
 
-  // 1. Das Suchfeld bleibt ein einfaches Signal, das ist perfekt für die Live-Suche
-  public searchInput = signal('');
+  // ❌ Lokaler searchInput fliegt raus, da wir filterService nutzen!
   public errorFromServer = signal<string>("");
-
-  // 2. Der Popup-Zustand für das fliegende Fenster
   public selectedUserForEdit = signal<UserModel | null>(null);
 
-  // 3. Die Datenquelle vom Server (globale User)
-  private allUsersServerSignal = toSignal(this.teamService.getSortedByLastName$(null), { initialValue: [] });
+  // 👑 Königslösung: Holt die flachen Benutzer direkt aus dem Service-Signal!
+  private allUsersServerSignal = computed(() => {
+    return this.teamService.globalMembersSignal().map(member => member.user);
+  })
+  
+  // 🛡️ Dein Klick-Spam-Schutz bleibt bestehen!
   private registerClicks$ = new Subject<void>();
+  private clickSub?: Subscription;
 
-  // 4. LERNPUNKT: Model-Driven Form (Das Formular-Modell im TypeScript)
   public userForm = new FormGroup({
     firstName: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     lastName: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    username: new FormControl('', { nonNullable: true, validators: [Validators.required] })
+    username: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    password: new FormControl("", { nonNullable: true, validators: [Validators.required] })
   });
 
-  // 5. LERNPUNKT: Das Formular für das Editier-Popup (ebenfalls modellgetrieben!)
   public editForm = new FormGroup({
     id: new FormControl('', { nonNullable: true }),
     firstName: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     lastName: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    username: new FormControl('', { nonNullable: true, validators: [Validators.required] })
+    username: new FormControl('', { nonNullable: true })
   });
 
-  // 6. LERNPUNKT: Validierung & Datenüberwachung ("Formulare auf Änderungen überwachen")
-  // Wir prüfen live, ob der eingegebene Username im Formular schon existiert
-  public isUsernameTaken = computed(() => {
-    const typedUsername = this.userForm.value.username?.trim().toLowerCase() || '';
-    if (!typedUsername) return false;
-
-    return this.allUsersServerSignal().some(user => user.username.toLowerCase() === typedUsername);
-  });
-
+  // 🔍 Die Filter-Logik zieht sich den Suchbegriff jetzt direkt aus der globalen Suche!
 public filteredUsers = computed(() => {
     const users = this.allUsersServerSignal();
-    const search = this.searchInput().toLowerCase().trim();
+    const search = this.filterService.searchTerm().toLowerCase().trim();
+    const category = this.filterService.currentCategory(); // 🎯 Aktuelle Kategorie aus dem Service
 
+    // 🛡️ Wenn wir in einer ganz anderen Kategorie sind, filtern wir dieses Grid nicht
+    if (category !== 'team' && category !== 'all') {
+      return users; 
+    }
+    
     if (!search) return users;
 
     return users.filter(u => 
@@ -67,78 +64,66 @@ public filteredUsers = computed(() => {
     );
   });
   
-  constructor() {
-    this.registerClicks$.pipe(
+  public isUsernameTaken = computed(() => {
+    const users = this.allUsersServerSignal();
+    const typedUsername = this.userForm.get('username')?.value?.trim().toLowerCase();
+    if (!typedUsername) return false;
+    return users.some(u => u.username.toLowerCase() === typedUsername);
+  });
+
+  ngOnInit(): void {
+    this.filterService.setInitialCategory('team');
+
+    console.log('👥 [TeamPool] Trigger globalen Pool-Sync im OnInit');
+    this.teamService.loadGlobalPool();
+    // 🛡️ Wir registrieren das Klick-Abo sauber im ngOnInit, genau wie du es hattest!
+    this.clickSub = this.registerClicks$.pipe(
       throttleTime(2000)
-    ).subscribe({
-      next: () => {
-         this.addUser()
-      },
-      error: (err) => {
-         console.log("error bei Erstellen Userdaten", err)
-      }
-    } 
-    )
+    ).subscribe(() => {
+      this.executeUserRegistration();
+    });
   }
 
-  private addUser() {
-        console.log("onAdd: start")
-    if (this.userForm.invalid || this.isUsernameTaken()) {
-      return;
-    }
+  ngOnDestroy(): void {
+    // 🧹 Wichtig: Abo kündigen, wenn die Komponente verlassen wird!
+    this.clickSub?.unsubscribe();
+  }
 
-    console.log("onAdd: ask formValues")
-    const formValues = this.userForm.getRawValue();
-    console.log("onAdd: formValues ", formValues)
+  public onAddUser(): void {
+    this.registerClicks$.next();
+  }
 
+  private executeUserRegistration(): void {
+    if (this.userForm.invalid || this.isUsernameTaken()) return;
+
+    const values = this.userForm.getRawValue();
     const newUser = new UserModel({
-      id: '', // Das Modell triggert im Konstruktor jetzt deine generateLocalId()!
-      firstName: formValues.firstName.trim(),
-      lastName: formValues.lastName.trim(),
-      username: formValues.username.trim(),
+      id: '',
+      firstName: values.firstName.trim(),
+      lastName: values.lastName.trim(),
+      username: values.username.trim().toLowerCase(),
+      role: 'Teammitglied',
+      emoji: '👤',
+      coffeeBalance: 0,
       projectIds: []
     });
 
-    console.log("onAdd: new User: ", newUser)
+    this.teamService.createMember(newUser, values.password, (err) => {
+      this.errorFromServer.set(err);
+    });
 
-    this.teamService.createMember(newUser, (err) => this.onError(err));
-
-    // Formular komplett leeren und in den Urzustand zurückversetzen
     this.userForm.reset();
   }
 
-  // ⌨️ 8. LERNPUNKT: HostListener für globale Tastatur-Events (Escape-Taste)
-  @HostListener('window:keydown.escape', ['$event'])
-  public onKeyDown(event: any): void {
-    if (this.selectedUserForEdit()) {
-      console.log('⌨️ Escape gedrückt – Popup schließt sich!');
-      this.onClosePopup();
-    }
-  }
-
-  /**
-   * User hinzufügen über das reaktive Formular-Modell
-   */
-  public onAddUser(): void {
-     this.registerClicks$.next()
-  }
-
-  /**
-   * 🗑️ 10. User löschen
-   */
+  // ... ab hier bleiben onDeleteUser, onOpenEditPopup, onSaveEdit und onClosePopup HAARGENAU identisch ...
   public onDeleteUser(id: string): void {
     if (confirm('Möchtest du diesen Benutzer wirklich löschen?')) {
       this.teamService.deleteMember(null, id);
     }
   }
 
-  /**
-   * 🪟 11. POPUP ÖFFNEN und das Editier-Formular mit den Werten befüllen
-   */
   public onOpenEditPopup(user: UserModel): void {
     this.selectedUserForEdit.set(user);
-
-    // Wir befüllen das Editier-Formular im Code mit den Daten des ausgewählten Users!
     this.editForm.setValue({
       id: user.id,
       firstName: user.firstName,
@@ -147,36 +132,38 @@ public filteredUsers = computed(() => {
     });
   }
 
-  /**
-   * 💾 12. POPUP SPEICHERN
-   */
   public onSaveEdit(): void {
     if (this.editForm.invalid) return;
-
     const formValues = this.editForm.getRawValue();
+    const currentUser = this.selectedUserForEdit();
 
-    // Wir bauen das aktualisierte Modell zusammen
     const updatedUser = new UserModel({
       id: formValues.id,
       firstName: formValues.firstName.trim(),
       lastName: formValues.lastName.trim(),
       username: formValues.username.trim(),
-      projectIds: this.selectedUserForEdit()?.projectIds || []
+      role: currentUser?.role || '',
+      emoji: currentUser?.emoji || '',
+      coffeeBalance: currentUser?.coffeeBalance || 0,
+      projectIds: currentUser?.projectIds || []
     });
 
     this.teamService.updateMember(updatedUser);
-    this.selectedUserForEdit.set(null); // Popup zu
+    this.selectedUserForEdit.set(null);
   }
-
+  
   public onClosePopup(): void {
     this.selectedUserForEdit.set(null);
   }
 
-  public onError(error: string) {
-    this.errorFromServer.set(error)
+@HostListener('document:keydown.escape', ['$event'])
+  public handleEscape(event: Event): void {
+    if (this.selectedUserForEdit()) {
+      this.onClosePopup();
+    }
   }
 
-  public closeError() {
-    this.errorFromServer.set("")
+  public closeError(): void {
+    this.errorFromServer.set("");
   }
 }

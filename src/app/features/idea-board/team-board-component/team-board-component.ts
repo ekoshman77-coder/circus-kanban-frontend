@@ -1,4 +1,4 @@
-import { Component, inject, computed, input, signal, effect } from '@angular/core';
+import { Component, inject, computed, input, signal, effect, OnInit, Signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TodoService } from '../../../core/services/todo/todo-service';
@@ -15,6 +15,10 @@ import { IdeaSortingService } from '../../../core/services/board-state-service';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { UserModel } from '../../../core/models/user-model';
 import { map, of, switchMap } from 'rxjs';
+import { FilterService } from '../../../core/services/filter-service';
+import { TodoQueryService } from '../../../core/services/todo-query-service';
+import { UserService } from '../../../core/services/user/user-service';
+import { ProjectMember } from '../../../core/models/project-member';
 
 export type BoardFilterState = {
   type: 'project' | 'milestone' | null;
@@ -28,11 +32,14 @@ export type BoardFilterState = {
   templateUrl: './team-board-component.html',
   styleUrl: './team-board-component.css'
 })
-export class TeamBoardComponent {
+export class TeamBoardComponent implements OnInit {
   public todoService = inject(TodoService);
   public teamService = inject(TeamService);
   public navigationService = inject(TabNavigationService);
   private projectService = inject(ProjectService)
+  private filterService = inject(FilterService)
+  private todoQueryService = inject(TodoQueryService)
+
 
   // 🏁 Die stabilen Steuerungssignale direkt auf dem Board:
   public showAssigneePopup = signal<boolean>(false);
@@ -42,143 +49,188 @@ export class TeamBoardComponent {
 
   public boardFilter = signal<BoardFilterState>({ type: null, id: null })
 
-  constructor() {
-    const projectService = inject(ProjectService);
-    const tabNavigationService = inject(TabNavigationService);
-    
-    // 🎯 Gestern-Fix: Meilenstein-Tab-Leuchten zurücksetzen
-    projectService.setActiveMilestoneId(null);
+  public canEdit = computed(() => {
+    return this.teamService.hasPermission(this.currentProjectId(), 'TODO_EDIT')
+  })
+  public canDelete = computed(() => {
+    return this.teamService.hasPermission(this.currentProjectId(), 'TODO_DELETE')
+  })
+  
+  private currentProjectId = signal<string>("")
+  public currentProjectMembers = this.teamService.currentProjectMembersSignal;
 
-    // 🚀 STABILER REAKTIVER EFFECT FÜR UNSERE WEITERLEITUNG:
+  public assignableUsers = computed(() => {
+    console.log("nimmt assignalbe user aus members", this.currentProjectMembers())
+    return this.currentProjectMembers().map(member => member.user);
+  });
+
+  constructor() {
+    this.projectService.setActiveMilestoneId(null);
+
     effect(() => {
-      // Wir abonnieren das Signal! Sobald die Daten da sind, springt der Effekt an.
-      const navState = tabNavigationService.currentNavigationState();
-      
+      const navState = this.navigationService.currentNavigationState();
+
       if (navState && navState.type === 'milestone') {
-        console.log('📥 REAKTIV EMPFANGEN: Filter wird gesetzt auf Meilenstein:', navState.id);
-        
+        console.log('REAKTIV EMPFANGEN: Filter wird gesetzt auf Meilenstein:', navState.id);
+
         // Lokalen Filter setzen
         this.boardFilter.set({
           type: 'milestone',
           id: navState.id
         });
         
-        // State im Service wieder leeren (untracked verhindert Endlosschleifen)
-        // Angular erlaubt es, Signals in Effekten zu schreiben, solange es sauber terminiert.
-        tabNavigationService.currentNavigationState.set(null);
+        this.navigationService.currentNavigationState.set(null);
       }
     });
+
+    effect(() => {
+      const filter = this.boardFilter();
+      let projectId: string = "";
+
+      if (filter.type === 'project') {
+        projectId = filter.id?? "";
+      } else if (filter.type === 'milestone') {
+        projectId = this.todoQueryService.getProjectIdByMilestoneId(filter.id)?? "";
+      }
+      if (projectId && projectId !== this.teamService.currentProjectId()) {
+        console.log(`📡 Board wechselt Projekt von ${this.teamService.currentProjectId()} zu ${projectId}. Starte Sync.`);
+        this.teamService.setCurrentProject(projectId);
+      }
+      this.currentProjectId.set(projectId)
+    });
   }
-  
-  public currentProjectId = computed(() => {
-    const filter = this.boardFilter();
-    if (!filter.type || !filter.id) return null;
-    if (filter.type === 'project') return filter.id;
 
-    const allProjects = this.projectService.projectsList();
-    const matchingProject = allProjects.find(p => p.milestones?.some(m => m.id === filter.id));
-    return matchingProject ? matchingProject.id : null;
-  });
+  ngOnInit(): void {
+    this.filterService.setInitialCategory('todos')
+  }
 
-  // B) Die Pipeline, die das Observable automatisch auflöst!
-  public currentProjectMembers = toSignal(
-    toObservable(this.currentProjectId).pipe(
-      switchMap(projectId => {
-        if (!projectId) return of([]); // Wenn keine ID da ist, schicke leeres Array
-        return this.teamService.getSortedMembers$(projectId); // Ruft das Observable ab!
-      })
-    ),
-    { initialValue: [] } // WICHTIG: Damit ist es NIEMALS undefined, sondern startet als leeres Array!
-  );
-
-  private getTodosForBoard(): Todo[] {
+  private getTodosForBoard = computed(() => {
     const filter = this.boardFilter();
     const rawTodos = filter.type === 'milestone'
       ? this.todoService.getTodosForMilestone(filter.id)
-      : this.projectService.getProjectTodos(filter.id);
+      : this.todoQueryService.getTodosForProject(filter.id).filter(t => this.filterWithQuery(this.filterService.searchTerm(), t));
     return rawTodos;
+  })
+
+  private filterWithQuery(query: string, todo: Todo): boolean {
+     const trimmedQuery = query.toLowerCase().trim()
+     if (!trimmedQuery) {
+      return true
+     }
+
+     return (todo.task.toLowerCase().includes(trimmedQuery) 
+        || (todo.description?.toLowerCase().includes(trimmedQuery)?? false)
+        || (todo.category?.toLowerCase().includes(trimmedQuery)?? false))
   }
 
-  // Reaktive Filterung der Tasks für die Spalten
-  // ⚪ Offene Spalte
+  public backlogTasks = computed(() => {
+    return this.getTodosForBoard()
+      .filter(t => t.teamStatus === "BACKLOG")
+      .map(t => new TodoViewModel(t, false, this.canEdit(), this.canDelete()));
+  });
+
+  // ⚪ 2. OPEN Spalte (Deine "alte" Offen-Spalte)
   public openTasks = computed(() => {
     return this.getTodosForBoard()
-      .filter(t => t.teamStatus === "Offen")
-      .map(t => new TodoViewModel(t, false));
+      .filter(t => t.teamStatus === "OPEN")
+      .map(t => new TodoViewModel(t, false, this.canEdit(), this.canDelete()));
   });
 
-  // 🟡 In Arbeit Spalte
+  // 🟡 3. IN PROGRESS Spalte
   public inProgressTasks = computed(() => {
     return this.getTodosForBoard()
-      .filter(t => t.teamStatus === "In Arbeit")
-      .map(t => new TodoViewModel(t, false));
+      .filter(t => t.teamStatus === "IN_PROGRESS")
+      .map(t => new TodoViewModel(t, false, this.canEdit(), this.canDelete()));
   });
 
-  // 🟢 Erledigt Spalte
+  // 👁️ 4. REVIEW Spalte
+  public reviewTasks = computed(() => {
+    return this.getTodosForBoard()
+      .filter(t => t.teamStatus === "REVIEW")
+      .map(t => new TodoViewModel(t, false, this.canEdit(), this.canDelete()));
+  });
+
+  // 🟢 5. DONE Spalte
   public doneTasks = computed(() => {
     return this.getTodosForBoard()
-      .filter(t => t.teamStatus === "Erledigt")
-      .map(t => new TodoViewModel(t, false));
+      .filter(t => t.teamStatus === "DONE")
+      .map(t => new TodoViewModel(t, false, this.canEdit(), this.canDelete()));
   });
 
   /**
-   * Die zentrale Drag & Drop Steuerung
+   * 🔄 DIE ZENTRALE DRAG & DROP STEUERUNG (MIT DEINEN WORKFLOW-REGELN)
    */
   public onTodoDropped(event: CdkDragDrop<any>): void {
-    console.log("=== DRAG & DROP EVENT FÜR DIE KONSOLE ===");
-    console.log("Von Container:", event.previousContainer.id);
-    console.log("Nach Container:", event.container.id);
-
     if (event.previousContainer === event.container) {
       return;
     }
 
-    // Das originale Live-ViewModel aus dem Quell-Container auslesen
     const movedViewModel = event.previousContainer.data[event.previousIndex] as TodoViewModel;
     if (!movedViewModel) return;
 
-    console.log("📝 Aufgabe:", movedViewModel.todo.task);
-    console.log("👤 assignedMemberId auf .todo:", movedViewModel.todo.assignedUserId);
-    console.log("⚙️ showAssigneePopup Wert VOR der Weiche:", movedViewModel.showAssigneePopup());
-    console.log("🏁 Zielspalten-ID:", event.container.id);
     const targetColumnId = event.container.id;
+    console.log("🏁 Zielspalten-ID erkannt:", targetColumnId);
 
-    // ⚪ NACH LINKS: Offen
-    if (targetColumnId === 'column-open-list') {
+    // 📦 REGELEFFEKT 1: Zurück ins BACKLOG gezogen
+    if (targetColumnId === 'column-backlog-list') {
+      movedViewModel.todo.teamStatus = 'BACKLOG';
       movedViewModel.todo.done = false;
       movedViewModel.todo.isStarted = false;
+      movedViewModel.todo.assignedUserId = null; // 🧼 User radikal entfernen!
 
-      // Die Karte schnappt visuell zurück, aber das Backend speichert es im Hintergrund.
-      // Sobald Docker antwortet, wandert die Karte reaktiv nach links!
       this.todoService.updateTodo(movedViewModel.todo, true);
     }
 
-    // 🟡 IN DIE MITTE: In Arbeit
+    // ⚪ REGELEFFEKT 2: Nach OPEN gezogen
+    else if (targetColumnId === 'column-open-list') {
+      movedViewModel.todo.teamStatus = 'OPEN';
+      movedViewModel.todo.done = false;
+      movedViewModel.todo.isStarted = false;
+      // Hier lassen wir den User unberührt (falls mal einer eingetragen war), erzwungen wird er aber nicht.
+
+      this.todoService.updateTodo(movedViewModel.todo, true);
+    }
+
+    // 🟡 REGELEFFEKT 3: Nach IN PROGRESS gezogen (Hier muss ein User drauf sitzen!)
     else if (targetColumnId === 'column-progress-list') {
+      movedViewModel.todo.teamStatus = 'IN_PROGRESS';
       movedViewModel.todo.done = false;
       movedViewModel.todo.isStarted = true;
 
-      // Mitarbeiter-Prüfung auf dem echten Objekt
       if (!movedViewModel.todo.assignedUserId) {
-        console.log("👥 Kein Mitarbeiter! Öffne Zuweisungs-Popup.");
-
-        // Das lokale Signal im ViewModel aktivieren (jetzt wo dein HTML repariert ist!)
+        console.log("👥 Kein Mitarbeiter im In-Progress-Zustand! Zeige Zuweisungs-Popup.");
         movedViewModel.showAssigneePopup.set(true);
         return;
       } else {
-        // Mitarbeiter ist da -> Karte schnappt zurück, speichert, und fliegt via Docker reaktiv in die Mitte!
         this.todoService.updateTodo(movedViewModel.todo, true);
       }
     }
 
-    // 🟢 NACH RECHTS: Erledigt
+    // 👁️ REGELEFFEKT 4: Nach REVIEW gezogen (Kontroll-Modus)
+    else if (targetColumnId === 'column-review-list') {
+      movedViewModel.todo.teamStatus = 'REVIEW';
+      movedViewModel.todo.done = false;
+      
+      if (!movedViewModel.todo.assignedUserId) {
+        console.log("👥 Für ein Review wird ebenfalls ein fester Bearbeiter erzwungen!");
+        movedViewModel.showAssigneePopup.set(true);
+        return;
+      } else {
+        this.todoService.updateTodo(movedViewModel.todo, true);
+      }
+    }
+
+    // 🟢 REGELEFFEKT 5: Nach DONE gezogen (Erledigt & User saubermachen!)
     else if (targetColumnId === 'column-done-list') {
-      console.log("🟢 Karte will nach Erledigt. Schnappt zurück für Punkte-Popup!");
+      movedViewModel.todo.teamStatus = 'DONE';
+      movedViewModel.todo.assignedUserId = null; // 🧼 Genialer Einfall von dir: User bei DONE entfernen!
+      
+      console.log("🟢 Karte geht nach DONE. Schnappt zurück fürs Aufwands-Punkte-Popup.");
       movedViewModel.onTodoChecked(this.todoService);
       return;
     }
   }
-
+  
   // Klick-Aktion für das Mitarbeiter-Popup
   public selectAssigneeFromPopup(memberId: string): void {
     const todo = this.todoWaitingForPopup();
@@ -231,5 +283,13 @@ export class TeamBoardComponent {
         id: projectId
       })
     }
+  }
+
+  public canInteractWithBoard(): boolean {
+    if (!this.currentProjectId()) {
+      return false;
+    }
+    const hasPermission = this.teamService.hasPermission(this.currentProjectId(), 'TODO_EDIT')
+    return hasPermission;
   }
 }

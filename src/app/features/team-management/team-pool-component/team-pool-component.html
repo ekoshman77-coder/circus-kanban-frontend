@@ -1,23 +1,14 @@
 <div class="pool-container">
-    
+
     <div class="page-header">
         <h1>👥 Globales Team-Management</h1>
         <p>Hier verwaltest du die Mitglieder und Registrierungen des gesamten Systems.</p>
     </div>
 
-    <div class="search-section">
-        <input type="text" name="fake_username" style="display:none;" autocomplete="username">
-        <input type="password" name="fake_password" style="display:none;" autocomplete="new-password">
-
-        <label for="searchMembers">🔍 Mitarbeiter suchen:</label>
-        <input type="text" id="searchMembers" placeholder="Vorname, Nachname oder Username..." [value]="searchInput()"
-            (input)="searchInput.set($event.target.value)" class="search-input">
-    </div>
-
     <hr class="divider">
 
     <div class="main-layout">
-        
+
         <div class="form-section">
             <h3>➕ Neuen Mitarbeiter registrieren</h3>
 
@@ -31,17 +22,20 @@
             <form [formGroup]="userForm" (ngSubmit)="onAddUser()" class="user-form">
 
                 <div class="input-group">
-                    <span class="input-icon" [style.color]="userForm.get('firstName')?.value ? 'inherit' : '#cbd5e1'">👤</span>
+                    <span class="input-icon"
+                        [style.color]="userForm.get('firstName')?.value ? 'inherit' : '#cbd5e1'">👤</span>
                     <input type="text" formControlName="firstName" placeholder="Vorname">
                 </div>
 
                 <div class="input-group">
-                    <span class="input-icon" [style.color]="userForm.get('lastName')?.value ? 'inherit' : '#cbd5e1'">👤</span>
+                    <span class="input-icon"
+                        [style.color]="userForm.get('lastName')?.value ? 'inherit' : '#cbd5e1'">👤</span>
                     <input type="text" formControlName="lastName" placeholder="Nachname">
                 </div>
 
                 <div class="input-group username-group">
-                    <span class="input-icon" [style.color]="userForm.get('username')?.value ? 'inherit' : '#cbd5e1'">🏷️</span>
+                    <span class="input-icon"
+                        [style.color]="userForm.get('username')?.value ? 'inherit' : '#cbd5e1'">🏷️</span>
                     <input type="text" formControlName="username" placeholder="Username (z.B. max_m)">
 
                     @if (isUsernameTaken()) {
@@ -49,6 +43,12 @@
                     }
                 </div>
 
+                <div class="input-group">
+                    <span class="input-icon"
+                        [style.color]="userForm.get('password')?.value ? 'inherit' : '#cbd5e1'">🔒</span>
+                    <input type="password" formControlName="password" placeholder="Passwort (min. 6 Zeichen)">
+                </div>
+                
                 <button type="submit" [disabled]="userForm.invalid || isUsernameTaken()" class="btn-submit">
                     Mitarbeiter erstellen
                 </button>
@@ -65,7 +65,7 @@
                     <div class="avatar" [style.background-color]="user.getColorHash()">
                         {{ user.firstName[0]?.toUpperCase() }}{{ user.lastName[0]?.toUpperCase() }}
                     </div>
-                    
+
                     <div class="user-info">
                         <h4>{{ user.firstName }} {{ user.lastName }}</h4>
                         <p class="username">&#64;{{ user.username }}</p>
@@ -96,7 +96,7 @@
             </div>
 
             <form [formGroup]="editForm" (ngSubmit)="onSaveEdit()">
-                
+
                 <div class="edit-avatar-container">
                     <div class="modal-avatar" [style.background-color]="selectedUserForEdit()?.getColorHash()">
                         {{ selectedUserForEdit()?.getInitials() || '👤' }}

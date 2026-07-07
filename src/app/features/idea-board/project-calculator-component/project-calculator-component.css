@@ -366,7 +366,10 @@ tr.total-row td {
     font-size: 0.88rem;
     cursor: pointer;
     box-shadow: 0 4px 12px rgba(168, 85, 247, 0.25);
-    transition: all 0.25s ease-in-out;
+    min-width: 290px; 
+    
+    /* Ein sanfter Übergang für alle Fälle (falls sich mal eine Farbe ändert) */
+    transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 
 .magic-template-btn:hover {
@@ -382,6 +385,42 @@ tr.total-row td {
 
 .magic-template-btn.general-btn:hover {
     background: linear-gradient(135deg, #0284c7 0%, #1d4ed8 100%);
+}
+
+/* ✨ Magisches Pulsieren für den Zauberstab (Kein Drehen, kein Schaukeln!) */
+/* ✨ MAGISCHES CSS-FUNKELN (100% sicher vor Browser-Fehlern!) */
+.magic-sparkles {
+    display: inline-flex;
+    align-items: center;
+    position: relative;
+    width: 20px;
+    height: 16px;
+    margin-right: 8px;
+}
+
+/* Die einzelnen Sterne nutzen ein sicheres Text-Symbol (✦), das jeder PC kennt */
+/* ✨ MAGISCHER FARB-GLOW (100% sicher vor jedem Grafikfehler!) */
+.magic-template-btn[disabled] {
+    /* Wenn der Button deaktiviert ist (isMagicLoading() === true), lassen wir die Farbe atmen */
+    animation: button-color-glow 2s ease-in-out infinite !important;
+    cursor: wait;
+    opacity: 1 !important; /* Verhindert, dass der Button einfach nur blass ausgegraut wird */
+}
+
+/* Die sanfte Farb-Pulsation */
+@keyframes button-color-glow {
+    0% {
+        background: #8b5cf6; /* Start-Violett */
+        box-shadow: 0 0 5px rgba(139, 92, 246, 0.4);
+    }
+    50% {
+        background: #a855f7; /* Hellere, magische Farbe am Höhepunkt */
+        box-shadow: 0 0 15px rgba(168, 85, 247, 0.8); /* Ein echter, reiner CSS-Leuchteffekt */
+    }
+    100% {
+        background: #8b5cf6;
+        box-shadow: 0 0 5px rgba(139, 92, 246, 0.4);
+    }
 }
 
 /* ==========================================================================
@@ -818,25 +857,54 @@ tr.cdk-drag-placeholder {
     transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
 }
 
-/* 1. 🔮 Der magische Button im Lade-Modus */
+/* ==========================================================================
+   ✨ DER NEUE, ULTRALEICHTE PRESET-LOADING-LOOK (0% CPU LAST)
+   ========================================================================== */
+
+/* Wenn die KI die Vorschläge lädt, aktivieren wir das Leuchten */
 .magic-template-btn.loading {
-    background: linear-gradient(135deg, #4b5563 0%, #1f2937 100%) !important; /* Dezentes Dunkelgrau beim Laden */
-    cursor: not-allowed;
-    opacity: 0.8;
-    box-shadow: none;
+    background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%) !important; /* Wunderschöner lila-blauer Verlauf */
+    border: none;
+    color: #ffffff !important;
+    cursor: wait;
+    position: relative;
+    /* Ein pulsierendes, mystisches Nordlicht-Leuchten um den Button herum */
+    animation: magic-aurora-glow 2.4s ease-in-out infinite;
 }
 
-/* Das rotierende/pulsierende Icon im Button */
-.magic-spinner {
+/* Das Zauber-Icon im Inneren schwebt sanft auf und ab (kein abruptes Ruckeln) */
+.floating-magic-icon {
     display: inline-block;
-    animation: magicPulse 1s infinite ease-in-out;
     margin-right: 6px;
+    font-size: 1.2rem;
+    animation: smooth-magic-float 1.8s ease-in-out infinite;
+    will-change: transform;
 }
 
-@keyframes magicPulse {
-    0% { transform: scale(1) rotate(0deg); opacity: 0.6; }
-    50% { transform: scale(1.2) rotate(180deg); opacity: 1; }
-    100% { transform: scale(1) rotate(360deg); opacity: 0.6; }
+/* 🎆 Die Aurora-Animation: Verändert weich den Schein (Grafikkarten-Liebling!) */
+@keyframes magic-aurora-glow {
+    0% {
+        box-shadow: 0 0 12px rgba(168, 85, 247, 0.4), 0 0 4px rgba(99, 102, 241, 0.2);
+    }
+    50% {
+        box-shadow: 0 0 24px rgba(168, 85, 247, 0.8), 0 0 16px rgba(99, 102, 241, 0.6);
+    }
+    100% {
+        box-shadow: 0 0 12px rgba(168, 85, 247, 0.4), 0 0 4px rgba(99, 102, 241, 0.2);
+    }
+}
+
+/* Das sanfte Schweben des Emojis im Button */
+@keyframes smooth-magic-float {
+    0% {
+        transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+        transform: translateY(-2px) rotate(8deg); /* Dreht sich minimal und schwebt */
+    }
+    100% {
+        transform: translateY(0px) rotate(0deg);
+    }
 }
 
 /* 2. 🌊 DIE TABELLENZEILEN-ANIMATION (Fade-In & Slide-Down) */

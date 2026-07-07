@@ -1,8 +1,9 @@
 import { computed } from "@angular/core";
 import { Milestone } from "./milestone";
-import { UserModel } from "./user-model";
+import { ProjectRole, UserModel } from "./user-model";
 import { IProjectJSON } from "../repositories/dto/project-json";
 import { generateLocalId } from "../shared/constants/id-const";
+import { ProjectMember } from "./project-member";
 
 export class Project {
   public id: string;
@@ -12,7 +13,7 @@ export class Project {
   public content: string;
   public status: 'Calculation' | 'Active' | 'Zip';
   public milestones: Milestone[];
-  public teamMembers: UserModel[];
+  public teamMembers: ProjectMember[];
 
   // 💡 INLINE-KONSTRUKTOR: Keine extra Interfaces mehr nötig!
   constructor(init: {
@@ -23,7 +24,7 @@ export class Project {
     content?: string;
     status?: 'Calculation' | 'Active' | 'Zip';
     milestones?: Milestone[];
-    teamMembers?: UserModel[];
+    teamMembers?: ProjectMember[];
   }) {
     this.title = init.title;
     this.area = init.area;
@@ -58,4 +59,9 @@ export class Project {
   public isInCalculation = computed(() => this.status === 'Calculation' )
 
   public isActive = computed(() => this.status === "Active")
+
+  public getUserRole(userId: string): ProjectRole {
+    const member = this.teamMembers.find(m => m.user.id === userId);
+    return member ? member.projectRole : 'VIEWER'; // Fallback, falls er kein Mitglied ist
+  }
 }

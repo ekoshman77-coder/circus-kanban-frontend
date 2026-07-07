@@ -5,7 +5,7 @@
       [class.disable-btn]="disableDeleteButtons()" 
       [attr.title]="disableDeleteButtons() ? 'Diese Funktion ist offline nicht verfügbar 🔌' : null"
       (click)="disableDeleteButtons() ? null : onClearCompleted()">
-      gemachte löschen
+      🗑️ Erledigte private Aufgaben löschen
     </span>
     
     <span class="total-time-display">
@@ -17,7 +17,7 @@
       [class.disable-btn]="disableDeleteButtons()" 
       [attr.title]="disableDeleteButtons() ? 'Diese Funktion ist offline nicht verfügbar 🔌' : null"
       (click)="disableDeleteButtons() ? null : onClearAll()">
-      alles löschen
+      🔥 Alle privaten Aufgaben löschen
     </span>
   </div>
 }

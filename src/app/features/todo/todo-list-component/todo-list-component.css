@@ -1,9 +1,8 @@
 /* --- 1. Der äußere Rahmen für die gesamte Liste --- */
 .todo-list-container {
   width: 100%;
-  /* Wir geben dem Container eine feste maximale Höhe, 
-     damit er nicht unendlich nach unten wächst */
-  max-height: 450px; /* 80% der sichtbaren Bildschirmhöhe */
+  /* Erhöht für das Grid, damit Kärtchen nebeneinander genug Platz zum Atmen haben */
+  max-height: 650px; 
   display: flex;
   flex-direction: column;
   background-color: #ffffff; 
@@ -12,159 +11,80 @@
   padding: 16px;             
   box-sizing: border-box;
   box-shadow: 0 2px 8px rgba(16, 42, 58, 0.04); 
+  overflow-x: hidden;
 }
 
-/* --- 4. Der eigentliche Listen-Bereich wird scrollbar --- */
-.todo-list {
-  flex-grow: 1;         /* Nutzt den restlichen Platz im Container optimal aus */
-  overflow-y: auto;     /* Aktiviert die vertikale Scrollbar NUR, wenn es zu viele Items gibt! */
-  padding-right: 8px;   /* Kleiner Sicherheitsabstand, damit die Scrollbar nicht an den Karten klebt */
+/* --- 2. Der neue, reaktionsfähige Grid-Bereich wird scrollbar --- */
+.todo-grid-layout {
+  flex-grow: 1;         
+  overflow-y: auto;     /* Aktiviert Scrollbar nur bei Bedarf! */
+  padding-right: 8px;   
   padding-top: 5px;
+  overflow-x: hidden;
 
-  /* Hübsche, dezente Scrollbar für moderne Browser (Chrome, Safari, Edge) */
+  /* 🎴 DAS MAGISCHE GRID-SYSTEM */
+  display: grid;
+  /* Erstellt automatisch so viele Spalten wie Platz auf dem Monitor ist (mind. 320px breit) */
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px; /* Harmonischer Abstand zwischen deinen Kärtchen */
+  align-content: start; /* Verhindert, dass Zeilen gestreckt werden, wenn es wenige Items gibt */
+
+  /* Deine hübsche, dezente Scrollbar (Bleibt voll erhalten!) */
   &::-webkit-scrollbar {
     width: 6px;
   }
   &::-webkit-scrollbar-track {
     background: #f1f5f9;
-    border-radius: 4px;
+    border-radius: 10px;
   }
   &::-webkit-scrollbar-thumb {
     background: #cbd5e1;
-    border-radius: 4px;
+    border-radius: 10px;
   }
   &::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
   }
 }
 
-/* --- 2. Das schicke, haptische Item-Kärtchen --- */
-.todo-item {
-  display: flex;
-  align-items: center; /* Richtet Checkbox, Text und Button perfekt auf einer Linie aus */
-  gap: 15px;           /* Stabiler Abstand zwischen den Elementen */
-  padding: 12px 16px;
-  background-color: #ffffff;
-  border: 1px solid #c8d6e0;
-  border-radius: 8px;
-  margin-bottom: 10px;
-  box-shadow: 0 3px 8px rgba(16, 42, 58, 0.12); /* Dein neuer, kräftigerer Schatten! */
-  transition: all 0.2s ease-in-out;
-}
-
-/* Hover-Effekt: Karte ploppt leicht nach oben */
-.todo-item:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 5px 12px rgba(16, 42, 58, 0.18);
-  border-color: #00b4d8; /* Cyan-Akzent aus dem Header */
-}
-
-/* --- 3. Die inneren Elemente perfekt aufteilen --- */
-
-/* Die Checkbox bleibt links verankert */
-.todo-item input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-/* Die Text-Box schnappt sich elastisch den gesamten Platz in der Mitte */
-.todo-text-container {
-  flex-grow: 1; /* Schiebt alles andere nach rechts weg! */
+/* Ein kleiner Container für jedes einzelne Kärtchen, damit die Animation sauber läuft */
+.grid-item-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  width: 100%;
 }
 
-.todo-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #2c3e50;
-}
-
-/* Wenn die Aufgabe erledigt ist, wird sie dezent durchgestrichen */
-.todo-title.done {
-  text-decoration: line-through;
-  color: #94a3b8;
-}
-
-.todo-desc {
-  font-size: 12px;
-  color: #7f8c8d;
-}
-
-/* Der Mülleimer-Button wandert ganz stabil nach rechts außen */
-.delete-btn {
-  background: transparent;
-  border: none;
-  font-size: 16px;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
-  flex-shrink: 0;
-  transition: background-color 0.2s;
-}
-
-.delete-btn:hover {
-  background-color: #fce4e4; /* Sanftes Rot beim Drüberfahren */
-}
-
-/* Falls die Liste leer ist */
-.no-todos-card {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  min-height: 200px;
-  color: #8a99a8;
-  text-align: center;
-}
-
+/* --- 3. Der Wrapper für Kontroll-Elemente (Filter & Statistik nebeneinander) --- */
 .controls-wrapper {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
   width: 100%;
-  
-  /* HIER DEN ABSTAND VERKLEINERN */
-  margin-bottom: 1px; /* Vorher war es 24px, wir halbieren es oder gehen noch weiter runter */
-  
+  margin-bottom: 12px; 
   flex-wrap: wrap;
 }
 
-/* Kleiner Feinschliff: Wir nehmen die Ränder und Abstände, die wir vorhin 
-   in den Einzelkomponenten zur Sicherheit eingebaut hatten, hier wieder raus, 
-   damit der Wrapper die volle Kontrolle übernimmt */
 app-filter, app-statistic {
   display: block;
 }
 
 app-statistic {
-  flex-grow: 1; /* Die Statistik darf sich den restlichen Platz schnappen */
-  max-width: 600px; /* Verhindert, dass die Statistik auf Riesenbildschirmen zu lang gezogen wird */
+  flex-grow: 1; 
+  max-width: 600px; 
 }
 
 h3 {
-  margin-top: 4px;     /* Reduziert den Abstand nach oben zu den Controls drastisch */
-  margin-bottom: 12px; /* Kontrolliert den Abstand nach unten zu den eigentlichen Kärtchen */
-  font-size: 18px;     /* Falls du die Größe auch direkt harmonisch anpassen willst */
-  color: #1e293b;      /* Ein schönes, knackiges Dunkelgrau */
+  margin-top: 4px;     
+  margin-bottom: 12px; 
+  font-size: 18px;     
+  color: #1e293b;      
 }
 
-.todo-list > div {
-  border-left: 5px solid transparent; /* Standard unsichtbar, damit nichts ruckelt */
-  transition: all 0.3s ease;
-  border-radius: 8px;
-  margin-bottom: 10px; /* Hält den Abstand beim Sliden sauber */
+/* Falls du farbige Status-Ränder an den Kärtchen-Wrappern nutzen möchtest: */
+.grid-item-wrapper.status-overdue {
+  border-left: 4px solid #ef4444;
+  border-radius: 4px;
 }
-
-.todo-list > div {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  /* Erzwingt eine saubere Render-Ebene auf der Grafikkarte (GPU) \n     während das Element reingeslidet kommt! */
-  will-change: transform, opacity; 
+.grid-item-wrapper.status-completed {
+  opacity: 0.75;
 }

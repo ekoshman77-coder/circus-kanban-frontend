@@ -1,0 +1,164 @@
+/* ==========================================================================
+   1. GLOBALER DASHBOARD CONTAINER (Dein geliebtes Soft-Blau-Grün)
+   ========================================================================== */
+.dashboard-wrapper {
+  padding: 30px;
+  /* Ein wunderschöner, dezenter Verlauf von Soft-Mint zu einem sanften Eisblau */
+  background: linear-gradient(135deg, #e0f2fe 0%, #e6f4ea 50%, #e0f7fa 100%);
+  min-height: 100vh;
+}
+
+.dashboard-grid {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  gap: 24px;
+}
+
+/* ==========================================================================
+   2. DIE HELLEN "PREMIUM" KARTEN (Schweben über dem Hintergrund)
+   ========================================================================== */
+.dashboard-card {
+  flex: 1;
+  border-radius: 20px; 
+  padding: 24px; 
+  box-shadow: 0 10px 25px -5px rgba(148, 163, 184, 0.12);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  
+  /* 🌟 DER TRICK: Die Karten sind jetzt standardmäßig ganz zart weiß-transparent */
+  background: rgba(255, 255, 255, 0.75); 
+  backdrop-filter: blur(8px);
+}
+
+/* Hover-Effekt: Beim Drüberfahren verliert die Karte ihre Transparenz und fängt an zu strahlen */
+.dashboard-card:hover {
+  transform: translateY(-5px);
+  background: #ffffff; /* Wird zu 100% reinweiß beim Hover! */
+  box-shadow: 0 20px 30px -10px rgba(100, 116, 139, 0.2);
+}
+
+/* ==========================================================================
+   5. OPTIMIERTE FARBANPASSUNGEN (Karten 1 & 2 verstärkt!) 🌈
+   ========================================================================== */
+
+/* 🟢 Karte 1: Persönlicher Fortschritt - Jetzt knackig und sichtbar! */
+.personal-card {
+  /* Höherer Weiß-Anteil (0.9 statt 0.75), damit sie nicht im Hintergrund verschwindet */
+  background: rgba(230, 24cf, 245, 0.9); 
+  /* Ein deutlich kräftigerer, frischer Mint-Rahmen */
+  border: 1.5px solid #99f6e4; 
+  /* Ein etwas dunklerer Schatten für mehr Tiefe im hellen Bereich */
+  box-shadow: 0 10px 25px -5px rgba(20, 184, 166, 0.1);
+}
+.personal-card:hover {
+  border-color: #0d9488; /* Wird beim Hover schön satt */
+  background: #ffffff;
+}
+
+/* 🔵 Karte 2: Team-Fortschritt - Scharf abgegrenzt! */
+.team-card {
+  /* Höherer Weiß-Anteil für perfekten Kontrast zum Eisblau des Hintergrunds */
+  background: rgba(234, 246, 255, 0.9); 
+  /* Ein kräftigerer Rahmen, der die Karte festhält */
+  border: 1.5px solid #bae6fd; 
+  box-shadow: 0 10px 25px -5px rgba(56, 189, 248, 0.1);
+}
+.team-card:hover {
+  border-color: #2563eb;
+  background: #ffffff;
+}
+
+/* 🟣 Karte 3: Projekte (Bleibt edel-dezent) */
+.project-card {
+  background: rgba(245, 243, 255, 0.8); 
+  border: 1px solid rgba(233, 213, 255, 0.7); 
+}
+.project-card:hover {
+  border-color: #8b5cf6;
+  background: #ffffff;
+}
+
+/* 🟡 Karte 4: Notizen (Bleibt gemütlich-warm) */
+.notes-card {
+  background: rgba(255, 251, 235, 0.8); 
+  border: 1px solid rgba(254, 243, 199, 0.7); 
+}
+.notes-card:hover {
+  border-color: #fbbf24;
+  background: #ffffff;
+}
+
+/* ==========================================================================
+   3. TYPOGRAFIE & HEADER (Edles Anthrazit für perfekte Lesbarkeit)
+   ========================================================================== */
+.card-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.card-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e293b; /* Dein edles Anthrazit */
+}
+
+.card-icon {
+  font-size: 1.4rem;
+}
+
+/* Die großen Kennzahlen */
+.big-number {
+  font-size: 3rem;
+  font-weight: 800;
+  color: #0f172a; /* Tiefes Dunkelblau */
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.card-body p {
+  margin: 0 0 20px 0;
+  font-size: 0.9rem;
+  color: #64748b; /* Das ruhige Neben-Graublau aus dem Team-Management */
+}
+
+/* ==========================================================================
+   4. PROGRESS BARS (Sanft verblendet)
+   ========================================================================== */
+.progress-bar-container {
+  height: 8px;
+  background-color: #f1f5f9; /* Heller Kanal */
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  /* Frischer, weicher Smaragd-Verlauf */
+  background: linear-gradient(90deg, #10b981, #34d399); 
+  border-radius: 999px;
+  transition: width 0.5s ease-out;
+}
+
+/* ==========================================================================
+   5. DEZENTE FARBVARIATIONEN (Passend zum Konzept)
+   ========================================================================== */
+
+/* Karte 2: Team-Fortschritt in sanftem Ozeanblau */
+.team-fill {
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+}
+
+/* Karte 3: Projekte - Die Zahl kriegt einen weichen Violett-Ton */
+.project-card .big-number {
+  color: #6366f1; /* Indigo-Violett */
+}
+
+/* Karte 4: Notizen - Die Zahl kriegt einen warmen Bernstein-Ton */
+.notes-card .big-number {
+  color: #d97706; /* Edles Dunkelgelb */
+}

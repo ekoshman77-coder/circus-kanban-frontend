@@ -56,7 +56,7 @@ export class TodoItemComponent {
     const currentTodo = this.item();
 
     // Nur anstoßen, wenn das To-Do wirklich offen ist
-    if (!currentTodo.done && currentTodo.effort > 0) {
+    if (!currentTodo.todo.done && currentTodo.effort > 0) {
       this.todoService.updateTodoEffort(currentTodo.id, newPoints);
     }
 
@@ -84,6 +84,10 @@ export class TodoItemComponent {
   // 2. HIER IST DEINE MEHTODE: Die Brücke zum ViewModel!
   public onEffortConfirmed(actualEffort: number): void {
     // 🌟 WICHTIG: Über 'this.item' rufst du die Logik des ViewModels auf!
+    if (!this.item().canEdit) {
+      console.warn("⚠️ Aktion verweigert: Du darfst die Story Points dieses Todos nicht ändern!");
+      return;
+    }
     this.item().onEffortConfirmed(actualEffort, this.todoService);
 
     // Lokales Popup wieder schließen

@@ -1,0 +1,20 @@
+<div class="search-bar-container">
+  
+  <select 
+    [ngModel]="currentCategory()" 
+    (ngModelChange)="onCategoryChange($any($event))">
+    @for (category of categories; track category.value) {
+       <option [value]="category.value">
+         {{ category.icon }} {{ category.label }}
+       </option>
+    }    
+  </select>
+
+  <input 
+    type="text" 
+    [ngModel]="filterService.searchTerm()" 
+    (ngModelChange)="onSearchTermChange($any($event))"
+    placeholder="Suchen..."
+  />
+  
+</div>

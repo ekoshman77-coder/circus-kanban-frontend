@@ -7,10 +7,13 @@ import { filter } from 'rxjs';
 import { NavigationHistoryService } from './core/services/navigation-history-service';
 import { IdeaBoardComponent } from './features/idea-board/idea-board-component/idea-board-component';
 import { NotificationComponent } from './features/notification/notification-component/notification-component';
+import { FilterComponent } from './features/todo/filter-component/filter-component';
+import { SearchCenterComponent } from './features/global-search/search-center-component/search-center-component';
+import { FilterService } from './core/services/filter-service';
 
 @Component({
   selector: 'app-root',
-  imports: [Apptitle, RouterLink, RouterOutlet, RouterLinkActive, NotificationComponent], // 'Home' und 'TodoPageComponent' fliegen hier raus, da sie über den Router geladen werden!
+  imports: [Apptitle, RouterLink, RouterOutlet, RouterLinkActive, NotificationComponent, SearchCenterComponent], // 'Home' und 'TodoPageComponent' fliegen hier raus, da sie über den Router geladen werden!
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
@@ -19,13 +22,16 @@ export class App implements OnInit {
   public userService = inject(UserService);
   public connectionService = inject(ConnectionService)
   private navigationHistory = inject(NavigationHistoryService);
+
   
+  private filterService = inject(FilterService);
+
+  // 2. Die Werte als einfache computed Signals für dein HTML bereitstellen
+  protected searchTerm = computed(() => this.filterService.searchTerm());
+  protected currentCategory = computed(() => this.filterService.currentCategory());
   showOfflineBanner = signal<boolean>(false);
 
-  public offline = computed(() =>{
-    this.connectionService.status === this.offline
-  })
-
+  public isOffline = computed(() => this.connectionService.isOffline());
   protected readonly title = signal('schulung');
 
   private router = inject(Router);

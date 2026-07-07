@@ -17,6 +17,7 @@ import { TabNavigationService } from '../tab-navigation-service';
 import { BoardTab } from '../tab-navigation-service';
 import { UniversalTagInputComponent } from '../../../core/shared/components/universal-tag-input-component/universal-tag-input-component';
 import { NoteInputComponent } from '../note-input-component/note-input-component';
+import { FilterService } from '../../../core/services/filter-service';
 
 @Component({
   selector: 'app-idea-board',
@@ -35,10 +36,9 @@ import { NoteInputComponent } from '../note-input-component/note-input-component
 export class IdeaBoardComponent {
   private noteService = inject(NoteService);
   private boardStateService = inject(IdeaSortingService);
-  // 2. 🔌 Den neuen Service injizieren
   private projectService = inject(ProjectService);
-  //  private router = inject(Router)
   private tabService = inject(TabNavigationService);
+  private filterService = inject(FilterService)
 
   public currentFilters = signal<FilterState>({ query: '', mode: 'AND', tag: '', color: '' });
 
@@ -53,6 +53,11 @@ export class IdeaBoardComponent {
   private viewModelCache: NoteViewModel[] = [];
   public currentNotes = computed(() => this.noteService.notesList());
 
+  ngOnInit(): void {
+    // Sobald die Ideenseite betreten wird, stellen wir die Suche fest auf 'ideas' ein!
+    this.filterService.setInitialCategory('ideas');
+  }
+  
   constructor() {
     // 🛡️ DIE REAKTIVE WARTESHLEIFE: 
     // Dieser Effekt wartet, bis die Services mit dem Laden der Daten fertig sind!
@@ -101,6 +106,7 @@ export class IdeaBoardComponent {
 
   public onFilterChanged(newFilters: FilterState): void {
     this.currentFilters.set(newFilters);
+    this.filterService.searchTerm.set(newFilters.query);
   }
 
   /**
@@ -185,64 +191,50 @@ export class IdeaBoardComponent {
   }
 
   // 🧠 DAS REVOLUTIONÄRE FILTER-PIPELINE-SYSTEM (Völlig frei von Reihenfolgen!)
-  private filterPipeline = computed(() => {
-    const allVMs = this.viewModels();
-    const filters = this.currentFilters();
+private filterPipeline = computed(() => {
+  const allVMs = this.viewModels();
+  const filters = this.currentFilters();
 
-    const rawQuery = filters.query.toLowerCase().trim();
-    const tagFilter = filters.tag.toLowerCase().trim();
-    const colorFilter = filters.color;
+  // Da onFilterChanged den Text synchronisiert, gibt es nur noch EINE Wahrheit:
+  const searchQuery = this.filterService.searchTerm().toLowerCase().trim();
+  
+  const tagFilter = filters.tag.toLowerCase().trim();
+  const colorFilter = filters.color;
 
-    // SCHRITT 1: Die Basis-Textsuche (gilt immer für alles!)
-    let textFiltered = [...allVMs];
-    if (rawQuery) {
-      const searchTerms = rawQuery.split(',').map(term => term.trim()).filter(term => term.length > 0);
-      textFiltered = textFiltered.filter(vm => {
-        const title = vm.note.title.toLowerCase();
-        const content = vm.note.content.toLowerCase();
-        return filters.mode === 'AND'
-          ? searchTerms.every(term => title.includes(term) || content.includes(term))
-          : searchTerms.some(term => title.includes(term) || content.includes(term));
-      });
-    }
+  // SCHRITT 1: Die vereinte Textsuche (unterstützt auch Komma-Trennung!)
+  let textFiltered = [...allVMs];
+  
+  if (searchQuery) {
+    // Da du vorher eine tolle Komma-Trennung hattest, behalten wir die bei!
+    const searchTerms = searchQuery.split(',').map(term => term.trim()).filter(term => term.length > 0);
+    textFiltered = textFiltered.filter(vm => {
+      const title = vm.note.title.toLowerCase();
+      const content = vm.note.content.toLowerCase();
+      return filters.mode === 'AND'
+        ? searchTerms.every(term => title.includes(term) || content.includes(term))
+        : searchTerms.some(term => title.includes(term) || content.includes(term));
+    });
+  }
 
-    // SCHRITT 2: Daten für das TAG-Dropdown (Ignoriert den Tag-Filter selbst, nimmt aber Farbe!) 🏷️
-    let forTags = [...textFiltered];
-    if (colorFilter) {
-      forTags = forTags.filter(vm => vm.note.colorType === colorFilter);
-    }
+  // ─── AB HIER BLEIBT DEIN ALTER CODE FÜR TAGS & FARBEN ZU 100% GLEICH ───
+  let forTags = [...textFiltered];
+  if (colorFilter) { forTags = forTags.filter(vm => vm.note.colorType === colorFilter); }
+  
+  let forColors = [...textFiltered];
+  if (tagFilter) {
+    if (tagFilter === 'none') { forColors = forColors.filter(vm => !vm.note.tag || !vm.note.tag.trim()); }
+    else { forColors = forColors.filter(vm => vm.note.tag && vm.note.tag.toLowerCase().includes(tagFilter)); }
+  }
 
-    // SCHRITT 3: Daten für das FARBEN-Dropdown (Ignoriert den Farben-Filter selbst, nimmt aber Tag!) 🌈
-    let forColors = [...textFiltered];
-    if (tagFilter) {
-      if (tagFilter === 'none') {
-        forColors = forColors.filter(vm => !vm.note.tag || !vm.note.tag.trim());
-      } else {
-        forColors = forColors.filter(vm => vm.note.tag && vm.note.tag.toLowerCase().includes(tagFilter));
-      }
-    }
+  let finalSelection = [...textFiltered];
+  if (tagFilter) {
+    if (tagFilter === 'none') { finalSelection = finalSelection.filter(vm => !vm.note.tag || !vm.note.tag.trim()); }
+    else { finalSelection = finalSelection.filter(vm => vm.note.tag && vm.note.tag.toLowerCase().includes(tagFilter)); }
+  }
+  if (colorFilter) { finalSelection = finalSelection.filter(vm => vm.note.colorType === colorFilter); }
 
-    // SCHRITT 4: Das finale Ergebnis für das Board (Hier schlägt ALLES zu!) 📌
-    let finalSelection = [...textFiltered];
-    // Tag anwenden
-    if (tagFilter) {
-      if (tagFilter === 'none') {
-        finalSelection = finalSelection.filter(vm => !vm.note.tag || !vm.note.tag.trim());
-      } else {
-        finalSelection = finalSelection.filter(vm => vm.note.tag && vm.note.tag.toLowerCase().includes(tagFilter));
-      }
-    }
-    // Farbe anwenden
-    if (colorFilter) {
-      finalSelection = finalSelection.filter(vm => vm.note.colorType === colorFilter);
-    }
-
-    return {
-      finalSelection,
-      dataForColors: forColors,
-      dataForTags: forTags
-    };
-  });
+  return { finalSelection, dataForColors: forColors, dataForTags: forTags };
+});
 
   // 1. Das finale Ausgabe-Signal für das Zettel-Grid (mit Sortierung)
   public sortedViewModels = computed(() => {

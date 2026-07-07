@@ -157,7 +157,7 @@ public deleteProject(id: string, actualList: Project[]): Observable<void | undef
         status: m.status || 'Offen',
         assignedUserId: m.assignedUser?.id || null
       })),
-      teamMemberIds: (project.teamMembers || []).map(member => member.id)
+      teamMemberIds: (project.teamMembers || []).map(member => member.user.id)
     };
   }
 
@@ -229,7 +229,7 @@ public deleteProject(id: string, actualList: Project[]): Observable<void | undef
    * DIE HYBRID-WEICHE: Entscheidet intelligent zwischen KI und Offline-Templates
    */
   public getMilestoneSuggestions(title: string, area: string, userId: string): Observable<MilestoneSuggestionsModel> {
-    
+    console.log(`💼 [DataManager] Leite Anfrage weiter an AiRepository für Titel: "${title}"`);
     // 📶 PRÜFUNG: Was sagt der ConnectionService?
     const offlineStatus = this.connectionService.isOffline();
     console.log('🔄 getMilestoneSuggestions aufgerufen. ConnectionService sagt offline =', offlineStatus);

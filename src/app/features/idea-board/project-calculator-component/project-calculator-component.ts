@@ -15,6 +15,7 @@ import { I } from '@angular/cdk/keycodes';
 import { BoardFilterState } from '../team-board-component/team-board-component';
 import { MilestoneSuggestionsComponent } from '../milestone-suggestions-component/milestone-suggestions-component';
 import { DraftProjectWrapper } from '../../../core/models/draft-project-wrapper';
+import { TeamService } from '../../../core/services/team-service';
 
 @Component({
   selector: 'app-project-calculator-component',
@@ -27,6 +28,7 @@ export class ProjectCalculatorComponent implements OnInit {
   public projectService = inject(ProjectService);
   public noteService = inject(NoteService);
   private tabService = inject(TabNavigationService);
+  public teamService = inject(TeamService)
 
   // Reaktive Zustände für das Erfolgs-Popup
   public showSuccessPopup = signal(false);
@@ -62,7 +64,7 @@ export class ProjectCalculatorComponent implements OnInit {
   // 🕵️‍♂️ Ein computed Signal, damit dein HTML/CSS weiß, ob wir im Edit-Modus sind
   public isEditMode = computed(() => this.localEditProject() !== null);
   public isBrandNewDraft = signal<boolean>(false);
-
+  
   public originalIdea = computed(() => {
     const currentProject = this.localProjectDraft();
     if (!currentProject || !currentProject.ideaId) return null;
@@ -178,8 +180,6 @@ export class ProjectCalculatorComponent implements OnInit {
     return this.localProjectDraft()?.getTotalDuration() ?? 0
   })
 
-
-
   /**
    * 🎯 FALL 1b / OPTION 5: Ein bestehendes Projekt manuell aus der Liste auswählen
    */
@@ -261,11 +261,14 @@ export class ProjectCalculatorComponent implements OnInit {
   }
 
   /**
-   * 🚀 KALKULATION ABSCHLIESSEN (Startet das Popup und berechnet Tage)
+   * KALKULATION ABSCHLIESSEN (Startet das Popup und berechnet Tage)
    */
   public finishCalculation(): void {
+    console.log("finishCalculation startet")
+
     const currentDraft = this.localProjectDraft();
     if (!currentDraft) return;
+    console.log("finishCalculation nach dem prüfunh currentDraft")
 
     let totalDays = 0;
     const calculatedMilestones: Milestone[] = [];
@@ -281,10 +284,11 @@ export class ProjectCalculatorComponent implements OnInit {
         })
       );
     }
+    console.log("finishCalculation nach dem schleife")
 
-    // 💾 DIREKT IN DIE KLASSENVARIABLE SPEICHERN (Inklusive ID-Mitnahme!)
+    // DIREKT IN DIE KLASSENVARIABLE SPEICHERN (Inklusive ID-Mitnahme!)
     this.projectToSend = new Project({
-      id: currentDraft.id, // 🔥 Wichtig: Existierende IDs reisen hier mit!
+      id: currentDraft.id, // Wichtig: Existierende IDs reisen hier mit!
       title: currentDraft.title,
       area: currentDraft.area,
       ideaId: currentDraft.ideaId,
@@ -505,21 +509,49 @@ export class ProjectCalculatorComponent implements OnInit {
     return 'Allgemein';
   }
 
+  public suggestedArea = computed(() => {
+    // Hier kommt deine originale Logik aus getSuggestedArea() rein!
+    // Beispiel:
+    return this.currentIdea()?.tag || 'Allgemein';
+  });
+
+  public canSaveCalculation = computed(() => {
+    console.log("check if can save calculation")
+    if (!this.isEditMode()) {
+      console.log("not edit mode return true")
+      return true
+    }
+    if (!this.localProjectDraft()) {
+      console.log("no project in localProjectDraft return false")
+       return false
+    }
+    const hasPermission = this.teamService.hasPermission(this.localProjectDraft()!.id, 'PROJECT_EDIT');
+    console.log("check permission return ", hasPermission)
+    return hasPermission
+  })
+
 public applySmartTemplates(): void {
-    const currentProject = this.localProjectDraft();
-    if (!currentProject || !currentProject.title) return;
-
-    // 1. Schalte den magischen Lade-Modus/Spinner im Button AN
-    this.isMagicLoading.set(true);
-
-    // 2. Wir triggern die Vorschläge jetzt exakt HIER beim Button-Klick!
-    this.projectService.loadMilestoneSuggestions(currentProject.title, currentProject.area);
-
-    // 3. Nach einer kurzen, eleganten Verzögerung (für die UX) schalten wir den Spinner wieder aus
-    setTimeout(() => {
-      this.isMagicLoading.set(false);
-    }, 1200);
+  console.log("🔘 [UI] 1. Klick auf applySmartTemplates() registriert!");
+  const currentProject = this.localProjectDraft();
+  
+  if (!currentProject) {
+    console.warn("🛑 [UI] Abbruch: localProjectDraft ist null!");
+    return;
   }
+  if (!currentProject.title) {
+    console.warn("🛑 [UI] Abbruch: Projekttitel ist leer!");
+    return;
+  }
+
+  console.log(`🔘 [UI] 2. Starte Spinner und rufe Service auf für: "${currentProject.title}"`);
+  this.isMagicLoading.set(true);
+
+//  this.projectService.loadMilestoneSuggestions(currentProject.title, currentProject.area);
+
+  setTimeout(() => {
+    this.isMagicLoading.set(false);
+  }, 1200);
+}
 
   public currentIdea = computed(() => {
     const currentProject = this.localProjectDraft();

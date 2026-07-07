@@ -8,25 +8,19 @@
             </p>
         </div>
 
-<div class="header-action-section">
-            
-            <app-milestone-selector-component 
-                [initialMilestoneId]="activeMilestoneId()" 
-                [initialProjectId]="null"
-                [canChooseProject]="false"
-                [filterByActiveProject]="false"
-                [appearance]="'modal'"
+        <div class="header-action-section">
+
+            <app-milestone-selector-component [initialMilestoneId]="activeMilestoneId()" [initialProjectId]="null"
+                [canChooseProject]="false" [filterByActiveProject]="false" [appearance]="'modal'"
                 (milestoneSelected)="onMilestoneChanged($event)">
             </app-milestone-selector-component>
 
-            <button type="button" 
-                    class="btn-team-board" 
-                    [disabled]="!activeMilestoneId()"
-                    (click)="openTeamBoardForMilestone(activeMilestoneId()!)">
+            <button type="button" class="btn-team-board" [disabled]="!activeMilestoneId()"
+                (click)="openTeamBoardForMilestone(activeMilestoneId()!)">
                 <span class="btn-icon">🎪</span>
                 <span class="btn-text">Zum TeamBoard</span>
             </button>
-            
+
         </div>
     </div>
 
@@ -54,8 +48,11 @@
             <div class="workspace-column">
                 <h3 class="workspace-title">📝 Aufgaben in dieser Phase</h3>
 
-                <div id="milestone-todo-list" cdkDropList [cdkDropListData]="match.milestoneTodos"
-                    (cdkDropListDropped)="onTodoDropped($event)" class="drag-drop-zone">
+                <div id="milestone-todo-list" cdkDropList 
+                    [cdkDropListData]="match.milestoneTodos"
+                    (cdkDropListDropped)="onTodoDropped($event)" 
+                    [cdkDropListDisabled]="!canInteractWithTodos()"
+                    class="drag-drop-zone">
                     @for (todoViewModel of match.milestoneTodos; track todoViewModel.id) {
                     <app-todo-item [item]="todoViewModel" [isKanbanMode]="true"
                         [ngClass]="'status-' + todoViewModel.visualStatus" cdkDrag [cdkDragData]="todoViewModel.todo"
@@ -73,12 +70,19 @@
                 <h3 class="workspace-title">➕ Unzugeordnete Aufgaben</h3>
 
                 <div class="workspace-form-wrapper">
-                    <app-todo-form [forcedMilestoneId]="activeMilestoneId()" layout="compact">
-                    </app-todo-form>
+
+                    @if (canInteractWithTodos()) {
+                    <app-todo-form [forcedMilestoneId]="activeMilestoneId()" layout="compact"></app-todo-form>
+                    } @else {
+                    <p class="viewer-locked-hint">🔒 Erstellen von Aufgaben nur für Projektmitglieder.</p>
+                    }
                 </div>
 
-                <div id="free-todo-list" cdkDropList [cdkDropListData]="unassignedTodos()"
-                    (cdkDropListDropped)="onTodoDropped($event)" class="drag-drop-zone">
+                <div id="free-todo-list" cdkDropList 
+                    [cdkDropListData]="unassignedTodos()"
+                    [cdkDropListDisabled]="!canInteractWithTodos()"
+                    (cdkDropListDropped)="onTodoDropped($event)" 
+                    class="drag-drop-zone">
 
                     @for (todoViewModel of unassignedTodos(); track todoViewModel.id) {
                     <app-todo-item [item]="todoViewModel" [isKanbanMode]="true"

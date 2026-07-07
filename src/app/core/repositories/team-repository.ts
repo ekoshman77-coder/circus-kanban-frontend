@@ -1,9 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, Observable, tap } from 'rxjs';
-import { UserModel } from '../models/user-model';
+import { ProjectRole, UserModel } from '../models/user-model';
 import { teamApiUrl, userApiUrl } from './links';
 import { IUserJSON } from './dto/user-json';
+import { ProjectMember } from '../models/project-member';
 
 @Injectable({
   providedIn: 'root'
@@ -11,97 +12,102 @@ import { IUserJSON } from './dto/user-json';
 export class TeamRepository {
   private http = inject(HttpClient);
 
-  /**
-   * 📥 AUFGABE 1: GET-Request
-   * Hole alle Teammitglieder, die dem Projekt mit der 'projectId' zugewiesen sind.
-   * Die URL auf dem Kotlin-Server lautet: `${teamApiUrl}/${projectId}/members`
-   */
-  public getMembersForProject$(projectId?: string | null): Observable<UserModel[]> {
-    console.log('📡 [TeamRepo] GET getMembersForProject$ aufgerufen für Projekt:', projectId);
+  /** 📥 Holt alle Projektmitglieder inklusive ihrer Rollen */
+  public getMembersForProject$(projectId?: string | null): Observable<ProjectMember[]> {
+    console.log('📡 [TeamRepo] GET getMembersForProject$ für Projekt:', projectId);
     let params = new HttpParams();
-
     if (projectId) {
       params = params.set('projectId', projectId);
     }
 
-    return this.http.get<IUserJSON[]>(teamApiUrl, { params }).pipe(
-      tap(jsonArray => console.log('📥 [TeamRepo] GET Antwort vom Server (unverarbeitet):', jsonArray)),
-      map(jsonArray => jsonArray.map(user => UserModel.fromJson(user))),
-      tap(models => console.log('🎯 [TeamRepo] GET in UserModel konvertiert:', models))
+    return this.http.get<any[]>(teamApiUrl, { params }).pipe(
+      map(jsonArray => jsonArray.map(json => {
+        return new ProjectMember(
+          UserModel.fromJson(json.user || json),
+          (json.projectRole as ProjectRole) || 'DEVELOPER'
+        );
+      }))
     );
   }
-  /**
-  * ➕ Weist einen bestehenden User einem bestimmten Projekt zu
-  */
-  /**
-    * ➕ POST: Weist einen bestehenden User einem bestimmten Projekt zu
-    * Schießt jetzt sauber auf die Basis-Route des Controllers!
-    */
-  /**
-    * ➕ POST: Weist einen bestehenden User einem bestimmten Projekt zu
-    * Schießt jetzt sauber auf die Basis-Route des Controllers!
-    */
-  public assignUserToProject$(projectId: string, member: UserModel): Observable<UserModel> {
-    console.log('📡 [TeamRepo] POST assignUserToProject$ abgefeuert:', { projectId, memberId: member.id });
 
-    // Wir packen die projectId als Query-Parameter an die Basis-URL (?projectId=...)
+/** ➕ Weist einen bestehenden User einem Projekt mit einer spezifischen Rolle zu */
+  public assignToProject$(projectId: string, memberId: string, role: ProjectRole): Observable<ProjectMember> {
+    console.log(`📡 [TeamRepo] POST assignToProject$ - Projekt: ${projectId}, User: ${memberId}, Rolle: ${role}`);
+    
+    // 🎯 WICHTIG: NUR teamApiUrl benutzen, kein extra '/assign' anfügen!
+    const url = teamApiUrl; 
+
+    // 1. Die Query-Parameter für das Backend
+    const params = new HttpParams()
+      .set('projectId', projectId)
+      .set('role', role);
+
+    // 2. Das JSON-Objekt für den @RequestBody
+    const body = {
+      userId: memberId
+    };
+
+    // 3. Abschicken!
+    return this.http.post<any>(url, body, { params }).pipe(
+      map(json => {
+        console.log('📬 [TeamRepo] Server-Antwort für Zuweisung erhalten:', json);
+        return new ProjectMember(
+          UserModel.fromJson(json.user || json),
+          (json.projectRole as ProjectRole) || role
+        );
+      })
+    );
+  }
+  
+  /** 🗑️ Entfernt einen User aus einem Projekt */
+  public deleteFromProject$(projectId: string, memberId: string): Observable<any> {
+    const params = new HttpParams()
+      .set('projectId', projectId)
+      .set('memberId', memberId);
+
+    return this.http.delete<any>(`${teamApiUrl}/remove`, { params });
+  }
+
+  /** 🪣 Synchronisiert die Offline-Liste eines Projekts */
+  public bulkSyncForProject$(projectId: string, localList: ProjectMember[]): Observable<ProjectMember[]> {
     const params = new HttpParams().set('projectId', projectId);
+    const body = { memberIds: localList.map(m => m.user.id) };
 
-    // Wir senden das vom Server erwartete DTO { userId: "..." } im Body mit!
-    const body = { userId: member.id };
-
-    return this.http.post<IUserJSON>(teamApiUrl, body, { params }).pipe(
-      tap(response => console.log('📥 [TeamRepo] POST Antwort vom Server:', response)),
-      map(json => UserModel.fromJson(json)),
-      tap(model => console.log('🎯 [TeamRepo] POST erfolgreich verarbeitet:', model))
+    return this.http.post<any[]>(`${teamApiUrl}/bulk`, body, { params }).pipe(
+      map(jsonArray => jsonArray.map(json => new ProjectMember(
+        UserModel.fromJson(json.user || json),
+        (json.projectRole as ProjectRole) || 'DEVELOPER'
+      )))
     );
   }
 
-  /**
-   * 🗑️ DELETE: User aus dem Projekt entfernen
-   * Schießt auf: http://localhost:8080/api/teams/{memberId}?projectId={projectId}
-   */
-  public deleteFromProject$(projectId: string, memberId: string): Observable<void> {
-    console.log('📡 [TeamRepo] DELETE deleteFromProject$ abgefeuert:', { projectId, memberId });
-
-    const params = new HttpParams().set('projectId', projectId);
-
-    return this.http.delete<void>(`${teamApiUrl}/${memberId}`, { params }).pipe(
-      tap(() => console.log(`📥 [TeamRepo] DELETE erfolgreich vom Server bestätigt!`))
+/** 🌍 Holt alle registrierten Benutzer weltweit verpackt als ProjectMember (Standard-Rolle NONE) */
+  public getAllGlobalUsers$(): Observable<ProjectMember[]> {
+    console.log('📡 [TeamRepo] GET getAllGlobalUsers$ (globaler Pool) über:', teamApiUrl);
+    
+    // 🎯 Fix: Wir gehen über teamApiUrl (/api/teams) statt userApiUrl
+    return this.http.get<any[]>(teamApiUrl).pipe(
+      map(jsonArray => jsonArray.map(json => {
+        // 🎯 Fix: Wir mappen das Ergebnis sauber in das ProjectMember-Modell
+        return new ProjectMember(
+          UserModel.fromJson(json.user || json),
+          (json.projectRole as ProjectRole) || 'NONE' // Backend liefert hier 'NONE'
+        );
+      }))
     );
   }
 
-  /**
-   * 🪣 AUFGABE 4: BULK-SYNC POST-Request (Offline-Änderungen abgleichen)
-   * URL: `${teamApiUrl}/${projectId}/members/bulk-sync`
-   * Der Server erwartet im Body ein Objekt mit einem Array aller User-IDs: 
-   * { memberIds: ["id1", "id2", ...] }
-   * Als Antwort spuckt er uns wieder das bereinigte, volle Array <UserModel[]> aus!
-   */
-  public bulkSyncForProject$(projectId: string, localList: UserModel[]): Observable<UserModel[]> {
-    const params = new HttpParams().set('projectId', projectId);
-    const body = { memberIds: localList.map(m => m.id) };
-
-    const result = this.http.post<IUserJSON[]>(`${teamApiUrl}/bulk`, body, { params }).pipe(
-      map(jsonArray => jsonArray.map(json => UserModel.fromJson(json)))
-    );
-
-    return result;
-  }
-
-  public getAllGlobalUsers$(): Observable<UserModel[]> {
-    return this.http.get<IUserJSON[]>(`${userApiUrl}`).pipe(
-      map(jsonArray => jsonArray.map(user => UserModel.fromJson(user)))
-    );
-  }
-
+/** ☕ Ändert das Kaffeekonto auf dem Server über die korrekte teamApiUrl */
   public updateCoffeeAccount$(userId: string, balance: number, role: string, emoji: string): Observable<UserModel> {
+    console.log(`📡 [TeamRepo] PUT updateCoffeeAccount$ für User ${userId} über teamApiUrl`);
+    
     const params = new HttpParams()
       .set('balance', balance.toString())
       .set('role', role)
       .set('emoji', emoji);
 
-    return this.http.put<IUserJSON>(`${teamApiUrl}/${userId}/coffee-account`, null, { params }).pipe(
+    // 🎯 Fix: teamApiUrl (/api/teams) anstatt userApiUrl nutzen!
+    return this.http.put<any>(`${teamApiUrl}/${userId}/coffee-account`, null, { params }).pipe(
       map(json => UserModel.fromJson(json))
     );
   }

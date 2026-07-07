@@ -7,8 +7,6 @@ import { UserService } from './user/user-service';
 import { Milestone } from '../models/milestone';
 import { TodoTeamStatus } from '../repositories/dto/milestone-json';
 import { TodoViewModel } from '../viewmodel/todo-view-model';
-import { TodoService } from './todo/todo-service';
-import { Todo } from '../models/todo';
 import { NoteService } from './note-service';
 import { UnifiedSuggestion } from '../models/unified-suggestion';
 import { MilestoneSuggestionsModel } from '../models/milestone-suggestions-model';
@@ -28,34 +26,14 @@ export class ProjectService {
 
   private allProjectsPool = signal<Project[]>([]);
 
-// Die korrigierte Lese-Brille im ProjectService:
+  // Die korrigierte Lese-Brille im ProjectService:
   public readonly projectsList = computed(() => {
     const rawProjects = this.allProjectsPool();
     const currentUser = this.userService.currentUser();
     if (!currentUser) return [];
-
-    const userProjects = rawProjects.filter(project => {
-      // 1. Wenn du bereits im Team-Array bist:
-      const isTeamMember = project.teamMembers?.some(m => m.id === currentUser.id);
-      
-      // 2. Fallback für frisch erstellte Projekte: Wenn das Team noch leer ist, 
-      // gehört es dem Ersteller (also dir), damit es sofort sichtbar ist!
-      const isBrandNew = !project.teamMembers || project.teamMembers.length === 0;
-
-      // 3. Sicherheits-Check auf temporäre IDs (Offline/Berechnung)
-      const isTemporary = project.id.startsWith('tmp_') || project.id.startsWith('OFFLINE');
-
-      return isTeamMember || isBrandNew || isTemporary;
-    });
-
-    return userProjects.map(project => {
-      if (project.milestones && project.milestones.length > 0) {
-        project.milestones.sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0));
-      }
-      return project;
-    });
+    return rawProjects
   });
-  
+
   private _aiSuggestionsSignal = signal<MilestoneSuggestionsModel | null>(null);
   public suggestions = computed(() => {
     const rawSuggestions = this._aiSuggestionsSignal();
@@ -93,8 +71,6 @@ export class ProjectService {
 
   private _projectsSignal = signal<Project[]>([]);
 
-  private todoService = inject(TodoService);
-
   // Das reaktive Fokus-Signal
   private activeMilestoneIdSignal = signal<string | null>(null);
   public readonly activeMilestoneId = this.activeMilestoneIdSignal.asReadonly();
@@ -116,10 +92,32 @@ export class ProjectService {
     return user.id;
   }
 
+  public getProjectIdByMilestoneId(milestoneId: string | null): string | null {
+    if (!milestoneId) return null;
+
+    // Wir durchsuchen den allProjectsPool nach dem Projekt, das diesen Meilenstein besitzt
+    const foundProject = this.allProjectsPool().find(project =>
+      project.milestones?.some(ms => ms.id === milestoneId)
+    );
+
+    return foundProject ? foundProject.id : null;
+  }
+  
+  private lastRequestedTitle = '';
+
   constructor() {
-    // 🔄 DER AUTOMATISCHE WÄCHTER: Sichert jede Änderung im Entwurf sofort im LocalStorage
+    // DER AUTOMATISCHE WÄCHTER: Sichert jede Änderung im Entwurf sofort im LocalStorage
     effect(() => {
       const currentDraft = this.temporaryDraftSignal();
+      if (!currentDraft || !currentDraft.title || currentDraft.title.trim() === '') {
+        return;
+      }
+
+      const currentTitle = currentDraft.title.trim().toLowerCase();
+      if (currentTitle === this.lastRequestedTitle) {
+        return
+      }
+      this.lastRequestedTitle = currentTitle;
       // Wir sichern nur im LocalStorage, wenn es ein NEUER Entwurf ohne Datenbank-ID ist!
       if (currentDraft) {
         const wrapper: DraftProjectWrapper = { project: currentDraft, degradedMilestones: this.degradedMilestones() }
@@ -127,14 +125,14 @@ export class ProjectService {
       }
     });
 
-effect(() => {
-    const user = this.userService.currentUser();
-    if (user) {
-      this.loadProjects();
-    } else {
-      this.allProjectsPool.set([]); // <-- Geändert auf allProjectsPool!
-    }
-  });
+    effect(() => {
+      const user = this.userService.currentUser();
+      if (user) {
+        this.loadProjects();
+      } else {
+        this.allProjectsPool.set([]); // <-- Geändert auf allProjectsPool!
+      }
+    });
   }
 
   /**
@@ -269,7 +267,7 @@ effect(() => {
     }
   }
 
-public updateMilestoneInProject(projectId: string, updatedMilestone: Milestone): Observable<boolean> {
+  public updateMilestoneInProject(projectId: string, updatedMilestone: Milestone): Observable<boolean> {
     const currentProject = this.allProjectsPool().find(p => p.id === projectId);
     if (!currentProject) return of(false);
 
@@ -291,7 +289,7 @@ public updateMilestoneInProject(projectId: string, updatedMilestone: Milestone):
     );
   }
 
-public saveCalculatedProject(project: Project): Observable<string> {
+  public saveCalculatedProject(project: Project): Observable<string> {
     // Wir übergeben das neue Projekt und den aktuellen Stand des Pools
     return this.dataManager.createProject(project, this.allProjectsPool()).pipe(
       tap((savedProject) => {
@@ -304,7 +302,7 @@ public saveCalculatedProject(project: Project): Observable<string> {
     );
   }
 
-public updateCalculatedProject(updatedProject: Project): Observable<Project | undefined> {
+  public updateCalculatedProject(updatedProject: Project): Observable<Project | undefined> {
     // Übergebe das modifizierte Projekt und den ungeschnittenen Pool
     return this.dataManager.updateProject(updatedProject, this.allProjectsPool()).pipe(
       tap(() => {
@@ -315,30 +313,12 @@ public updateCalculatedProject(updatedProject: Project): Observable<Project | un
     );
   }
 
-public removeProject(projectId: string): void {
+  public removeProject(projectId: string): void {
     const currentPool = this.allProjectsPool();
     this.allProjectsPool.update(projects => projects.filter(p => p.id !== projectId));
     // Dem DataManager die ID und den Zustand des Pools vor dem Löschen mitgeben
     this.dataManager.deleteProject(projectId, currentPool).subscribe();
   }
-
-  public getProjectTodos(projectId: string | null) {
-    if (!projectId) {
-      return []
-    }
-    const project = this.projectsList().find((pr) => pr.id === projectId);
-
-    if (!project || !project.milestones) {
-      return []
-    }
-
-    const todos = project.milestones
-      .reduce((result: Todo[], ms: Milestone) =>
-        result.concat(this.todoService.getTodosForMilestone(ms.id))
-        , [])
-    return todos
-  }
-
 
   /**
    * 📈 Meilenstein akzeptieren und über den DataManager tracken
@@ -423,33 +403,37 @@ public removeProject(projectId: string): void {
     this.dataManager.trackMilestoneIgnorance(projectTitle, userId, titles).subscribe()
   }
 
-  // public showMore() {
-  //   this._showAll.set(true)
-  // }
-
-  // public showLess() {
-  //   this._showAll.set(false)
-  // }
-
   /**
    * ⚡ Lädt Vorschläge über die intelligente DataManager-Weiche
    */
-  public loadMilestoneSuggestions(title: string, area: string): void {
-    if (!title || title.trim().length < 3) {
-      this._aiSuggestionsSignal.set({ recommended: [], degraded: [] });
-      return;
-    }
-    const userId = this.userService.getCurrentUserId()
-    if (!userId) {
-      return
-    }
+public loadMilestoneSuggestions(title: string, area: string): void {
+  console.log(`🧠 [Service] 1. loadMilestoneSuggestions empfangen. Titel: "${title}", Area: "${area}"`);
 
-    // Hier rufen wir jetzt den DataManager auf! (Nutzt das Signal mit Klammern: currentUserId())
-    this.dataManager.getMilestoneSuggestions(title, area, userId).subscribe({
-      next: (suggestions: MilestoneSuggestionsModel) => this._aiSuggestionsSignal.set(suggestions),
-      error: (err) => console.error('Fehler beim Laden der Meilenstein-Vorschläge:', err)
-    });
+  if (!title || title.trim().length < 3) {
+    console.warn("🧠 [Service] Abbruch: Titel zu kurz (< 3 Zeichen)!");
+    this._aiSuggestionsSignal.set({ recommended: [], degraded: [] });
+    return;
   }
+
+  const userId = this.userService.getCurrentUserId();
+  console.log(`🧠 [Service] 2. Aktuelle User-ID ermittelt: "${userId}"`);
+
+  if (!userId) {
+    console.error("🛑 [Service] Abbruch: Keine userId gefunden!");
+    return;
+  }
+
+  console.log("🧠 [Service] 3. Rufe jetzt den DataManager auf...");
+  this.dataManager.getMilestoneSuggestions(title, area, userId).subscribe({
+    next: (suggestions: MilestoneSuggestionsModel) => {
+      console.log("✅ [Service] ERFOLG! KI-Vorschläge vom DataManager empfangen:", suggestions);
+      this._aiSuggestionsSignal.set(suggestions);
+    },
+    error: (err) => {
+      console.error('🛑 [Service] FEHLER beim DataManager-Aufruf:', err);
+    }
+  });
+}
 
   /**
    * Leert die KI-Vorschläge komplett (wird beim Speichern/Abbrechen aufgerufen)

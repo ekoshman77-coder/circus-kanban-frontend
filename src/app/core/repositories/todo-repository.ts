@@ -1,9 +1,9 @@
 import { inject, Injectable } from '@angular/core';
-import { Todo } from '../models/todo';
+import { TeamStatus, Todo } from '../models/todo';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { GamificationResult, TodoStatusUpdatePayload } from '../models/gamification';
-import { bulkApiUrl, gamificationApiUrl, todoApiUrl } from './links';
+import { aiCategoriesApiUrl, bulkApiUrl, gamificationApiUrl, todoApiUrl } from './links';
 import { SyncResult } from './dto/sync-result';
 import { LoggerService } from '../services/logger-service';
 import { TodoUpdateResponse } from './dto/dto-interface';
@@ -94,7 +94,8 @@ public updateTodo(todo: Todo): Observable<TodoUpdateResponse> {
       effortChangesCount: json.effortChangesCount,
       milestoneId: json.milestoneId,
       isStarted: json.isStarted?? false,
-      assignedUserId: json.assignedUserId?? null
+      assignedUserId: json.assignedUserId?? null,
+      teamStatus: (json.teamStatus as TeamStatus) ?? 'BACKLOG'
     });  
     return todo;
   }
@@ -131,11 +132,13 @@ public updateTodo(todo: Todo): Observable<TodoUpdateResponse> {
    * 📋 Alle Kategorien vom Server holen (Dynamisch aus der Server-KI)
    */
   public getServerCategories(userId: string): Observable<string[]> {
-    this.loggerService.info("in todoRepository", "getServerCategories")
-    const result = this.http.get<string[]>(`${todoApiUrl}/categories?userId=${userId}`);
+    this.loggerService.info("in todoRepository", "getServerCategories über KI-Endpoint");
     
-    this.loggerService.info("in todoRepository", "getServerCategories result ist da")  
-    return result  
+    // 🎯 Fix: Wir nutzen aiCategoriesApiUrl (/api/ai/categories) statt todoApiUrl
+    // 🎯 Fix: Wir übergeben 'contextType=todo' anstelle von userId, wie vom AIController gefordert!
+    const result = this.http.get<string[]>(`${aiCategoriesApiUrl}?contextType=todo`);
+    
+    this.loggerService.info("in todoRepository", "getServerCategories KI-Antwort erhalten");
+    return result;
   }
-
 }  

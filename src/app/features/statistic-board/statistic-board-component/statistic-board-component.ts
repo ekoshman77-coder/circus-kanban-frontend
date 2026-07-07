@@ -1,21 +1,23 @@
 import { Component, inject, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TodoService } from '../../../core/services/todo/todo-service'; // Passe den Pfad zu deinem Service an!
-import { StatsOverviewComponent } from '../stats-overview-component/stats-overview-component';
+import { TodoOverviewComponent } from '../todo-overview-component/todo-overview-component';
 import { StatsPerformanceComponent } from '../stats-performance-component/stats-performance-component';
 import { StatsWorkloadComponent } from '../stats-workload-component/stats-workload-component';
+import { StatisticOverviewComponent } from '../statistic-overview-component/statistic-overview-component';
 
 export type StatMode = 'tasks' | 'points';
-export type StatTab = 'overview' | 'performance' | 'workload';
+export type StatTab = 'statistic-overview' | 'todo-overview' | 'performance' | 'workload';
 
 @Component({
   selector: 'app-statistic',
   standalone: true,
   imports: [
     CommonModule, 
-    StatsOverviewComponent, 
+    TodoOverviewComponent, 
     StatsPerformanceComponent, 
-    StatsWorkloadComponent
+    StatsWorkloadComponent,
+    StatisticOverviewComponent
   ],
   templateUrl: './statistic-board-component.html',
   styleUrl: './statistic-board-component.css'
@@ -26,7 +28,7 @@ export class StatisticBoardComponent {
 
   // Die beiden Steuer-Zustände für Buttons und Tabs
   protected currentMode = signal<StatMode>('tasks');
-  protected currentTab = signal<StatTab>('overview');
+  protected currentTab = signal<StatTab>('statistic-overview');
 
   // ⚡ DEIN NEUES SIGNAL: Wir nutzen direkt deine ungefilterte Master-Liste!
   protected allTodos = this.todoService.allTodos;

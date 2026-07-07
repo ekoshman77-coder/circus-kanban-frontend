@@ -163,8 +163,8 @@ export class UserService {
     });
   }
 
-  public register(username: string, firstName: string, lastName: string): Observable<IUser> {
-    return this.userRepository.register(username, firstName, lastName).pipe(
+  public register(username: string, firstName: string, lastName: string, password: string): Observable<IUser> {
+    return this.userRepository.register(username, firstName, lastName, password).pipe(
       tap((user) => {
         this.saveSession(user);
         this.loadSettingsFromBackend(user.id);

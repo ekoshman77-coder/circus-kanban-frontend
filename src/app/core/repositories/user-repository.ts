@@ -29,9 +29,9 @@ export class UserRepository {
     return this.http.post<IUser>(`${userApiUrl}/login`, { username });
   }
 
-  public register(username: string, firstName: string, lastName: string): Observable<IUser> {
+  public register(username: string, firstName: string, lastName: string, password: string): Observable<IUser> {
   console.log('📦 Angular schickt zur Registrierung:', { username, firstName, lastName })
-    return this.http.post<IUser>(`${userApiUrl}/register`, { username, firstName, lastName }).pipe(
+    return this.http.post<IUser>(`${userApiUrl}/register`, { username, firstName, lastName, password }).pipe(
     tap(response => {
       // 🔍 2. SPUR: Was kommt wirklich vom Kotlin-Server zurück?
       console.log('📡 Kotlin-Server antwortet mit:', response);

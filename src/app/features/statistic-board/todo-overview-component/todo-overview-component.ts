@@ -3,7 +3,7 @@ import { CommonModule, PercentPipe } from '@angular/common';
 import { StatMode } from '../statistic-board-component/statistic-board-component';
 
 @Component({
-  selector: 'app-stats-overview',
+  selector: 'app-todo-overview',
   standalone: true,
   imports: [CommonModule, PercentPipe],
   template: `
@@ -64,9 +64,9 @@ import { StatMode } from '../statistic-board-component/statistic-board-component
 
     </div>
   `,
-  styleUrl: './stats-overview-component.css'
+  styleUrl: './todo-overview-component.css'
 })
-export class StatsOverviewComponent {
+export class TodoOverviewComponent {
   @Input({ required: true }) mode: StatMode = 'tasks';
   @Input({ required: true }) totalCount: number = 0;
   @Input({ required: true }) openTodos: any[] = [];

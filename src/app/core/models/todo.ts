@@ -1,10 +1,11 @@
-import { TodoTeamStatus } from "../repositories/dto/milestone-json";
 import { ITodoJSON, TodoSyncState } from "../repositories/dto/todo-json";
 
 export enum DateStatus {
     DUE = "due",
     COMPLETED = "completed"
 }
+
+export type TeamStatus = 'BACKLOG' | 'OPEN' | 'IN_PROGRESS' | 'REVIEW' | 'DONE';
 
 export enum VisualStatus {
     ON_TIME = "on-time",
@@ -24,6 +25,7 @@ export class Todo {
   effort: number;
   usedEffort: number;
   createdAt: number;
+  teamStatus: TeamStatus;
   userId: string;
   syncState: 'fine' | 'dirty' | 'new'; // Direkt als Typ statt extra Interface!
   category: string | null;
@@ -43,6 +45,7 @@ export class Todo {
     effort?: number;
     usedEffort?: number;
     userId?: string;
+    teamStatus?: TeamStatus | string;
     syncState?: 'fine' | 'dirty' | 'new';
     createdAt?: number;
     category?: string | null;
@@ -68,6 +71,7 @@ export class Todo {
     this.milestoneId = init.milestoneId ?? null;
     this.assignedUserId = init.assignedUserId ?? null;
     this.isStarted = init.isStarted ?? false;
+    this.teamStatus = (init.teamStatus as TeamStatus) ?? 'BACKLOG';
   }
   public toJson(): ITodoJSON {
      return {
@@ -86,7 +90,8 @@ export class Todo {
       effortChangesCount: this.effortChangesCount,
       milestoneId: this.milestoneId,
       isStarted: this.isStarted?? false,
-      assignedUserId: this.assignedUserId?? null
+      assignedUserId: this.assignedUserId?? null,
+      teamStatus: this.teamStatus
      }
   }
 
@@ -107,7 +112,8 @@ export class Todo {
              effortChangesCount: oldTodo.effortChangesCount,
              milestoneId: oldTodo.milestoneId,
              isStarted: oldTodo.isStarted?? false,
-             assignedUserId: oldTodo.assignedUserId?? null
+             assignedUserId: oldTodo.assignedUserId?? null,
+             teamStatus: oldTodo.teamStatus
   });
     return copy
   }  
@@ -169,21 +175,5 @@ export class Todo {
    */
   public get isAssigned(): boolean {
     return this.assignedUserId !== null && this.assignedUserId !== undefined && this.assignedUserId .trim() !== '';
-  }
-
-  /**
-   * 🎛️ Der virtuelle Team-Status im exakten Meilenstein-Format!
-   * Extrem mächtig für spätere Statistiken im Board.
-   */
-  public get teamStatus(): TodoTeamStatus {
-    if (this.done) {
-      return 'Erledigt';
-    }
-    
-    if (this.isStarted) {
-      return 'In Arbeit';
-    }
-    
-    return 'Offen';
   }
 }

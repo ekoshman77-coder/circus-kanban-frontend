@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ProjectService } from '../../../core/services/project-service';
 import { BoardTab, TabNavigationService } from '../tab-navigation-service';
@@ -10,6 +10,8 @@ import { TodoFormComponent } from '../../../core/shared/components/todo-form/tod
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { TodoViewModel } from '../../../core/viewmodel/todo-view-model';
 import { TodoItemComponent } from '../../../core/shared/components/todo-item-component/todo-item-component';
+import { FilterService } from '../../../core/services/filter-service';
+import { TeamService } from '../../../core/services/team-service';
 
 @Component({
   selector: 'app-project-milestones-component',
@@ -18,14 +20,17 @@ import { TodoItemComponent } from '../../../core/shared/components/todo-item-com
   templateUrl: './project-milestones-component.html',
   styleUrl: './project-milestones-component.css',
 })
-export class ProjectMilestonesComponent {
+export class ProjectMilestonesComponent implements OnInit{
   private projectService = inject(ProjectService);
   private tabService = inject(TabNavigationService);
   private todoService = inject(TodoService);
+  private filterService = inject(FilterService);
+  private teamService = inject(TeamService)
 
   // 🎯 UNSER SAUBERER BOARDFILTER
   public boardFilter = signal<{ projectId: string; milestoneId: string } | null>(null);
 
+  
   constructor() {
     // 🚀 DER INTELLIGENTE EMPFÄNGER: Reagiert stabil auf eintreffende Daten
     effect(() => {
@@ -65,6 +70,9 @@ export class ProjectMilestonesComponent {
         this.tabService.currentNavigationState.set(null);
       }
     });
+  }
+  ngOnInit(): void {
+    this.filterService.setInitialCategory('milestones')
   }
 
   /**
@@ -209,5 +217,18 @@ export class ProjectMilestonesComponent {
       type: 'milestone',
       id: milestoneId
     });
+  }
+
+  // 4. 🔒 UNSERE ZENTRALE RECHTE-METHODE FÜR DIESE SEITE:
+  public canInteractWithTodos(): boolean {
+    const allProjects = this.projectService.projectsList();
+    const foundProject = allProjects.find((p) => 
+      p.milestones.some((m) => m.id === this.activeMilestoneId())
+    );
+    if (foundProject) {
+      return false
+    }
+    const hasPermission = this.teamService.hasPermission(foundProject!.id, 'MILESTONE_EDIT')
+    return hasPermission; 
   }
 }

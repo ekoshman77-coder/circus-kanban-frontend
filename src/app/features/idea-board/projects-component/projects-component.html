@@ -7,7 +7,7 @@
 
         <div class="header-selector-wrapper"></div>
     </div>
-    
+
     <!-- 🧊 DAS PROJEKT-RASTER -->
     <div class="projects-grid">
         @for (project of projects(); track project.id) {
@@ -57,7 +57,11 @@
                     🎯 Phasen verwalten
                 </button>
 
-                <button (click)="triggerDeletePopup(project)" class="btn-footer btn-delete" title="Projekt entfernen">
+                <button class="action-icon-btn delete-btn" 
+                  [disabled]="!canDeleteProject(project.id)" 
+                  [title]="canDeleteProject(project.id) 
+                    ? 'Projekt einstampfen' 
+                    : '🔒 Funktion gesperrt: Du bist nicht der Owner dieses Projekts!'" (click)="triggerDeletePopup(project)">
                     🗑️
                 </button>
             </div>

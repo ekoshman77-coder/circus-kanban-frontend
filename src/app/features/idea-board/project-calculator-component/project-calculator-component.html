@@ -34,28 +34,26 @@
         <div class="active-project-subbar">
             <span>Aktiver Entwurf für: <strong>{{ localProjectDraft()?.title }}</strong></span>
 
-            <button class="magic-template-btn" [class.general-btn]="getSuggestedArea() === 'Allgemein'"
-                [class.loading]="isMagicLoading()" [disabled]="isMagicLoading()" (click)="applySmartTemplates()">
+            <button class="magic-template-btn" [class.general-btn]="suggestedArea() === 'Allgemein'"
+                [disabled]="isMagicLoading()" (click)="applySmartTemplates()">
 
                 @if (isMagicLoading()) {
-                <span class="magic-spinner">🔮</span> Analysiere Projekttitel...
+                    Analysiere Projekttitel...
                 } @else {
-                @if (getSuggestedArea() === 'Allgemein') {
+                @if (suggestedArea() === 'Allgemein') {
                 🔮 Allgemeine Vorschläge laden
                 } @else {
-                🪄 Smart {{ getSuggestedArea() }}-Vorschläge laden
+                🪄 Smart {{ suggestedArea() }}-Vorschläge laden
                 }
                 }
             </button>
         </div>
 
         <app-milestone-suggestions-component [projectTitle]="localProjectDraft()?.title ?? ''"
-            (milestoneAccepted)="addAiMilestone($event)"
-            (degradedAreShown)="degradedAreShown($event)"
-            >
+            (milestoneAccepted)="addAiMilestone($event)" (degradedAreShown)="degradedAreShown($event)">
         </app-milestone-suggestions-component>
 
-        <table class="calc-table" cdkDropList (cdkDropListDropped)="onDrop($event)">
+        <table class="calc-table">
             <thead>
                 <tr>
                     <th>Aufgabe / Meilenstein</th>
@@ -85,14 +83,14 @@
                     <td>
                         <div class="action-btns-group">
                             <button class="calc-action-btn save" (click)="saveEditMilestone(task.id)"
-                                title="Speichern">💾</button>
+                                title="Speichern">�</button>
                             <button class="calc-action-btn cancel" (click)="cancelEditMilestone()"
                                 title="Abbrechen">❌</button>
                         </div>
                     </td>
                 </tr>
                 } @else {
-                <tr cdkDrag class="draggable-row">
+                <tr class="draggable-row">
                     <td>
                         <span class="drag-handle">:::</span>
                         <strong>{{ task.title }}</strong>
@@ -159,8 +157,15 @@
             <button type="button" class="btn-secondary" (click)="abortCalculation()">
                 ❌ Kalkulation abbrechen
             </button>
-            <button type="button" class="btn-primary" (click)="finishCalculation()">
-                Kalkulation abschließen & Projekt starten! 🚀
+            <button type="button" class="btn-primary" (click)="finishCalculation()" [disabled]="!canSaveCalculation()"
+            [title]="canSaveCalculation() 
+                ? 'Kalkulation abschließen und Projekt offiziell starten!' 
+                : '💡 Reingeguckt! Du bist im sicheren Experimentier-Modus. Tob dich aus – zum offiziellen Speichern fehlen dir für dieses Projekt die Chef-Laborrechte.'">            
+            @if (canSaveCalculation()) {
+               Kalkulation abschließen & Projekt starten! 🚀
+            } @else {
+                🔒 Labor-Modus aktiv
+            }
             </button>
         </div>
     </div>

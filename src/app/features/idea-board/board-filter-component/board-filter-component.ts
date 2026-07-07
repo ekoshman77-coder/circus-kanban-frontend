@@ -1,6 +1,7 @@
-import { Component, Output, EventEmitter, input } from '@angular/core';
+import { Component, Output, EventEmitter, input, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { FilterService } from '../../../core/services/filter-service';
 
 export interface FilterState {
   query: string;
@@ -20,6 +21,7 @@ export class BoardFilterComponent {
   // 🌟 Die dynamischen Listen, die von der Hauptkomponente kommen
   public availableTags = input<string[]>([]);
   public availableColors = input<string[]>([]);
+  private filterService = inject(FilterService)
 
   // Interne Zustände der Eingabefelder
   public searchQuery: string = '';
@@ -29,6 +31,19 @@ export class BoardFilterComponent {
 
   @Output() filterChanged = new EventEmitter<FilterState>();
 
+  constructor() {
+    // 🚀 DIE AUTOMATISCHE BRÜCKE:
+    // Sobald sich der globale searchTerm ändert (z.B. durch Header-Eingabe oder Reset),
+    // aktualisieren wir die lokale searchQuery und triggern den Board-Filter!
+    effect(() => {
+      const globalTerm = this.filterService.searchTerm();
+      if (this.searchQuery !== globalTerm) {
+        this.searchQuery = globalTerm;
+        this.emitChange();
+      }
+    });
+  }
+  
   private emitChange(): void {
     this.filterChanged.emit({
       query: this.searchQuery,
@@ -49,13 +64,21 @@ export class BoardFilterComponent {
     }
   }
 
-  public onSearchQueryChange(val: string): void { this.searchQuery = val; this.emitChange(); }
+  public onSearchQueryChange(val: string): void {
+     this.searchQuery = val; 
+     this.filterService.searchTerm.set(val);
+     this.emitChange(); 
+  }
+
   public onSearchModeChange(val: 'AND' | 'OR'): void { this.searchMode = val; this.emitChange(); }
+
   public onTagFilterChange(val: string): void { this.tagFilter = val; this.emitChange(); }
+
   public onColorFilterChange(val: string): void { this.colorFilter = val; this.emitChange(); }
 
   public resetAll(): void {
     this.searchQuery = '';
+    this.filterService.searchTerm.set('');
     this.searchMode = 'AND';
     this.tagFilter = '';
     this.colorFilter = '';

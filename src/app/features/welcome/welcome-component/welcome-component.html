@@ -1,104 +1,100 @@
 <div class="welcome-container">
- <h1>Schön, dass du da bist! <span class="waving-hand">👋</span></h1>
+  <h1>Schön, dass du da bist! <span class="waving-hand">👋</span></h1>
   <p>Wie heißt du?</p>
 
-  <div class="input-group">
-    <input 
-      type="search" 
-      placeholder="Dein Name..."
-      [ngModel]="usernameInput()"
-      (ngModelChange)="usernameInput.set($event)"
-      (keyup.enter)="onLogin()"
-    />
-  </div>
-
-  @if (isNewUser()) {
-    <div class="registration-extra-fields" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
-      <p style="font-size: 12px; color: #64748b; margin: 0 0 5px 0;">Erstelle ein neues Board! Bitte trage deine Daten ein:</p>
-      
-      <div class="input-group">
-        <input 
-          type="text" 
-          [ngModel]="firstNameInput()" 
-          (ngModelChange)="firstNameInput.set($event)" 
-          placeholder="Vorname (z.B. Elena)" />
-      </div>
-
-      <div class="input-group">
-        <input 
-          type="text" 
-          [ngModel]="lastNameInput()" 
-          (ngModelChange)="lastNameInput.set($event)" 
-          placeholder="Nachname" />
-      </div>
+  <form [formGroup]="registerForm">
+    <div class="input-group">
+      <input type="text" placeholder="Dein Name..." formControlName="username" />
     </div>
-  }
+    <div>
+      <input type="password" placeholder="Password" formControlName="password" />
+    </div>
 
-  <div class="button-group" style="margin-top: 20px;">
-    <button (click)="onLogin()" [disabled]="!usernameInput().trim()">
-      @if (isLoading()) {
-        <span class="spinner"></span> Laden...
-      } @else {
-        Mein Board öffnen
-      }
-    </button>
-    <button (click)="onRegister()" [disabled]="!usernameInput().trim()">
+    @if (isNewUser()) {
+    <div class="registration-extra-fields"
+      style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+      <p style="font-size: 12px; color: #64748b; margin: 0 0 5px 0;">Erstelle ein neues Board! Bitte trage deine Daten
+        ein:</p>
+
+      <div class="input-group">
+        <input type="text" formControlName="firstName" placeholder="Vorname" />
+      </div>
+
+      <div class="input-group">
+        <input type="text" formControlName="lastName" placeholder="Nachname" />
+      </div>
+      <select formControlName="role">
+        <option value="OWNER">OWNER</option>
+        <option value="PROJECT_MANAGER">PROJECT_MANAGER</option>
+        <option value="DEVELOPER">DEVELOPER</option>
+        <option value="DESIGNER">DESIGNER</option>
+        <option value="VIEWER">VIEWER</option>
+      </select>
+    </div>
+    }
+
+    <div class="button-group" style="margin-top: 20px;">
+      <button (click)="onLogin()"
+        [disabled]="registerForm.get('username')?.invalid || registerForm.get('password')?.invalid">
         @if (isLoading()) {
-          <span class="spinner"></span> Laden...
+        <span class="spinner"></span> Laden...
         } @else {
-          Neues Board erstellen
+        Mein Board öffnen
         }
-    </button>
-  </div>
-
-  @if (errorMessage()) {
-    <div class="error-msg">
-      ⚠️ {{ errorMessage() }}
+      </button>
+      <button (click)="onRegister()" [disabled]="registerForm.invalid">
+        @if (isLoading()) {
+        <span class="spinner"></span> Laden...
+        } @else {
+        Neues Board erstellen
+        }
+      </button>
     </div>
+  </form>
+  @if (errorMessage()) {
+  <div class="error-msg">
+    ⚠️ {{ errorMessage() }}
+  </div>
   }
 
   <hr />
 
-<div class="status-zone">
+  <div class="status-zone">
     @if (userService.isLoggedIn()) {
-      <p class="success-text">
-        ✔ Bereit! Du bist als <strong>{{ userService.currentUser()?.username }}</strong> unterwegs.
-      </p>
-      
-      <button class="start-btn" routerLink="/todopage" [disabled]="isForwardButtonDisabled()">
-        Gehe zu meinen To-Dos →
-      </button>
+    <p class="success-text">
+      ✔ Bereit! Du bist als <strong>{{ userService.currentUser()?.username }}</strong> unterwegs.
+    </p>
 
-      <button class="logout-btn" (click)="userService.logout()">
-        Anderen Namen eingeben
-      </button>
-    }  @else {
-      <p class="wait-text">
-        🔒 Bitte verrate mir zuerst deinen Namen, um zu deinen To-Dos zu gelangen.
-      </p>
-      
-      @if (recentUsers().length > 0) {
-        <div class="recent-users-section" style="margin-bottom: 18px; text-align: center;">
-          <small style="color: #666; display: block; margin-bottom: 6px; font-size: 13px;">
-            Zuletzt eingeloggt:
-          </small>
-          <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
-            @for (name of recentUsers(); track name) {
-              <button 
-                type="button"
-                class="recent-user-badge" 
-                (click)="selectRecentUser(name)"
-                [disabled]="isLoading()">
-                👤 {{ name }}
-              </button>
-            }
-          </div>
-        </div>
-      }
-      
-      <button class="start-btn" [disabled]="true">
-        Gehe zu meinen To-Dos →
-      </button>
+    <button class="start-btn" routerLink="/todopage" [disabled]="isForwardButtonDisabled()">
+      Gehe zu meinen To-Dos →
+    </button>
+
+    <button class="logout-btn" (click)="userService.logout()">
+      Anderen Namen eingeben
+    </button>
+    } @else {
+    <p class="wait-text">
+      🔒 Bitte verrate mir zuerst deinen Namen, um zu deinen To-Dos zu gelangen.
+    </p>
+
+    @if (recentUsers().length > 0) {
+    <div class="recent-users-section" style="margin-bottom: 18px; text-align: center;">
+      <small style="color: #666; display: block; margin-bottom: 6px; font-size: 13px;">
+        Zuletzt eingeloggt:
+      </small>
+      <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+        @for (name of recentUsers(); track name) {
+        <button type="button" class="recent-user-badge" (click)="selectRecentUser(name)" [disabled]="isLoading()">
+          👤 {{ name }}
+        </button>
+        }
+      </div>
+    </div>
+    }
+
+    <button class="start-btn" [disabled]="true">
+      Gehe zu meinen To-Dos →
+    </button>
     }
   </div>
 </div>

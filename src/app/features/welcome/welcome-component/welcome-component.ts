@@ -1,21 +1,25 @@
 import { Component, computed, inject, signal, OnInit } from '@angular/core'; // 👈 1. HIER OnInit importiert
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { UserService } from '../../../core/services/user/user-service';
 
 @Component({
   selector: 'app-welcome',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './welcome-component.html',
   styleUrl: './welcome-component.css'
 })
 export class WelcomeComponent implements OnInit { 
   public userService = inject(UserService);
-  public usernameInput = signal<string>('');
-  public firstNameInput = signal<string>('');
-  public lastNameInput = signal<string>('');
+  public registerForm = new FormGroup({
+    username: new FormControl("", Validators.required),
+    password: new FormControl("", Validators.required),
+    firstName: new FormControl(""),
+    lastName: new FormControl(""),
+    role: new FormControl("DEVELOPER"),
+  })
 
   public errorMessage = signal<string>(''); 
   public isLoading = signal<boolean>(false); 
@@ -40,13 +44,12 @@ export class WelcomeComponent implements OnInit {
   }
 
   public selectRecentUser(name: string): void {
-    this.usernameInput.set(name);
-    this.onLogin();
+    this.registerForm.get("username")?.setValue(name);
   }
 
   isForwardButtonDisabled = computed(() => {
     if (this.isLoading()) return true;
-    const currentInput = this.usernameInput().trim();
+    const currentInput = (this.registerForm.get('username')?.value?? "").trim();
     if (this.userService.isLoggedIn()) {
       return currentInput !== '';
     }
@@ -54,7 +57,7 @@ export class WelcomeComponent implements OnInit {
   });
 
 public onLogin(): void {
-    const name = this.usernameInput().trim();
+    const name = (this.registerForm.get("username")?.value?? "").trim();
     if (!name) return;
 
     this.isLoading.set(true);
@@ -64,7 +67,7 @@ public onLogin(): void {
       next: (user) => {
         this.saveUserToRecent(user.username);
         this.errorMessage.set('');
-        this.usernameInput.set('');
+        this.registerForm.reset();
         this.isLoading.set(false);
       },
       error: (err) => {
@@ -88,7 +91,7 @@ public onLogin(): void {
           }
           
           // Name im Input stehen lassen
-          this.usernameInput.set(name);
+          this.registerForm.get("username")?.setValue(name);
 
         } else {
           this.errorMessage.set(err.error?.error || 'Verbindung zum Server fehlgeschlagen.');
@@ -98,46 +101,51 @@ public onLogin(): void {
   }
 
 public onRegister(): void {
-    const username = this.usernameInput().trim();
-    if (!username) {
-      this.errorMessage.set('Bitte gib zuerst einen Benutzernamen ein! ✨');
-      return;
-    }
+  // 1. Auslesen aller Werte über das coole Destructuring, das wir besprochen haben
+  const { username, firstName, lastName, password, role } = this.registerForm.value;
 
-    // 🌟 SCHRITT 1: Wenn die Felder noch ZU sind, machen wir sie jetzt einfach AUF!
-    if (!this.isNewUser()) {
-      this.isNewUser.set(true);
-      this.errorMessage.set(''); // Eventuelle alte Fehler löschen
-      return; // Hier stoppen wir! Der User soll erst tippen.
-    }
-
-    // 🌟 SCHRITT 2: Wenn die Felder schon AUF sind, validieren und registrieren wir echt!
-    const firstName = this.firstNameInput().trim();
-    const lastName = this.lastNameInput().trim();
-
-    if (!firstName || !lastName) {
-      this.errorMessage.set('Bitte fülle alle Felder (Vorname und Nachname) aus! ✨');
-      return;
-    }
-
-    this.isLoading.set(true);
-
-    this.userService.register(username, firstName, lastName).subscribe({
-      next: (user) => {
-        this.saveUserToRecent(user.username);
-        this.errorMessage.set('');
-        this.isNewUser.set(false); // Formular wieder einklappen
-        
-        // Felder leeren
-        this.usernameInput.set('');
-        this.firstNameInput.set('');
-        this.lastNameInput.set('');
-        this.isLoading.set(false);
-      },
-      error: (err: string) => {
-        this.errorMessage.set(err || 'Registrierung fehlgeschlagen.');
-        this.isLoading.set(false);
-      }
-    });
+  // Sicherheitscheck für den Benutzernamen (wie vorher)
+  if (!username?.trim()) {
+    this.errorMessage.set('Bitte gib zuerst einen Benutzernamen ein! ✨');
+    return;
   }
+
+  // 🌟 SCHRITT 1: Wenn die Felder noch ZU sind, machen wir sie jetzt einfach AUF!
+  if (!this.isNewUser()) {
+    this.isNewUser.set(true);
+    this.errorMessage.set(''); 
+    return; // Hier stoppen wir! Der User soll erst tippen.
+  }
+
+  // 🌟 SCHRITT 2: Die Felder sind offen! JETZT validieren wir manuell:
+  if (!firstName?.trim() || !lastName?.trim() || !password?.trim()) {
+    this.errorMessage.set('Bitte fülle alle Felder (Vorname, Nachname und Passwort) aus! ✨');
+    return;
+  }
+
+  if (password.length < 6) {
+    this.errorMessage.set('Das Passwort muss mindestens 6 Zeichen lang sein! 🔒');
+    return;
+  }
+
+  // 🚀 WENN ALLES OK IST: Ab zum Backend!
+  this.isLoading.set(true);
+
+  // HIER rufen wir jetzt deinen Service mit allen 5 Werten auf!
+  this.userService.register(username?? "", firstName?? "", lastName?? "", password?? "").subscribe({
+    next: (user) => {
+      this.saveUserToRecent(user.username);
+      this.errorMessage.set('');
+      this.isNewUser.set(false); // Wieder einklabben
+      
+      // 🪄 Der magische Reset, den du herausgefunden hast!
+      this.registerForm.reset({ role: 'DEVELOPER' }); 
+      this.isLoading.set(false);
+    },
+    error: (err: string) => {
+      this.errorMessage.set(err || 'Registrierung fehlgeschlagen.');
+      this.isLoading.set(false);
+    }
+  });
+}
 }

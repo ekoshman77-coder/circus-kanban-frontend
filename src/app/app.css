@@ -18,8 +18,8 @@ html, body {
   margin-left: -24px;       
   
   /* 🎨 HIER IST DER BACKGROUND: Er liegt auf dem GANZEN Element und deckt alles ab! */
-  background-color: #164356; 
-  border-bottom: 3px solid #205973; 
+   background-color: #4a5568;                           /* background-color: #164356; */
+     border-bottom: 3px solid #2d3748;                 /*border-bottom: 3px solid #205973;*/ 
   
   /* Ein gleichmäßiges Padding oben/unten (12px) und links/rechts (24px) */
   padding: 12px 24px; 
@@ -219,4 +219,35 @@ html, body {
   0% { transform: scale(1); }
   50% { transform: scale(1.05); }
   100% { transform: scale(1); }
+}
+
+/* 🕵️‍♂️ Styling für die Suchzentrale im Header */
+.header-search-wrapper {
+  margin-right: 8px; /* Kleiner Sicherheitsabstand zum ersten Tab-Button */
+}
+
+/* Wir stylen die Form-Elemente direkt so, dass sie zu deinen runden Buttons passen! */
+.header-search-wrapper select,
+.header-search-wrapper input {
+  background-color: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #e2f0f5;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 20px; /* Schön abgerundet wie deine .nav-tab Buttons! */
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.header-search-wrapper input::placeholder {
+  color: rgba(226, 240, 245, 0.5); /* Schön dezenter Platzhaltertext */
+}
+
+/* Hover- & Fokus-Effekte analog zu deinen Tabs */
+.header-search-wrapper select:hover,
+.header-search-wrapper input:hover,
+.header-search-wrapper input:focus {
+  background-color: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.35);
 }
