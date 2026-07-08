@@ -140,8 +140,8 @@ export class UserService {
     });
   }
 
-  public login(username: string): Observable<IUser> {
-    return this.userRepository.login(username).pipe(
+  public login(username: string, password: string): Observable<IUser> {
+    return this.userRepository.login(username, password).pipe(
       tap((user) => {
         this.saveSession(user);
         this.loadSettingsFromBackend(user.id);

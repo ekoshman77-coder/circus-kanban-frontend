@@ -18,13 +18,18 @@ export class WelcomeComponent implements OnInit {
     password: new FormControl("", Validators.required),
     firstName: new FormControl(""),
     lastName: new FormControl(""),
-    role: new FormControl("DEVELOPER"),
   })
 
   public errorMessage = signal<string>(''); 
   public isLoading = signal<boolean>(false); 
   public recentUsers = signal<string[]>([]);  
   public isNewUser = signal<boolean>(false); 
+
+  public showPassword = signal<boolean>(false);
+
+  public togglePasswordVisibility(): void {
+    this.showPassword.update(value => !value);
+  }
 
   ngOnInit(): void {
     // Wird jetzt garantiert beim Start ausgeführt!
@@ -56,14 +61,20 @@ export class WelcomeComponent implements OnInit {
     return currentInput === '';
   });
 
-public onLogin(): void {
-    const name = (this.registerForm.get("username")?.value?? "").trim();
-    if (!name) return;
+  public onLogin(): void {
+    const name = (this.registerForm.get("username")?.value ?? "").trim();
+    const password = (this.registerForm.get("password")?.value ?? "").trim();
+    
+    if (!name || !password) {
+      this.errorMessage.set('Bitte gib sowohl deinen Namen als auch dein Passwort ein! 🔒');
+      return;
+    }
 
     this.isLoading.set(true);
-    this.isNewUser.set(false); // 🧹 Erstmal zurücksetzen
+    this.isNewUser.set(false); 
 
-    this.userService.login(name).subscribe({
+    // Ruft jetzt den aktualisierten Service mit 2 Argumenten auf!
+    this.userService.login(name, password).subscribe({
       next: (user) => {
         this.saveUserToRecent(user.username);
         this.errorMessage.set('');
@@ -72,37 +83,25 @@ public onLogin(): void {
       },
       error: (err) => {
         this.isLoading.set(false);
-
         if (err.status === 404 || err.status === 401) {
-          // 🔔 Der Server sagt: User existiert nicht -> Registrierung aufmachen!
           this.isNewUser.set(true); 
-          
           const wasInLocalStorage = this.recentUsers().includes(name);
-
           if (wasInLocalStorage) {
-            this.errorMessage.set(`Der Benutzer "${name}" existiert nicht mehr in der Datenbank. Bitte fülle die Felder unten aus, um dein Board neu zu erstellen! ✨`);
-            
-            // Aus der lokalen Liste entfernen
-            const filteredList = this.recentUsers().filter(u => u !== name);
-            this.recentUsers.set(filteredList);
-            localStorage.setItem('recent_todos_users', JSON.stringify(filteredList));
+            this.errorMessage.set(`Anmeldung fehlgeschlagen. Passwort falsch oder der Benutzer "${name}" existiert nicht mehr. 🔑`);
           } else {
-            this.errorMessage.set(`Der Name "${name}" wurde nicht gefunden. Bitte trage deine Daten unten ein, um ein neues Board zu erstellen! 🚀`);
+            this.errorMessage.set(`Der Name "${name}" wurde nicht gefunden oder das Passwort ist falsch. Bitte überprüfe deine Eingabe oder erstelle unten ein neues Board! 🚀`);
           }
-          
-          // Name im Input stehen lassen
           this.registerForm.get("username")?.setValue(name);
-
         } else {
           this.errorMessage.set(err.error?.error || 'Verbindung zum Server fehlgeschlagen.');
         }
       }
     });
-  }
+ }
 
 public onRegister(): void {
   // 1. Auslesen aller Werte über das coole Destructuring, das wir besprochen haben
-  const { username, firstName, lastName, password, role } = this.registerForm.value;
+  const { username, firstName, lastName, password,  } = this.registerForm.value;
 
   // Sicherheitscheck für den Benutzernamen (wie vorher)
   if (!username?.trim()) {
@@ -139,7 +138,7 @@ public onRegister(): void {
       this.isNewUser.set(false); // Wieder einklabben
       
       // 🪄 Der magische Reset, den du herausgefunden hast!
-      this.registerForm.reset({ role: 'DEVELOPER' }); 
+      this.registerForm.reset(); 
       this.isLoading.set(false);
     },
     error: (err: string) => {

@@ -1,48 +1,285 @@
-/* Zentriert die gesamte Karte schön auf dem Bildschirm */
+/* ==========================================================================
+   🎨 GLOBALER PASTEL-HINTERGRUND FÜR DIE GANZE SEITE
+   ========================================================================== */
+:host {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 90vh;
+  padding: 20px;
+  background: radial-gradient(circle at top left, #f3e8ff 0%, #e0f2fe 100%);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ==========================================================================
+   🔮 DIE EDLE MILCHGLAS-KARTE (Glassmorphismus)
+   ========================================================================== */
 .welcome-container {
-  max-width: 450px;
-  margin: 60px auto;
-  padding: 40px 30px;
-  background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  max-width: 480px;
+  width: 100%;
+  margin: 40px auto;
+  padding: 40px 35px;
+  
+  /* Hochmodernes Milchglas-Rezept */
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  
+  /* Feine Lichtkante und satter, weicher Schatten */
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08),
+              0 1px 3px rgba(0, 0, 0, 0.02);
+  
   text-align: center;
-  font-family: 'Segoe UI', Roboto, sans-serif;
-  color: #333333;
+  color: #1e293b;
+  box-sizing: border-box;
+  animation: slideDown 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* Die herzliche Überschrift */
 .welcome-container h1 {
-  font-size: 26px;
-  margin-bottom: 8px;
-  color: #1a1a1a;
+  font-size: 28px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.5px;
 }
 
 .welcome-container p {
-  color: #666666;
-  font-size: 16px;
-  margin-bottom: 24px;
+  color: #475569;
+  font-size: 15px;
+  font-weight: 500;
+  margin: 0 0 28px 0;
 }
 
-/* Das Eingabefeld (Ehemals "Suchfeld" wegen des Browser-Tricks) */
-.input-group input[type="search"] {
+/* Trennlinie im edlen Gradienten-Look */
+.welcome-container hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(203, 213, 225, 0.6) 20%, rgba(203, 213, 225, 0.6) 80%, transparent);
+  margin: 24px 0;
+}
+
+/* ==========================================================================
+   ✍️ FORMULAR-ELEMENTE & INPUTS
+   ========================================================================== */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.input-group {
+  position: relative;
   width: 100%;
-  padding: 14px 20px;
-  font-size: 16px;
-  border: 2px solid #e0e0e0;
+}
+
+.input-group input[type="text"],
+.input-group input[type="password"],
+.input-group input[type="search"],
+select {
+  width: 100%;
+  height: 48px;
+  padding: 0 16px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #0f172a;
+  
+  /* Sanfter, leicht bläulicher Ruhe-Hintergrund */
+  background-color: #f1f5f9;
+  border: 2px solid transparent;
   border-radius: 10px;
+  
   outline: none;
-  transition: all 0.3s ease;
   box-sizing: border-box;
+  transition: all 0.2s ease;
 }
 
-/* Wenn man ins Feld klickt: Schöner blauer Glow Effect */
-.input-group input[type="search"]:focus {
-  border-color: #4a90e2;
-  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.15);
+/* ==========================================================================
+   👁️ PASSWORT-AUGE PERFEKT RECHTS PLATZIERT
+   ========================================================================== */
+.password-wrapper {
+  position: relative; /* Das ist die Basis, damit "absolute" rechts funktioniert */
+  display: flex;
+  align-items: center;
 }
 
-/* Die Button-Gruppe nebeneinander anordnen */
+/* Verhindert, dass langer Text unter das Auge rutscht */
+.password-wrapper input {
+  padding-right: 48px !important; 
+}
+
+/* Das Auge-Badge exakt rechts positioniert */
+.password-toggle-badge {
+  position: absolute;
+  right: 14px; /* Perfekter Abstand zum rechten Rand */
+  top: 50%;
+  transform: translateY(-50%); /* Zentriert es vertikal im Inputfeld */
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  transition: opacity 0.2s ease, transform 0.1s ease;
+  z-index: 10; /* Liegt sicher über dem Input */
+  opacity: 0.7;
+}
+
+/* Kleines visuelles Feedback beim Drüberfahren */
+.password-toggle-badge:hover {
+  opacity: 1;
+  transform: translateY(-50%) scale(1.1);
+}
+
+/* Dropdown/Select spezifisch stylen, damit es zu den Inputs passt */
+select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23475569'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 16px;
+  padding-right: 40px;
+}
+
+/* Magischer Fokus-Effekt für alle Eingabefelder */
+.input-group input:focus,
+select:focus {
+  background-color: #ffffff;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+}
+
+/* Placeholder-Farbe anpassen */
+.input-group input::placeholder {
+  color: #94a3b8;
+}
+
+/* ==========================================================================
+   🎪 DIE REGISTRIERUNGS-SCHUBLADE (Wenn User neu ist)
+   ========================================================================== */
+.registration-extra-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 6px;
+  padding: 20px 16px !important; /* Überschreibt Inline-Styles elegant */
+  
+  background: rgba(248, 250, 252, 0.6) !important;
+  border: 1px dashed #cbd5e1 !important;
+  border-radius: 12px !important;
+  
+  animation: fadeIn 0.35s ease-out forwards;
+}
+
+.registration-extra-fields p {
+  font-size: 13px !important;
+  color: #64748b !important;
+  font-weight: 600;
+  margin: 0 0 4px 0 !important;
+  text-align: left;
+}
+
+/* ==========================================================================
+   👑 BUTTONS & PREMIUM GRADIENTS
+   ========================================================================== */
+.btn-group {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+/* Primärer Login-Button */
+.login-btn {
+  flex: 1;
+  height: 48px;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+  transition: all 0.2s ease;
+}
+
+.login-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.3);
+}
+
+/* Sekundärer Registrieren-Button */
+.register-toggle-btn {
+  flex: 1;
+  height: 48px;
+  background-color: #ffffff;
+  color: #475569;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.register-toggle-btn:hover:not(:disabled) {
+  background-color: #f1f5f9;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+/* Großer Forward-Button ("Gehe zu meinen To-Dos") */
+.start-btn {
+  width: 100%;
+  height: 50px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+  transition: all 0.2s ease;
+  margin-top: 14px;
+}
+
+.start-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.3);
+}
+
+/* Logout / Abmelden-Button */
+.logout-btn {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 14px;
+  text-decoration: underline;
+  transition: color 0.15s ease;
+}
+
+.logout-btn:hover {
+  color: #ef4444;
+}
+
+/* Button-Disabled-Zustand */
+/* ==========================================================================
+   👑 BUTTONS & PREMIUM GRADIENTS (Zurück zum kräftigen Blau!)
+   ========================================================================== */
 .button-group {
   display: flex;
   gap: 12px;
@@ -52,24 +289,31 @@
 /* Basis-Styling für BEIDE Hauptbuttons */
 .button-group button {
   flex: 1;
-  padding: 14px 16px;
+  height: 48px;
+  padding: 0 16px;
   font-size: 15px;
   font-weight: 600;
   border: none;
   border-radius: 10px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   transition: all 0.2s ease;
 }
 
-/* Button 1: Board öffnen (Der Haupt-Aktionsbutton) */
+/* Button 1: Board öffnen (Der Haupt-Aktionsbutton in sattem Blau) */
 .button-group button:first-child {
   background-color: #4a90e2;
   color: white;
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.2);
 }
 
 .button-group button:first-child:hover:not(:disabled) {
   background-color: #357abd;
   transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(74, 144, 226, 0.3);
 }
 
 /* Button 2: Neues Board erstellen (Dezentere Zweit-Aktion) */
@@ -84,135 +328,127 @@
   transform: translateY(-1px);
 }
 
-/* Wenn die Buttons deaktiviert sind (weil noch kein Name eingetippt wurde) */
-.button-group button:disabled,
-.start-btn:disabled {
-    opacity: 0.5;              /* 50% Deckkraft – das Blau schimmert sanft durch (dein Alpha-Effekt) */
-  cursor: not-allowed;       /* Zeigt dem User an: Hier kannst du gerade nicht klicken */
-  box-shadow: none;          /* Entfernt eventuelle Schatten im deaktivierten Zustand */
-  transform: none;           /* Verhindert Hover-Effekte wie "Nach oben hüpfen", wenn gesperrt */}
-
-/* Trennstrich */
-hr {
-  border: 0;
-  height: 1px;
-  background: #eeeeee;
-  margin: 30px 0;
-}
-
-/* Die Status-Zone unten (Wenn man eingeloggt ist) */
-.status-zone {
-  background-color: #f8fafc;
-  padding: 20px;
-  border-radius: 12px;
-  border: 1px dashed #e2e8f0;
-}
-
-.success-text {
-  color: #2e7d32 !important;
-  font-weight: 500;
-  margin-bottom: 16px !important;
-}
-
-.wait-text {
-  color: #718096 !important;
-  font-size: 14px !important;
-  margin-bottom: 0 !important;
-}
-
-/* Der große, fette "Gehe zu meinen To-Dos"-Button */
+/* Großer Forward-Button ("Gehe zu meinen To-Dos") */
 .start-btn {
   width: 100%;
-  padding: 14px;
+  height: 50px;
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
+  color: #ffffff;
   border: none;
   border-radius: 10px;
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+  transition: all 0.2s ease;
+  margin-top: 14px;
 }
 
 .start-btn:hover:not(:disabled) {
-  opacity: 0.95;
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.3);
 }
 
-/* Namen wechseln Button */
+/* Logout / Abmelden-Button */
 .logout-btn {
   background: none;
   border: none;
-  color: #ef4444;
+  color: #64748b;
   font-size: 13px;
-  margin-top: 12px;
+  font-weight: 600;
   cursor: pointer;
+  margin-top: 14px;
   text-decoration: underline;
+  transition: color 0.15s ease;
 }
 
 .logout-btn:hover {
-  color: #dc2626;
+  color: #ef4444;
 }
 
-/* Fehlermeldung */
+/* Button-Disabled-Zustand */
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* ==========================================================================
+   🚨 FEEDBACK MESSAGES & ZULETZT EINGELOGGT
+   ========================================================================== */
 .error-msg {
   background-color: #fef2f2;
-  color: #dc2626;
+  border: 1px solid #fca5a5;
+  color: #b91c1c;
   padding: 12px;
   border-radius: 8px;
-  margin-top: 16px;
-  font-size: 14px;
-  border: 1px solid #fee2e2;
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 14px;
+  text-align: left;
+  animation: fadeIn 0.2s ease-out;
 }
 
-/* Der Spinner-Kreis */
+.success-text {
+  color: #15803d !important;
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 !important;
+}
+
+.wait-text {
+  color: #64748b !important;
+  font-size: 13px !important;
+  font-weight: 600;
+  margin: 0 !important;
+}
+
+/* Schnell-Login Buttons (Zuletzt eingeloggt) */
+.recent-user-badge {
+  background-color: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.recent-user-badge:hover {
+  background-color: #dbeafe;
+  border-color: #93c5fd;
+  transform: translateY(-1px);
+}
+
+/* Loader-Spinner Animation */
 .spinner {
   display: inline-block;
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3); /* Blasser Außenring */
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
-  border-top-color: #fff; /* Weiser aktiver Strich */
-  animation: spin 0.8s linear infinite; /* Drehung */
-  margin-right: 8px; /* Abstand zum Text */
-  vertical-align: middle;
+  border-top-color: #ffffff;
+  animation: spin 0.8s linear infinite;
 }
 
-/* Die Dreh-Animation */
+/* ==========================================================================
+   🎬 ANIMATIONEN
+   ========================================================================== */
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
-/* 1. Die Überschrift von oben einfliegen lassen */
-.welcome-container h1 {
-  /* Von 0.8s auf 1.2s erhöht */
-  animation: slideDown 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards; 
-}
-
-/* 2. Den Untertext leicht verzögert einblenden */
-.welcome-container p {
-  opacity: 0;
-  /* Braucht 0.9s zum Einblenden und wartet 0.4s, bis es startet */
-  animation: fadeIn 0.9s ease-out 0.4s forwards; 
-}
-
-/* 3. Die Input-Gruppe und Buttons einblenden */
-.input-group, .button-group, .status-zone, hr {
-  opacity: 0;
-  /* Braucht 1.2s zum Einblenden und wartet 0.7s, bis es startet */
-  animation: fadeIn 1.2s ease-out 0.7s forwards; 
-}
-/* 🎬 DIE ANIMATIONS-REZEPTE (Keyframes) */
-
-/* Von oben nach unten sliden + einblenden */
 @keyframes slideDown {
   from {
     opacity: 0;
-    transform: translateY(-30px);
+    transform: translateY(-20px);
   }
   to {
     opacity: 1;
@@ -220,54 +456,25 @@ hr {
   }
 }
 
-/* Reines weiches Einblenden */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
+/* Winke-Hand */
 .waving-hand {
-  display: inline-block; /* Wichtig, damit Transformationen funktionieren! */
-  transform-origin: 70% 70%; /* Setzt den Drehpunkt unten an das Handgelenk */
-  animation: wave 1.5s ease-in-out 1.2s 3; /* Braucht 1.5s, startet nach 1.2s (wenn der Text da ist) und winkt 3-mal */
+  display: inline-block;
+  transform-origin: 70% 70%;
+  animation: wave 1.5s ease-in-out 0.5s 2;
 }
 
-/* 🎬 Das Wink-Rezept (Keyframes) */
 @keyframes wave {
   0% { transform: rotate( 0.0deg) }
- 10% { transform: rotate(14.0deg) }  /* Nach rechts drehen */
- 20% { transform: rotate(-8.0deg) }  /* Nach links drehen */
+ 10% { transform: rotate(14.0deg) }
+ 20% { transform: rotate(-8.0deg) }
  30% { transform: rotate(14.0deg) }
  40% { transform: rotate(-4.0deg) }
  50% { transform: rotate(10.0deg) }
- 60% { transform: rotate( 0.0deg) }  /* Zurück zur Mitte */
+ 60% { transform: rotate( 0.0deg) }
 100% { transform: rotate( 0.0deg) }
-}
-
-.recent-user-badge {
-  background-color: rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  padding: 6px 14px;
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  color: #444;
-  transition: all 0.2s ease;
-}
-
-.recent-user-badge:hover:not(:disabled) {
-  background-color: rgba(59, 130, 246, 0.08); /* Schickes helles Angular-Blau */
-  border-color: #3b82f6;
-  color: #3b82f6;
-  transform: translateY(-1px);
-}
-
-.recent-user-badge:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
 }

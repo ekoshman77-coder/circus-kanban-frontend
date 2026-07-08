@@ -6,15 +6,18 @@
     <div class="input-group">
       <input type="text" placeholder="Dein Name..." formControlName="username" />
     </div>
-    <div>
-      <input type="password" placeholder="Password" formControlName="password" />
+    
+    <!-- Optimiertes Passwort-Feld mit "Anzeigen"-Auge -->
+    <div class="input-group password-wrapper">
+      <input [type]="showPassword() ? 'text' : 'password'" placeholder="Passwort..." formControlName="password" />
+      <button type="button" class="password-toggle-badge" (click)="togglePasswordVisibility()">
+        {{ showPassword() ? '👁️' : '🙈' }}
+      </button>
     </div>
 
     @if (isNewUser()) {
-    <div class="registration-extra-fields"
-      style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
-      <p style="font-size: 12px; color: #64748b; margin: 0 0 5px 0;">Erstelle ein neues Board! Bitte trage deine Daten
-        ein:</p>
+    <div class="registration-extra-fields">
+      <p>Erstelle ein neues Board! Bitte trage deine Daten ein:</p>
 
       <div class="input-group">
         <input type="text" formControlName="firstName" placeholder="Vorname" />
@@ -23,18 +26,11 @@
       <div class="input-group">
         <input type="text" formControlName="lastName" placeholder="Nachname" />
       </div>
-      <select formControlName="role">
-        <option value="OWNER">OWNER</option>
-        <option value="PROJECT_MANAGER">PROJECT_MANAGER</option>
-        <option value="DEVELOPER">DEVELOPER</option>
-        <option value="DESIGNER">DESIGNER</option>
-        <option value="VIEWER">VIEWER</option>
-      </select>
     </div>
     }
 
-    <div class="button-group" style="margin-top: 20px;">
-      <button (click)="onLogin()"
+    <div class="button-group">
+      <button type="button" (click)="onLogin()"
         [disabled]="registerForm.get('username')?.invalid || registerForm.get('password')?.invalid">
         @if (isLoading()) {
         <span class="spinner"></span> Laden...
@@ -42,7 +38,7 @@
         Mein Board öffnen
         }
       </button>
-      <button (click)="onRegister()" [disabled]="registerForm.invalid">
+      <button type="button" (click)="onRegister()" [disabled]="registerForm.invalid">
         @if (isLoading()) {
         <span class="spinner"></span> Laden...
         } @else {
@@ -51,6 +47,7 @@
       </button>
     </div>
   </form>
+
   @if (errorMessage()) {
   <div class="error-msg">
     ⚠️ {{ errorMessage() }}
@@ -78,8 +75,8 @@
     </p>
 
     @if (recentUsers().length > 0) {
-    <div class="recent-users-section" style="margin-bottom: 18px; text-align: center;">
-      <small style="color: #666; display: block; margin-bottom: 6px; font-size: 13px;">
+    <div class="recent-users-section" style="margin-top: 14px; text-align: center;">
+      <small style="color: #64748b; display: block; margin-bottom: 8px; font-size: 13px; font-weight: 600;">
         Zuletzt eingeloggt:
       </small>
       <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">

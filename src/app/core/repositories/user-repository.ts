@@ -25,8 +25,8 @@ export interface PlannerSettingsDto {
 export class UserRepository {
   private http = inject(HttpClient);
 
-  public login(username: string): Observable<IUser> {
-    return this.http.post<IUser>(`${userApiUrl}/login`, { username });
+  public login(username: string, password: string): Observable<IUser> {
+    return this.http.post<IUser>(`${userApiUrl}/login`, { username, password });
   }
 
   public register(username: string, firstName: string, lastName: string, password: string): Observable<IUser> {
