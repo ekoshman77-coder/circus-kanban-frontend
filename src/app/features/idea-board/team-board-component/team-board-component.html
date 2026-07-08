@@ -1,124 +1,114 @@
 <div class="board-container">
-  
+
   <div class="board-header-premium">
-      <div class="header-title-section">
-          <h1 class="main-title">🎪 Team-Projekt-Board</h1>
-          <p class="subtitle">Übersicht aller Aufgaben sortiert nach virtuellem Bearbeitungsstatus.</p>
-      </div>
-
-      <div class="header-selector-wrapper">
-        <app-milestone-selector-component
-          [canChooseProject]="true"
-          [appearance]="'modal'"
-          [initialMilestoneId]="boardFilter().type === 'milestone' ? boardFilter().id : null"
-          [initialProjectId]="boardFilter().type === 'project' ? boardFilter().id : null"
-          (projectSelected)="onProjectSelectedFromWelcome($event)"
-          (milestoneSelected)="onMilestoneSelectedFromWelcome($event)">
-        </app-milestone-selector-component>
-      </div>
-  </div> @if (boardFilter().type === null || boardFilter().id === null) {
-
-    <div class="welcome-placeholder-box">
-      <div class="welcome-icon">🎪</div>
-      <h2>Willkommen auf dem Team-Board!</h2>
-      <p>Um die Aufgaben deines Teams zu sehen und zu verschieben, wähle bitte zuerst oben rechts einen aktiven Meilenstein oder ein Projekt aus.</p>
+    <div class="header-title-section">
+      <h1 class="main-title">🎪 Team-Projekt-Board</h1>
+      <p class="subtitle">Übersicht aller Aufgaben sortiert nach virtuellem Bearbeitungsstatus.</p>
     </div>
 
+    <div class="header-selector-wrapper">
+      <app-milestone-selector-component [canChooseProject]="true" [appearance]="'modal'"
+        [initialMilestoneId]="boardFilter().type === 'milestone' ? boardFilter().id : null"
+        [initialProjectId]="boardFilter().type === 'project' ? boardFilter().id : null"
+        (projectSelected)="onProjectSelectedFromWelcome($event)"
+        (milestoneSelected)="onMilestoneSelectedFromWelcome($event)">
+      </app-milestone-selector-component>
+    </div>
+  </div> 
+  
+  <hr class="section-divider">
+  
+  @if (boardFilter().type === null || boardFilter().id === null) {
+  <div class="no-milestone-selected-container">
+    <div class="welcome-card">
+      <span class="empty-icon-neon">🎪</span>
+      <h3>Der Zirkusvorhang ist noch geschlossen!</h3>
+      <p>Um die Aufgaben deines Teams auf die Bühne zu holen, wähle bitte zuerst oben rechts ein aktives Projekt oder einen Meilenstein aus.</p>
+    </div>
+  </div>
   } @else {
 
-    <div class="kanban-workspace" cdkDropListGroup>
+  <div class="kanban-workspace" cdkDropListGroup>
 
-      <div class="kanban-column column-backlog">
-        <h3 class="column-header">📦 Backlog ({{ backlogTasks().length }})</h3>
-        <div id="column-backlog-list" cdkDropList [cdkDropListData]="backlogTasks()"
-          (cdkDropListDropped)="onTodoDropped($event)" class="cards-holder">
-          @for (todoViewModel of backlogTasks(); track todoViewModel.todo.id) {
-            <app-todo-item 
-              [item]="todoViewModel" 
-              [isKanbanMode]="true" 
-              [isTeamsPopupEnabled]="true" 
-              [assignableUsers]="assignableUsers()"
-              [ngClass]="'status-' + todoViewModel.visualStatus" 
-              cdkDrag
-              [cdkDragData]="todoViewModel">
-            </app-todo-item>
-          } @empty { <div class="empty-info">Keine Ideen im Backlog</div> }
-        </div>
+    <div class="kanban-column column-backlog">
+      <h3 class="column-header">📦 Backlog ({{ backlogTasks().length }})</h3>
+      <div class="column-planning-header">
+        <button type="button" class="btn-minimal-plus" (click)="openPlanningPopup()">
+          ＋
+        </button>
       </div>
 
-      <div class="kanban-column column-open">
-        <h3 class="column-header">⚪ Offen ({{ openTasks().length }})</h3>
-        <div id="column-open-list" cdkDropList [cdkDropListData]="openTasks()"
-          (cdkDropListDropped)="onTodoDropped($event)" class="cards-holder">
-          @for (todoViewModel of openTasks(); track todoViewModel.todo.id) {
-            <app-todo-item 
-              [item]="todoViewModel" 
-              [isKanbanMode]="true" 
-              [isTeamsPopupEnabled]="true" 
-              [assignableUsers]="assignableUsers()"
-              [ngClass]="'status-' + todoViewModel.visualStatus" 
-              cdkDrag
-              [cdkDragData]="todoViewModel">
-            </app-todo-item>
-          } @empty { <div class="empty-info">Keine offenen Aufgaben</div> }
-        </div>
+      <div id="column-backlog-list" cdkDropList [cdkDropListData]="backlogTasks()"
+        (cdkDropListDropped)="onTodoDropped($event)" class="cards-holder">
+        @for (todoViewModel of backlogTasks(); track todoViewModel.todo.id) {
+        <app-todo-item [item]="todoViewModel" [isKanbanMode]="true" [isTeamsPopupEnabled]="true"
+          [assignableUsers]="assignableUsers()" [ngClass]="'status-' + todoViewModel.visualStatus" cdkDrag
+          [cdkDragData]="todoViewModel">
+        </app-todo-item>
+        } @empty { <div class="empty-info">Keine Ideen im Backlog</div> }
       </div>
+    </div>
 
-      <div class="kanban-column column-progress">
-        <h3 class="column-header">🟡 In Arbeit ({{ inProgressTasks().length }})</h3>
-        <div id="column-progress-list" cdkDropList [cdkDropListData]="inProgressTasks()"
-          (cdkDropListDropped)="onTodoDropped($event)" class="cards-holder">
-          @for (todoViewModel of inProgressTasks(); track todoViewModel.todo.id) {
-            <app-todo-item 
-              [item]="todoViewModel" 
-              [isKanbanMode]="true" 
-              [isTeamsPopupEnabled]="true" 
-              [ngClass]="'status-' + todoViewModel.visualStatus" 
-              cdkDrag
-              [assignableUsers]="assignableUsers()"
-              [cdkDragData]="todoViewModel">
-            </app-todo-item>
-          } @empty { <div class="empty-info">Niemand arbeitet gerade</div> }
-        </div>
+    <div class="kanban-column column-open">
+      <h3 class="column-header">⚪ Offen ({{ openTasks().length }})</h3>
+      <div id="column-open-list" cdkDropList [cdkDropListData]="openTasks()"
+        (cdkDropListDropped)="onTodoDropped($event)" class="cards-holder">
+        @for (todoViewModel of openTasks(); track todoViewModel.todo.id) {
+        <app-todo-item [item]="todoViewModel" [isKanbanMode]="true" [isTeamsPopupEnabled]="true"
+          [assignableUsers]="assignableUsers()" [ngClass]="'status-' + todoViewModel.visualStatus" cdkDrag
+          [cdkDragData]="todoViewModel">
+        </app-todo-item>
+        } @empty { <div class="empty-info">Keine offenen Aufgaben</div> }
       </div>
+    </div>
 
-      <div class="kanban-column column-review">
-        <h3 class="column-header">👁️ Review ({{ reviewTasks().length }})</h3>
-        <div id="column-review-list" cdkDropList [cdkDropListData]="reviewTasks()"
-          (cdkDropListDropped)="onTodoDropped($event)" class="cards-holder">
-          @for (todoViewModel of reviewTasks(); track todoViewModel.todo.id) {
-            <app-todo-item 
-              [item]="todoViewModel" 
-              [isKanbanMode]="true" 
-              [isTeamsPopupEnabled]="true" 
-              [ngClass]="'status-' + todoViewModel.visualStatus" 
-              cdkDrag
-              [assignableUsers]="assignableUsers()"
-              [cdkDragData]="todoViewModel">
-            </app-todo-item>
-          } @empty { <div class="empty-info">Nichts zu prüfen</div> }
-        </div>
+    <div class="kanban-column column-progress">
+      <h3 class="column-header">🟡 In Arbeit ({{ inProgressTasks().length }})</h3>
+      <div id="column-progress-list" cdkDropList [cdkDropListData]="inProgressTasks()"
+        (cdkDropListDropped)="onTodoDropped($event)" class="cards-holder">
+        @for (todoViewModel of inProgressTasks(); track todoViewModel.todo.id) {
+        <app-todo-item [item]="todoViewModel" [isKanbanMode]="true" [isTeamsPopupEnabled]="true"
+          [ngClass]="'status-' + todoViewModel.visualStatus" cdkDrag [assignableUsers]="assignableUsers()"
+          [cdkDragData]="todoViewModel">
+        </app-todo-item>
+        } @empty { <div class="empty-info">Niemand arbeitet gerade</div> }
       </div>
+    </div>
 
-      <div class="kanban-column column-done">
-        <h3 class="column-header">🟢 Erledigt ({{ doneTasks().length }})</h3>
-        <div id="column-done-list" cdkDropList [cdkDropListData]="doneTasks()"
-          (cdkDropListDropped)="onTodoDropped($event)" class="cards-holder">
-          @for (todoViewModel of doneTasks(); track todoViewModel.todo.id) {
-            <app-todo-item 
-              [item]="todoViewModel" 
-              [isKanbanMode]="true" 
-              [isTeamsPopupEnabled]="true"
-              [assignableUsers]="assignableUsers()" 
-              [ngClass]="'status-' + todoViewModel.visualStatus" 
-              cdkDrag
-              [cdkDragData]="todoViewModel">
-            </app-todo-item>
-          } @empty { <div class="empty-info">Noch keine Aufgabe erledigt</div> }
-        </div>
+    <div class="kanban-column column-review">
+      <h3 class="column-header">👁️ Review ({{ reviewTasks().length }})</h3>
+      <div id="column-review-list" cdkDropList [cdkDropListData]="reviewTasks()"
+        (cdkDropListDropped)="onTodoDropped($event)" class="cards-holder">
+        @for (todoViewModel of reviewTasks(); track todoViewModel.todo.id) {
+        <app-todo-item [item]="todoViewModel" [isKanbanMode]="true" [isTeamsPopupEnabled]="true"
+          [ngClass]="'status-' + todoViewModel.visualStatus" cdkDrag [assignableUsers]="assignableUsers()"
+          [cdkDragData]="todoViewModel">
+        </app-todo-item>
+        } @empty { <div class="empty-info">Nichts zu prüfen</div> }
       </div>
+    </div>
 
-    </div> 
+    <div class="kanban-column column-done">
+      <h3 class="column-header">🟢 Erledigt ({{ doneTasks().length }})</h3>
+      <div id="column-done-list" cdkDropList [cdkDropListData]="doneTasks()"
+        (cdkDropListDropped)="onTodoDropped($event)" class="cards-holder">
+        @for (todoViewModel of doneTasks(); track todoViewModel.todo.id) {
+        <app-todo-item [item]="todoViewModel" [isKanbanMode]="true" [isTeamsPopupEnabled]="true"
+          [assignableUsers]="assignableUsers()" [ngClass]="'status-' + todoViewModel.visualStatus" cdkDrag
+          [cdkDragData]="todoViewModel">
+        </app-todo-item>
+        } @empty { <div class="empty-info">Noch keine Aufgabe erledigt</div> }
+      </div>
+    </div>
+
+  </div>
   }
 
-</div> 
+</div>
+@if (showPlanningModal()) {
+<app-todo-planning-modal-component 
+  [currentMilestoneId]="currentMilestioneId()"
+  (closeModal)="closePlanningPopup()"
+  (todoPlanned)="closePlanningPopup()">
+</app-todo-planning-modal-component>
+}

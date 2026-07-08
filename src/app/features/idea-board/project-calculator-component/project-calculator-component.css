@@ -1,28 +1,24 @@
 /* ==========================================================================
    🎨 GLOBALER PASTEL-HINTERGRUND FÜR DEN GANZEN KALKULATOR
    ========================================================================== */
-
 :host {
   display: block;
-  /* 👑 KORREKTUR: Oben flach gemacht für die perfekte Symmetrie zu den anderen Boards! */
   padding: 20px 20px 40px 20px; 
   background: radial-gradient(circle at top left, #f3e8ff 0%, #e0f2fe 100%);
   border-radius: 12px;
   border: 1px solid #e2e8f0;
-  min-height: 85vh; /* Einheitliche Höhe */
+  min-height: 85vh;
   font-family: system-ui, -apple-system, sans-serif;
 }
 
-/* Der Haupt-Container zentriert sich genau wie das Meilenstein-Board */
 .calculator-container {
   max-width: 1000px;
   margin: 0 auto;
 }
 
 /* ==========================================================================
-   👑 EDLE TITEL-ZONE (Zu 100% identisch zu den anderen Boards!)
+   👑 EDLE TITEL-ZONE & AUSWAHL
    ========================================================================== */
-
 .board-header-premium {
     display: flex;
     justify-content: space-between;
@@ -54,27 +50,23 @@
     font-weight: 500;
 }
 
-/* 📊 Die neue, feine Sub-Leiste für das aktive Projekt */
-.active-project-subbar {
-  font-size: 15px;
-  color: #475569;
-  font-weight: 600;
-  margin-bottom: 20px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.header-selector-wrapper {
+    display: flex;
+    align-items: center;
 }
 
-.active-project-subbar span {
-  color: #2563eb;
-  background-color: #eff6ff;
-  padding: 4px 12px;
-  border-radius: 8px;
-  border: 1px solid #bfdbfe;
-  font-weight: 700;
+/* 👑 TRENNLINIE */
+.section-divider {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, #e2e8f0 0%, #cbd5e1 50%, #e2e8f0 100%);
+    margin: 0 0 24px 0;
+    opacity: 0.6;
 }
 
-/* Ab hier folgt dein restliches CSS (.calculator-active-container abändern / altes h2 löschen) */
+/* ==========================================================================
+   📊 INTEGRATION DER JEWEILIGEN BEREICHE (Aktiv vs. Willkommen)
+   ========================================================================== */
 .calculator-active-container {
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(8px);
@@ -83,18 +75,40 @@
   box-shadow: 0 10px 30px rgba(148, 163, 184, 0.08);
 }
 
+.active-project-subbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    background: #f1f5f9;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 0.95rem;
+    color: #475569;
+}
+
+.active-project-subbar span strong {
+  color: #2563eb;
+  background-color: #eff6ff;
+  padding: 4px 12px;
+  border-radius: 8px;
+  border: 1px solid #bfdbfe;
+  font-weight: 700;
+}
+
 /* ==========================================================================
-   Sperrbildschirm-Card (Bleibt fast gleich, nur ohne den Hintergrund-Gradienten)
+   🎪 WILLKOMMENS-ZONE (Jetzt exakt auf dein HTML gematcht!)
    ========================================================================== */
 .no-project-selected-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 60px 20px;
+    animation: fadeIn 0.5s ease-out;
 }
 
 .welcome-card {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(8px);
   padding: 40px;
   border-radius: 16px;
@@ -104,148 +118,66 @@
   width: 100%;
 }
 
-.empty-icon-neon {
-  font-size: 54px;
-  display: inline-block;
-  margin-bottom: 15px;
-  animation: floatEffect 3s ease-in-out infinite; /* Lässt das Icon sanft schweben */
-}
-
-@keyframes floatEffect {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
-}
-
 .welcome-card h3 {
   color: #1e293b;
   font-size: 22px;
   font-weight: 700;
   margin-bottom: 8px;
+  margin-top: 10px;
 }
 
 .welcome-card p {
   color: #64748b;
   font-size: 15px;
-  margin-bottom: 30px;
+  margin-bottom: 0;
 }
 
-.projects-selection-list {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-/* Die magische Pastell-Kachel für jedes Projekt */
-.projects-item-pastel {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  background: #f0fdf4; /* Weiches Pastell-Grün als Standard */
-  border: 1px solid #bbf7d0;
-  border-radius: 12px;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Jedes zweite Projekt bekommt ein schickes Pastell-Blau für Abwechslung */
-.projects-item-pastel:nth-child(2n) {
-  background: #eff6ff; 
-  border-color: #bfdbfe;
-}
-
-.projects-item-pastel:hover {
-  transform: scale(1.02) translateY(-2px);
-  box-shadow: 0 6px 15px rgba(51, 65, 85, 0.06);
-}
-
-.project-info-block {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.folder-icon {
-  font-size: 20px;
-}
-
-.project-title {
-  font-weight: 600;
-  color: #334155;
-  font-size: 15px;
-}
-
-/* Moderner, leuchtender Button */
-.calc-select-btn-neon {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  font-size: 13px;
-  font-weight: 600;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
-}
-
-.calc-select-btn-neon:hover {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  box-shadow: 0 6px 12px rgba(37, 99, 235, 0.3);
-}
-
-.projects-empty-state-pastel {
-  padding: 30px;
-  background: #fffbef;
-  border: 2px dashed #fef3c7;
-  border-radius: 12px;
-  color: #b45309;
+.empty-icon-neon {
+    font-size: 54px;
+    display: inline-block;
+    filter: drop-shadow(0 0 12px rgba(168, 85, 247, 0.25)) 
+            drop-shadow(0 0 2px rgba(168, 85, 247, 0.4));
+    animation: neonFloat 3s infinite ease-in-out;
 }
 
 /* ==========================================================================
-   🏗️ 2. DIE SCHICKE PROJEKT-TABELLE
+   🏗️ DIE PROJEKT-TABELLE & ELEMENTE
    ========================================================================== */
-.project-table {
+.calc-table {
   width: 100%;
-  border-collapse: separate; /* Erlaubt runde Ecken für die Tabelle */
+  border-collapse: separate;
   border-spacing: 0;
   margin-top: 15px;
   border-radius: 10px;
   overflow: hidden;
-  border: 1px solid #04479e;
+  border: 1px solid #cbd5e1;
 }
 
-/* 🧢 Der Tabellenkopf bekommt jetzt richtig Charakter! */
-.project-table th {
-  background-color: #04388c; /* Dunkles Schiefergrau für starken Kontrast */
+.calc-table th {
+  background-color: #0f172a;
   color: #f8fafc;
   font-weight: 600;
   text-transform: uppercase;
   font-size: 11px;
   letter-spacing: 0.08em;
-  padding: 14px 18px;
-  border-bottom: none;
+  padding: 14px 20px;
+  text-align: left;
 }
 
-.project-table td {
-  padding: 16px 18px;
+.calc-table td {
+  padding: 14px 20px;
   border-bottom: 1px solid #f1f5f9;
-  color: #053c88;
+  color: #334155;
   background-color: #ffffff;
+  vertical-align: middle;
 }
 
-/* Subtiler Zeilen-Wechsel */
-.project-table tbody tr:nth-child(even) td {
-  background-color: lch(87.93% 48.51 196.39 / 0.161);
+.calc-table tbody tr:hover td {
+  background-color: #f8fafc;
 }
 
-/* Sanfter Hover-Effekt beim Drübergleiten */
-.project-table tbody tr:hover td {
-  background-color: #f0fdf4; /* Ganz leichtes Grün, um zu zeigen: "Hier arbeitest du gerade" */
-}
-
-/* 🏷️ BEREICHS-BADGE */
 .tag-badge {
-  background: linear-gradient(135deg, #6366f1, #4f46e5); /* Cooler Indigo-Verlauf */
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
   color: white;
   padding: 4px 12px;
   border-radius: 20px;
@@ -254,72 +186,64 @@
   box-shadow: 0 2px 4px rgba(79, 70, 229, 0.15);
 }
 
-.calc-table th, 
-.calc-table td {
-    padding: 14px 20px !important; /* 20px links/rechts erzeugt genau das gewünschte 20px-Spalten-Gap! */
-    vertical-align: middle;
+tr.draggable-row {
+    cursor: move;
+    user-select: none;
 }
 
-/* 2. Der Footer-Abstand und das optische Padding-Top */
+.drag-handle {
+    color: #94a3b8;
+    cursor: grab;
+    margin-right: 10px;
+    display: inline-block;
+    font-weight: bold;
+}
+
+/* EDITIER-ZEILE */
+.edit-row-pastel {
+  background-color: #fef08a !important;
+}
+.edit-row-pastel td {
+  background-color: #fef08a !important;
+}
+
+.table-edit-input,
+.table-edit-dropdown {
+  width: 100%;
+  height: 38px !important;
+  padding: 6px 12px !important;
+}
+
+/* FOOTER / TOTAL */
 .calc-table tfoot {
-    border-top: 3px solid #e2e8f0; /* Eine feine Trennlinie zum tbody */
+    border-top: 3px solid #e2e8f0;
 }
 
 tr.total-row td {
-    /* Ein üppigeres Padding oben simuliert das padding-top für den Footer perfekt */
-    padding-top: 22px !important; 
-    padding-bottom: 22px !important;
-    background-color: #f8fafc; /* Ein ganz sanftes Pastell-Grau für die Summe */
+    padding: 22px 20px !important; 
+    background-color: #f8fafc !important;
     color: #1e293b;
     font-size: 1.05rem;
 }
 
-/* 3. Das Badge etwas dezenter & kleiner machen */
 .total-badge {
-    background-color: hwb(200 3% 81% / 0.12); /* Dein gewohnter Premium-Blauton, leicht transparent */
-    color: hwb(200 3% 81% / 1);
-    padding: 5px 10px; /* Kompakteres Innenmaß */
+    background-color: #eff6ff;
+    color: #1e40af;
+    padding: 6px 14px;
     border-radius: 6px;
     font-weight: 700;
-    font-size: 0.92rem; /* Leicht verkleinerte Schriftgröße für den cleanen Look */
-    border: 1px solid hwb(200 3% 81% / 0.25);
+    font-size: 0.95rem;
+    border: 1px solid #bfdbfe;
     display: inline-block;
 }
 
 /* ==========================================================================
-   📂 3. KLAPPBARE ELEMENTE (Details & Summary)
+   📂 KLAPPBARE ELEMENTE & AUFGABEN-SCHUBLADE
    ========================================================================== */
-.phase-section {
-  border: none;
-}
-
-.phase-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 18px;
-  background: #f1f5f9;
-  cursor: pointer;
-  font-weight: 600;
-  color: #0f172a;
-  user-select: none;
-}
-
-.phase-badge {
-  background-color: #3b82f6;
-  color: white;
-  font-size: 11px;
-  padding: 3px 9px;
-  border-radius: 20px;
-  font-weight: 600;
-}
-
-/* ➕ DIE AUFGABEN-SCHUBLADE */
 .add-task-drawer {
   border: 1px dashed #3b82f6;
   border-radius: 10px;
   background-color: #f8fafc;
-  margin-top: 25px;
   overflow: hidden;
   transition: all 0.2s ease;
 }
@@ -335,6 +259,7 @@ tr.total-row td {
   color: #2563eb;
   cursor: pointer;
   user-select: none;
+  outline: none;
 }
 
 .drawer-content {
@@ -343,88 +268,43 @@ tr.total-row td {
   background-color: #ffffff;
 }
 
-.active-project-subbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 20px;
-    background: #f1f5f9;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    font-size: 0.95rem;
-    color: #475569;
-}
-
-/* 🪄 Der magische Zauberstab-Button */
+/* ==========================================================================
+   🪄 DER MAGISCHE ZAUBERSTAB-BUTTON & PROMPTS
+   ========================================================================== */
 .magic-template-btn {
     background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
     color: white;
     border: none;
-    padding: 8px 16px;
+    padding: 10px 18px;
     border-radius: 6px;
     font-weight: 600;
     font-size: 0.88rem;
     cursor: pointer;
     box-shadow: 0 4px 12px rgba(168, 85, 247, 0.25);
-    min-width: 290px; 
-    
-    /* Ein sanfter Übergang für alle Fälle (falls sich mal eine Farbe ändert) */
-    transition: background 0.3s ease, box-shadow 0.3s ease;
+    transition: all 0.2s ease;
 }
 
-.magic-template-btn:hover {
+.magic-template-btn:hover:not([disabled]) {
     background: linear-gradient(135deg, #4f46e5 0%, #9333ea 100%);
-    transform: translateY(-2px);
+    transform: translateY(-1px);
 }
 
-/* 🔮 Wenn die KI unsicher ist (Allgemein): Ein schickes, dezenteres Ocean-Blau */
 .magic-template-btn.general-btn {
     background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
 }
 
-.magic-template-btn.general-btn:hover {
+.magic-template-btn.general-btn:hover:not([disabled]) {
     background: linear-gradient(135deg, #0284c7 0%, #1d4ed8 100%);
 }
 
-/* ✨ Magisches Pulsieren für den Zauberstab (Kein Drehen, kein Schaukeln!) */
-/* ✨ MAGISCHES CSS-FUNKELN (100% sicher vor Browser-Fehlern!) */
-.magic-sparkles {
-    display: inline-flex;
-    align-items: center;
-    position: relative;
-    width: 20px;
-    height: 16px;
-    margin-right: 8px;
-}
-
-/* Die einzelnen Sterne nutzen ein sicheres Text-Symbol (✦), das jeder PC kennt */
-/* ✨ MAGISCHER FARB-GLOW (100% sicher vor jedem Grafikfehler!) */
 .magic-template-btn[disabled] {
-    /* Wenn der Button deaktiviert ist (isMagicLoading() === true), lassen wir die Farbe atmen */
-    animation: button-color-glow 2s ease-in-out infinite !important;
     cursor: wait;
-    opacity: 1 !important; /* Verhindert, dass der Button einfach nur blass ausgegraut wird */
-}
-
-/* Die sanfte Farb-Pulsation */
-@keyframes button-color-glow {
-    0% {
-        background: #8b5cf6; /* Start-Violett */
-        box-shadow: 0 0 5px rgba(139, 92, 246, 0.4);
-    }
-    50% {
-        background: #a855f7; /* Hellere, magische Farbe am Höhepunkt */
-        box-shadow: 0 0 15px rgba(168, 85, 247, 0.8); /* Ein echter, reiner CSS-Leuchteffekt */
-    }
-    100% {
-        background: #8b5cf6;
-        box-shadow: 0 0 5px rgba(139, 92, 246, 0.4);
-    }
+    opacity: 0.7;
 }
 
 /* ==========================================================================
-   ✍️ 4. FORMULAR ELEMENTE (Symmetrie-Korrektur für Textfeld & Dropdown)
+   ✍️ FORMULAR ELEMENTE
    ========================================================================== */
 .calc-form-group {
   display: flex;
@@ -451,7 +331,6 @@ tr.total-row td {
   letter-spacing: 0.05em;
 }
 
-/* 🟢 HIER WIRKT DIE SYMMETRIE: Beide Felder bekommen exakt denselben Style & dieselbe Höhe! */
 .calc-input,
 .calc-dropdown {
   padding: 12px 16px;
@@ -459,13 +338,13 @@ tr.total-row td {
   border-radius: 8px;
   font-size: 14px;
   color: #0f172a;
-  background-color: #ffffff; /* Sorgt für ein sauberes Weiß beim Dropdown */
-  height: 48px;              /* Erzwingt eine absolut identische, perfekte Höhe! */
-  box-sizing: border-box;    /* Verhindert, dass Padding die Boxen unterschiedlich groß macht */
+  background-color: #ffffff;
+  height: 48px;
+  box-sizing: border-box;
   transition: all 0.2s ease;
+  width: 100%;
 }
 
-/* Schicker Focus-Effekt für beide Elemente */
 .calc-input:focus,
 .calc-dropdown:focus {
   outline: none;
@@ -474,7 +353,7 @@ tr.total-row td {
 }
 
 /* ==========================================================================
-   🕹️ 5. UTILITY BUTTONS (Hammer, Müll & Navigation)
+   🕹️ UTILITY BUTTONS & ACTIONS
    ========================================================================== */
 .calculator-actions {
   display: flex;
@@ -498,9 +377,14 @@ tr.total-row td {
   transition: all 0.2s ease;
 }
 
-.calc-btn:hover {
+.calc-btn:hover:not([disabled]) {
   transform: translateY(-1px);
   box-shadow: 0 6px 12px rgba(16, 185, 129, 0.25);
+}
+
+.calc-btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .delete-task-btn {
@@ -523,7 +407,7 @@ tr.total-row td {
   color: white;
   border: none;
   padding: 14px 28px;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   border-radius: 10px;
   cursor: pointer;
@@ -531,9 +415,16 @@ tr.total-row td {
   transition: all 0.2s ease;
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not([disabled]) {
   transform: translateY(-1px);
   box-shadow: 0 6px 15px rgba(59, 130, 246, 0.3);
+}
+
+.btn-primary[disabled] {
+  background: #cbd5e1;
+  color: #94a3b8;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 .btn-secondary {
@@ -550,220 +441,8 @@ tr.total-row td {
 
 .btn-secondary:hover {
   background-color: #f1f5f9;
-  color: #092362;
-  border-color: #cbd5e1;
-}
-
-.no-project-selected {
-  text-align: center;
-  padding: 60px 40px;
-  color: #64748b;
-}
-
-.empty-icon {
-  font-size: 56px;
-  display: block;
-  margin-bottom: 16px;
-  animation: float 3s infinite ease-in-out;
-}
-
-/* ==========================================================================
-   🧮 6. DER COMPONENT-OWN FOOTER DER TABELLE (DEIN REPARIERTER LIEBLINGS-BLOCK)
-   ========================================================================== */
-.table-footer-row td {
-  background-color: #f8fafc !important;
-  border-top: 2px solid #cbd5e1 !important;
-  border-bottom: none !important;
-  font-size: 15px;
-  padding: 16px 18px !important;
-}
-
-.table-footer-sum {
-  font-weight: 700;
   color: #0f172a;
-  font-size: 16px;
-}
-
-/* ==========================================================================
-   🚨 7. POPUP OVERLAY & ANMATIONEN (VON DIR ABGESEGNET, BLEIBT REIN!)
-   ========================================================================== */
-.popup-overlay {
-  position: fixed;
-  top: 0; left: 0; width: 100vw; height: 100vh;
-  background-color: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(4px);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 9999;
-  animation: fadeIn 0.25s ease-out;
-}
-
-.popup-card {
-  background-color: #ffffff;
-  padding: 35px;
-  border-radius: 16px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-  text-align: center;
-  max-width: 440px; width: 90%;
-  border: 1px solid rgba(16, 185, 129, 0.2);
-  animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.rocket-animation { font-size: 50px; margin-bottom: 12px; animation: rocketLaunch 0.5s ease-out; }
-.popup-card h2 { color: #10b981; margin: 0 0 12px 0; font-size: 22px; border: none; background: none; padding: 0; }
-.popup-card p { color: #4b5563; font-size: 14.5px; margin-bottom: 24px; }
-.popup-cancel-btn {
-  background-color: #ef4444; color: white; border: none; padding: 10px 18px;
-  font-size: 13px; font-weight: 600; border-radius: 6px; cursor: pointer;
-  transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
-}
-.popup-cancel-btn:hover { background-color: #dc2626; transform: translateY(-1px); }
-
-.loading-bar-container { width: 100%; height: 6px; background-color: #f3f4f6; border-radius: 3px; overflow: hidden; margin-bottom: 20px; }
-.loading-bar-fill { height: 100%; background-color: #10b981; width: 100%; animation: countdownBar 3.2s linear forwards; }
-
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes scaleUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-@keyframes rocketLaunch { 0% { transform: translateY(20px) scale(0.8); opacity: 0; } 70% { transform: translateY(-10px) scale(1.1); } 100% { transform: translateY(0) scale(1); opacity: 1; } }
-@keyframes countdownBar { from { width: 100%; } to { width: 0%; } }
-@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-
-/* ==========================================================================
-   🎨 NEUES PASTEL-DESIGN FÜR DEN SPERRBILDSCHIRM (OPTION 5)
-   ========================================================================== */
-
-.no-project-selected-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 40px 20px;
-  background: radial-gradient(circle at top left, #f3e8ff 0%, #e0f2fe 100%); /* Sanfter Pastell-Hintergrund (Lila zu Blau) */
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-}
-
-.welcome-card {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(8px); /* Moderner Milchglas-Effekt */
-  padding: 40px;
-  border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(148, 163, 184, 0.12);
-  text-align: center;
-  max-width: 550px;
-  width: 100%;
-}
-
-.empty-icon-neon {
-  font-size: 54px;
-  display: inline-block;
-  margin-bottom: 15px;
-  animation: floatEffect 3s ease-in-out infinite; /* Lässt das Icon sanft schweben */
-}
-
-@keyframes floatEffect {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
-}
-
-.welcome-card h3 {
-  color: #1e293b;
-  font-size: 22px;
-  font-weight: 700;
-  margin-bottom: 8px;
-}
-
-.welcome-card p {
-  color: #64748b;
-  font-size: 15px;
-  margin-bottom: 30px;
-}
-
-.projects-selection-list {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-/* Die magische Pastell-Kachel für jedes Projekt */
-.projects-item-pastel {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  background: #f0fdf4; /* Weiches Pastell-Grün als Standard */
-  border: 1px solid #bbf7d0;
-  border-radius: 12px;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Jedes zweite Projekt bekommt ein schickes Pastell-Blau für Abwechslung */
-.projects-item-pastel:nth-child(2n) {
-  background: #eff6ff; 
-  border-color: #bfdbfe;
-}
-
-.projects-item-pastel:hover {
-  transform: scale(1.02) translateY(-2px);
-  box-shadow: 0 6px 15px rgba(51, 65, 85, 0.06);
-}
-
-.project-info-block {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.folder-icon {
-  font-size: 20px;
-}
-
-.project-title {
-  font-weight: 600;
-  color: #334155;
-  font-size: 15px;
-}
-
-/* Moderner, leuchtender Button */
-.calc-select-btn-neon {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  font-size: 13px;
-  font-weight: 600;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
-}
-
-.calc-select-btn-neon:hover {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  box-shadow: 0 6px 12px rgba(37, 99, 235, 0.3);
-}
-
-.projects-empty-state-pastel {
-  padding: 30px;
-  background: #fffbef;
-  border: 2px dashed #fef3c7;
-  border-radius: 12px;
-  color: #b45309;
-}
-
-/* ✏️ Inline-Editing Tabellen-Styles */
-.edit-row-pastel {
-  background-color: #fef08a !important; /* Ganz zartes Gelb, um zu zeigen, dass editiert wird */
-}
-
-.table-edit-input {
-  width: 100%;
-  height: 36px !important; /* Etwas kompakter für die Tabelle */
-  padding: 6px 12px !important;
-}
-
-.table-edit-dropdown {
-  width: 100%;
-  height: 36px !important;
-  padding: 6px 12px !important;
+  border-color: #cbd5e1;
 }
 
 .action-btns-group {
@@ -776,447 +455,72 @@ tr.total-row td {
   border: none;
   font-size: 16px;
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 6px 10px;
+  border-radius: 6px;
   transition: background-color 0.2s;
 }
 
 .calc-action-btn:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-}
-
-/* 🎛️ Jede Zeile in der echten Tabelle bekommt einen sauberen Rand */
-/* Jede Zeile bekommt einen dicken, unsichtbaren Abstand nach unten */
-tr.draggable-row {
-    cursor: move;
-    user-select: none;
-    background-color: #ffffff;
-    
-    /* Der Trick: Ein dicker unterer Rand, der die Farbe des Hintergrunds hat,
-       wirkt wie ein echter Abstand (Divider) zwischen den Zeilen! */
-    border: 1px solid hwb(200 3% 81% / 0.578) !important; 
-    
-    transition: all 0.2s ease;
-}
-
-/* Ein eleganter Schwebe-Effekt für die ganze Zeile */
-tr.draggable-row:hover {
-    background-color: #f1f5f9;
-    transform: translateY(-1px); /* Die Zeile hebt sich leicht an */
-}
-
-/* 🎯 Der visuelle Griff */
-.drag-handle {
-    color: #94a3b8;
-    cursor: grab;
-    margin-right: 10px;
-    display: inline-block;
-}
-.drag-handle:active {
-    cursor: grabbing;
-}
-
-/* ==========================================
-   🚨 DER FIX FÜR DIE BREITE & DIE RÄNDER:
-   ========================================== */
-
-/* 1. Die Vorschau (die Zeile, die an der Maus klebt) */
-::ng-deep .cdk-drag-preview {
-    display: table !important;
-    table-layout: fixed !important;
-    /* 🆕 WICHTIG: Wir zwingen die Vorschau exakt so breit zu sein, wie die echte Tabelle! */
-    width: 100% !important; 
-    max-width: 800px !important; /* Setze hier ca. die maximale Breite deiner Kalkulator-Tabelle ein */
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
-    background-color: #ffffff !important;
-    border: 1px solid #cbd5e1 !important; /* Rahmen für die schwebende Zeile */
-    z-index: 9999 !important;
-}
-
-/* 2. Die einzelnen Zellen in der schwebenden Vorschau-Zeile */
-::ng-deep .cdk-drag-preview td {
-    display: table-cell !important;
-    padding: 12px !important;
-    background-color: #ffffff !important;
-    vertical-align: middle !important;
-    border-bottom: 1px solid #e2e8f0 !important;
-}
-
-/* 3. Der Platzhalter (das "Loch", das in der Tabelle bleibt) */
-tr.cdk-drag-placeholder {
-    opacity: 0.3;
-    background-color: #f1f5f9 !important;
-    border: 1px dashed #cbd5e1 !important; /* Gestrichelter Rand für den Platzhalter! */
-}
-
-/* 4. Geschmeidige Animationen */
-.cdk-drag-animating {
-    transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
-}
-.cdk-drop-list-dragging .cdk-drag {
-    transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+  background-color: #f1f5f9;
 }
 
 /* ==========================================================================
-   ✨ DER NEUE, ULTRALEICHTE PRESET-LOADING-LOOK (0% CPU LAST)
+   🚨 UNGESPEICHERTER ENTWURF - BANNER
    ========================================================================== */
-
-/* Wenn die KI die Vorschläge lädt, aktivieren wir das Leuchten */
-.magic-template-btn.loading {
-    background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%) !important; /* Wunderschöner lila-blauer Verlauf */
-    border: none;
-    color: #ffffff !important;
-    cursor: wait;
-    position: relative;
-    /* Ein pulsierendes, mystisches Nordlicht-Leuchten um den Button herum */
-    animation: magic-aurora-glow 2.4s ease-in-out infinite;
-}
-
-/* Das Zauber-Icon im Inneren schwebt sanft auf und ab (kein abruptes Ruckeln) */
-.floating-magic-icon {
-    display: inline-block;
-    margin-right: 6px;
-    font-size: 1.2rem;
-    animation: smooth-magic-float 1.8s ease-in-out infinite;
-    will-change: transform;
-}
-
-/* 🎆 Die Aurora-Animation: Verändert weich den Schein (Grafikkarten-Liebling!) */
-@keyframes magic-aurora-glow {
-    0% {
-        box-shadow: 0 0 12px rgba(168, 85, 247, 0.4), 0 0 4px rgba(99, 102, 241, 0.2);
-    }
-    50% {
-        box-shadow: 0 0 24px rgba(168, 85, 247, 0.8), 0 0 16px rgba(99, 102, 241, 0.6);
-    }
-    100% {
-        box-shadow: 0 0 12px rgba(168, 85, 247, 0.4), 0 0 4px rgba(99, 102, 241, 0.2);
-    }
-}
-
-/* Das sanfte Schweben des Emojis im Button */
-@keyframes smooth-magic-float {
-    0% {
-        transform: translateY(0px) rotate(0deg);
-    }
-    50% {
-        transform: translateY(-2px) rotate(8deg); /* Dreht sich minimal und schwebt */
-    }
-    100% {
-        transform: translateY(0px) rotate(0deg);
-    }
-}
-
-/* 2. 🌊 DIE TABELLENZEILEN-ANIMATION (Fade-In & Slide-Down) */
-/* Wir animieren die Tabellenzeile <tr>, wenn sie frisch reingerendert wird */
-tr.magic-new-row {
-    animation: rowSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    background-color: rgba(168, 85, 247, 0.04); /* Ganz dezenter lila Schimmer für die neuen Zeilen */
-    opacity: 0; /* Startzustand vor der Animation */
-}
-
-@keyframes rowSlideIn {
-    0% {
-        opacity: 0;
-        transform: translateY(-15px); /* Rutscht von oben nach unten */
-    }
-    100% {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* ==========================================================================
-   🌟 EDLES & MODERNES WIEDERHERSTELLUNGS-BANNER (GANZ OBEN)
-   ========================================================================== */
-
 .restore-banner-card {
-    background: rgba(255, 255, 255, 0.75);
+    background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
     border: 1px solid rgba(245, 158, 11, 0.3);
     border-left: 5px solid #f59e0b;
     border-radius: 12px;
     padding: 18px 24px;
     margin-bottom: 24px;
-    box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.08), 0 4px 12px -5px rgba(0, 0, 0, 0.05);
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 20px;
-    flex-wrap: wrap;
 }
 
-.restore-banner-content {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.restore-banner-icon {
-    font-size: 1.75rem;
-    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-    padding: 8px;
-    border-radius: 10px;
-    box-shadow: inset 0 1px 2px rgba(255,255,255,0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    animation: bannerPulse 2s infinite ease-in-out;
-}
-
-.restore-banner-text h4 {
-    margin: 0;
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: #1e293b;
-    letter-spacing: -0.01em;
-}
-
-.restore-banner-text p {
-    margin: 4px 0 0 0;
-    font-size: 0.92rem;
-    color: #64748b;
-}
-
-.restore-banner-text strong {
-    color: #b45309;
-    font-weight: 600;
-}
-
-.restore-banner-actions {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-}
+.restore-banner-content { display: flex; align-items: center; gap: 16px; }
+.restore-banner-icon { font-size: 1.75rem; }
+.restore-banner-text h4 { margin: 0; font-size: 1.05rem; font-weight: 700; color: #1e293b; }
+.restore-banner-text p { margin: 4px 0 0 0; font-size: 0.92rem; color: #64748b; }
+.restore-banner-actions { display: flex; gap: 12px; align-items: center; }
 
 .restore-btn-confirm {
     background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-    color: #ffffff;
-    font-weight: 600;
-    font-size: 0.9rem;
-    border: none;
-    padding: 10px 18px;
-    border-radius: 8px;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(180, 83, 9, 0.2);
-    transition: all 0.2s ease;
+    color: #ffffff; font-weight: 600; font-size: 0.9rem; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer;
 }
-
-.restore-btn-confirm:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(180, 83, 9, 0.3);
-    filter: brightness(1.1);
-}
-
-.restore-btn-confirm:active {
-    transform: translateY(0);
-}
-
+.restore-btn-confirm:hover { transform: translateY(-1px); }
 .restore-btn-reject {
-    background: rgba(239, 68, 68, 0.06);
-    color: #ef4444;
-    font-weight: 600;
-    font-size: 0.9rem;
-    border: 1px solid rgba(239, 68, 68, 0.2);
-    padding: 9px 16px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
+    background: rgba(239, 68, 68, 0.06); color: #ef4444; font-weight: 600; font-size: 0.9rem; border: 1px solid rgba(239, 68, 68, 0.2); padding: 9px 16px; border-radius: 8px; cursor: pointer;
 }
-
-.restore-btn-reject:hover {
-    background: #ef4444;
-    color: #ffffff;
-    border-color: #ef4444;
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
-}
-
-.animate-fade-in {
-    animation: bannerSlideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-@keyframes bannerSlideDown {
-    0% { opacity: 0; transform: translateY(-15px); }
-    100% { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes bannerPulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.06); }
-    100% { transform: scale(1); }
-}
+.restore-btn-reject:hover { background: #ef4444; color: #ffffff; }
 
 /* ==========================================================================
-   💡 PREMIUM IDEEN-SCHUBLADE (AM RECHTEN RAND MIT INTEGRIERTEM ZIEHER)
+   💡 IDEEN-SIDEBAR & BACKDROP
    ========================================================================== */
-
-/* Das Hauptpanel (Passt sich jetzt perfekt an die Inhaltsgröße an!) */
 .idea-sliding-sidebar {
-    position: fixed;
-    top: 22vh; 
-    right: -430px; /* Bleibt standfest hier */
-    width: 380px;
-    height: auto; 
-    max-height: 55vh; 
-    
-    background-color: rgba(255, 255, 255, 0.85); 
-    backdrop-filter: blur(25px);
-    -webkit-backdrop-filter: blur(25px);
-    
-    box-shadow: -10px 10px 30px rgba(15, 23, 42, 0.05);
-    border: 1px solid rgba(0, 0, 0, 0.06);
-    border-right: none;
-    border-radius: 20px 0 0 20px; 
-    z-index: 2000;
-    transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
+    position: fixed; top: 22vh; right: -430px; width: 380px; max-height: 55vh; background-color: rgba(255, 255, 255, 0.85); backdrop-filter: blur(25px); box-shadow: -10px 10px 30px rgba(15, 23, 42, 0.05); border: 1px solid rgba(0, 0, 0, 0.06); border-right: none; border-radius: 20px 0 0 20px; z-index: 2000; transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1); padding: 24px; display: flex; flex-direction: column;
 }
-
-.idea-sliding-sidebar.open {
-    right: 0;
-}
-
-/* 🎛️ DER ZIEH-REITER: Viel leiseres, cremiges Pastel-Gold (schreit nicht mehr!) */
-/* Der Reiter bleibt farblich jetzt völlig stabil und ruhig */
-.sidebar-pull-tab:hover {
-    box-shadow: -6px 4px 14px rgba(245, 158, 11, 0.12);
-    width: 38px; /* Nur noch eine minimale haptische Bewegung nach links */
-    left: -39px;
-}
-
-/* 🌟 DIE REAKTIVE GLÜHBIRNE: Der magische Effekt beim Hovern! */
-.sidebar-pull-tab:hover .idea-bulb {
-    display: inline-block;
-    transform: scale(1.3); /* Die Birne ploppt saftig nach vorne! */
-    filter: drop-shadow(0 0 8px #fcd34d) drop-shadow(0 0 2px #f59e0b); /* Intensiver, goldener Leucht-Effekt */
-    animation: bulbGlowPulse 1.2s infinite ease-in-out; /* Lässt das Licht sanft pulsieren */
-    transition: all 0.25s ease;
-}
-
-/* Der Puls-Rhythmus für das Leuchten */
-@keyframes bulbGlowPulse {
-    0% { transform: scale(1.3); filter: drop-shadow(0 0 8px #fcd34d) drop-shadow(0 0 2px #f59e0b); }
-    50% { transform: scale(1.4); filter: drop-shadow(0 0 14px #fde68a) drop-shadow(0 0 5px #f59e0b); }
-    100% { transform: scale(1.3); filter: drop-shadow(0 0 8px #fcd34d) drop-shadow(0 0 2px #f59e0b); }
-}
-
+.idea-sliding-sidebar.open { right: 0; }
 .sidebar-pull-tab {
-    position: absolute;
-    
-    /* 🎯 RETTUNG: Weiter nach links geschoben und breiter gemacht, damit er aus dem Bildschirmrand herausragt! */
-    left: -42px; 
-    width: 42px;
-    
-    top: 25px; 
-    height: 120px;
-    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
-    border: 1px solid rgba(245, 158, 11, 0.18);
-    border-right: none;
-    border-radius: 12px 0 0 12px;
-    cursor: pointer;
-    box-shadow: -4px 4px 10px rgba(245, 158, 11, 0.05);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 8px 0;
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: absolute; left: -42px; width: 42px; top: 25px; height: 120px; background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1px solid rgba(245, 158, 11, 0.18); border-right: none; border-radius: 12px 0 0 12px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 8px 0;
 }
-
-/* Beim Hovern dehnt er sich minimal haptisch aus */
-.sidebar-pull-tab:hover {
-    box-shadow: -6px 4px 12px rgba(245, 158, 11, 0.12);
-    width: 45px;
-    left: -45px;
-}
-
-/* Vertikaler Text im Reiter */
-.sidebar-pull-tab .tab-text {
-    writing-mode: vertical-lr;
-    transform: rotate(180deg);
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: #92400e; 
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-}
-
-.sidebar-pull-tab .tab-icon {
-    font-size: 0.95rem;
-    transition: all 0.25s ease;
-}
-
-/* 🌟 DIE MAGIC GLÜHBIRNE */
-.sidebar-pull-tab:hover .idea-bulb {
-    display: inline-block;
-    transform: scale(1.35); 
-    filter: drop-shadow(0 0 8px #fcd34d) drop-shadow(0 0 2px #f59e0b); 
-    animation: bulbGlowPulse 1.2s infinite ease-in-out; 
-}
-
-@keyframes bulbGlowPulse {
-    0% { transform: scale(1.35); filter: drop-shadow(0 0 8px #fcd34d) drop-shadow(0 0 2px #f59e0b); }
-    50% { transform: scale(1.45); filter: drop-shadow(0 0 14px #fde68a) drop-shadow(0 0 5px #f59e0b); }
-    100% { transform: scale(1.35); filter: drop-shadow(0 0 8px #fcd34d) drop-shadow(0 0 2px #f59e0b); }
-}
-/* Innere Elemente */
-.sidebar-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 14px;
-}
-
-.sidebar-header h3 {
-    margin: 0;
-    font-size: 1.05rem;
-    color: #1e293b;
-    font-weight: 700;
-}
-
-.sidebar-close-btn {
-    background: none;
-    border: none;
-    font-size: 0.85rem;
-    cursor: pointer;
-    padding: 4px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #64748b;
-    transition: all 0.2s;
-}
-.sidebar-close-btn:hover { background: rgba(0, 0, 0, 0.04); color: #0f172a; }
-
-.sidebar-content { 
-    flex: 1; 
-    overflow-y: auto;
-    max-height: 40vh; /* Falls der Text lang ist, scrollt nur das Innere */
-}
-
-/* Die innere Karte verschmilzt glasklar, ohne störende weiße Ränder */
-.idea-premium-card {
-    background: transparent; 
-    padding: 0;
-}
-
+.sidebar-pull-tab .tab-text { writing-mode: vertical-lr; transform: rotate(180deg); font-size: 0.7rem; font-weight: 700; color: #92400e; text-transform: uppercase; }
+.sidebar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.sidebar-header h3 { margin: 0; font-size: 1.05rem; color: #1e293b; font-weight: 700; }
+.sidebar-close-btn { background: none; border: none; font-size: 0.85rem; cursor: pointer; padding: 4px; border-radius: 50%; color: #64748b; }
+.sidebar-content { flex: 1; overflow-y: auto; max-height: 40vh; }
 .idea-card-title { margin: 0 0 6px 0; font-size: 1.1rem; color: #0f172a; font-weight: 800; }
 .idea-card-tag { display: inline-block; background: rgba(0, 0, 0, 0.05); color: #475569; font-size: 0.68rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; text-transform: uppercase; }
 .sidebar-divider { border: none; border-top: 1px solid rgba(0, 0, 0, 0.06); margin: 12px 0; }
 .idea-card-description { margin: 0; font-size: 0.9rem; line-height: 1.5; color: #334155; white-space: pre-wrap; }
+.sidebar-backdrop { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.02); z-index: 1999; }
 
-/* Ganz hauchzarter Hintergrund-Schleier */
-.sidebar-backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(15, 23, 42, 0.02);
-    z-index: 1999;
-}
+/* ==========================================================================
+   🎬 ANIMATIONS
+   ========================================================================== */
+@keyframes neonFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }

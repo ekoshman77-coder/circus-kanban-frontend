@@ -1,10 +1,10 @@
-<div class="milestone-selector-container">
+<div class="milestone-selector-container" [class.is-disabled]="isDisabled()">
   
   <button type="button" 
           class="selector-trigger" 
           [disabled]="isDisabled()" 
           (click)="toggleDropdown()">
-    🏁 {{ currentMilestoneTitle() }}
+    {{ currentMilestoneTitle() }}
   </button>
 
   @if (!isDisabled() && isOpen()) {
@@ -14,49 +14,51 @@
       @case ('dropdown') {
         <div class="floating-popup">
           <input type="text" 
-                 placeholder="Meilenstein suchen..." 
+                 [placeholder]="onlyProjects() ? 'Projekt suchen...' : 'Phase oder Projekt suchen...'" 
                  (input)="onSearch($event)"
-                 (keydown.escape)="closeDropdown()"
-                 (blur)="onInputBlur()">
+                 (keydown.escape)="closeDropdown()">
           
           <div class="projects-list">
             @for (project of filteredProjectsWithMilestones(); track project.id) {
               <div class="project-group">
+                
                 <button type="button" 
                         class="project-header-btn"
                         [disabled]="!canChooseProject()"
-                        (click)="selectProject(project.id)"
-                        [title]="canChooseProject() ? 'Das gesamte Projekt anzeigen' : ''">
+                        (click)="selectProject(project.id)">
                   <span class="folder-icon">📁</span> 
                   <span class="project-title-text">{{ project.title }}</span>
-                  
                   @if (canChooseProject()) {
-                    <span class="all-badge">Alle Phasen</span>
+                    <span class="all-badge">Wählen</span>
                   }
                 </button>
 
-                @for (milestone of project.milestones; track milestone.id) {
-                  <button type="button" class="milestone-item" (click)="selectMilestone(milestone.id)">
-                    🏁 {{ milestone.title }}
-                  </button>
-                }
+                <div class="milestones-sub-list">
+                  @for (milestone of project.milestones; track milestone.id) {
+                    <button type="button" class="milestone-item" (click)="selectMilestone(milestone.id)">
+                      🏁 {{ milestone.title }}
+                    </button>
+                  }
+                </div>
+
               </div>
             } @empty {
-              <div class="no-results">Keine offenen Meilensteine gefunden...</div>
+              <div class="no-results">Keine Einträge gefunden...</div>
             }
           </div>
         </div>
       }
 
-@case ('modal') {
-        <div class="modal-backdrop" (click)="closeDropdown()">
+      @case ('modal') {
+        <div class="modal-backdrop" [class.is-closing]="isClosing()" (click)="closeDropdown()">
           
           <div class="modal-container" [class.is-closing]="isClosing()" (click)="$event.stopPropagation()">
             
             <input type="text" 
-                   placeholder="Meilenstein oder Phase suchen..." 
+                   [placeholder]="onlyProjects() ? 'Nach Projekten suchen...' : 'Meilenstein oder Phase suchen...'" 
                    (input)="onSearch($event)"
-                   (keydown.escape)="closeDropdown()">
+                   (keydown.escape)="closeDropdown()"
+                   autofocus>
             
             <div class="modal-projects-list">
               @for (project of filteredProjectsWithMilestones(); track project.id) {
@@ -69,7 +71,7 @@
                     <span class="folder-icon">📁</span> 
                     <span class="project-title-text">{{ project.title }}</span>
                     @if (canChooseProject()) {
-                      <span class="all-badge">Alle Phasen</span>
+                      <span class="all-badge">Gesamtes Projekt</span>
                     }
                   </button>
 
@@ -81,7 +83,7 @@
 
                 </div>
               } @empty {
-                <div class="no-results">Keine offenen Meilensteine gefunden...</div>
+                <div class="no-results">Keine passenden Ergebnisse gefunden...</div>
               }
             </div>
 

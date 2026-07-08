@@ -7,18 +7,12 @@ import { Todo } from '../../../core/models/todo';
 import { TabNavigationService } from '../tab-navigation-service';
 import { TodoViewModel } from '../../../core/viewmodel/todo-view-model';
 import { TodoItemComponent } from '../../../core/shared/components/todo-item-component/todo-item-component';
-// 🚀 HIER IST ER WIEDER DA: Der korrekte Import aus dem Angular CDK!
-import { CdkDragDrop, DragDropModule, transferArrayItem } from '@angular/cdk/drag-drop';
+import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { MilestoneSelectorComponent } from '../../../core/shared/components/milestone-selector-component/milestone-selector-component';
 import { ProjectService } from '../../../core/services/project-service';
-import { IdeaSortingService } from '../../../core/services/board-state-service';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { UserModel } from '../../../core/models/user-model';
-import { map, of, switchMap } from 'rxjs';
 import { FilterService } from '../../../core/services/filter-service';
 import { TodoQueryService } from '../../../core/services/todo-query-service';
-import { UserService } from '../../../core/services/user/user-service';
-import { ProjectMember } from '../../../core/models/project-member';
+import { TodoPlanningModalComponent } from '../../../core/shared/components/todo-planning-modal-component/todo-planning-modal-component';
 
 export type BoardFilterState = {
   type: 'project' | 'milestone' | null;
@@ -28,7 +22,7 @@ export type BoardFilterState = {
 @Component({
   selector: 'app-team-board',
   standalone: true,
-  imports: [CommonModule, FormsModule, TodoItemComponent, DragDropModule, MilestoneSelectorComponent],
+  imports: [CommonModule, FormsModule, TodoItemComponent, DragDropModule, MilestoneSelectorComponent, TodoPlanningModalComponent],
   templateUrl: './team-board-component.html',
   styleUrl: './team-board-component.css'
 })
@@ -46,6 +40,7 @@ export class TeamBoardComponent implements OnInit {
   public showEffortPopup = signal<boolean>(false);
   public todoWaitingForPopup = signal<Todo | null>(null);
   public popupEffortValue = signal<number>(0);
+  showPlanningModal = signal<boolean>(false);
 
   public boardFilter = signal<BoardFilterState>({ type: null, id: null })
 
@@ -55,8 +50,12 @@ export class TeamBoardComponent implements OnInit {
   public canDelete = computed(() => {
     return this.teamService.hasPermission(this.currentProjectId(), 'TODO_DELETE')
   })
-  
+
   private currentProjectId = signal<string>("")
+  public currentMilestioneId = computed(() => {
+    return (this.boardFilter().type === 'milestone') ? this.boardFilter().id : "" 
+  })
+  
   public currentProjectMembers = this.teamService.currentProjectMembersSignal;
 
   public assignableUsers = computed(() => {
@@ -88,9 +87,9 @@ export class TeamBoardComponent implements OnInit {
       let projectId: string = "";
 
       if (filter.type === 'project') {
-        projectId = filter.id?? "";
+        projectId = filter.id ?? "";
       } else if (filter.type === 'milestone') {
-        projectId = this.todoQueryService.getProjectIdByMilestoneId(filter.id)?? "";
+        projectId = this.todoQueryService.getProjectIdByMilestoneId(filter.id) ?? "";
       }
       if (projectId && projectId !== this.teamService.currentProjectId()) {
         console.log(`📡 Board wechselt Projekt von ${this.teamService.currentProjectId()} zu ${projectId}. Starte Sync.`);
@@ -113,14 +112,14 @@ export class TeamBoardComponent implements OnInit {
   })
 
   private filterWithQuery(query: string, todo: Todo): boolean {
-     const trimmedQuery = query.toLowerCase().trim()
-     if (!trimmedQuery) {
+    const trimmedQuery = query.toLowerCase().trim()
+    if (!trimmedQuery) {
       return true
-     }
+    }
 
-     return (todo.task.toLowerCase().includes(trimmedQuery) 
-        || (todo.description?.toLowerCase().includes(trimmedQuery)?? false)
-        || (todo.category?.toLowerCase().includes(trimmedQuery)?? false))
+    return (todo.task.toLowerCase().includes(trimmedQuery)
+      || (todo.description?.toLowerCase().includes(trimmedQuery) ?? false)
+      || (todo.category?.toLowerCase().includes(trimmedQuery) ?? false))
   }
 
   public backlogTasks = computed(() => {
@@ -210,7 +209,7 @@ export class TeamBoardComponent implements OnInit {
     else if (targetColumnId === 'column-review-list') {
       movedViewModel.todo.teamStatus = 'REVIEW';
       movedViewModel.todo.done = false;
-      
+
       if (!movedViewModel.todo.assignedUserId) {
         console.log("👥 Für ein Review wird ebenfalls ein fester Bearbeiter erzwungen!");
         movedViewModel.showAssigneePopup.set(true);
@@ -224,13 +223,13 @@ export class TeamBoardComponent implements OnInit {
     else if (targetColumnId === 'column-done-list') {
       movedViewModel.todo.teamStatus = 'DONE';
       movedViewModel.todo.assignedUserId = null; // 🧼 Genialer Einfall von dir: User bei DONE entfernen!
-      
+
       console.log("🟢 Karte geht nach DONE. Schnappt zurück fürs Aufwands-Punkte-Popup.");
       movedViewModel.onTodoChecked(this.todoService);
       return;
     }
   }
-  
+
   // Klick-Aktion für das Mitarbeiter-Popup
   public selectAssigneeFromPopup(memberId: string): void {
     const todo = this.todoWaitingForPopup();
@@ -251,13 +250,6 @@ export class TeamBoardComponent implements OnInit {
     this.showEffortPopup.set(false);
     this.todoWaitingForPopup.set(null);
   }
-
-  // Hilfsmethode für den alten Template-Rest unten im HTML
-  // public getAssignedMember(memberId: string | null) {
-  //   if (!memberId) return null;
-  //   const members = toSignal( this.teamService.getSortedByLastName$)
-  //   return this.teamService.getSortedByLastName$.find(m => m.id === memberId);
-  // }
 
   public onAssigneeChange(todo: Todo, event: Event): void {
     const select = event.target as HTMLSelectElement;
@@ -291,5 +283,15 @@ export class TeamBoardComponent implements OnInit {
     }
     const hasPermission = this.teamService.hasPermission(this.currentProjectId(), 'TODO_EDIT')
     return hasPermission;
+  }
+
+  public openPlanningPopup() {
+    console.log("openPlanningPopup")
+    this.showPlanningModal.set(true)
+  }
+
+  public closePlanningPopup() {
+    console.log("closePlanningPopup")
+    this.showPlanningModal.set(false)   
   }
 }

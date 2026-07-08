@@ -1,12 +1,23 @@
 <div class="calculator-container">
 
-    <div class="board-header-premium">
+<div class="board-header-premium">
         <div class="header-title-section">
             <h1 class="main-title">🧮 Projekt-Kalkulator</h1>
             <p class="subtitle">Berechnung der Meilenstein-Phasen und Ermittlung der Gesamtdauer.</p>
         </div>
-        <div class="header-selector-wrapper"></div>
+        
+        <div class="header-selector-wrapper">
+            <app-milestone-selector-component 
+                [canChooseProject]="true" 
+                [onlyProjects]="true" 
+                [filterByActiveProject]="false"
+                [appearance]="'modal'"
+                (projectSelected)="onProjectSelectedFromWelcome($any($event))">
+            </app-milestone-selector-component>
+        </div>
     </div>
+
+    <hr class="section-divider">
 
     @if (showRestoreBanner() && draftTitleFromStorage()) {
     <div class="restore-banner-card animate-fade-in">
@@ -176,24 +187,6 @@
             <h3>Berechnungs-Maschine ist bereit</h3>
             <p>Bitte wähle ein bestehendes Projekt aus der Liste aus, um mit der Phasenanalyse zu starten:</p>
 
-            <div class="projects-selection-list">
-                @for (project of projects(); track project.id) {
-                <div class="projects-item-pastel">
-                    <div class="project-info-block">
-                        <span class="folder-icon">📁</span>
-                        <span class="project-title">{{ project.title }}</span>
-                    </div>
-                    <button class="calc-select-btn-neon" (click)="selectExistingProject(project)">
-                        Kalkulieren 📊
-                    </button>
-                </div>
-                } @empty {
-                <div class="projects-empty-state-pastel">
-                    <p>Du hast aktuell noch keine Projekte angelegt.</p>
-                    <p class="hint">Gehe zuerst zum Idea-Board und schiebe eine Idee an! 🎰</p>
-                </div>
-                }
-            </div>
         </div>
     </div>
     }

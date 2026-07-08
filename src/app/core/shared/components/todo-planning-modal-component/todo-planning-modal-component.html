@@ -1,0 +1,86 @@
+
+<div class="modal-overlay" (click)="cancel()">
+  <div class="planning-card-comfort" (click)="$event.stopPropagation()">
+    
+    <div class="modal-header">
+      <h2>🎪 Neues Ticket im Planning schmieden</h2>
+      <button class="btn-close" (click)="cancel()">✕</button>
+    </div>
+
+    <form [formGroup]="planningForm" (ngSubmit)="submitPlan()">
+
+      <div class="form-group title-group">
+        <label for="task">Was steht an? 🎯</label>
+        <input id="task" type="text" formControlName="task" class="form-control main-title-input" 
+               placeholder="z.B. API-Schnittstelle für KI-Kategorien anbinden...">
+        @if (planningForm.get('task')?.invalid && planningForm.get('task')?.touched) {
+          <small class="error-msg">Ein Ticket ohne Namen können wir nicht planen! 😉</small>
+        }
+      </div>
+
+      <div class="modal-body-grid">
+        
+        <div class="main-content-column">
+          <div class="form-group">
+            <label for="description">Diskussions-Notizen / Kriterien 📝</label>
+            <textarea id="description" formControlName="description" rows="7" class="form-control comfort-textarea"
+                      placeholder="Schreibe hier Stichpunkte, User-Story-Details oder Akzeptanzkriterien auf, die das Team bespricht..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>KI-Kategorie-Zuweisung 🏷️</label>
+            <div class="comfort-category-box">
+              <app-universal-tag-input-component 
+                  [textToWatch]="planningForm.get('task')?.value || ''" 
+                  [contextType]="'todo'"
+                  [placeholder]="'Kategorie automatisch ermitteln...'" 
+                  (valueChanged)="onCategoryChanged($event)">
+              </app-universal-tag-input-component>
+            </div>
+          </div>
+        </div>
+
+        <div class="metadata-sidebar-column">
+          
+          <div class="form-group">
+            <label>Meilenstein</label>
+            <app-milestone-selector-component
+                [initialMilestoneId]="currentMilestoneId()"
+                (milestoneSelected)="onMilestoneSelected($any($event))">
+            </app-milestone-selector-component>
+          </div>
+
+          <div class="form-group">
+            <label for="effort">Aufwand (Story Points) 🔢</label>
+            <select id="effort" formControlName="effort" class="form-control comfort-select">
+              @for (num of fibonacciSequence; track num) {
+                <option [ngValue]="num">{{ num }} SP</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="daysAheadSlider">Wann soll es fertig sein? 📅</label>
+            <div class="slider-wrapper">
+              <input id="daysAheadSlider" type="range" min="0" max="30" step="0.2"
+                     (input)="onSliderInput($event)" class="funny-slider" 
+                     [style.--val]="sliderPercentage() + '%'" [style.--hue]="sliderHue()">
+
+              <span class="funny-date-badge" [style.color]="dynamicColor()"
+                    [style.background-color]="dynamicColor() + '15'" [style.border-color]="dynamicColor() + '40'">
+                {{ liquidDateLabel() }}
+              </span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" (click)="cancel()">Lieber nicht</button>
+        <button type="submit" class="btn-primary" [disabled]="planningForm.invalid">Aufgabe einplanen! 💾</button>
+      </div>
+
+    </form>
+  </div>
+</div>

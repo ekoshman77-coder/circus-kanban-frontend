@@ -281,55 +281,68 @@
 /* ==========================================================================
    🏝️ SPERRBILDSCHIRM (WENN KEIN MATCH EXISTIERT)
    ========================================================================== */
+/* ==========================================================================
+   🎪 VEREINHEITLICHTER PREMIUM EMPTY STATE (LEERER ZUSTAND)
+   ========================================================================== */
+
 .no-milestone-selected-container {
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 100%;
-    margin-top: 20px;
-
-    position: relative;
-    z-index: 1;
+    padding: 60px 20px; /* 👑 KORREKTUR: Perfekt identischer Abstand zum TeamBoard! */
+    animation: fadeIn 0.5s ease-out; /* 🎬 JETZT AUCH HIER: Die edle Einblend-Animation! */
 }
 
 .welcome-card {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(8px);
-    padding: 40px;
+    background: white;
+    padding: 40px 30px;
     border-radius: 16px;
-    box-shadow: 0 10px 30px rgba(148, 163, 184, 0.1);
+    box-shadow: 0 10px 25px rgba(30, 41, 59, 0.05), 
+                0 2px 4px rgba(0, 0, 0, 0.02);
+    border: 1px solid #e2e8f0;
+    max-width: 520px;
     text-align: center;
-    max-width: 550px;
-    width: 100%;
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
 }
 
+/* 🔥 DER MAGISCHE NEON-EFFEKT MIT SCHWEBE-ANIMATION */
 .empty-icon-neon {
     font-size: 54px;
+    margin-bottom: 8px;
     display: inline-block;
-    margin-bottom: 15px;
-    animation: floatEffect 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 12px rgba(168, 85, 247, 0.25)) 
+            drop-shadow(0 0 2px rgba(168, 85, 247, 0.4));
+    animation: neonFloat 3s infinite ease-in-out; /* 🪄 Lässt das Emoji sanft atmen */
 }
 
-@keyframes floatEffect {
+.welcome-card h3 {
+    margin: 0;
+    font-size: 22px;
+    color: #0f172a;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+.welcome-card p {
+    margin: 0;
+    font-size: 14.5px;
+    color: #64748b;
+    line-height: 1.6;
+}
+
+@keyframes neonFloat {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-6px); }
 }
 
-.welcome-card h3 {
-    color: #1e293b;
-    font-size: 22px;
-    font-weight: 700;
-    margin-bottom: 10px;
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-.welcome-card p {
-    color: #64748b;
-    font-size: 15px;
-    line-height: 1.5;
-}
-
-/* 🎪 DER NEUE, GROSSE KANBAN-BUTTON (RECHTS) */
 /* 🎪 DER SÄTTIGERE, KNACKIGE KANBAN-BUTTON */
 .btn-team-board {
     display: inline-flex;

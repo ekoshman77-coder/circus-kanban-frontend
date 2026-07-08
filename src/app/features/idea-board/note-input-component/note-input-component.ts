@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, EventEmitter, inject, Output, signal } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { UniversalTagInputComponent } from '../../../core/shared/components/universal-tag-input-component/universal-tag-input-component';
 import { NoteService } from '../../../core/services/note-service';
@@ -26,6 +26,8 @@ export class NoteInputComponent {
   public newContent = signal<string>('');
   public newTag = signal<string>('');
   public showTodoSuggestion = signal<boolean>(false);
+
+  @Output() convertToTodoRequested = new EventEmitter<{ title: string; content: string; category: string }>();
 
   // 🌟 Der Standardwert ist jetzt der String 'note-yellow'
   public newColor = signal<string>(NOTE_COLORS.YELLOW);
@@ -62,25 +64,24 @@ export class NoteInputComponent {
     });
   }
 
-  // 🚀 Die Funktion, die aufgerufen wird, wenn der User den "Ja, als Task anlegen"-Button drückt!
+  // Neue Eigenschaft ganz oben bei deinen anderen Signalen (z.B. unter showTodoSuggestion):
+  public isSuccessfullyConverted = signal<boolean>(false);
+
   public convertIdeaToTodo(): void {
     const formValues = this.noteForm.value;
 
-    // 🎯 Wir bereiten das exakte Objekt vor, das deine Methode erwartet:
-    this.todoService.createAndAddTodo({
-      task: formValues.title || '',
-      description: formValues.content || null,
-      effort: 1,                 // Standard-Aufwand
-      dueDate: Date.now(),       // Heute als Timestamp
-      category: formValues.category || 'Idee',
-      isStarted: false
+    if (!formValues.title) return;
+
+    // 📦 Wir packen das Paket und schicken es nach oben zur IdeaBoardComponent!
+    this.convertToTodoRequested.emit({
+      title: formValues.title,
+      content: formValues.content || '',
+      category: formValues.category || 'Idee'
     });
 
-    // 🧼 Nach dem Speichern machen wir die KI-Box zu und leeren das Formular
+    // 🧼 Formular sauber aufräumen
     this.showTodoSuggestion.set(false);
     this.noteForm.reset({ colorType: NOTE_COLORS.YELLOW });
-
-    alert('🎉 Perfekt! Die Idee wurde direkt in ein echtes To-Do verwandelt!');
   }
 
 

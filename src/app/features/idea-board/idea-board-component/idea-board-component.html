@@ -15,7 +15,8 @@
                     <span>✍️ Neue Idee anpinnen? (Klicke zum Einklappen)</span>
                 </summary>
 
-                <app-note-input></app-note-input>
+                <!-- 👂 Hier lauschen wir auf das Event und rufen eine Methode im Board auf! -->
+                <app-note-input (convertToTodoRequested)="openTodoPlanningFromIdea($event)"></app-note-input>
             </details>
         </div>
 
@@ -50,3 +51,13 @@
         }
     </div>
 </div>
+
+@if (isTodoPopupShow()) {
+  <app-todo-planning-modal-component
+      [initialTaskName]="ideaToPlanTitle()"
+      [initialDescription]="ideaToPlanDescription()"
+      [initialCategory]="ideaToPlanCategory()"
+      (closeModal)="closePlanningModal()"
+      (todoPlanned)="closePlanningModal()">
+  </app-todo-planning-modal-component>
+}

@@ -33,397 +33,236 @@
 .selector-trigger:hover:not(:disabled) {
   background-color: #f8fafc; 
   border-color: #94a3b8; 
-  color: #0f172a; 
-  transform: translateY(-1px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  color: #0f172a;
 }
 
-/* 🎯 Aktiv-Zustand, wenn das Popup offen ist */
-.selector-trigger:focus-within {
-  border-color: #3b82f6; 
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-  background-color: #ffffff;
+/* ==========================================================================
+   🔒 ZUSTAND: KOMPONENT IST GESPERRT (isDisabled = true)
+   ========================================================================== */
+.milestone-selector-container.is-disabled .selector-trigger,
+.selector-trigger[disabled] {
+    background: #f1f5f9 !important; /* Dezentes Hellgrau */
+    color: #94a3b8 !important;      /* Ausgegrauter Text */
+    border-color: #e2e8f0 !important;/* Flacher Rahmen */
+    cursor: not-allowed !important; /* Zeigt den "Sperren"-Mauszeiger */
+    box-shadow: none !important;    /* Keine Schatteneffekte */
+    transform: none !important;     /* Keine Hover-Bewegung */
+    opacity: 0.8;
 }
 
-/* Setze das Popup auf einen sauberen Wert zurück */
+.milestone-selector-container.is-disabled .selector-trigger::before {
+    content: "🔒 ";
+    margin-right: 4px;
+}
+
+/* ==========================================================================
+   🔮 FLOATING POPUP (Für Dropdown-Modus)
+   ========================================================================== */
 .floating-popup {
   position: absolute;
-  top: calc(100% + 6px); 
+  top: calc(100% + 6px);
   left: 0;
-  
-  width: 320px; 
-  max-height: 380px; 
-  overflow-y: auto; 
-  
-  background-color: #ffffff; /* ✨ Zurück zu Weiß */
+  width: 320px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); /* Sanfter Farbton */
   border: 1px solid #e2e8f0;
   border-radius: 12px;
-  box-shadow: 0 12px 30px -4px rgba(15, 23, 42, 0.15), 0 4px 12px -2px rgba(15, 23, 42, 0.05); 
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
   padding: 12px;
-  
-  z-index: 100; 
-
-  animation: popupSlideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  z-index: 100;
+  animation: popupScaleIn 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes popupSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(4px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-/* 🔍 Das Suchfeld ganz oben im Popup */
 .floating-popup input[type="text"] {
   width: 100%;
-  height: 38px;
-  padding: 0 12px;
-  margin-bottom: 12px;
-  border: 1px solid #e2e8f0;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
   border-radius: 8px;
   font-size: 14px;
   background-color: #f8fafc;
+  color: #0f172a;
   box-sizing: border-box;
-  outline: none;
-  transition: all 0.15s ease;
+  margin-bottom: 10px;
+  transition: all 0.2s ease;
 }
 
 .floating-popup input[type="text"]:focus {
+  outline: none;
   background-color: #ffffff;
-  border-color: #3b82f6; 
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
 }
 
-/* 📁 Die Projekt-Gruppe (Kopfzeile) */
+.projects-list, .modal-projects-list {
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* 📁 DIE PROJEKT-GROUP (Abstandhalter) */
 .project-group {
   margin-bottom: 14px;
 }
 
-.project-header {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: #475569; /* Kräftiger lesbar */
-  letter-spacing: 0.75px;
-  padding: 6px 8px;
-  background-color: hwb(190 65% 5% / 0.08);
-  border-radius: 6px;
-  margin-bottom: 6px;
-  display: flex;
-  align-items: center;
-}
-
-/* 🏁 Die einzelnen Meilenstein-Einträge */
-.milestone-item {
-  width: 100%;
-  background: none;
-  border: none;
-  text-align: left;
-  padding: 9px 16px;
-  font-size: 13.5px;
-  font-weight: 500;
-  color: #334155;
-  cursor: pointer;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* ✨ Hover-Effekt mit sanftem Slide und dezenter Einfärbung */
-.milestone-item:hover {
-  background-color: #f0f9ff; 
-  color: #0284c7; 
-  padding-left: 14px; /* Dein genialer Rutsch-Effekt bleibt! */
-}
-
-/* 📭 Wenn die Suche fehlschlägt */
-.no-results {
-  font-size: 13px;
-  color: #64748b;
-  text-align: center;
-  padding: 24px 0;
-}
-
-/* 🔒 Disabled Zustand */
-.milestone-selector-container.is-disabled .selector-trigger {
-  background-color: #f1f5f9; 
-  color: #94a3b8;            
-  border-color: #e2e8f0;
-  cursor: not-allowed;       
-  opacity: 0.7;
-  transform: none;
-  box-shadow: none;
-}
-
-/* 🎛️ Hübschere Scrollbar für das Popup-Fenster */
-.floating-popup::-webkit-scrollbar {
-  width: 6px;
-}
-.floating-popup::-webkit-scrollbar-track {
-  background: transparent;
-}
-.floating-popup::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 10px;
-}
-.floating-popup::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
 /* ==========================================================================
-   📁 DER UNIVERSELLE PROJEKT-HEADER (Ruhig & Konsistent)
+   📁 DIE PROJEKT-BALKEN (Jetzt im frischen Eisblau-Pastell!)
    ========================================================================== */
-
 .project-header-btn {
   width: 100%;
-  background-color: #f1f5f9; /* Das gewohnte, ruhige Schiefergrau */
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  padding: 6px 10px;
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 8px 12px;
+  
+  /* 🧊 Eisblaues Pastell statt tristem Grau */
+  background-color: #e0f2fe; 
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  
+  color: #0369a1; /* Edler Tiefblau-Ton */
+  font-weight: 700;
+  font-size: 13px;
   text-align: left;
-  font-family: inherit;
-  margin-bottom: 6px;
+  cursor: default;
   transition: all 0.15s ease;
 }
 
-/* 🔒 WENN GESPERRT (In kleinen Formularen): Sieht aus wie reiner Text */
-.project-header-btn:disabled {
-  cursor: default;
-  border-color: transparent; /* Keine störende Umrandung */
-}
-
-/* 🔓 WENN KLICKBAR (Nur im Team-Board aktiv!): Reagiert zart auf den User */
-.project-header-btn:not(:disabled) {
+/* Wenn das Projekt auswählbar ist (Variante 1 & 3) */
+.project-header-btn:not([disabled]) {
   cursor: pointer;
 }
-
-/* Der feine Hover-Effekt – nur, wenn er im Team-Board freigeschaltet ist */
-.project-header-btn:not(:disabled):hover {
-  background-color: #e0f2fe; /* Ganz zartes, einladendes Himmelblau */
-  border-color: #bae6fd;
-  transform: translateX(2px); /* Minimaler, edler Bewegungseffekt */
+.project-header-btn:not([disabled]):hover {
+  background-color: #bae6fd; /* Wird beim Hover etwas satter */
+  border-color: #7dd3fc;
+  color: #0c4a6e;
 }
 
-.project-title-text {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: #475569; /* Schickes, mattes Dunkelgrau */
-  letter-spacing: 0.75px;
-  flex: 1;
-}
-
-/* 🏷️ Das kleine, dezente "Alle"-Badge für das Team-Board */
 .all-badge {
-  font-size: 9px;
-  background-color: #cbd5e1;
-  color: #475569;
-  padding: 1px 5px;
-  border-radius: 4px;
+  margin-left: auto;
+  background-color: #0284c7;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+/* ==========================================================================
+   🏁 DIE MEILENSTEIN-EINTRÄGE (Jetzt im Smaragdgrün-Pastell!)
+   ========================================================================== */
+.milestone-item {
+  width: 100%;
+  display: block;
+  padding: 8px 12px 8px 24px; /* Schön eingerückt unter dem Projekt */
+  margin-top: 4px;
+  text-align: left;
+  font-size: 13px;
   font-weight: 600;
+  
+  /* 🌿 Zartes, frisches Grün */
+  background-color: #f0fdf4;
+  border: 1px solid #dcfce7;
+  border-radius: 6px;
+  color: #15803d; /* Tiefes Smaragdgrün für beste Lesbarkeit */
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
-.project-header-btn:not(:disabled):hover .all-badge {
-  background-color: #3b82f6; /* Wird beim Hovern blau */
-  color: white;
+.milestone-item:hover {
+  background-color: #dcfce7; /* Wird beim Drüberfahren saftiger */
+  border-color: #bbf7d0;
+  color: #166534;
+  padding-left: 28px; /* Minimaler animierter "Slide"-Effekt beim Hover! */
 }
 
-/* 🏁 Die Meilensteine darunter (Bleiben perfekt eingerückt) */
-.milestones-sub-list {
-  padding-left: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-bottom: 10px;
-}
-
+/* ==========================================================================
+   🖼️ MODAL BACKDROP & CONTAINER (Suchfenster-Modus)
+   ========================================================================== */
 .modal-backdrop {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  
-  /* Ein schönes, edles Transparent-Dunkel */
-  background-color: rgba(15, 23, 42, 0.3); 
-  
-  /* 🪄 Der moderne Weichzeichner-Effekt für den Hintergrund! */
-  backdrop-filter: blur(4px); 
-  
-  /* Bringt das Modal absolut sicher über alle anderen Elemente */
-  z-index: 99999; 
-  
-  /* Zentriert das Suchfenster perfekt auf dem Bildschirm */
+  background-color: rgba(15, 23, 42, 0.25); /* Leicht abgedunkelt */
+  backdrop-filter: blur(12px); /* Wunderschöner Milchglas-Effekt */
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: backdropFadeIn 0.2s ease forwards;
+  z-index: 99999;
+  animation: backdropFadeIn 0.2s ease-out forwards;
 }
 
-.modal-backdrop.is-closing {
-  animation: backdropFadeOut 0.2s ease forwards;
-}
-
-/* 2. Die weiße Suchbox, die genau in der Mitte des Bildschirms schwebt */
 .modal-container {
-  background-color: #ffffff;
-  border-radius: 16px; /* Schön weiche, moderne Ecken */
   width: 100%;
-  max-width: 550px; /* Perfekte Breite für eine zentrierte Suche */
-  max-height: 80vh; /* Verhindert, dass das Modal aus dem Bildschirm wächst */
-  display: flex;
-  flex-direction: column;
-  padding: 24px; /* Schön viel Platz zum Atmen drinnen */
+  max-width: 500px;
   
-  /* Ein extrem edler, tiefer Schatten, der Tiefe erzeugt */
-  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25); 
-  
-  /* Eine kleine, feine Einblend-Animation */
-  animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.modal-container.is-closing {
-  animation: modalFadeOut 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-/* 🔄 Eine saubere Liste im Modal, die scrollen kann, wenn es viele Projekte gibt */
-.modal-projects-list {
-  overflow-y: auto;
-  flex: 1;
-  margin-top: 8px;
-  padding-right: 4px;
-}
-
-/* ✨ Die Animation für das sanfte Aufploppen */
-@keyframes modalFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes backdropFadeIn {
-  from { background-color: rgba(15, 23, 42, 0); backdrop-filter: blur(0px); }
-  to { background-color: rgba(15, 23, 42, 0.3); backdrop-filter: blur(4px); }
-}
-
-@keyframes backdropFadeOut {
-  from { background-color: rgba(15, 23, 42, 0.3); backdrop-filter: blur(4px); }
-  to { background-color: rgba(15, 23, 42, 0); backdrop-filter: blur(0px); }
-}
-
-@keyframes modalFadeIn {
-  from { opacity: 0; transform: translateY(-20px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@keyframes modalFadeOut {
-  from { opacity: 1; transform: translateY(0) scale(1); }
-  to { opacity: 0; transform: translateY(20px) scale(0.95); } /* Fliegt elegant nach unten weg */
-}
-
-/* 🔍 Das Suchfeld oben im Modal */
-/* 2. Die Suchbox im Zentrum mit einem Hauch von Hellblau */
-.modal-container {
-  background-color: #ffffff;
+  /* 🎨 Weicher pastelliger Farbverlauf für die Karte selbst */
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdfa 100%); /* Minimaler Hauch von Türkis/Weiß */
+  border: 1px solid rgba(255, 255, 255, 0.7);
   border-radius: 16px;
-  width: 100%;
-  max-width: 550px;
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12),
+              0 1px 3px rgba(0, 0, 0, 0.05);
   padding: 24px;
-  
-  /* 💙 Ein feiner, hellblauer Rahmen, der die Box vom Nebel abhebt */
-  border: 2px solid #e0f2fe; /* Sehr zartes Hellblau */
-  
-  /* Ein tiefer Schatten, der durch ein bisschen Blau-Anteil lebendiger wirkt */
-  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.15), 0 0 15px rgba(56, 189, 248, 0.05); 
-  
-  animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  box-sizing: border-box;
+  animation: modalFadeIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-/* 🔍 Das Suchfeld oben im Modal (Frisch & Hellblau) */
-.modal-container input[type="text"] {
+/* Suchfeld im Modal */
+.modal-container input[type=\"text\"] {
   width: 100%;
-  box-sizing: border-box;
-  padding: 14px 18px;
-  font-size: 16px;
-  border: 1px solid #bae6fd; /* Hellblauer Rand */
-  border-radius: 12px;
-  outline: none;
+  height: 46px;
+  padding: 0 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 15px;
   
-  /* 🧊 Ein wunderschöner, ganz heller Eisblau-Hintergrund */
+  /* Sanftes Eisblau als Ruhe-Hintergrund */
   background-color: #f0f9ff; 
-  
   color: #0f172a;
   transition: all 0.2s ease;
   margin-bottom: 16px;
+  box-sizing: border-box;
 }
 
-/* Fokus-Effekt für die Suche: Das Feld "erwacht" beim Reinklicken */
-.modal-container input[type="text"]:focus {
+.modal-container input[type=\"text\"]:focus {
+  outline: none;
   background-color: #ffffff;
-  border-color: #38bdf8; /* Kräftigeres Hellblau */
+  border-color: #38bdf8;
   box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.15);
 }
 
-/* 📁 Die Projekt-Balken innerhalb des Modals */
+/* Verschachtelte Regeln für Modal aufräumen, da sie jetzt global oben definiert sind */
 .modal-container .project-header-btn {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
   margin-top: 12px;
-  
-  /* 🧊 Ein zartes, professionelles Blau-Grau als Hintergrund */
-  background-color: #f1f5f9; 
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  
-  color: #334155;
-  font-weight: 600;
-  font-size: 14px;
-  text-align: left;
 }
 
-/* 🏁 Die Meilenstein-Einträge im Modal */
-.modal-container .milestone-item {
-  width: 100%;
-  display: block;
-  padding: 10px 14px;
-  margin-top: 4px;
-  
-  background-color: transparent;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  
-  color: #475569;
+.no-results {
+  padding: 20px;
+  text-align: center;
+  color: #64748b;
   font-size: 14px;
-  text-align: left;
-  cursor: pointer;
-  transition: all 0.15s ease;
+  font-style: italic;
 }
 
-/* ✨ Hover-Effekt: Wenn man mit der Maus über einen Meilenstein fährt */
-.modal-container .milestone-item:hover {
-  /* Ein frisches, einladendes Hellblau beim Drüberfahren */
-  background-color: #e0f2fe; 
-  border-color: #bae6fd;
-  color: #0369a1; /* Dunklerer Blauton für die Schrift */
-  padding-left: 18px; /* Ein kleiner, schicker Bewegungseffekt! */
+/* ==========================================================================
+   🎬 ANIMATIONEN (Schließen & Öffnen)
+   ========================================================================== */
+.modal-backdrop.is-closing { animation: backdropFadeOut 0.2s ease-in forwards; }
+.modal-container.is-closing { animation: modalFadeOut 0.2s ease-in forwards; }
+
+@keyframes popupScaleIn {
+  from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes backdropFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes backdropFadeOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: translateY(15px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes modalFadeOut {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(10px) scale(0.97); }
 }

@@ -18,17 +18,19 @@ import { BoardTab } from '../tab-navigation-service';
 import { UniversalTagInputComponent } from '../../../core/shared/components/universal-tag-input-component/universal-tag-input-component';
 import { NoteInputComponent } from '../note-input-component/note-input-component';
 import { FilterService } from '../../../core/services/filter-service';
+import { TodoPlanningModalComponent } from '../../../core/shared/components/todo-planning-modal-component/todo-planning-modal-component';
 
 @Component({
   selector: 'app-idea-board',
   standalone: true,
-  imports: [CommonModule, 
-    DragDropModule, 
-    NoteComponent, 
-    FormsModule, 
-    BoardFilterComponent, 
+  imports: [CommonModule,
+    DragDropModule,
+    NoteComponent,
+    FormsModule,
+    BoardFilterComponent,
     NotesStatisticsComponent,
-    NoteInputComponent
+    NoteInputComponent,
+    TodoPlanningModalComponent
   ],
   templateUrl: './idea-board-component.html',
   styleUrls: ['./idea-board-component.css']
@@ -52,12 +54,17 @@ export class IdeaBoardComponent {
   public viewModels = signal<NoteViewModel[]>([]);
   private viewModelCache: NoteViewModel[] = [];
   public currentNotes = computed(() => this.noteService.notesList());
-
+  public isTodoPopupShow = signal<boolean>(false)
+   
+  // Die Zwischenspeicher für die KI-Daten
+  public ideaToPlanTitle = signal<string>('');
+  public ideaToPlanDescription = signal<string>('');
+  public ideaToPlanCategory = signal<string>('');
   ngOnInit(): void {
     // Sobald die Ideenseite betreten wird, stellen wir die Suche fest auf 'ideas' ein!
     this.filterService.setInitialCategory('ideas');
   }
-  
+
   constructor() {
     // 🛡️ DIE REAKTIVE WARTESHLEIFE: 
     // Dieser Effekt wartet, bis die Services mit dem Laden der Daten fertig sind!
@@ -191,50 +198,50 @@ export class IdeaBoardComponent {
   }
 
   // 🧠 DAS REVOLUTIONÄRE FILTER-PIPELINE-SYSTEM (Völlig frei von Reihenfolgen!)
-private filterPipeline = computed(() => {
-  const allVMs = this.viewModels();
-  const filters = this.currentFilters();
+  private filterPipeline = computed(() => {
+    const allVMs = this.viewModels();
+    const filters = this.currentFilters();
 
-  // Da onFilterChanged den Text synchronisiert, gibt es nur noch EINE Wahrheit:
-  const searchQuery = this.filterService.searchTerm().toLowerCase().trim();
-  
-  const tagFilter = filters.tag.toLowerCase().trim();
-  const colorFilter = filters.color;
+    // Da onFilterChanged den Text synchronisiert, gibt es nur noch EINE Wahrheit:
+    const searchQuery = this.filterService.searchTerm().toLowerCase().trim();
 
-  // SCHRITT 1: Die vereinte Textsuche (unterstützt auch Komma-Trennung!)
-  let textFiltered = [...allVMs];
-  
-  if (searchQuery) {
-    // Da du vorher eine tolle Komma-Trennung hattest, behalten wir die bei!
-    const searchTerms = searchQuery.split(',').map(term => term.trim()).filter(term => term.length > 0);
-    textFiltered = textFiltered.filter(vm => {
-      const title = vm.note.title.toLowerCase();
-      const content = vm.note.content.toLowerCase();
-      return filters.mode === 'AND'
-        ? searchTerms.every(term => title.includes(term) || content.includes(term))
-        : searchTerms.some(term => title.includes(term) || content.includes(term));
-    });
-  }
+    const tagFilter = filters.tag.toLowerCase().trim();
+    const colorFilter = filters.color;
 
-  // ─── AB HIER BLEIBT DEIN ALTER CODE FÜR TAGS & FARBEN ZU 100% GLEICH ───
-  let forTags = [...textFiltered];
-  if (colorFilter) { forTags = forTags.filter(vm => vm.note.colorType === colorFilter); }
-  
-  let forColors = [...textFiltered];
-  if (tagFilter) {
-    if (tagFilter === 'none') { forColors = forColors.filter(vm => !vm.note.tag || !vm.note.tag.trim()); }
-    else { forColors = forColors.filter(vm => vm.note.tag && vm.note.tag.toLowerCase().includes(tagFilter)); }
-  }
+    // SCHRITT 1: Die vereinte Textsuche (unterstützt auch Komma-Trennung!)
+    let textFiltered = [...allVMs];
 
-  let finalSelection = [...textFiltered];
-  if (tagFilter) {
-    if (tagFilter === 'none') { finalSelection = finalSelection.filter(vm => !vm.note.tag || !vm.note.tag.trim()); }
-    else { finalSelection = finalSelection.filter(vm => vm.note.tag && vm.note.tag.toLowerCase().includes(tagFilter)); }
-  }
-  if (colorFilter) { finalSelection = finalSelection.filter(vm => vm.note.colorType === colorFilter); }
+    if (searchQuery) {
+      // Da du vorher eine tolle Komma-Trennung hattest, behalten wir die bei!
+      const searchTerms = searchQuery.split(',').map(term => term.trim()).filter(term => term.length > 0);
+      textFiltered = textFiltered.filter(vm => {
+        const title = vm.note.title.toLowerCase();
+        const content = vm.note.content.toLowerCase();
+        return filters.mode === 'AND'
+          ? searchTerms.every(term => title.includes(term) || content.includes(term))
+          : searchTerms.some(term => title.includes(term) || content.includes(term));
+      });
+    }
 
-  return { finalSelection, dataForColors: forColors, dataForTags: forTags };
-});
+    // ─── AB HIER BLEIBT DEIN ALTER CODE FÜR TAGS & FARBEN ZU 100% GLEICH ───
+    let forTags = [...textFiltered];
+    if (colorFilter) { forTags = forTags.filter(vm => vm.note.colorType === colorFilter); }
+
+    let forColors = [...textFiltered];
+    if (tagFilter) {
+      if (tagFilter === 'none') { forColors = forColors.filter(vm => !vm.note.tag || !vm.note.tag.trim()); }
+      else { forColors = forColors.filter(vm => vm.note.tag && vm.note.tag.toLowerCase().includes(tagFilter)); }
+    }
+
+    let finalSelection = [...textFiltered];
+    if (tagFilter) {
+      if (tagFilter === 'none') { finalSelection = finalSelection.filter(vm => !vm.note.tag || !vm.note.tag.trim()); }
+      else { finalSelection = finalSelection.filter(vm => vm.note.tag && vm.note.tag.toLowerCase().includes(tagFilter)); }
+    }
+    if (colorFilter) { finalSelection = finalSelection.filter(vm => vm.note.colorType === colorFilter); }
+
+    return { finalSelection, dataForColors: forColors, dataForTags: forTags };
+  });
 
   // 1. Das finale Ausgabe-Signal für das Zettel-Grid (mit Sortierung)
   public sortedViewModels = computed(() => {
@@ -283,14 +290,37 @@ private filterPipeline = computed(() => {
 
   public canIdeaEnterCalculator = (drag: any): boolean => {
     const vm = drag.data; // Das gezogene NoteViewModel
-    
+
     // Wenn kein ViewModel da ist, verbieten wir es. Ansonsten entscheidet das VM selbst!
     return vm ? vm.canEnterCalculator() : false;
   };
 
-public onTagChanged(neuerTag: any): void {
-  // Wir casten es hier sicherheitshalber auf einen String, 
-  // damit TypeScript die Klappe hält, egal was das HTML glaubt zu sehen!
-  this.newTag = String(neuerTag || '');
-}
+  public onTagChanged(neuerTag: any): void {
+    // Wir casten es hier sicherheitshalber auf einen String, 
+    // damit TypeScript die Klappe hält, egal was das HTML glaubt zu sehen!
+    this.newTag = String(neuerTag || '');
+  }
+
+// 🚀 Morgen früh einfach genau so in deine idea-board-component.ts einsetzen:
+  public openTodoPlanningFromIdea(ideaData: { title: string; content: string; category: string }): void {
+    console.log("🎯 KI-Daten empfangen, wir füttern die Signale und öffnen das Popup!");
+    
+    // 1. Die KI-Daten in den Signalen zwischenspeichern
+    this.ideaToPlanTitle.set(ideaData.title);
+    this.ideaToPlanDescription.set(ideaData.content);
+    this.ideaToPlanCategory.set(ideaData.category);
+
+    // 2. Den Vorhang öffnen! (Dein Signal auf true setzen)
+    this.isTodoPopupShow.set(true);
+  }
+
+  public closePlanningModal(): void {
+    // 1. Das Popup schließen
+    this.isTodoPopupShow.set(false);
+
+    // 2. Die Zwischenspeicher sauber ausleeren
+    this.ideaToPlanTitle.set('');
+    this.ideaToPlanDescription.set('');
+    this.ideaToPlanCategory.set('');
+  }
 }

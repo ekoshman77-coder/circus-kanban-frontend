@@ -16,11 +16,12 @@ import { BoardFilterState } from '../team-board-component/team-board-component';
 import { MilestoneSuggestionsComponent } from '../milestone-suggestions-component/milestone-suggestions-component';
 import { DraftProjectWrapper } from '../../../core/models/draft-project-wrapper';
 import { TeamService } from '../../../core/services/team-service';
+import { MilestoneSelectorComponent } from '../../../core/shared/components/milestone-selector-component/milestone-selector-component';
 
 @Component({
   selector: 'app-project-calculator-component',
   standalone: true,
-  imports: [CommonModule, FormsModule, UniversalPopupComponent, DragDropModule, MilestoneSuggestionsComponent],
+  imports: [CommonModule, FormsModule, UniversalPopupComponent, DragDropModule, MilestoneSuggestionsComponent, MilestoneSelectorComponent],
   templateUrl: './project-calculator-component.html',
   styleUrl: './project-calculator-component.css',
 })
@@ -183,12 +184,15 @@ export class ProjectCalculatorComponent implements OnInit {
   /**
    * 🎯 FALL 1b / OPTION 5: Ein bestehendes Projekt manuell aus der Liste auswählen
    */
-  public selectExistingProject(project: Project): void {
-    if (!project) return;
+  public onProjectSelectedFromWelcome(projectId: string): void {
+    if (!projectId) return;
 
     // Wir schalten den Erstell-Modus aus, da wir ein echtes DB-Projekt wählen!
     this.isBrandNewDraft.set(false);
-
+    const project = this.projectService.projectsList().find(p => p.id === projectId) 
+    if (!project) {
+      return
+    }
     // Tiefes Klonen über den Konstruktor in unser isoliertes Komponentensignal
     const selectedProject = new Project({
       ...project,
