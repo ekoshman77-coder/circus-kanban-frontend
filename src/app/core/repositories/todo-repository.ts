@@ -16,14 +16,14 @@ import { ITodoJSON } from './dto/todo-json';
 export class TodoRepository {
   private loggerService = inject(LoggerService)
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   // 📥 Alle To-Dos für diesen User-Namen/ID laden
   getTodos(userId: string | null): Observable<Todo[]> {
     console.log("TodoRepository: getTodos")
     let params = new HttpParams()
     if (userId) {
-       params = new HttpParams().set('userId', userId);
+      params = new HttpParams().set('userId', userId);
     }
     const result = this.http.get<ITodoJSON[]>(todoApiUrl, { params }).pipe(
       map(jsonArray => jsonArray.map(json => this.mapToTodoClass(json)))
@@ -39,9 +39,9 @@ export class TodoRepository {
     );
   }
 
-public updateTodo(todo: Todo): Observable<TodoUpdateResponse> {
+  public updateTodo(todo: Todo): Observable<TodoUpdateResponse> {
     console.log("TodoRepository:: updateTodo", todo);
-    
+
     // 🌟 Wir typisieren den HTTP-Aufruf mit unserem neuen Interface!
     return this.http.put<TodoUpdateResponse>(`${todoApiUrl}/${todo.id}`, todo).pipe(
       map(responseBody => {
@@ -58,7 +58,7 @@ public updateTodo(todo: Todo): Observable<TodoUpdateResponse> {
       })
     );
   }
-  
+
   deleteTodo(id: string): Observable<void> {
     return this.http.delete<void>(`${todoApiUrl}/${id}`);
   }
@@ -75,7 +75,7 @@ public updateTodo(todo: Todo): Observable<TodoUpdateResponse> {
   }
 
   deleteBulk(ids: string[]): Observable<void> {
-     return this.http.post<void>(`${todoApiUrl}/delete-bulk`, ids)
+    return this.http.post<void>(`${todoApiUrl}/delete-bulk`, ids)
   }
 
   private mapToTodoClass(json: ITodoJSON): Todo {
@@ -93,10 +93,10 @@ public updateTodo(todo: Todo): Observable<TodoUpdateResponse> {
       category: json.category,
       effortChangesCount: json.effortChangesCount,
       milestoneId: json.milestoneId,
-      isStarted: json.isStarted?? false,
-      assignedUserId: json.assignedUserId?? null,
+      isStarted: json.isStarted ?? false,
+      assignedUserId: json.assignedUserId ?? null,
       teamStatus: (json.teamStatus as TeamStatus) ?? 'BACKLOG'
-    });  
+    });
     return todo;
   }
 
@@ -124,8 +124,8 @@ public updateTodo(todo: Todo): Observable<TodoUpdateResponse> {
     const result = this.http.get<{ suggestedCategory: string }>(
       `${todoApiUrl}/predict?text=${encodeURIComponent(text)}&userId=${userId}`
     );
-    this.loggerService.info("in todoRepository", "gtAiCategorySuggestion result ist da")  
-    return result 
+    this.loggerService.info("in todoRepository", "gtAiCategorySuggestion result ist da")
+    return result
   }
 
   /**
@@ -133,12 +133,33 @@ public updateTodo(todo: Todo): Observable<TodoUpdateResponse> {
    */
   public getServerCategories(userId: string): Observable<string[]> {
     this.loggerService.info("in todoRepository", "getServerCategories über KI-Endpoint");
-    
+
     // 🎯 Fix: Wir nutzen aiCategoriesApiUrl (/api/ai/categories) statt todoApiUrl
     // 🎯 Fix: Wir übergeben 'contextType=todo' anstelle von userId, wie vom AIController gefordert!
     const result = this.http.get<string[]>(`${aiCategoriesApiUrl}?contextType=todo`);
-    
+
     this.loggerService.info("in todoRepository", "getServerCategories KI-Antwort erhalten");
     return result;
+  }
+
+  /**
+ * 📋 Holt die für den User relevanten Todos (Projekt + Privat) inkl. Zeitfenster-Filter
+ */
+  public getRelevantTodos(userId: string, daysLookback: number = 30): Observable<Todo[]> {
+    const params = new HttpParams()
+      .set('userId', userId)
+      .set('daysLookback', daysLookback.toString());
+
+    return this.http.get<ITodoJSON[]>(`${todoApiUrl}/relevant`, { params }).pipe(
+      map(jsonArray => jsonArray.map(json => this.mapToTodoClass(json)))
+    );
+  }
+
+  /**
+ * 🧠 Holt die KI-generierten Quick-Panel-Vorschläge vom Server
+ */
+  public getQuickPredictions(modus: 'PAUSE' | 'ACTIVE'): Observable<string[]> {
+    const params = new HttpParams().set('modus', modus);
+    return this.http.get<string[]>(`${todoApiUrl}/quick-predictions`, { params });
   }
 }  

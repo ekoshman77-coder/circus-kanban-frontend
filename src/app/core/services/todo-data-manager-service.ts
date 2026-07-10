@@ -19,10 +19,15 @@ export class TodoDataManagerService {
   private connectionService = inject(ConnectionService);
   private userService = inject(UserService)
   private localStorageService = inject(LocalStorageService);
-  
-  private readonly CACHE_KEY = 'global_todos_pool';        
-  private readonly OFFLINE_CHANGES_KEY = 'offline_todos_queue'; 
 
+  private readonly CACHE_KEY = 'global_todos_pool';
+  private readonly OFFLINE_CHANGES_KEY = 'offline_todos_queue';
+  private readonly PREDICTIONS_ACTIVE_KEY = 'cached_predictions_active';
+  private readonly PREDICTIONS_PAUSE_KEY = 'cached_predictions_pause';
+
+// 2. Die ultimativen Notfall-Fallbacks (wenn der Cache komplett leer ist)
+private readonly fallbackPauseTodos = ['Kaffee trinken', 'Dehnen', 'Wasser holen', 'Kurz lüften'];
+private readonly fallbackActiveTodos = ['Refactoring UI', 'Bugfix Service', 'Code Review', 'Doku schreiben'];
   // 🌍 Das Signal ist jetzt beschreibbar (nicht mehr 'readonly' für diesen Service)
   public allTodosPool = signal<Todo[]>([]);
 
@@ -73,7 +78,12 @@ export class TodoDataManagerService {
   /**
    * 📋 DATEN LADEN
    */
-  public loadTodos(): Observable<Todo[]> {
+  // In todo-data-manager-service.ts modifizieren:
+
+  /**
+   * 📋 DATEN RELEVANT LADEN (Ersetzt die alte loadTodos Methode)
+   */
+  public loadTodos(userId: string): Observable<Todo[]> {
     const cachedJSON = this.localStorageService.getItem<any[]>(this.CACHE_KEY) || [];
     let echteTodoObjekte: Todo[] = [];
     try {
@@ -83,21 +93,18 @@ export class TodoDataManagerService {
     }
 
     if (this.connectionService.status() === 'OFFLINE') {
-      // 💡 HIER! Wenn offline, befüllen wir das Signal sofort aus dem Cache
       this.allTodosPool.set(echteTodoObjekte);
       return of(echteTodoObjekte);
     }
 
-    return this.todoRepository.getTodos(null).pipe(
+    // 🎯 NUTZT JETZT DEN NEUEN RELEVANT-ENDPUNKT:
+    return this.todoRepository.getRelevantTodos(userId).pipe(
       map(serverTodos => {
         const geladeneTodos = serverTodos && serverTodos.length > 0 ? serverTodos : echteTodoObjekte;
         const mappedTodos = geladeneTodos.map(t => new Todo(t));
-        
+
         this.saveToLocalStorage(mappedTodos);
-        
-        // 💡 HIER! Sobald die Daten vom Server (oder Cache) da sind, schreiben wir sie ins Signal!
         this.allTodosPool.set(mappedTodos);
-        
         return mappedTodos;
       }),
       catchError(() => {
@@ -115,7 +122,7 @@ export class TodoDataManagerService {
       todo.syncState = 'new';
       const neueListe = [...aktuelleListe, todo].map(t => new Todo(t));
       this.saveToLocalStorage(neueListe);
-      
+
       // 💡 HIER! Signal offline aktualisieren
       this.allTodosPool.set(neueListe);
       return of(neueListe);
@@ -126,7 +133,7 @@ export class TodoDataManagerService {
         savedTodo.syncState = 'fine';
         const neueListe = [...aktuelleListe, savedTodo].map(t => new Todo(t));
         this.saveToLocalStorage(neueListe);
-        
+
         // 💡 HIER! Signal online aktualisieren
         this.allTodosPool.set(neueListe);
         return neueListe;
@@ -147,7 +154,7 @@ export class TodoDataManagerService {
     return this.todoRepository.deleteTodo(id).pipe(
       map(() => {
         this.saveToLocalStorage(gefilterteListe);
-        
+
         // 💡 HIER! Signal nach dem Löschen aktualisieren
         this.allTodosPool.set(gefilterteListe);
         return gefilterteListe;
@@ -174,7 +181,7 @@ export class TodoDataManagerService {
       });
 
       this.saveToLocalStorage(updatedOfflineList);
-      
+
       // 💡 HIER! Signal offline bearbeiten
       this.allTodosPool.set(updatedOfflineList);
       return of(updatedOfflineList);
@@ -185,7 +192,7 @@ export class TodoDataManagerService {
         const serverTodo = response.todo as unknown as Todo;
         serverTodo.syncState = 'fine';
 
-        const finalUpdatedList = currentList.map(todo => 
+        const finalUpdatedList = currentList.map(todo =>
           todo.id === serverTodo.id ? new Todo(serverTodo) : new Todo(todo)
         );
 
@@ -194,7 +201,7 @@ export class TodoDataManagerService {
         }
 
         this.saveToLocalStorage(finalUpdatedList);
-        
+
         // 💡 HIER! Signal online bearbeiten
         this.allTodosPool.set(finalUpdatedList);
         return finalUpdatedList;
@@ -208,7 +215,7 @@ export class TodoDataManagerService {
    */
   public deleteTodosBulk(deletedTodos: Todo[], actualList: Todo[]): Observable<Todo[]> {
     if (deletedTodos.length === 0) return of([]);
-    
+
     const deletedMap = deletedTodos.map(t => t.id)
     const filtered = actualList.filter(t => !deletedMap.includes(t.id)).map(t => new Todo(t));
 
@@ -232,4 +239,43 @@ export class TodoDataManagerService {
   private saveToLocalStorage(todos: Todo[]): void {
     this.localStorageService.setItem(this.CACHE_KEY, todos);
   }
+
+
+  /**
+ * 🧠 Holt die intelligenten Vorschläge. Prüft den Online-Status,
+ * nutzt den Cache oder schlägt im absoluten Notfall Standard-Wörter vor.
+ */
+  public getQuickPredictions(modus: 'PAUSE' | 'ACTIVE'): Observable<string[]> {
+
+    // Hilfsfunktion: Versucht den lokalen Cache zu lesen, sonst hartes Fallback
+    const getOfflineOrFallbackStrings = (): string[] => {
+      const cacheKey = modus === 'PAUSE' ? this.PREDICTIONS_PAUSE_KEY : this.PREDICTIONS_ACTIVE_KEY;
+      const cachedData = this.localStorageService.getItem<string[]>(cacheKey);
+
+      if (cachedData && cachedData.length > 0) {
+        return cachedData;
+      }
+      return modus === 'PAUSE' ? this.fallbackPauseTodos : this.fallbackActiveTodos;
+    };
+
+    // Szenario A: Wir sind nachweislich OFFLINE
+    if (this.connectionService.status() === 'OFFLINE') {
+      return of(getOfflineOrFallbackStrings());
+    }
+
+    // Szenario B: Wir sind ONLINE -> Server fragen und Cache updaten
+    return this.todoRepository.getQuickPredictions(modus).pipe(
+      map(predictions => {
+        if (predictions && predictions.length > 0) {
+          const cacheKey = modus === 'PAUSE' ? this.PREDICTIONS_PAUSE_KEY : this.PREDICTIONS_ACTIVE_KEY;
+          this.localStorageService.setItem(cacheKey, predictions);
+          return predictions;
+        }
+        return getOfflineOrFallbackStrings();
+      }),
+      // Falls der Request im Tunnel fehlschlägt oder ein Timeout fliegt
+      catchError(() => of(getOfflineOrFallbackStrings()))
+    );
+  }
+
 }

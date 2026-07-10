@@ -1,86 +1,118 @@
+/* ==========================================================================
+   🏠 DER NEUE DEEP-FLOW-WELLNESS-LOOK (Komplettsanierung)
+   ========================================================================== */
+
 .timer-container {
   max-width: 600px;
-  margin: 0 auto;
-  padding: 24px;
+  margin: 40px auto;
+  padding: 32px;
   display: flex;
   flex-direction: column;
   gap: 24px;
   text-align: center;
+  
+  /* ✨ DEIN HELLER EFFEKT: 
+     Ein wunderschöner, hauchzarter Verlauf von einem ganz hellen, 
+     pastelligen Marine-Weiß zu einem sanften Eis-Grau. 
+     Es bleibt taghell, nimmt aber das grelle Monitor-Weiß komplett weg! */
+  background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
+  
+  /* Sanfter Schatten und abgerundete Ecken, damit es edel fliegt */
+  border-radius: 24px;
+  box-shadow: 0 10px 30px -10px rgba(148, 163, 184, 0.3);
+  border: 1px solid #ffffff; /* Eine weiße Lichtkante für den Premium-Look */
 }
 
 .timer-header h2 {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 800;
-  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  /* Sanfter, beruhigender Natur-Verlauf (Smaragd zu Salbei) */
+  background: linear-gradient(135deg, #064e3b, #10b981);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  margin: 0 0 6px 0;
+  margin: 0 0 8px 0;
 }
 
 .timer-header p {
-  color: #64748b;
-  font-size: 14px;
+  color: #94a3b8; /* Weiches Slate-Silber */
+  font-size: 15px;
   margin: 0;
 }
 
-/* Selector Zone */
+/* Selector Zone - Schön weich und harmonisch */
 .task-selector-zone {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
+/* Das Label für die To-Do-Auswahl */
 .task-selector-zone label {
-  font-weight: 700;
-  color: #334155;
+  font-weight: 600;
+  color: #cbd5e1; /* Hellgrau für perfekten Kontrast */
   font-size: 14px;
 }
 
 .task-selector-zone select {
   width: 100%;
   max-width: 400px;
-  padding: 10px 14px;
-  border-radius: 8px;
+  padding: 12px 16px;
+  border-radius: 12px;
   border: 2px solid #cbd5e1;
-  background-color: white;
+  background-color: #f8fafc; /* Ganz softes Off-White */
   font-size: 14px;
-  color: #334155;
+  color: #0f172a;
   font-weight: 500;
+  transition: all 0.3s ease;
 }
 
-/* Die Uhr-Karte */
+.task-selector-zone select:focus {
+  outline: none;
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+/* 🎯 Roter Rahmen dezent gehalten, falls kein Todo gewählt wurde */
+.task-selector-zone select.validation-error {
+  border: 2px dashed #f43f5e;
+  background-color: #fff1f2;
+}
+
+/* 🌲 Die Uhr-Karte: Tiefes, beruhigendes Waldgrün statt finsterem Schwarz */
 .timer-display-card {
-  background: #1e293b;
-  border-radius: 20px;
-  padding: 40px;
-  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.15);
-  border: 2px solid #334155;
-  transition: border-color 0.5s;
+  background: #022c22; /* Extrem tiefes, edles Tannengrün */
+  border-radius: 28px;
+  padding: 48px;
+  box-shadow: 0 20px 40px -15px rgba(2, 44, 34, 0.3);
+  border: 2px solid #065f46;
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Pulsieren im Flow-Zustand: Sanftes, atmendes Grün */
 .timer-display-card.pulse {
-  border-color: #f59e0b;
+  border-color: #10b981;
+  box-shadow: 0 20px 40px -10px rgba(16, 185, 129, 0.25);
 }
 
 .time-string {
-  font-size: 80px;
-  font-weight: 900;
-  font-family: monospace;
-  color: #f8fafc;
+  font-size: 84px;
+  font-weight: 800;
+  font-family: 'Courier New', monospace; /* Etwas wärmerer Monospace-Vibe */
+  color: #ecfdf5; /* Ganz sanftes Minz-Weiß */
   line-height: 1;
-  letter-spacing: -2px;
+  letter-spacing: -1px;
 }
 
 .timer-status-text {
-  margin-top: 12px;
+  margin-top: 16px;
   font-size: 14px;
-  color: #94a3b8;
-  font-weight: 600;
-  letter-spacing: 0.5px;
+  color: #a7f3d0; /* Softes Mint */
+  font-weight: 500;
+  letter-spacing: 0.8px;
 }
 
-/* Tasten */
+/* Tasten - Weg von scharfkantig und grell, hin zu rund und weich */
 .timer-controls {
   display: flex;
   justify-content: center;
@@ -88,31 +120,160 @@
 }
 
 .timer-controls button {
-  padding: 12px 28px;
+  padding: 14px 36px;
   font-size: 15px;
   font-weight: 700;
-  border-radius: 30px;
+  border-radius: 16px; /* Moderne, leicht abgerundete Ecken statt Kreise */
   cursor: pointer;
   border: none;
-  transition: transform 0.1s;
+  transition: all 0.2s ease;
 }
 
-.timer-controls button:active {
-  transform: scale(0.97);
+.timer-controls button:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
+/* Der primäre Button strahlt jetzt Ruhe und Fokus aus */
 .btn-primary {
-  background: linear-gradient(135deg, #d97706, #f59e0b);
+  background: linear-gradient(135deg, #065f46, #10b981);
   color: white;
-  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.3);
+  box-shadow: 0 4px 14px rgba(6, 95, 70, 0.2);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #047857, #059669);
+  box-shadow: 0 6px 20px rgba(6, 95, 70, 0.3);
+}
+
+/* Deaktivierter Zustand: Verschmilzt harmonisch mit dem Hintergrund */
+.btn-primary.disabled, .btn-primary:disabled {
+  background: #e2e8f0 !important;
+  color: #94a3b8 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
 
 .btn-secondary {
-  background: #cbd5e1;
-  color: #475569;
+  background: rgba(255, 255, 255, 0.08); /* Transparentes Weiß */
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
 }
 
 .btn-secondary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+
+/* ==========================================================================
+   ✨ DAS REINIGENDE ERFOLGS-OVERLAY (Zentrierend und warm)
+   ========================================================================== */
+
+.celebration-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(2, 44, 34, 0.55); /* Natur-Dunkel-Schleier */
+  backdrop-filter: blur(12px); /* Noch weicherer Blur für totale Abschirmung */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.celebration-card {
+  background: #ffffff;
+  padding: 44px 36px;
+  border-radius: 32px;
+  text-align: center;
+  box-shadow: 0 30px 60px -15px rgba(2, 44, 34, 0.25);
+  border: 2px solid #a7f3d0; /* Ganz sanfter, mintgrüner Rahmen */
+  max-width: 440px;
+  width: 90%;
+}
+
+.celebration-emoji {
+  font-size: 64px;
+  margin-bottom: 20px;
+  animation: emoji-bounce 0.8s infinite alternate cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.celebration-card h3 {
+  font-size: 26px;
+  font-weight: 800;
+  color: #064e3b; /* Dunkelgrüner Text */
+  margin: 0 0 12px 0;
+}
+
+.celebration-card p {
+  color: #475569;
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 0 0 28px 0;
+}
+
+/* Belohnungs-Abzeichen in tiefem, stolzem Smaragdgrün */
+.xp-badge {
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: #ffffff;
+  font-weight: 700;
+  padding: 12px 32px;
+  border-radius: 14px;
+  display: inline-block;
+  font-size: 16px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.3);
+}
+
+.xp-badge.offline {
+  background: linear-gradient(135deg, #0284c7, #0ea5e9);
+  box-shadow: 0 10px 25px -5px rgba(14, 165, 233, 0.3);
+}
+
+.ki-hint {
+  margin-top: 24px !important;
+  font-style: italic;
+  font-size: 13px !important;
+  color: #94a3b8 !important;
+  margin-bottom: 0 !important;
+}
+
+.celebration-close-btn {
+  margin-top: 28px;
+  background: #f0fdf4; /* Extrem zartes Grün */
+  border: none;
+  color: #166534;
+  padding: 10px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.celebration-close-btn:hover {
+  background: #dcfce7;
+}
+
+/* 🎬 Animationen */
+@keyframes pop-in {
+  0% { transform: scale(0.92); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-pop {
+  animation: pop-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1) forwards;
+}
+
+@keyframes emoji-bounce {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-8px); }
 }

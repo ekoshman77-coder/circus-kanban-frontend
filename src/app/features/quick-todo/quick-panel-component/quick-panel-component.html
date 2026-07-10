@@ -1,1 +1,19 @@
-<p>quick-panel-component works!</p>
+<div class="quick-panel" [class.pause-theme]="currentModus === QuickPanelMode.PAUSE">
+  <div class="panel-header">
+    <span class="indicator-dot" [class.loading]="isLoading()"></span>
+    <h4>💡 KI-gestützte Quick-Vorlagen</h4>
+  </div>
+  
+  <div class="template-grid">
+    @if (isLoading()) {
+      <div class="loading-placeholder">Lade intelligente Vorschläge...</div>
+    } @else {
+      @for (name of quickPredictions(); track name) {
+        <button class="task-template-btn" (click)="selectedTodo(name)">
+          <span class="btn-text">{{ name }}</span>
+          <span class="plus-icon">+</span>
+        </button>
+      }
+    }
+  </div>
+</div>

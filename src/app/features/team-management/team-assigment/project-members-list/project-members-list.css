@@ -1,28 +1,32 @@
 .members-list-container {
-  background-color: #f1f5f9; /* Dezentes, sauberes Kanban-Grau */
-  border: 2px dashed #cbd5e1; /* Gestrichelter Rand signalisiert die Drop-Zone */
-  border-radius: 12px;
-  padding: 16px;
-  min-height: 450px; /* WICHTIG: Damit die Spalte auch leer groß genug bleibt, um Karten reinzuwerfen! */
+  background-color: rgba(248, 250, 252, 0.6);
+  border: 2px dashed #fca5a5; /* Weiches Rot signalisiert die Team-Zone */
+  border-radius: 16px;
+  padding: 20px;
+  min-height: 480px;
   display: flex;
   flex-direction: column;
-  gap: 4px; /* Kleiner Abstand zwischen den gezogenen Karten */
+  gap: 12px;
   transition: all 0.2s ease;
 }
 
-.members-list-container h3 {
-  margin: 0 0 16px 0;
-  font-size: 15px;
-  color: #b91c1c; /* Ein wertiges Dunkelrot für Projektmitglieder */
-  font-weight: 600;
-  border-bottom: 2px solid #fee2e2;
-  padding-bottom: 8px;
+.members-list-container {
+  background-color: rgba(248, 250, 252, 0.6);
+  /* ✨ Edles Indigo statt Gefahr-Rot: Das wirkt einladend und spannend! */
+  border: 2px dashed #a5b4fc; 
+  border-radius: 16px;
+  padding: 20px;
+  min-height: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.2s ease;
 }
 
 .empty-hint {
   text-align: center;
   color: #94a3b8;
   font-size: 13px;
-  margin-top: 40px;
+  margin-top: 60px;
   font-style: italic;
 }

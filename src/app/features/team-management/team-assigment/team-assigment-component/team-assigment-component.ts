@@ -8,11 +8,12 @@ import { ProjectService } from '../../../../core/services/project-service';
 import { MemberCardComponent } from '../../../../core/shared/components/member-card/member-card-component/member-card-component';
 import { ProjectRole } from '../../../../core/models/user-model';
 import { FormsModule } from '@angular/forms'; // 🎯 Wichtig fürs Dropdown-Binding!
+import { MilestoneSelectorComponent } from '../../../../core/shared/components/milestone-selector-component/milestone-selector-component';
 
 @Component({
   selector: 'app-team-assignment',
   standalone: true,
-  imports: [CommonModule, FormsModule, ProjectMembersListComponent, AvailablePoolListComponent],
+  imports: [CommonModule, FormsModule, ProjectMembersListComponent, AvailablePoolListComponent, MilestoneSelectorComponent],
   templateUrl: './team-assigment-component.html',
   styleUrl: './team-assigment-component.css'
 })
@@ -23,7 +24,6 @@ export class TeamAssigmentComponent implements OnInit {
   public selectedProjectId = signal<string | null>(null);
 
   public allProjects = computed(() => this.projectService.projectsList());
-
   public allUsers = this.teamService.globalMembersSignal;
 
   public activeMembers = computed(() => {
@@ -103,8 +103,11 @@ export class TeamAssigmentComponent implements OnInit {
     this.userIdPendingAssignment.set(null);
   }
 
-  public onProjectChange(event: any): void {
-    const val = event.target.value;
-    this.selectedProjectId.set(val === 'null' ? null : val);
+public onProjectChange(projectId: string | null): void {
+    this.selectedProjectId.set(projectId);
+    
+    if (projectId) {
+      this.teamService.setCurrentProject(projectId)       
+    }
   }
 }

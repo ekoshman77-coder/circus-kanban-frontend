@@ -1,187 +1,202 @@
+/* ==========================================================================
+   🌍 DER HAUPTCONTAINER: Jetzt perfekt zentriert mit edlem Soft-Hintergrund
+   ========================================================================== */
 .action-center-container {
   width: 100%;
-  max-width: 600px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+  max-width: 640px;
+  margin: 40px auto;
+  
+  /* 💥 DIE RETTUNG: Wir nutzen den Gradienten, zwingen ihn aber,
+     sich wie ein festes Hintergrundbild zu verhalten, das sich NICHT mitbewegt! */
+  background: linear-gradient(185deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.7) 100%);
+  background-attachment: fixed; /* Der Verlauf klebt fest am Viewport, nicht am Element! */
+  background-size: 100% 100%;
+  
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.06),
+              0 0 50px 0 rgba(99, 102, 241, 0.02);
+  
   box-sizing: border-box;
+  backdrop-filter: blur(8px);
+  
+  /* 🧱 ANTI-GELEE-SCHUTZSCHILD: Wir geben dem Container eine minimale feste Höhe,
+     damit er beim Tab-Wechsel nicht komplett in sich zusammenfällt, während Angular lädt. */
+  min-height: 480px; 
+  transition: none !important; /* Verhindert, dass der Container selbst weich wabbelt */
 }
 
+/* ⚡ TITEL: Schön zentriert und ausdrucksstark */
 .center-title {
-  margin: 0 0 16px 0;
-  font-size: 18px;
-  font-weight: 800;
-  color: #1e293b;
+  margin: 0 0 24px 0;
+  font-size: 22px;
+  font-weight: 900;
+  color: #0f172a;
+  text-align: center; /* Titel mittig setzen */
+  letter-spacing: -0.5px;
 }
 
-/* MODUS TOGGLE PILL */
+/* ==========================================================================
+   🎬 EINGANGSANIMATION FÜR DIE TASK-LISTE (Schluss mit dem Gelee!)
+   ========================================================================== */
+.panel-card-wrapper {
+  width: 100%;
+}
+
+/* ==========================================================================
+   🎛️ MODUS TOGGLE PILL (Die "Semafore" / Schalter)
+   ========================================================================== */
 .modus-toggle-wrapper {
   display: flex;
   background: #f1f5f9;
-  padding: 4px;
+  padding: 6px;
   border-radius: 30px;
-  gap: 4px;
-  margin-bottom: 20px;
+  gap: 6px;
+  margin-bottom: 24px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.03);
 }
 
 .toggle-btn {
   flex: 1;
   border: none;
   background: transparent;
-  padding: 10px 16px;
+  padding: 12px 20px;
   border-radius: 30px;
-  font-size: 14px;
+  font-size: 14.5px;
   font-weight: 700;
   color: #64748b;
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
 }
 
-/* Aktiver Zustand für Arbeit (Dein Violett) */
-.toggle-btn.active {
-  background: #6366f1;
+/* Aktiver Zustand für Arbeit (Dein fokussiertes Violett) */
+.toggle-btn.active:not(.class-pause) {
+  background: #4f46e5;
   color: #ffffff;
-  box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
 }
 
-/* Aktiver Zustand für Pause (Ein schönes, gemütliches Orange/Braun) */
-.toggle-btn.class-pause.active {
-  background: #10b981; /* Smaragd-/Minzgrün */
+/* Aktiver Zustand für Pause (Das warme, genussvolle Orange) */
+.toggle-btn.active.class-pause {
+  background: #f59e0b;
   color: #ffffff;
-  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
 }
 
-.toggle-btn:hover:not(.active) {
-  color: #1e293b;
-  background: rgba(255, 255, 255, 0.5);
+/* ==========================================================================
+   📍 MEILENSTEIN SELECTOR (Schön eingebettet)
+   ========================================================================== */
+.quick-milestone-wrapper {
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Auch den Selektor mittig ausrichten */
+  gap: 12px;
+  background: rgba(241, 245, 249, 0.5);
+  padding: 10px 16px;
+  border-radius: 14px;
+  border: 1px dashed #e2e8f0;
 }
 
-/* ==========================================
-   NEUES EDLES & LEBENDIGES TOAST DESIGN
-   ========================================== */
+.quick-milestone-wrapper span {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #475569;
+}
 
-.toast-notification.persistent {
-  position: fixed;
-  bottom: 32px;
-  right: 32px;
-  
-  /* Moderner Glassmorphismus-Look (Halbtransparent) */
-  background: rgba(30, 41, 59, 0.95); 
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  
-  color: #ffffff;
-  padding: 20px 24px;
-  border-radius: 16px;
-  
-  /* Ein richtig tiefer, weicher Schatten für 3D-Effekt */
-  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.3), 
-              0 0 0 1px rgba(255, 255, 255, 0.1);
-              
-  z-index: 9999;
-  max-width: 420px;
-  
-  /* Eine feine, leuchtende linke Kante (Neon-Flieder/Mint Mix) */
-  border-left: 5px solid #6366f1;
-  
-  /* Sanfter Einstiegs-Schwung */
-  animation: slideInAndPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+/* ==========================================================================
+   📬 TOAST NOTIFICATION 
+   ========================================================================== */
+.toast-inline-notification {
+  /* Kein fixed mehr, sondern fügt sich perfekt zwischen die Elemente ein */
+  margin-bottom: 20px;
+  width: 100%;
   box-sizing: border-box;
+  
+  /* Unser edler, heller Look */
+  background: #ffffff;
+  border: 1px solid #a7f3d0; /* Soft-minziger Rahmen */
+  padding: 14px 20px;
+  border-radius: 16px; /* Passt sich den Kanten der App an */
+  
+  /* Sanfter, unaufdringlicher Schatten nach unten */
+  box-shadow: 0 4px 12px rgba(6, 95, 70, 0.05);
+  
+  /* Sanfte Pop-In-Animation */
+  animation: slideDownIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-/* Der Container im Toast */
+/* Der innere Flex-Container sorgt dafür, dass Haken, Text und Button in einer Reihe stehen */
 .toast-content {
   display: flex;
   align-items: center;
-  gap: 18px;
-}
-
-/* DAS MEHRFARBIG-LUSTIGE HÄKCHEN */
-.toast-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  
-  /* Ein wunderschöner, lebendiger Farbverlauf für das Icon */
-  background: linear-gradient(135deg, #10b981, #06b6d4, #6366f1);
-  background-size: 200% 200%;
-  animation: gradientShift 4s ease infinite; /* Der Verlauf bewegt sich leicht! */
-  
-  color: white;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  font-weight: bold;
-  font-size: 16px;
-  flex-shrink: 0;
-  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.4);
+  justify-content: space-between; /* Verteilt Text links und Button rechts */
+  gap: 14px;
 }
 
 .toast-text-container {
-  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1; /* Nimmt den restlichen Platz ein */
+}
+
+/* 🟢 Der grüne Erfolgs-Haken */
+.toast-icon {
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 13px;
+  font-weight: 900;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0; /* Verhindert, dass der Kreis gequetscht wird */
 }
 
 .toast-text {
-  margin: 0;
-  font-size: 14.5px;
+  font-size: 14px;
   font-weight: 600;
-  line-height: 1.5;
-  color: #f8fafc;
-  letter-spacing: 0.2px;
+  color: #1e293b;
+  margin: 0;
+  text-align: left; /* Text sauber linksbündig */
+  line-height: 1.4;
 }
 
-/* DER KNACKIGE OK-BUTTON */
+/* 🔘 Der smarte Schließen-Button */
 .toast-close-btn {
-  background: #ffffff;
-  color: #1e293b; /* Dunkler Text für super Kontrast */
+  background: #f1f5f9;
+  color: #475569;
   border: none;
-  padding: 8px 18px;
+  padding: 6px 14px;
   border-radius: 10px;
-  font-weight: 800;
-  font-size: 13px;
+  font-weight: 700;
+  font-size: 12px;
   cursor: pointer;
-  letter-spacing: 0.5px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
   flex-shrink: 0;
 }
 
-/* Hover-Effekt für den OK-Button */
 .toast-close-btn:hover {
-  background: #6366f1; /* Wechselt beim Drüberfahren zu deinem Violett */
+  background: #065f46;
   color: #ffffff;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(99, 102, 241, 0.4);
 }
 
-.toast-close-btn:active {
-  transform: translateY(0);
-}
-
-/* ==========================================
-   ANIMATIONEN (Die Magie im Hintergrund)
-   ========================================== */
-
-/* 1. Animation für das Reingleiten UND ein leichtes Aufbäumen (Pop) */
-@keyframes slideInAndPop {
+/* 🎬 Animation für das geschmeidige Aufklappen von oben */
+@keyframes slideDownIn {
   0% {
-    transform: translateY(60px) scale(0.8);
     opacity: 0;
-  }
-  70% {
-    transform: translateY(-4px) scale(1.02); /* Leichtes Übersteuern für den "Bounce"-Effekt */
+    transform: translateY(-10px) scale(0.98);
   }
   100% {
-    transform: translateY(0) scale(1);
     opacity: 1;
+    transform: translateY(0) scale(1);
   }
-}
-
-/* 2. Animation für das sanfte Wandern des Farbverlaufs im Häkchen-Kreis */
-@keyframes gradientShift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
 }

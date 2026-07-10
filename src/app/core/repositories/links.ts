@@ -20,4 +20,6 @@
   export const aiNotePredictionUrl = `${baseUrl}/ai/notes/predict`;
   export const aiCategoriesApiUrl = `${baseUrl}/ai/todos/categories`;
   export const aiNoteCategoriesUrl = `${baseUrl}/ai/notes/categories`;
+  export const API_URL = 'http://localhost:8080/api/gamification'
+
   

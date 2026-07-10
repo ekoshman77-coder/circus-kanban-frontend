@@ -1,0 +1,209 @@
+/* ==========================================================================
+   🌟 DAS HAUPTPANEL: Haptisch, edel und bereit für Vergnügen
+   ========================================================================== */
+.quick-panel {
+  /* 📐 DIE LÖSUNG: Wir sagen dem Browser unmissverständlich, wie breit es sein MUSS */
+  width: 100%;
+  box-sizing: border-box; /* Sorgt dafür, dass Padding die 100% nicht sprengt */
+
+  /* Standard-Styles bleiben perfekt erhalten */
+  background: linear-gradient(135deg, #ffffff 0%, #f4f7fe 100%);
+  border: 1px solid #e0e7ff;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 12px 30px -8px rgba(99, 102, 241, 0.05),
+              0 4px 12px -4px rgba(99, 102, 241, 0.02);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Der leuchtende Fokus-Indikator ganz oben */
+.quick-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, #4f46e5, #818cf8);
+  transition: all 0.5s ease;
+}
+
+/* ==========================================================================
+   🏖️ PAUSEN-THEME: Meer, Palmen & Sonne (Island Serenity)
+   ========================================================================== */
+.quick-panel.pause-theme {
+  /* Ein sanfter Verlauf wie feiner Sandstrand, der ins weiche Meerwasser übergeht */
+  background: linear-gradient(135deg, #fffdf5 0%, #f0fdf4 100%);
+  border-color: #bbf7d0; /* Softes Palmen-Grün */
+  box-shadow: 0 12px 30px -8px rgba(34, 197, 94, 0.06),
+              0 4px 12px -4px rgba(245, 158, 11, 0.03);
+}
+
+.quick-panel.pause-theme::before {
+  /* Der Sonnenuntergang am Horizont */
+  background: linear-gradient(90deg, #f59e0b, #10b981);
+}
+
+/* ==========================================================================
+   📑 HEADER & UTILITIES
+   ========================================================================== */
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e0e7ff;
+  transition: border-color 0.5s ease;
+}
+
+.quick-panel.pause-theme .panel-header {
+  border-bottom-color: #dcfce7;
+}
+
+.panel-header h4 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  color: #312e81; /* Tiefes Indigo */
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  transition: color 0.5s ease;
+}
+
+.quick-panel.pause-theme .panel-header h4 {
+  color: #14532d; /* Tiefes Palmen-Grün */
+}
+
+/* 🟢 DER AKTIVE PUNKT (Dein kleines Signal im Nebel, jetzt organisch pulsierend) */
+.indicator-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #6366f1;
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
+  transition: all 0.5s ease;
+}
+
+.quick-panel.pause-theme .indicator-dot {
+  background: #10b981;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+}
+
+.indicator-dot.loading {
+  background: #f59e0b;
+  box-shadow: 0 0 14px #f59e0b;
+  animation: pulse-glow 1.8s infinite ease-in-out;
+}
+
+/* ==========================================================================
+   🔲 DIE BUTTONS: Zwei Arten von pures Vergnügen!
+   ========================================================================== */
+.template-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  
+  /* 📐 DIE WAHRE RETTUNG: 360px ist die perfekte Wohlfühlhöhe für genau 6 Buttons.
+     Egal wie schnell du klickst oder ob die KI gerade nachlädt – diese Box 
+     bewegt sich jetzt um keinen einzigen Millimeter mehr nach oben oder unten! */
+  height: 360px; 
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* ⏳ DER LADE-PLATZHALTER: Füllt die 360px perfekt aus und zentriert den Text */
+.loading-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%; /* Nutzt die vollen 360px des Grids aus */
+  width: 100%;
+  font-size: 14px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-align: center;
+  font-style: italic;
+  animation: pulseOpacity 1.5s infinite ease-in-out;
+}
+
+/* Butterweiche Überblendung für die fertigen Buttons, wenn sie reinkommen */
+.task-template-btn {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  background: #ffffff;
+  border: 1px solid #e0e7ff;
+  border-radius: 14px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: #4f46e5;
+  box-shadow: 0 2px 5px rgba(99, 102, 241, 0.02);
+  
+  /* Sanfter Eingang, sobald sie den Platzhalter ersetzen */
+  animation: fadeInOnly 0.2s ease-in-out forwards;
+}
+
+/* 🎬 Hilfs-Animationen für den nahtlosen Übergang */
+@keyframes pulseOpacity {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+@keyframes fadeInOnly {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.task-template-btn:hover {
+  color: #3730a3;
+  border-color: #818cf8;
+  background: linear-gradient(90deg, #ffffff 0%, #f4f7fe 100%);
+  
+  /* ✨ ELEGANTER SCHWEBE-EFFEKT: Der Button hebt sich sanft nach oben (2px)
+     und skaliert hauchzart, ohne das restliche Layout zu verschieben! */
+  transform: translateY(-2px) scale(1.005);
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.08);
+}
+
+/* Der Plus-Icon-Kreis dreht sich beim Hovern genial mit */
+.task-template-btn:hover .plus-icon {
+  color: #ffffff;
+  background: #4f46e5;
+  transform: rotate(180deg) scale(1.15);
+  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+}
+
+/* Das gleiche Spiel für das Pausen-Theme */
+.pause-theme .task-template-btn {
+  color: #166534;
+  border-color: #bbf7d0;
+  transition: none !important;
+}
+
+/* ==========================================================================
+   🏖️ HOVER: Spaß an der Pause (Entspanntes Schweben in Smaragdgrün)
+   ========================================================================== */
+.pause-theme .task-template-btn:hover {
+  color: #14532d;
+  border-color: #4ade80;
+  background: linear-gradient(90deg, #ffffff 0%, #f0fdf4 100%);
+  
+  /* Auch hier das perfekt ausbalancierte Heben */
+  transform: translateY(-2px) scale(1.005);
+  box-shadow: 0 8px 20px rgba(34, 197, 94, 0.08);
+}
+
+.pause-theme .task-template-btn:hover .plus-icon {
+  color: #ffffff;
+  background: #22c55e;
+  transform: rotate(180deg) scale(1.15);
+  box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3);
+}

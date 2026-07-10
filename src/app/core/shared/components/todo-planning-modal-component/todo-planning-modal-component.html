@@ -59,20 +59,30 @@
             </select>
           </div>
 
-          <div class="form-group">
-            <label for="daysAheadSlider">Wann soll es fertig sein? 📅</label>
-            <div class="slider-wrapper">
-              <input id="daysAheadSlider" type="range" min="0" max="30" step="0.2"
-                     (input)="onSliderInput($event)" class="funny-slider" 
-                     [style.--val]="sliderPercentage() + '%'" [style.--hue]="sliderHue()">
+<div class="form-group">
+  <label for="daysAheadSlider">Wann soll es fertig sein? 📅</label>
+  <div class="slider-wrapper">
+    
+    <input id="daysAheadSlider" 
+           type="range" 
+           min="0" 
+           max="30" 
+           step="0.2"
+           [(ngModel)]="sliderDays"
+           [ngModelOptions]="{standalone: true}"
+           (input)="onSliderInput($event)" 
+           class="funny-slider" 
+           [style.--val]="sliderPercentage() + '%'" 
+           [style.--hue]="sliderHue()">
 
-              <span class="funny-date-badge" [style.color]="dynamicColor()"
-                    [style.background-color]="dynamicColor() + '15'" [style.border-color]="dynamicColor() + '40'">
-                {{ liquidDateLabel() }}
-              </span>
-            </div>
-          </div>
-
+    <span class="funny-date-badge" 
+          [style.color]="dynamicColor()"
+          [style.background-color]="dynamicColor() + '15'" 
+          [style.border-color]="dynamicColor() + '40'">
+      {{ liquidDateLabel() }}
+    </span>
+  </div>
+</div>
         </div>
       </div>
 

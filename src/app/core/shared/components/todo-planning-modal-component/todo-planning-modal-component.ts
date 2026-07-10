@@ -1,5 +1,5 @@
 import { Component, computed, inject, input, OnInit, output, signal } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TodoService } from '../../../services/todo/todo-service';
 import { CommonModule } from '@angular/common';
 import { UniversalTagInputComponent } from '../universal-tag-input-component/universal-tag-input-component';
@@ -7,7 +7,7 @@ import { MilestoneSelectorComponent } from '../milestone-selector-component/mile
 
 @Component({
   selector: 'app-todo-planning-modal-component',
-  imports: [CommonModule, ReactiveFormsModule, UniversalTagInputComponent, MilestoneSelectorComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, UniversalTagInputComponent, MilestoneSelectorComponent],
   templateUrl: './todo-planning-modal-component.html',
   styleUrl: './todo-planning-modal-component.css',
 })
@@ -20,7 +20,7 @@ export class TodoPlanningModalComponent implements OnInit {
   initialDescription = input<string>('');
   initialCategory = input<string>('');
   currentMilestoneId = input<string | null>(null);
-  
+
   closeModal = output<void>();
   todoPlanned = output<void>();
 
@@ -36,10 +36,37 @@ export class TodoPlanningModalComponent implements OnInit {
   selectedCategory = signal<string>('');
 
   // 🎛️ DEINE FUNNY-SLIDER-SIGNALE
-  liquidDateLabel = signal<string>('Heute fällig! 🚨');
-  sliderDays = signal<number>(0);
-  sliderPercentage = signal<number>(0);
-  sliderHue = signal<number>(120);
+ public liquidDateLabel = computed(() => {
+  const days = this.sliderDays();
+  
+  if (days === 0) {
+    return 'Heute fällig! 🚨';
+  } else if (days === 1) {
+    return 'Morgen fällig! ⏳';
+  } else if (days === 2) {
+    return 'Übermorgen fällig! 🗓️';
+  } else {
+    const targetDate = new Date();
+    targetDate.setDate(targetDate.getDate() + days);
+    const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long' };
+    return `In ${days} Tagen (${targetDate.toLocaleDateString('de-DE', options)}) 📅`;
+  }
+});
+
+sliderDays = signal<number>(0);
+
+public sliderPercentage = computed(() => {
+  const days = this.sliderDays() || 0; // Fallback auf 0, falls mal undefined
+  const max = 30;
+  return Math.min(Math.max((days / max) * 100, 0), 100); // Garantiert zwischen 0% und 100%
+});
+
+  public sliderHue = computed(() => {
+  const days = this.sliderDays() || 0;
+  const percent = (days / 30) * 100;
+  let hue = percent * 1.2;
+  return Math.max(Math.min(hue, 120), 0);
+  });
 
   public fibonacciSequence = [1, 2, 3, 5, 8, 13, 21];
 
@@ -48,44 +75,21 @@ export class TodoPlanningModalComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    console.log("TodoPlanningModal:: onOnInit MilestoneId = ", this.currentMilestoneId()) 
+    console.log("TodoPlanningModal:: onOnInit MilestoneId = ", this.currentMilestoneId())
     this.planningForm.patchValue({
       task: this.initialTaskName(),
       description: this.initialDescription(),
       milestoneId: this.currentMilestoneId() || '' // Falls ein Meilenstein aktiv übergeben wurde
     });
-    
-    this.selectedCategory.set(this.initialCategory() || 'Idee');   
+
+    this.selectedCategory.set(this.initialCategory() || 'Idee');
+    this.sliderDays.set(0);
   }
 
-  public onSliderInput(event: Event): void {
-    const value = parseFloat((event.target as HTMLInputElement).value);
-    const percent = (value / 30) * 100;
-    this.sliderPercentage.set(percent);
-    
-    let hue = percent * 1.2; 
-    hue = Math.max(Math.min(hue, 120), 0);
-    this.sliderHue.set(hue);
-
-    const days = Math.round(value);
-    this.sliderDays.set(days); 
-    this.updateDateLabel(days);
-  }
-
-  private updateDateLabel(days: number): void {
-    if (days === 0) {
-      this.liquidDateLabel.set('Heute fällig! 🚨');
-    } else if (days === 1) {
-      this.liquidDateLabel.set('Morgen fällig! ⏳');
-    } else if (days === 2) {
-      this.liquidDateLabel.set('Übermorgen fällig! 🗓️');
-    } else {
-      const targetDate = new Date();
-      targetDate.setDate(targetDate.getDate() + days);
-      const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long' };
-      this.liquidDateLabel.set(`In ${days} Tagen (${targetDate.toLocaleDateString('de-DE', options)}) 📅`);
-    }
-  }
+public onSliderInput(event: Event): void {
+  const value = parseFloat((event.target as HTMLInputElement).value);
+  this.sliderDays.set(Math.round(value));
+}
 
   public onCategoryChanged(category: string): void {
     this.selectedCategory.set(category);
@@ -104,7 +108,7 @@ export class TodoPlanningModalComponent implements OnInit {
     if (this.planningForm.invalid) return;
 
     const values = this.planningForm.value;
-    
+
     // Fälligkeit aus dem Slider berechnen
     const targetDate = new Date();
     targetDate.setDate(targetDate.getDate() + this.sliderDays());

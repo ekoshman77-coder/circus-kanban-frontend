@@ -1,28 +1,28 @@
 .pool-list-container {
-  background-color: #f1f5f9; /* Gleiches Kanban-Grau für die Symmetrie */
-  border: 2px dashed #cbd5e1;
-  border-radius: 12px;
-  padding: 16px;
-  min-height: 450px; /* Auch hier wichtig für eine große Drop-Fläche */
+  background-color: rgba(248, 250, 252, 0.6);
+  border: 2px dashed #86efac; /* Weiches Grün signalisiert die Wartebank-Zone */
+  border-radius: 16px;
+  padding: 20px;
+  min-height: 480px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 12px;
   transition: all 0.2s ease;
 }
 
 .pool-list-container h3 {
-  margin: 0 0 16px 0;
+  margin: 0 0 8px 0;
   font-size: 15px;
-  color: #15803d; /* Ein angenehmes Dunkelgrün für die Wartebank */
-  font-weight: 600;
-  border-bottom: 2px solid #dcfce7;
-  padding-bottom: 8px;
+  color: #166534;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .empty-hint {
   text-align: center;
   color: #94a3b8;
   font-size: 13px;
-  margin-top: 40px;
+  margin-top: 60px;
   font-style: italic;
 }

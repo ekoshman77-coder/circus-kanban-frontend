@@ -8,12 +8,13 @@
     <label for="todo-select">Mein aktueller Fokus:</label>
     <select 
       id="todo-select" 
+      [class.validation-error]="!isRunning() && !selectedTodo()"
       [ngModel]="selectedTodo()" 
       (ngModelChange)="selectedTodo.set($event)"
       [disabled]="isRunning()">
       <option [ngValue]="null" disabled>-- Bitte To-Do auswählen --</option>
       @for (todo of openTodos(); track todo.id) {
-        <option [ngValue]="todo">{{ todo.task }} (Aktueller Aufwand: {{ todo.usedEffort }}pt)</option>
+        <option [ngValue]="todo">{{ todo.task }}</option>
       }
     </select>
   </div>
@@ -26,11 +27,37 @@
   </div>
 
   <div class="timer-controls">
-    <button class="btn-primary" (click)="toggleTimer()">
+    <button 
+      class="btn-primary"
+      (click)="toggleTimer()" 
+      [disabled]="!isRunning() && !selectedTodo()"
+      [class.disabled]="!isRunning() && !selectedTodo()">
       {{ isRunning() ? '⏸️ Pause' : '▶️ Fokus Starten' }}
     </button>
+
     <button class="btn-secondary" (click)="resetTimer()" [disabled]="isRunning()">
       🔄 Zurücksetzen
     </button>
   </div>
 </div>
+
+@if (showSuccessCelebration()) {
+  <div class="celebration-overlay" (click)="showSuccessCelebration.set(false)">
+    <div class="celebration-card animate-pop" (click)="$event.stopPropagation()">
+      @if (!isSyncOffline()) {
+        <div class="celebration-emoji">🏆🔥</div>
+        <h3>Grandioser Fokus!</h3>
+        <p>Du hast 25 Minuten tiefe Arbeitsphase erfolgreich gemeistert.</p>
+        <div class="xp-badge">+15 XP verbucht</div>
+        <p class="ki-hint">Deine Titel-KI analysiert deine Fortschritte im Hintergrund...</p>
+      } @else {
+        <div class="celebration-emoji">🚂💾</div>
+        <h3>Fokus offline gesichert!</h3>
+        <p>Starke Leistung! Deine 25 Minuten wurden sicher im lokalen Speicher abgelegt.</p>
+        <div class="xp-badge offline">Puffere +15 XP</div>
+        <p class="ki-hint">Sobald du wieder Netz hast, kriegst du deine XP und deinen KI-Titel!</p>
+      }
+      <button class="celebration-close-btn" (click)="showSuccessCelebration.set(false)">Weiterarbeiten</button>
+    </div>
+  </div>
+}

@@ -1,17 +1,12 @@
 <div class="action-center-container">
   <h2 class="center-title">⚡ Quick Action Center</h2>
-  
+
   <div class="modus-toggle-wrapper">
-    <button 
-      class="toggle-btn" 
-      [class.active]="actuelModus() === QuickPanelMode.ACTIVE"
+    <button class="toggle-btn" [class.active]="actuelModus() === QuickPanelMode.ACTIVE"
       (click)="setModus(QuickPanelMode.ACTIVE)">
       🚀 Arbeits-Fokus
     </button>
-    <button 
-      class="toggle-btn" 
-      [class.class-pause]="true"
-      [class.active]="actuelModus() === QuickPanelMode.PAUSE"
+    <button class="toggle-btn" [class.class-pause]="true" [class.active]="actuelModus() === QuickPanelMode.PAUSE"
       (click)="setModus(QuickPanelMode.PAUSE)">
       ☕ Pausen-Modus
     </button>
@@ -19,21 +14,13 @@
 
   <div class="quick-milestone-wrapper" style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
     <span style="font-size: 13px; font-weight: 700; color: #64748b;">Ziel-Meilenstein:</span>
-    <app-milestone-selector-component 
-        [initialMilestoneId]="newMilestoneId()"
-        (milestoneSelected)="onMilestoneSelected($any($event))">
+    <app-milestone-selector-component [initialMilestoneId]="newMilestoneId()"
+      (milestoneSelected)="onMilestoneSelected($any($event))">
     </app-milestone-selector-component>
   </div>
 
-  <div class="panel-card-wrapper">
-    <app-quick-panel-component
-        [currentModus]="actuelModus()"
-        (todoSelected)="onTaskSelected($event)">
-    </app-quick-panel-component>
-  </div>  
-
   @if (toastMessage()) {
-    <div class="toast-notification persistent">
+    <div class="toast-inline-notification">
       <div class="toast-content">
         <span class="toast-icon">✓</span>
         <div class="toast-text-container">
@@ -43,4 +30,16 @@
       </div>
     </div>
   }
+
+  <div class="panel-card-wrapper">
+    <app-quick-panel-component [currentModus]="actuelModus()" (todoSelected)="onTaskSelected($event)">
+    </app-quick-panel-component>
+  </div>
+
 </div>
+
+@if (isModalOpen()) {
+<app-todo-planning-modal-component [initialTaskName]="prefilledTaskName()" [currentMilestoneId]="newMilestoneId()"
+  (closeModal)="isModalOpen.set(false)" (todoPlanned)="onTodoModalPlanned()">
+</app-todo-planning-modal-component>
+}
