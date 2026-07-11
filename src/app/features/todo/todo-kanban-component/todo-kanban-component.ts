@@ -28,21 +28,38 @@ import { TodoViewModel } from '../../../core/viewmodel/todo-view-model';
 export class TodoKanbanComponent {
   private todoService = inject(TodoService);
 
+  private privateTodos = computed(() => {
+    const allTasks = this.todoService.allTodos ? this.todoService.allTodos() : [];
+    
+    return allTasks.filter(t => !t.milestoneId || t.milestoneId === '');
+  });
+
   // Wir greifen auf die gefilterten oder rohen Todos deines Services zu
   // Falls dein Service eine andere Methode für alle Todos hat (z.B. todosSignal), passe es kurz an
-todoList = computed(() => 
-    this.todoService.allTodos()
+todoList = computed(() => {
+    return this.privateTodos()
       .filter(t => !t.done)
-      .map(todo => new TodoViewModel(todo, false))
-  );
+      .map(t => new TodoViewModel(
+        t, 
+        false, // isDescriptionOpen: im Kanban geschlossen
+        true,  // canEdit: Punkte dürfen angepasst werden
+        false  // canDelete: Löschen im Kanban deaktiviert
+      ));
+  });
 
-  doneList = computed(() => 
-    this.todoService.allTodos()
+  // 🎯 SPALTE 2: Erledigte Aufgaben (Bedient sich ebenfalls aus den privaten Todos)
+  doneList = computed(() => {
+    return this.privateTodos()
       .filter(t => t.done)
-      .map(todo => new TodoViewModel(todo, false))
-  );
-  
-onDrop(event: CdkDragDrop<TodoViewModel[]>) { // Typisierung verfeinert
+      .map(t => new TodoViewModel(
+        t, 
+        false, // isDescriptionOpen
+        true,  // canEdit
+        false  // canDelete
+      ));
+  });
+
+  onDrop(event: CdkDragDrop<TodoViewModel[]>) { // Typisierung verfeinert
     if (event.previousContainer === event.container) {
       // Innerhalb der gleichen Spalte umsortieren
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);

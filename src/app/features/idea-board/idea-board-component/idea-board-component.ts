@@ -19,6 +19,7 @@ import { UniversalTagInputComponent } from '../../../core/shared/components/univ
 import { NoteInputComponent } from '../note-input-component/note-input-component';
 import { FilterService } from '../../../core/services/filter-service';
 import { TodoPlanningModalComponent } from '../../../core/shared/components/todo-planning-modal-component/todo-planning-modal-component';
+import { UserService } from '../../../core/services/user/user-service';
 
 @Component({
   selector: 'app-idea-board',
@@ -38,7 +39,7 @@ import { TodoPlanningModalComponent } from '../../../core/shared/components/todo
 export class IdeaBoardComponent {
   private noteService = inject(NoteService);
   private boardStateService = inject(IdeaSortingService);
-  private projectService = inject(ProjectService);
+  private userService = inject(UserService)
   private tabService = inject(TabNavigationService);
   private filterService = inject(FilterService)
 
@@ -55,7 +56,7 @@ export class IdeaBoardComponent {
   private viewModelCache: NoteViewModel[] = [];
   public currentNotes = computed(() => this.noteService.notesList());
   public isTodoPopupShow = signal<boolean>(false)
-   
+
   // Die Zwischenspeicher für die KI-Daten
   public ideaToPlanTitle = signal<string>('');
   public ideaToPlanDescription = signal<string>('');
@@ -148,6 +149,18 @@ export class IdeaBoardComponent {
       this.onNoteDeleted(vmToDelete.note.id);
     }
   }
+
+  // 2. Das neue Prädikat für den Mülleimer:
+  public canIdeaEnterTrash = (drag: any): boolean => {
+    const vm = drag.data as NoteViewModel;
+    if (!vm) return false;
+
+    // Wir holen die ID des aktuellen Users (z.B. über dein Auth/User-System)
+    const currentUserId = this.userService.getCurrentUserId();
+
+    // Das ViewModel entscheidet eiskalt!
+    return vm.canDelete(currentUserId);
+  };
 
   /**
    * 🎰 Hilfsmethode: Schickt eine Note in die Projektkalkulation
@@ -301,10 +314,10 @@ export class IdeaBoardComponent {
     this.newTag = String(neuerTag || '');
   }
 
-// 🚀 Morgen früh einfach genau so in deine idea-board-component.ts einsetzen:
+  // 🚀 Morgen früh einfach genau so in deine idea-board-component.ts einsetzen:
   public openTodoPlanningFromIdea(ideaData: { title: string; content: string; category: string }): void {
     console.log("🎯 KI-Daten empfangen, wir füttern die Signale und öffnen das Popup!");
-    
+
     // 1. Die KI-Daten in den Signalen zwischenspeichern
     this.ideaToPlanTitle.set(ideaData.title);
     this.ideaToPlanDescription.set(ideaData.content);

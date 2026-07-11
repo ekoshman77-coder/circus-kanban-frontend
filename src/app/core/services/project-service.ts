@@ -207,6 +207,7 @@ export class ProjectService {
     // Wenn kein Backup da war oder es eine andere Idee war: Frisch starten!
     console.log('Starte frische Kalkulation für Idee:', ideaTitle);
     this.temporaryDraftSignal.set(new Project({
+      userId: this.userService.getCurrentUserId()?? "",
       ideaId: targetIdeaId,
       title: ideaTitle || '',
       milestones: [],
@@ -291,6 +292,8 @@ export class ProjectService {
 
   public saveCalculatedProject(project: Project): Observable<string> {
     // Wir übergeben das neue Projekt und den aktuellen Stand des Pools
+    project.userId = this.userService.getCurrentUserId()?? ""
+    console.log("Service saveCalculatedProject", project)
     return this.dataManager.createProject(project, this.allProjectsPool()).pipe(
       tap((savedProject) => {
         this.allProjectsPool.update(projects => [...projects, savedProject]);

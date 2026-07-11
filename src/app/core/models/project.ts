@@ -7,6 +7,7 @@ import { ProjectMember } from "./project-member";
 
 export class Project {
   public id: string;
+  public userId: string;
   public ideaId: string;
   public title: string;
   public area: string;
@@ -19,6 +20,7 @@ export class Project {
   constructor(init: {
     ideaId: string;
     title: string;
+    userId: string;
     area: string;
     id?: string;
     content?: string;
@@ -29,6 +31,7 @@ export class Project {
     this.title = init.title;
     this.area = init.area;
     this.ideaId = init.ideaId;
+    this.userId = init.userId;
     
     // 🛡️ Sichere Defaults für alles Optionale
     this.id = init.id ?? generateLocalId();

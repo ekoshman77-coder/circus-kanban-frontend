@@ -1,23 +1,23 @@
-/* 🌟 DIE GROSSE ERFOLGS-KARTE */
+/* 🌟 DIE GROSSE ERFOLGS-KARTE (Pimped with Champion-Vibes) */
 .express-celebration-card {
   width: 100%;
-  max-width: 650px; /* Angenehme Breite, damit es auf großen Bildschirmen nicht unendlich lang gezogen wird */
-  margin: 0 auto 30px auto; /* Zentriert auf der leeren Seite */
+  max-width: 650px;
+  margin: 20px auto 30px auto;
   
-  /* Der energetische Erfolgs-Verlauf */
-  background: linear-gradient(135deg, #e0f2fe 0%, #e0e7ff 100%); 
-  border: 2px solid #bae6fd; 
-  border-radius: 20px; /* Schön weiche Ecken */
-  padding: 30px; /* Viel Luft nach innen! */
+  /* 🏆 Edler Smaragd-Erfolgs-Verlauf mit einem Hauch von Gold-Schimmer */
+  background: linear-gradient(135deg, #e8f5e9 0%, #f0f4f8 100%); 
+  border: 2px solid #a7f3d0; 
+  border-radius: 20px;
+  padding: 30px;
   box-sizing: border-box;
-  box-shadow: 0 12px 32px rgba(14, 165, 233, 0.15);
+  box-shadow: 0 12px 32px rgba(16, 185, 129, 0.12); /* Grüner Schatten für Erfolg! */
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .express-celebration-card:focus-within {
-  border-color: #38bdf8;
-  box-shadow: 0 16px 40px rgba(14, 165, 233, 0.25);
-  transform: translateY(-2px); /* Schwebt elegant auf, wenn man tippt */
+  border-color: #34d399;
+  box-shadow: 0 16px 40px rgba(16, 185, 129, 0.22);
+  transform: translateY(-3px); /* Schwebt noch schöner auf! */
 }
 
 /* HEADER */
@@ -25,71 +25,75 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-bottom: 24px;
-  border-bottom: 1px solid rgba(186, 230, 253, 0.6);
-  padding-bottom: 16px;
+  margin-bottom: 25px;
+  border-bottom: 1px solid rgba(16, 185, 129, 0.15);
+  padding-bottom: 15px;
 }
 
 .celebrate-icon {
-  font-size: 32px;
-  animation: bounce 2s infinite;
+  font-size: 36px;
+  animation: pulseSuccess 2s infinite ease-in-out; /* Lässt den Pokal leicht pulsieren */
+}
+
+@keyframes pulseSuccess {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); filter: drop-shadow(0 0 8px #f59e0b); }
+  100% { transform: scale(1); }
 }
 
 .header-text h3 {
   margin: 0;
-  font-size: 20px;
-  color: #0f172a;
+  color: #065f46; /* Dunkles Erfolgs-Grün */
+  font-size: 22px;
   font-weight: 800;
 }
 
 .header-text p {
   margin: 4px 0 0 0;
+  color: #047857;
   font-size: 14px;
-  color: #475569;
 }
 
-/* FORMULAR-STRUKTUR (Vertikal) */
+/* FORMULAR CONTAINER */
 .express-vertical-form {
   display: flex;
   flex-direction: column;
-  gap: 20px; /* Satter Abstand zwischen den Zeilen */
+  gap: 18px;
 }
 
 .form-field-group {
   display: flex;
   flex-direction: column;
-  gap: 8px; /* Abstand zwischen Label und Input */
+  gap: 6px;
 }
 
 .field-label {
   font-size: 13px;
   font-weight: 700;
-  color: #334155;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-left: 4px;
+  color: #344054;
+  margin-left: 2px;
 }
 
-.field-label .required {
+.required {
   color: #ef4444;
 }
 
-/* INPUT-CONTAINER MIT ICON */
+/* INPUT & SELECT STYLE */
 .input-wrapper {
+  position: relative;
   display: flex;
   align-items: center;
-  height: 46px; /* Schön groß und griffig */
-  background-color: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(186, 230, 253, 0.8);
+  background: white;
+  border: 1px solid #d0d5dd;
   border-radius: 10px;
+  padding: 10px 14px;
   transition: all 0.2s ease;
-  padding: 0 14px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
 }
 
 .input-wrapper:focus-within {
-  background-color: #ffffff;
-  border-color: #38bdf8;
-  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.1), inset 0 0 0 1px #38bdf8;
+  border-color: #10b981; /* Grüner Fokus */
+  box-shadow: 0 0 0 4px #d1fae5;
 }
 
 .input-icon {
@@ -98,78 +102,225 @@
   user-select: none;
 }
 
-/* BEREINIGUNG DER INPUTS */
-.express-vertical-form input {
-  flex: 1;
-  height: 100%;
-  background: transparent !important;
+.input-wrapper input, 
+.input-wrapper select,
+.input-wrapper textarea {
+  width: 100%;
   border: none !important;
   outline: none !important;
   font-size: 15px;
   color: #1e293b;
   font-weight: 600;
   padding: 0;
+  background: transparent;
 }
 
-.express-vertical-form input::placeholder {
+.input-wrapper input::placeholder,
+.input-wrapper textarea::placeholder {
   color: #94a3b8;
   font-weight: 400;
 }
 
-/* STATS GRID (Effort und UsedEffort nebeneinander) */
-.form-stats-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+/* TEXTAREA EXTRA */
+.text-area-wrapper {
+  align-items: flex-start;
+}
+.textarea-icon {
+  margin-top: 2px;
 }
 
-/* BUTTON BEREICH (Ganz unten, volle Breite) */
+/* KATEGORIE WRAPPER */
+.express-category-wrapper {
+  background: white;
+  border: 1px solid #d0d5dd;
+  border-radius: 10px;
+  padding: 6px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+}
+
+/* BUTTON BEREICH (Mächtiger, befriedigender Erfolgs-Buzzer!) */
 .form-actions {
   margin-top: 10px;
 }
 
 .celebrate-submit-btn {
   width: 100%;
-  height: 50px; /* Mächtiger, befriedigender Button */
-  background: linear-gradient(135deg, #2ecc71, #27ae60);
+  height: 54px; /* Richtig fetter Buzzer */
+  /* Ein satter, energischer Smaragd-Verlauf */
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
   border: none;
-  border-radius: 12px;
+  border-radius: 14px;
   font-size: 16px;
   font-weight: 800;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 16px rgba(46, 204, 113, 0.35);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35); /* Leuchtender grüner Schatten */
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .celebrate-submit-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #27ae60, #219653);
-  transform: scale(1.02);
-  box-shadow: 0 8px 20px rgba(46, 204, 113, 0.45);
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.45);
 }
 
 .celebrate-submit-btn:active:not(:disabled) {
-  transform: scale(0.98);
+  transform: translateY(1px);
+  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.3);
 }
 
 .celebrate-submit-btn:disabled {
   background: #cbd5e1;
-  box-shadow: none;
-  opacity: 0.6;
+  color: #94a3b8;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
-/* ANIMATIONEN */
-@keyframes bounce {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-6px) scale(1.15); }
-}
-
-/* Styling für den Kategorie-Wrapper in der Express-Card */
-.express-category-wrapper {
+/* 🎛️ DAS NEUE SUCCESS-BUTTON-GRID */
+.express-effort-buttons-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   width: 100%;
-  margin-top: 4px;
+  margin-top: 5px;
+}
+
+.effort-btn {
+  flex: 1;
+  min-width: 42px;
+  height: 44px;
+  background: white;
+  border: 1px solid #d0d5dd;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #344054;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.effort-btn:hover {
+  border-color: #10b981;
+  background-color: #f0fdf4;
+  color: #059669;
+}
+
+/* 🔥 Wenn der Button aktiv/ausgewählt ist: Strahlendes Erfolgs-Grün! */
+.effort-btn.active {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-color: #059669;
+  color: white;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+  transform: scale(1.05);
+}
+
+/* Der Bonus-Knopf */
+.plus-btn {
+  background: #f8fafc;
+  border-style: dashed;
+}
+
+/* 🧪 DER PLUS-MINUS COUNTER-CONTAINER */
+.custom-counter-wrapper {
+  display: flex;
+  align-items: center;
+  background: white;
+  border: 2px solid #10b981; /* Erfolgs-Grün */
+  border-radius: 12px;
+  height: 44px;
+  flex: 3; /* Nimmt etwas mehr Breite ein für die Buttons */
+  min-width: 180px;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+  overflow: hidden;
+  animation: slideInCounter 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideInCounter {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Die fetten Plus/Minus Knöpfe */
+/* 🧪 DER INVERTIERTE COUNTER-BUTTON (Mächtig & Klar sichtbar!) */
+.counter-action-btn {
+  width: 44px; /* Ein klein wenig breiter für noch besseres Treffen */
+  height: 100%;
+  
+  /* 🟢 JETZT MIT GEWINNFARBEN INVERTIERT: Grüner Hintergrund, weißer Text! */
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white; 
+  
+  border: none;
+  font-size: 20px; /* Schön groß und knackig */
+  font-weight: 900; /* Extra fett */
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 🟢 Hover-Effekt: Wird beim Drüberfahren leicht dunkler und intensiver */
+.counter-action-btn:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* 🟢 Active-Effekt: Physisches Feedback beim echten Klicken */
+.counter-action-btn:active {
+  background: linear-gradient(135deg, #047857 0%, #064e3b 100%);
+  transform: scale(0.95); /* Schnappt minimal ein beim Klicken */
+}
+
+/* Die Anzeige in der Mitte bekommt durch die grünen Außen-Buttons noch mehr Kontrast */
+.counter-value-display {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  background: #ffffff;
+  padding: 0 6px;
+  border-left: 1px solid #d1fae5;
+  border-right: 1px solid #d1fae5;
+}
+.counter-number {
+  font-size: 16px;
+  font-weight: 900;
+  color: #065f46;
+  line-height: 1.1;
+}
+
+.counter-unit {
+  font-size: 9px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Der Schließen-X-Knopf ganz rechts */
+.counter-close-btn {
+  width: 32px;
+  height: 100%;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-left: 1px solid #e2e8f0;
+  transition: all 0.2s;
+}
+
+.counter-close-btn:hover {
+  color: #ef4444;
+  background: #fef2f2;
 }

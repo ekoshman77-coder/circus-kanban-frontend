@@ -26,6 +26,7 @@ export class ProjectRepository {
 
   // ➕ Projekt erstellen: POST /api/projects
   public createProject(projectDto: any): Observable<any> {
+    console.log("ProjectRepository createProject", projectDto)
     return this.http.post<any>(projectApiUrl, projectDto);
   }
 

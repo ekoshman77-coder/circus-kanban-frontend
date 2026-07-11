@@ -34,7 +34,11 @@
     @if (!vm.isEditing()) {
       <div class="action-buttons-group">
         <button class="round-btn view-btn" (click)="vm.togglePopup()" data-tooltip="Details anzeigen">🔍</button>
-        <button class="round-btn edit-btn" (click)="vm.startEdit()" data-tooltip="Zettel bearbeiten">📝</button>
+         @if (vm.canEdit(currentUserId())) {
+           <button class="round-btn edit-btn" (click)="vm.startEdit()" data-tooltip="Zettel bearbeiten">📝</button>
+         } @else {
+           <span class="lock-icon">🔒 Schreibgeschützt</span>
+         }
       </div>
     }
 

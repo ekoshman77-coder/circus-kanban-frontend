@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Note } from '../../../core/models/note';
 import { NoteViewModel } from '../../../core/viewmodel/note-view-model';
 import { WeatherIconPipe } from '../../../core/shared/pipes/weather-icon-pipe';
+import { UserService } from '../../../core/services/user/user-service';
 
 @Component({
   selector: 'app-note-component',
@@ -18,6 +19,9 @@ export class NoteComponent {
   // 📢 Event nach oben für die PostgreSQL-Datenbank
   @Output() updated = new EventEmitter<Note>();
 
+  private userService = inject(UserService)
+
+  public currentUserId = computed(() => this.userService.getCurrentUserId())
   public saveEdit(): void {
     // 1. Dem ViewModel sagen, dass der Edit-Modus vorbei ist
     this.vm.closeEdit();

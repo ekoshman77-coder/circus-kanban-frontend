@@ -4,20 +4,24 @@
         <span class="celebrate-icon">🏆</span>
         <div class="header-text">
             <h3>Spontaner Erfolg!</h3>
-            <p>Aufgabe direkt erledigt? Feier es und schieb sie direkt ins Archiv!</p>
+            <p>Aufgabe direkt erledigt? Feier deinen Erfolg und schieb sie direkt ins Archiv!</p>
         </div>
     </div>
 
+    <!-- Wichtig: Da wir Signals nutzen, binden wir ngSubmit direkt an das Template-Formular -->
     <form (ngSubmit)="submitExpressTodo()" class="express-vertical-form">
 
+        <!-- 🏢 MEILENSTEIN-SELECTOR (Wie im Planning-Modal!) -->
         <div class="form-field-group">
-            
+            <label class="field-label">Zugehöriger Meilenstein</label>
             <app-milestone-selector-component
-            [initialMilestoneId]="milestoneId()"
-            (milestoneSelected)="onMilestoneSelected($any($event))"
-            >
+                [initialMilestoneId]="milestoneId()"
+                (milestoneSelected)="onMilestoneSelected($any($event))">
             </app-milestone-selector-component>
-            
+        </div>
+
+        <!-- WAS WURDE GEROCKT -->
+        <div class="form-field-group">
             <label class="field-label">Was hast du gerade gerockt? <span class="required">*</span></label>
             <div class="input-wrapper">
                 <span class="input-icon">📝</span>
@@ -26,54 +30,72 @@
             </div>
         </div>
 
+        <!-- 🏷️ KI-KATEGORIE-INPUT (Exakt so integriert wie im Planning-Modal!) -->
         <div class="form-field-group">
             <label class="field-label">In welche Kategorie passt das? 🏷️</label>
             <div class="express-category-wrapper">
-                <app-task-category 
-                    #categorySelector 
-                    [taskName]="expressTask()"
-                    (categoryChanged)="onCategoryChanged($event)">
-                </app-task-category>
+                <app-universal-tag-input-component 
+                    [textToWatch]="expressTask()" 
+                    [contextType]="'todo'"
+                    [placeholder]="'Kategorie automatisch ermitteln...'" 
+                    [initialValue]="expressCategory()"
+                    (valueChanged)="onCategoryChanged($event)">
+                </app-universal-tag-input-component>
             </div>
         </div>
 
+        <!-- NOTIZ / BESCHREIBUNG -->
         <div class="form-field-group">
-            <label class="field-label">Kurze Notiz oder Beschreibung</label>
-            <div class="input-wrapper">
-                <span class="input-icon">📓</span>
-                <input type="text" [(ngModel)]="expressDescription" name="expressDescription"
-                    placeholder="Optional: Details, Stichpunkte oder warum es schnell gehen musste..." />
+            <label class="field-label">Kurze Notiz zum Erfolg (Beschreibung)</label>
+            <div class="input-wrapper text-area-wrapper">
+                <span class="input-icon textarea-icon">✍️</span>
+                <textarea [(ngModel)]="expressDescription" name="expressDescription" rows="2"
+                    placeholder="Optional: Details, Stichpunkte oder warum es schnell gehen musste..."></textarea>
             </div>
         </div>
 
-        <div class="form-stats-grid">
-            <div class="form-field-group">
-                <label class="field-label">Geplanter Aufwand (Effort)</label>
-                <div class="input-wrapper">
-                    <span class="input-icon">📈</span>
-                    <select [(ngModel)]="expressEffort" name="expressEffort">
-                        @for (value of fibonacciValues; track value) {
-                        <option [value]="value">{{ value }} P</option>
-                        }
-                    </select>
-                </div>
-            </div>
-            <div class="form-field-group">
-                <label class="field-label">Tatsächlich gebrauchte Zeit</label>
-                <div class="input-wrapper">
-                    <span class="input-icon">⏱️</span>
-                    <select [(ngModel)]="expressUsedEffort" name="expressUsedEffort">
-                        @for (value of fibonacciValues; track value) {
-                        <option [value]="value">{{ value }} P</option>
-                        }
-                    </select>
-                </div>
+        <!-- 🎛️ COOLE COUNTER-ZEILE (Kein Fibonacci-Zwang mehr) -->
+        <div class="form-field-group single-effort-field">
+            <label class="field-label">Tatsächlicher Aufwand (Story Points) ⏱️</label>
+            <div class="express-effort-buttons-row">
+                @for (value of effortValues; track value) {
+                    @if (!isCustomMode()) {
+                        <button 
+                            type="button" 
+                            class="effort-btn" 
+                            [class.active]="expressUsedEffort() === value"
+                            (click)="selectStandardEffort(value)">
+                            {{ value }}
+                        </button>
+                    }
+                }
+
+                @if (isCustomMode()) {
+                    <div class="custom-counter-wrapper">
+                        <button type="button" class="counter-action-btn" (click)="decreaseEffort()">−</button>
+                        <div class="counter-value-display">
+                            <span class="counter-number">{{ expressUsedEffort() }}</span>
+                            <span class="counter-unit">Points</span>
+                        </div>
+                        <button type="button" class="counter-action-btn" (click)="increaseEffort()">+</button>
+                        <button type="button" class="counter-close-btn" (click)="resetToStandard()">✕</button>
+                    </div>
+                } @else {
+                    <button 
+                        type="button" 
+                        class="effort-btn plus-btn" 
+                        [class.active]="expressUsedEffort() > 10"
+                        (click)="activateCustomMode()">
+                        {{ expressUsedEffort() > 10 ? expressUsedEffort() + ' P' : '10+' }}
+                    </button>
+                }
             </div>
         </div>
 
+        <!-- ERFOLGS-BUZZER -->
         <div class="form-actions">
             <button type="submit" [disabled]="!expressTask().trim()" class="celebrate-submit-btn">
-                🚀 Grandios! Ab ins Archiv
+                🔥 Grandios! Direkt ins Archiv feuern
             </button>
         </div>
 

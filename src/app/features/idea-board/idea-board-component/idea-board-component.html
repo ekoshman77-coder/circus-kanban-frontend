@@ -1,7 +1,10 @@
 <div class="board-container">
     <div class="top-bar">
 
-        <div class="trash-zone" id="trashList" cdkDropList [cdkDropListConnectedTo]="['wallList']"
+        <div class="trash-zone" id="trashList" 
+            cdkDropList  
+            [cdkDropListConnectedTo]="['wallList']"
+            [cdkDropListEnterPredicate]="canIdeaEnterTrash"
             (cdkDropListDropped)="onDropped($event)">
             <div class="trash-content">
                 <span class="trash-icon">🗑️</span>
@@ -20,8 +23,10 @@
             </details>
         </div>
 
-        <div class="calculator-slot" id="calculatorList" cdkDropList [cdkDropListConnectedTo]="['wallList']"
-            [cdkDropListEnterPredicate]="canIdeaEnterCalculator" (cdkDropListDropped)="onDropped($event)">
+        <div class="calculator-slot" id="calculatorList" 
+            cdkDropList [cdkDropListConnectedTo]="['wallList']"
+            [cdkDropListEnterPredicate]="canIdeaEnterCalculator" 
+            (cdkDropListDropped)="onDropped($event)">
             <div class="slot-content">
                 <div class="slot-row">
                     <span class="slot-icon">🧮</span>

@@ -38,4 +38,16 @@ export class NoteViewModel {
     // Das Board fragt nur – das ViewModel entscheidet anhand der Daten!
     return !this.note.isInCalculation;
   }
+
+  /** Prüft, ob der aktuelle User die Note bearbeiten darf */
+  public canEdit(currentUserId: string | null): boolean {
+    // Nur der Ersteller darf editieren
+    return this.note.userId === currentUserId;
+  }
+
+  /** Prüft, ob der aktuelle User die Note löschen (in den Eimer werfen) darf */
+  public canDelete(currentUserId: string | null): boolean {
+    // Nur der Ersteller darf löschen
+    return this.note.userId === currentUserId;
+  }
 }

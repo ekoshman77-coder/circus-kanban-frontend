@@ -26,8 +26,8 @@ export class NotificationService {
         }
         let timeout = this.successTimeout;
         switch(type) {
-           case 'error': timeout = 7000; break
-           case 'info': timeout = 4500;
+           case 'error': timeout = this.errorTimeout; break
+           case 'info': timeout = this.infoTimout;
         } 
 
         this.notificationSignal.update((array) => [...array, newNotification]);

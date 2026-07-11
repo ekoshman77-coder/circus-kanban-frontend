@@ -64,7 +64,7 @@ public getProjects(): Observable<Project[]> { // <-- Parameter 'userId' entfernt
 public createProject(project: Project, actualList: Project[]): Observable<Project> { // <-- Parameter 'userId' entfernt, 'actualList' hinzugefügt!
     // Wir nehmen die userId einfach direkt aus dem Projekt oder setzen einen Fallback, falls nötig.
     // Da das Mapping-Helper 'mapToCreateDto' die userId verlangt, holen wir sie uns dort aus dem teamMember-Array oder dem DTO.
-    const projectUserId = (project as any).userId || 'global_user';
+    const projectUserId = (project as any).userId || '';
     const body = this.mapToCreateDto(project, projectUserId);
 
     if (this.connectionService.isOffline()) {
@@ -72,6 +72,7 @@ public createProject(project: Project, actualList: Project[]): Observable<Projec
       localStorage.setItem(this.STORAGE_KEY_PREFIX + 'global_pool', JSON.stringify(neueListe));
       return of(project);
     }
+    console.log("DataManager createProject", project)
 
     return this.projectRepository.createProject(body).pipe(
       map(backendProject => {
@@ -175,6 +176,7 @@ public deleteProject(id: string, actualList: Project[]): Observable<void | undef
 
     return new Project({
       id: bp.id,
+      userId: bp.userId,
       ideaId: bp.ideaId,
       title: bp.title,
       area: bp.area,
