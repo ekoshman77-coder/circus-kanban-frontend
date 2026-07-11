@@ -294,6 +294,8 @@ export class ProjectService {
     // Wir übergeben das neue Projekt und den aktuellen Stand des Pools
     project.userId = this.userService.getCurrentUserId()?? ""
     console.log("Service saveCalculatedProject", project)
+    this.noteService.updateNoteStatus(project.ideaId, true)
+    
     return this.dataManager.createProject(project, this.allProjectsPool()).pipe(
       tap((savedProject) => {
         this.allProjectsPool.update(projects => [...projects, savedProject]);

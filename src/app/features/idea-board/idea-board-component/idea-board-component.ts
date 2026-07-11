@@ -176,11 +176,11 @@ export class IdeaBoardComponent {
 
     try {
       // 1. 🌟 OPTISCHE SPERRE: Note auf dem Board direkt als "In Kalkulation" markieren
-      const updatedNote: Note = {
-        ...vmToCalculator.note,
-        isInCalculation: true
-      };
-      this.noteService.updateNote(updatedNote);
+      // const updatedNote: Note = {
+      //   ...vmToCalculator.note,
+      //   isInCalculation: true
+      // };
+      // this.noteService.updateNote(updatedNote);
 
       // 2. 🗺️ NAVIGATION TRIGGERN: Übergreifend Bescheid geben
       console.log('🗺️ Schalte Tab auf Kalkulator für Idee-ID:', vmToCalculator.note.id);

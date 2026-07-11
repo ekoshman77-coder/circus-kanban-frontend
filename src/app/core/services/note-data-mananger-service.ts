@@ -100,7 +100,7 @@ export class NoteDataManagerService {
   /**
    * 🗑️ ZETTEL LÖSCHEN (Mit actualList!)
    */
-  public deleteNote(id: string, actualList: Note[]): Observable<void> {
+  public deleteNote(id: string, userId: string, actualList: Note[]): Observable<void> {
     const gefilterteListe = actualList.filter(n => n.id !== id);
     this.saveToLocalStorage(gefilterteListe);
 
@@ -108,6 +108,6 @@ export class NoteDataManagerService {
       return of(undefined);
     }
 
-    return this.noteRepository.deleteNote(id);
+    return this.noteRepository.deleteNote(id, userId);
   }
 }

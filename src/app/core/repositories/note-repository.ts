@@ -38,10 +38,11 @@ export class NoteRepository {
   }
 
   // 🗑️ DELETE /api/notes/{id}
-  deleteNote(id: string): Observable<void> {
-    return this.http.delete<void>(`${noteApiUrl}/${id}`);
+deleteNote(id: string, userId: string): Observable<void> {
+    let params = new HttpParams().set('userId', userId);
+    return this.http.delete<void>(`${noteApiUrl}/${id}`, { params });
   }
-
+  
   // 🔍 GET Einzelne Note
   getNoteById(id: string): Observable<Note> {
     return this.http.get<INoteJson>(`${noteApiUrl}/${id}`).pipe(

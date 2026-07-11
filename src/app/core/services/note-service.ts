@@ -118,12 +118,15 @@ export class NoteService {
    * 4. Zettel löschen
    */
   public removeNote(id: string): void {
+    const userId = this.userService.getCurrentUserId()
+    if (!userId) return;
+
     const alteListe = this.notesSignal();
-    
+       
     // Optimistisches UI-Update
     this.notesSignal.update(notes => notes.filter(n => n.id !== id));
-
-    this.dataManager.deleteNote(id, alteListe).subscribe({
+ 
+    this.dataManager.deleteNote(id, userId, alteListe).subscribe({
       error: (err) => {
         console.error('Fehler beim Löschen, stelle Liste wieder her:', err);
         this.notesSignal.set(alteListe);
