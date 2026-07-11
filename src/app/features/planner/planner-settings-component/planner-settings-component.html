@@ -1,1 +1,83 @@
-<p>planner-settings-component works!</p>
+<div class="settings-card">
+  <h3 class="settings-title">⚙️ Tages-Konfiguration</h3>
+  <p class="settings-subtitle">Stelle hier deine aktuelle Tagesform und dein biologisches Profil ein.</p>
+
+  <div class="setting-group">
+    <label class="group-label">Wie ist deine Energie gerade?</label>
+    <div class="energy-buttons">
+      <button 
+        [class.active]="userService.userEnergy() === 'low'" 
+        (click)="userService.userEnergy.set('low')" 
+        class="energy-btn low">🥱 Schläfrig / Müde</button>
+      <button 
+        [class.active]="userService.userEnergy() === 'normal'" 
+        (click)="userService.userEnergy.set('normal')" 
+        class="energy-btn normal">😐 Normal</button>
+      <button 
+        [class.active]="userService.userEnergy() === 'high'" 
+        (click)="userService.userEnergy.set('high')" 
+        class="energy-btn high">⚡ Klarer Kopf / Fokus</button>
+    </div>
+  </div>
+
+  <div class="setting-group">
+    <label class="group-label">Wie lange planst du HEUTE noch zu arbeiten?</label>
+    <div class="time-slider-container">
+      <input 
+        type="range" min="1" max="12" step="any"
+        [value]="sliderWorkingTimeLeft()" 
+        (input)="onWorkingTimeLeftInput($event)"
+        (change)="onWorkingTimeLeftChange()" 
+        class="time-slider"
+      >
+      <span class="time-display">⏳ <strong>{{ displayWorkingTimeLeft() }} Std.</strong></span>
+    </div>
+  </div>
+
+  <hr class="settings-divider">
+
+  <h4 class="profile-title">🧠 Dein biologischer Rhythmus & Standards</h4>
+  <p class="profile-subtitle">Diese Werte gelten als Standard für jeden neuen Tag.</p>
+
+  <div class="setting-group">
+    <label class="group-label">Deine regelmäßige tägliche Arbeitszeit (Standard):</label>
+    <div class="time-slider-container">
+      <input 
+        type="range" min="1" max="12" step="any"
+        [value]="sliderWorkingHours()" 
+        (input)="onWorkingHoursInput($event)"
+        (change)="onWorkingHoursChange()"
+        class="time-slider prime-accent"
+      >
+      <span class="time-display">💼 <strong>{{ displayWorkingHours() }} Stunden</strong></span>
+    </div>
+  </div>
+
+  <div class="setting-group">
+    <label class="group-label">Beginn deiner mentalen Prime-Time:</label>
+    <div class="time-slider-container">
+      <input 
+        type="range" min="0" max="23" step="any"
+        [value]="sliderPrimeStart()" 
+        (input)= "onPrimeStartInput($event)"
+        (change)="onPrimeTimeStartChange()"
+        class="time-slider prime-accent"
+      >
+      <span class="time-display">🔔 <strong>Ab {{ displayPrimeStart() }}:00 Uhr</strong></span>
+    </div>
+  </div>
+
+  <div class="setting-group">
+    <label class="group-label">Ende deines Konzentrations-Fensters:</label>
+    <div class="time-slider-container">
+      <input 
+        type="range" min="0" max="23" step="any"
+        [value]="sliderPrimeEnd()" 
+        (input)="onLocalPrimeEndInput($event)"
+        (change)="onPrimeTimeEndChange()"
+        class="time-slider prime-accent"
+      >
+      <span class="time-display">🔕 <strong>Bis {{ displayPrimeEnd() }}:00 Uhr</strong></span>
+    </div>
+  </div>
+</div>

@@ -6,13 +6,10 @@ import { PlannerComponent } from './features/planner/planner-component/planner-c
 import { authGuard } from './core/guards/auth-guard';
 import { FocusTimerComponent } from './features/focus-timer/focus-timer-component/focus-timer-component';
 import { QuickActionCenterComponent } from './features/quick-todo/quick-action-center-component/quick-action-center-component';
-import { PlannerBoardComponent } from './features/planner/planner-board-component/planner-board-component';
 import { onlineGuard } from './core/guards/online-guard';
-import { IdeaBoardComponent } from './features/idea-board/idea-board-component/idea-board-component';
 import { IdeaPageComponent } from './features/idea-board/idea-page-component/idea-page-component';
 import { ProjectCalculatorComponent } from './features/idea-board/project-calculator-component/project-calculator-component';
 import { TeamManagementComponent } from './features/team-management/team-management-component/team-management-component';
-import { TeamPoolComponent } from './features/team-management/team-pool-component/team-pool-component';
 
 export const routes: Routes = [
     { 
@@ -31,7 +28,7 @@ export const routes: Routes = [
     },
     { 
       path: "planner", 
-      component: PlannerBoardComponent,
+      component: PlannerComponent,
       canActivate: [authGuard]
     },
     { 

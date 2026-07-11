@@ -1,0 +1,154 @@
+/* ==========================================================================
+   ⚙️ PREMIUM WORKSPACE SETTINGS LOOK
+   ========================================================================== */
+
+.settings-card { 
+  /* 🪄 JETZT NOCH DÜNNER: Von 0.22 auf 0.14 reduziert, damit die Box super luftig bleibt */
+  background: rgba(184, 236, 227, 0.14) !important; 
+  backdrop-filter: blur(12px); 
+  border: 1px solid rgba(151, 224, 208, 0.6); 
+  border-radius: 14px; 
+  padding: 26px; 
+  box-shadow: 0 10px 30px -5px rgba(20, 50, 45, 0.04); 
+}
+
+.settings-title { 
+  margin: 0 0 6px 0; 
+  font-size: 19px; 
+  font-weight: 700;
+  color: #1e293b; 
+}
+
+.settings-subtitle { 
+  color: #64748b; 
+  font-size: 13px; 
+  margin: 0 0 24px 0; 
+}
+
+.setting-group { 
+  margin-bottom: 26px; 
+}
+
+.group-label { 
+  display: block; 
+  font-weight: 600; 
+  font-size: 14px; 
+  color: #334155; 
+  margin-bottom: 12px; 
+}
+
+/* --- ENERGIE BUTTONS --- */
+.energy-buttons { 
+  display: flex; 
+  gap: 12px; 
+}
+
+.energy-btn { 
+  flex: 1; 
+  padding: 12px; 
+  border-radius: 10px; 
+  font-weight: 700; 
+  font-size: 13px;
+  cursor: pointer; 
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+/* 🥱 Müde-Button (Sanfter Bernstein-Glow) */
+.energy-btn.low {
+  background: rgba(254, 243, 199, 0.5); 
+  border: 1px solid rgba(252, 211, 77, 0.5);
+  color: #92400e;
+}
+.energy-btn.low:hover {
+  background: rgba(254, 243, 199, 0.8);
+  transform: translateY(-1px);
+}
+.energy-btn.active.low { 
+  background: #fef3c7 !important; 
+  border-color: #f59e0b !important; 
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+}
+
+/* 😐 Normal-Button (🟢 ETWAS MEHR BLAU FÜR INAKTIV) */
+.energy-btn.normal {
+  background: rgba(186, 230, 253, 0.45); /* Mehr Blau-Pigmente im Ruhezustand */
+  border: 1px solid rgba(125, 211, 252, 0.6);
+  color: #0369a1;
+}
+.energy-btn.normal:hover {
+  background: rgba(186, 230, 253, 0.75);
+  transform: translateY(-1px);
+}
+.energy-btn.active.normal { 
+  background: #bae6fd !important; /* Wunderschönes sattes Pastell-Blau wenn aktiv */
+  border-color: #0ea5e9 !important; 
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2);
+}
+
+/* ⚡ Fokus-Button (🟢 MEHR VIOLETT FÜR INAKTIV) */
+.energy-btn.high {
+  background: rgba(224, 231, 255, 0.6); /* Spürbar mehr Violett/Indigo-Anteil */
+  border: 1px solid rgba(199, 210, 254, 0.8);
+  color: #3730a3;
+}
+.energy-btn.high:hover {
+  background: rgba(224, 231, 255, 0.85);
+  transform: translateY(-1px);
+}
+.energy-btn.active.high { 
+  background: #c7d2fe !important; /* Richtig saftiges, edles Fokus-Violett wenn aktiv */
+  border-color: #6366f1 !important; 
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+}
+
+/* --- SLIDER & CONTAINER --- */
+.time-slider-container { 
+  display: flex; 
+  align-items: center; 
+  gap: 16px; 
+}
+
+.time-slider { 
+  flex-grow: 1; 
+  accent-color: #3b82f6; /* Modernes Blau */
+  cursor: pointer; 
+  height: 6px;
+  border-radius: 4px;
+}
+
+.time-slider.prime-accent { 
+  accent-color: #4f46e5; /* Edles Fokus-Indigo */
+}
+
+.time-display { 
+  font-size: 13px; 
+  color: #1e293b; 
+  white-space: nowrap; 
+  background: #ffffff; 
+  padding: 7px 14px; 
+  border-radius: 8px; 
+  min-width: 115px; 
+  text-align: center; 
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+
+.settings-divider { 
+  border: 0; 
+  border-top: 1px dashed #e2e8f0; 
+  margin: 32px 0; 
+}
+
+.profile-title { 
+  margin: 0 0 4px 0; 
+  color: #1e293b; 
+  font-size: 16px; 
+  font-weight: 700;
+}
+
+.profile-subtitle { 
+  color: #64748b; 
+  font-size: 12px; 
+  margin: 0 0 22px 0; 
+}

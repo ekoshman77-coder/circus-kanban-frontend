@@ -2,101 +2,210 @@
   <app-planner-recommendation (closeRequest)="handleRecommendationResult($event)"></app-planner-recommendation>
 }
 
-@if (recommendedTodo()) {
-  <div class="active-todo-banner">
-    <div class="active-left">
-      <span class="active-badge">⚡ Aktueller Fokus</span>
-      <strong class="active-title">{{ recommendedTodo()?.task }}</strong>
+<div id="activeFocusList" 
+     cdkDropList 
+     (cdkDropListDropped)="onTodoDropped($event)"
+     class="active-todo-dropzone">
+     
+<div id="activeFocusList" 
+     cdkDropList 
+     (cdkDropListDropped)="onTodoDropped($event)"
+     class="active-todo-dropzone">
+     
+  @if (recommendedTodo()) {
+    <div class="active-todo-banner animate-fade-in">
+      <div class="active-left">
+        <span class="active-badge">⚡ Aktueller Fokus</span>
+        <strong class="active-title">{{ recommendedTodo()?.task }}</strong>
+      </div>
+      <button (click)="recommendedTodo.set(null)" class="btn-complete-focus">
+       🚀 Fokus abschließen
+      </button>
     </div>
-    <button (click)="recommendedTodo.set(null)" class="btn-complete-focus">
-      ✅ Erledigt!
-    </button>
-  </div>
-}
+  } @else {
+    <div class="active-todo-placeholder">
+      <span>💡 Tipp: Ziehe eine Aufgabe hierher, um sie als Fokus zu setzen!</span>
+    </div>
+  }
+</div>
 
 <div class="planner-container">
   <header class="planner-header">
     <div class="header-main-row">
       <h2 class="gradient-title">Smart Planner — Deine Prioritäten-Matrix</h2>
-      <button class="magic-btn" (click)="calculateRecommendation()">
-        ✨ Welches To-Do jetzt tun?
-      </button>
+      
+      <div class="header-actions-group">
+        <button class="settings-toggle-btn" [class.active-btn]="showSettings()" (click)="showSettings.update(v => !v)">
+          {{ showSettings() ? '❌ Schließen' : '⚙️ Tagesform einstellen' }}
+        </button>
+        
+        <button class="magic-btn" (click)="calculateRecommendation()">
+          ✨ Welches To-Do jetzt tun?
+        </button>
+      </div>
     </div>
     
     <p class="planner-subtitle">
-      Strategisch sortiert nach Dringlichkeit und Aufwand, völlig unabhängig von deinen Filtern.
+      Strategisch sortiert nach Dringlichkeit und Aufwand, gekoppelt an deine biologische Tagesenergie (aktuell: <strong>{{ userEnergy() | uppercase }}</strong>).
     </p>
   </header>
 
-  <div class="matrix-grid">
-    <div class="quadrant q-do-first">
-      <div class="q-header">🔥 Sofort Erledigen (Dringend & Leicht)</div>
-      <div class="q-body">
-        @for (todo of quadrantDoFirst(); track todo.id) {
-          <div class="matrix-todo-card">
-            <span class="todo-title">{{ todo.task }}</span>
-            <span class="todo-badge">{{ todo.effort }}pt</span>
-          </div>
-        } @empty {
-          <p class="empty-text">Keine dringenden "Quick Wins" offen. Gefahrenzone leer! 🙌</p>
-        }
-      </div>
-    </div>
-
-    <div class="quadrant q-schedule">
-      <div class="q-header">📅 Fokuszeit einplanen (Dringend & Aufwendig)</div>
-      <div class="q-body">
-        @for (todo of quadrantSchedule(); track todo.id) {
-          <div class="matrix-todo-card">
-            <span class="todo-title">{{ todo.task }}</span>
-            <span class="todo-badge">{{ todo.effort }}pt</span>
-          </div>
-        } @empty {
-          <p class="empty-text">Keine großen, dringenden Brocken auf dem Tisch.</p>
-        }
-      </div>
-    </div>
-
-    <div class="quadrant q-delegate">
-      <div class="q-header">⚡ Schnell wegatmen (Nicht dringend & Leicht)</div>
-      <div class="q-body">
-        @for (todo of quadrantDelegate(); track todo.id) {
-          <div class="matrix-todo-card">
-            <span class="todo-title">{{ todo.task }}</span>
-            <span class="todo-badge">{{ todo.effort }}pt</span>
-          </div>
-        } @empty {
-          <p class="empty-text">Keine kleinen Nebenaufgaben offen.</p>
-        }
-      </div>
-    </div>
-
-    <div class="quadrant q-eliminate">
-      <div class="q-header">⏳ Später / Strategisch (Nicht dringend & Aufwendig)</div>
-      <div class="q-body">
-        @for (todo of quadrantEliminate(); track todo.id) {
-          <div class="matrix-todo-card">
-            <span class="todo-title">{{ todo.task }}</span>
-            <span class="todo-badge">{{ todo.effort }}pt</span>
-          </div>
-        } @empty {
-          <p class="empty-text">Keine großen, unkritischen Aufgaben im Speicher.</p>
-        }
-      </div>
-    </div>
-  </div>
-
-  @if (quadrantRestZone().length > 0) {
-    <div class="quadrant q-rest-zone">
-      <div class="q-header">🌴 Deine Oase — Regeneration & Pausen für Heute</div>
-      <div class="q-body rest-body">
-        @for (todo of quadrantRestZone(); track todo.id) {
-          <div class="matrix-todo-card pause-card">
-            <span class="todo-title">☕ {{ todo.task }}</span>
-            <span class="todo-badge pause-badge">Aktiv</span>
-          </div>
-        }
-      </div>
+  @if (showSettings()) {
+    <div class="planner-settings-dropdown animate-slide-down">
+      <app-planner-settings></app-planner-settings>
     </div>
   }
+
+  <div class="matrix-vertical-stack">
+    
+    <div id="qDoFirstList"
+         class="quadrant q-do-first" 
+         [class.energy-low-dim]="userEnergy() === 'low'"
+         [class.is-collapsed]="!collapsedQuadrants()['doFirst']"
+         cdkDropList
+         [cdkDropListConnectedTo]="['activeFocusList']"> <div class="q-header" (click)="toggleQuadrant('doFirst')">
+        <span>🔥 Sofort Erledigen (Dringend & Leicht)</span>
+        <span class="toggle-arrow">{{ collapsedQuadrants()['doFirst'] ? '▼' : '►' }}</span>
+      </div>
+      
+      @if (collapsedQuadrants()['doFirst']) {
+        <div class="q-body animate-fade-in">
+          <div class="todo-flex-grid">
+            @for (todo of quadrantDoFirst(); track todo.id) {
+              <app-todo-item 
+                [item]="todo" 
+                [isKanbanMode]="true"
+                cdkDrag 
+                [cdkDragData]="todo">
+              </app-todo-item>            
+            } @empty {
+              <p class="empty-text">Keine dringenden, leichten Aufgaben offen.</p>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <div id="qScheduleList"
+         class="quadrant q-schedule" 
+         [class.energy-low-alert]="userEnergy() === 'low'"
+         [class.is-collapsed]="!collapsedQuadrants()['schedule']"
+         cdkDropList
+         [cdkDropListConnectedTo]="['activeFocusList']">
+      <div class="q-header" (click)="toggleQuadrant('schedule')">
+        <span>📅 Fokuszeit einplanen (Dringend & Aufwendig)</span>
+        <span class="toggle-arrow">{{ collapsedQuadrants()['schedule'] ? '▼' : '►' }}</span>
+      </div>
+      
+      @if (collapsedQuadrants()['schedule']) {
+        <div class="q-body animate-fade-in">
+          @if (userEnergy() === 'low') {
+            <div class="energy-warning-banner">
+              ☕ <em>Kopf müde! Große Brocken jetzt lieber meiden oder verschieben.</em>
+            </div>
+          }
+          <div class="todo-flex-grid">
+            @for (todo of quadrantSchedule(); track todo.id) {
+              <app-todo-item 
+                [item]="todo" 
+                [isKanbanMode]="true"
+                cdkDrag 
+                [cdkDragData]="todo">
+              </app-todo-item>            } @empty {
+              <p class="empty-text">Keine großen, dringenden Meilensteine offen.</p>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <div id="qDelegateList"
+         class="quadrant q-delegate" 
+         [class.is-collapsed]="!collapsedQuadrants()['delegate']"
+         cdkDropList
+         [cdkDropListConnectedTo]="['activeFocusList']">
+      <div class="q-header" (click)="toggleQuadrant('delegate')">
+        <span>⚡ Schnell wegatmen (Nicht dringend & Leicht)</span>
+        <span class="toggle-arrow">{{ collapsedQuadrants()['delegate'] ? '▼' : '►' }}</span>
+      </div>
+      
+      @if (collapsedQuadrants()['delegate']) {
+        <div class="q-body animate-fade-in">
+          <div class="todo-flex-grid">
+            @for (todo of quadrantDelegate(); track todo.id) {
+              <div class="matrix-todo-card draggable-todo" cdkDrag [cdkDragData]="todo">
+                <span class="todo-title">{{ todo.task }}</span>
+                <span class="todo-badge">{{ todo.effort }}pt</span>
+              </div>
+            } @empty {
+              <p class="empty-text">Keine kleinen Nebenaufgaben offen.</p>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <div id="qEliminateList"
+         class="quadrant q-eliminate" 
+         [class.energy-low-dim]="userEnergy() === 'low'"
+         [class.is-collapsed]="!collapsedQuadrants()['eliminate']"
+         cdkDropList
+         [cdkDropListConnectedTo]="['activeFocusList']">
+      <div class="q-header" (click)="toggleQuadrant('eliminate')">
+        <span>⏳ Später / Strategisch (Nicht dringend & Aufwendig)</span>
+        <span class="toggle-arrow">{{ collapsedQuadrants()['eliminate'] ? '▼' : '►' }}</span>
+      </div>
+      
+      @if (collapsedQuadrants()['eliminate']) {
+        <div class="q-body animate-fade-in">
+          <div class="todo-flex-grid">
+            @for (todo of quadrantEliminate(); track todo.id) {
+              <app-todo-item 
+                [item]="todo" 
+                [isKanbanMode]="true"
+                cdkDrag 
+                [cdkDragData]="todo">
+              </app-todo-item>            
+            } @empty {
+              <p class="empty-text">Keine großen, unkritischen Aufgaben im Speicher.</p>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <div id="qRestZoneList"
+         class="quadrant q-rest-zone" 
+         [class.oase-golden-glow]="userEnergy() === 'low'"
+         [class.is-collapsed]="!collapsedQuadrants()['restZone']"
+         cdkDropList
+         [cdkDropListConnectedTo]="['activeFocusList']">
+      <div class="q-header" (click)="toggleQuadrant('restZone')">
+        <span>🌴 Deine Oase — Regeneration & Pausen für Heute</span>
+        <span class="toggle-arrow">{{ collapsedQuadrants()['restZone'] ? '▼' : '►' }}</span>
+      </div>
+      
+      @if (collapsedQuadrants()['restZone']) {
+        <div class="q-body rest-body animate-fade-in">
+          @if (userEnergy() === 'low') {
+            <div class="oase-bonus-text">✨ Perfekter Zeitpunkt! Ruh dich aus oder tanke hier Energie.</div>
+          }
+          <div class="todo-flex-grid">
+            @for (todo of quadrantRestZone(); track todo.id) {
+              <app-todo-item 
+                [item]="todo" 
+                [isKanbanMode]="true"
+                cdkDrag 
+                [cdkDragData]="todo">
+              </app-todo-item>            } @empty {
+              <p class="empty-text" style="color: rgba(255,255,255,0.85); width: 100%; text-align: center;">
+                Aktuell keine reinen Pausen-Aktivitäten (0pt) eingetragen.
+              </p>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+  </div>
 </div>

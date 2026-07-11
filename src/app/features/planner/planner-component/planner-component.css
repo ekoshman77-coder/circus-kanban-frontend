@@ -1,11 +1,21 @@
 .planner-container {
-  padding: 16px;
+  padding: 24px;
   max-width: 1200px;
   margin: 0 auto;
   font-family: system-ui, -apple-system, sans-serif;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  background: linear-gradient(135deg, #f3f6ff 0%, #f4fbf7 100%) !important;
+  
+  /* 📐 Sanfter Innenabstand und weiche Kurven, damit das Design fließt */
+  border-radius: 12px;
+  
+  /* Ein feiner, fast unsichtbarer Schatten, um die Komponente edel abzuheben */
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.03); 
+  
+  box-sizing: border-box;
+  width: 100%;
 }
 
 /* 📋 NEU STRUKTURIERTER HEADER */
@@ -120,11 +130,49 @@
   white-space: nowrap;
 }
 
-/* 🟩 MATRIX GRID (2x2) */
-.matrix-grid {
+/* 🎯 1. Der neue vertikale Haupt-Stack */
+.matrix-vertical-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px; /* Schön viel Luft zwischen den Zonen */
+  width: 100%;
+}
+
+/* 📦 2. Quadranten als Full-Width-Container aufbereiten */
+.quadrant {
+  width: 100%;
+  height: auto !important; /* Verhindert starre 320px Boxen! */
+  min-height: unset !important;
+  max-height: 2000px;
+  overflow: hidden;
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* ⚡ 3. Das super-kollabierte Verhalten für den vertikalen Stack */
+.quadrant.is-collapsed {
+  max-height: 42px !important; /* Faltet sich radikal flach zusammen */
+  padding-bottom: 0 !important;
+  box-shadow: none;
+}
+
+/* 🎛️ 4. Das Grid für die To-Dos INNERHALB eines Quadranten */
+.todo-flex-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); /* Automatisches Auffüllen von links nach rechts! */
+  gap: 12px;
+  width: 100%;
+  padding-top: 8px;
+}
+
+/* Kartenanpassungen, damit sie im horizontalen Fluss perfekt aussehen */
+.matrix-todo-card {
+  margin-bottom: 0 !important; /* Überschreibt den alten Zeilenabstand */
+  width: 100% !important;
+}
+
+/* Oase-Spezifisches Grid-Styling glattziehen */
+.rest-body .todo-flex-grid {
+  width: 100%;
 }
 
 /* 📦 QUADRANT BOX */
@@ -314,17 +362,417 @@
 }
 
 .btn-complete-focus {
-  background: #2563eb;
-  color: white;
-  border: none;
-  padding: 6px 14px;
+  background: #ffffff;
+  color: #4f46e5; /* Indigo-Farbe passend zum App-Style */
+  border: 1px solid #e2e8f0;
+  padding: 8px 14px;
   border-radius: 6px;
-  font-weight: 600;
   font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
+/* ⚡ Der Button reagiert dynamisch, wenn man mit der Maus drüberfährt */
 .btn-complete-focus:hover {
-  background: #1d4ed8;
+  background: #4f46e5;
+  color: #ffffff;
+  border-color: #4f46e5;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+  transform: translateY(-1px);
+}
+
+.btn-complete-focus:active {
+  transform: translateY(0);
+}
+
+/* ==========================================================================
+   🔄 ERWEITERUNGEN FÜR SMART-PLANNER UPGRADES (Settings & Collapsing)
+   ========================================================================== */
+
+.header-actions-group {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.settings-toggle-btn {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.settings-toggle-btn:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.settings-toggle-btn.active-btn {
+  background: #64748b;
+  color: #ffffff;
+  border-color: #475569;
+}
+
+.planner-settings-dropdown {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 16px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+}
+
+.toggle-arrow {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+/* ☕ PSYCHOLOGISCHE ENERGIE-KLASSEN */
+
+/* 1. Unpassende Quadranten ausgrauen */
+.quadrant.energy-low-dim {
+  opacity: 0.6;
+  filter: grayscale(30%);
+  transition: all 0.3s ease;
+}
+.quadrant.energy-low-dim:hover {
+  opacity: 0.95;
+  filter: none;
+}
+
+/* 2. Warnung für dringende Mammut-Aufgaben */
+.quadrant.energy-low-alert {
+  border: 2px dashed #f59e0b !important;
+  background-color: #fffbeb !important;
+}
+.quadrant.energy-low-alert .q-header {
+  background: linear-gradient(135deg, #d97706, #b45309);
+}
+
+.energy-warning-banner {
+  background: #fef3c7;
+  color: #d97706;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  margin-bottom: 12px;
+  text-align: center;
+  font-weight: 500;
+  border: 1px solid #fde68a;
+}
+
+/* 3. Golden leuchtende Oase bei Müdigkeit */
+.quadrant.oase-golden-glow {
+  border: 2px solid #fbbf24 !important;
+  background: linear-gradient(to bottom, #ffffff, #fffdf5) !important;
+  animation: pulse-gold 3s infinite alternate;
+}
+
+.oase-bonus-text {
+  color: #b45309;
+  font-size: 12px;
+  font-weight: 600;
+  width: 100%;
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+/* 🎬 ANIMATIONEN */
+.animate-slide-down {
+  animation: slideDown 0.25s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pulse-gold {
+  from { box-shadow: 0 4px 12px rgba(4, 120, 87, 0.06); }
+  to { box-shadow: 0 0 16px rgba(251, 191, 36, 0.4); }
+}
+
+/* ⚡ Die Zauberklasse für voll kollabierte Boxen */
+.quadrant.is-collapsed {
+  height: 42px !important; /* Schrumpft auf die exakte Höhe des Headers */
+  min-height: 42px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: none;
+}
+
+/* Weicher Übergang für die Boxen, wenn sie wieder aufklappen */
+.quadrant {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 📦 Drag & Drop Styling für den Fokus-Planer */
+
+.active-todo-dropzone {
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+/* Platzhalter, wenn kein Fokus gewählt ist */
+.active-todo-placeholder {
+  border: 2px dashed #bfdbfe;
+  background-color: #f0f7ff;
+  color: #3b82f6;
+  padding: 14px;
+  text-align: center;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+/* Visuelles Feedback, wenn man eine Karte über den Banner hält */
+.active-todo-dropzone.cdk-drop-list-dragging .active-todo-placeholder {
+  background-color: #dbeafe;
+  border-color: #2563eb;
+  color: #1d4ed8;
+  transform: scale(1.01);
+}
+
+/* Ändert den Mauszeiger bei ziehbaren Kärtchen */
+.draggable-todo {
+  cursor: grab;
+  user-select: none;
+}
+.draggable-todo:active {
+  cursor: grabbing;
+}
+
+/* Das Aussehen des Kärtchens, während es fliegt 🛸 */
+/* ==========================================================================
+   🛸 HEILUNG FÜR DIE FLIEGENDE DRAG-KARTE (:host ::ng-deep bricht aus der Kapselung aus)
+   ========================================================================== */
+
+/* Diese Klasse stylt die Karte, WÄHREND sie mit der Maus gezogen wird */
+:host ::ng-deep .cdk-drag-preview {
+  /* 📐 Hier zwingen wir die Karte auf eine feste, edle Größe! */
+  width: 260px !important;
+  max-width: 260px !important;
+  box-sizing: border-box !important;
+  
+  /* 🎨 Das edle Aussehen der Karte im Flug */
+  background: #ffffff !important;
+  border: 2px solid #6366f1 !important; /* Indigo-Rahmen, der zeigt, dass sie aktiv ist */
+  border-radius: 8px !important;
+  padding: 12px 16px !important;
+  box-shadow: 0 10px 25px rgba(99, 102, 241, 0.25) !important;
+  
+  /* Flexbox im Inneren reparieren, damit Titel und pt-Badge schön nebeneinander stehen */
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  
+  /* 🏃‍♂️ DER WICHTIGSTE TRICK: Die Karte wird für die Maus unsichtbar! */
+  pointer-events: none !important; 
+  z-index: 99999 !important;
+}
+
+/* Sorgt dafür, dass der originale Platz in der Liste während des Ziehens dezent ausgegraut wird */
+.cdk-drag-placeholder {
+  opacity: 0.3;
+  background: #f1f5f9;
+  border: 2px dashed #cbd5e1;
+  border-radius: 6px;
+}
+
+/* Verhindert Ruckeln beim Bewegen */
+.cdk-drag-dragging {
+  transition: none !important;
+}
+
+/* 🎯 Visuelle Einladung: Der Banner leuchtet sofort blau auf, wenn ein Ticket angehoben wird */
+.active-todo-dropzone.cdk-drop-list-receiving .active-todo-placeholder {
+  background-color: #dbeafe !important;
+  border-color: #2563eb !important;
+  color: #1d4ed8 !important;
+  transform: scale(1.02);
+}
+
+/* ==========================================================================
+   🚨 DER FINALE MAULKORB FÜR DIE RIESIGE FLIEGENDE KARTE (CDK PREVIEW)
+   ========================================================================== */
+
+/* Das CDK hängt die Karte beim Ziehen direkt an den body. 
+   Mit diesem globalen Selektor zwingen wir sie in die Knie! */
+body > .cdk-drag-preview {
+  width: 250px !important;       /* 📐 Schuss mit riesig! Maximale Breite fixieren */
+  max-width: 250px !important;
+  min-width: 250px !important;
+  box-sizing: border-box !important;
+  
+  /* 🎨 Ein federleichtes, schickes Aussehen im Flug */
+  background: #ffffff !important;
+  border: 2px solid #6366f1 !important; /* Hübscher Indigo-Rahmen */
+  border-radius: 8px !important;
+  padding: 10px 14px !important;
+  box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3) !important;
+  
+  /* Flexbox im Inneren erzwingen, damit Text und Pt-Badge nebeneinander stehen */
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  
+  /* 🏃‍♂️ DER ZAUBERTRICK GEGEN DAS SCHWERE GEFÜHL: */
+  pointer-events: none !important; /* Die Maus guckt quasi "durch" die Karte durch */
+  z-index: 999999 !important;     /* Überstrahlt absolut alles */
+}
+
+/* 🌫️ Der Platzhalter, der im Quadranten zurückbleibt, während du ziehst */
+.cdk-drag-placeholder {
+  opacity: 0.2 !important;
+  background: #cbd5e1 !important;
+  border: 2px dashed #94a3b8 !important;
+  border-radius: 6px !important;
+}
+
+/* ⚡ Entfernt jegliche zähe CSS-Verzögerung während des Ziehens */
+.cdk-drag-dragging {
+  transition: none !important;
+}
+
+/* 🛸 1. Globaler Schutz: Verhindert, dass die Karte im Flug mutiert oder wächst */
+body > .cdk-drag-preview {
+  width: 280px !important;
+  max-width: 280px !important;
+  min-width: 280px !important;
+  box-sizing: border-box !important;
+  background: #ffffff !important;
+  border: 2px solid #6366f1 !important;
+  border-radius: 8px !important;
+  padding: 12px 16px !important;
+  box-shadow: 0 10px 25px rgba(99, 102, 241, 0.35) !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  
+  /* Macht die Karte für den Mauszeiger unsichtbar, damit das Fach darunter reagiert */
+  pointer-events: none !important;
+  z-index: 999999 !important;
+}
+
+/* 📥 2. Der Landeplatz: Das Fach, das im Banner aufspringt! */
+.active-todo-dropzone .cdk-drag-placeholder {
+  display: block !important;
+  height: 52px !important; /* Exakte Höhe eines Fokus-Tickets */
+  background: rgba(99, 102, 241, 0.08) !important;
+  border: 2px dashed #6366f1 !important;
+  border-radius: 8px !important;
+  margin: 4px 0 !important;
+}
+
+/* 🌫️ 3. Der Schattenplatzhalter, der unten im Quadranten zurückbleibt */
+.quadrant .cdk-drag-placeholder {
+  opacity: 0.15 !important;
+  background: #cbd5e1 !important;
+  border: 2px dashed #94a3b8 !important;
+}
+
+/* 🎯 4. Visuelle Einladung für das Fach */
+.active-todo-dropzone.cdk-drop-list-receiving .active-todo-placeholder {
+  background-color: #e0f2fe !important;
+  border-color: #0284c7 !important;
+  color: #0369a1 !important;
+  border-style: solid !important;
+}
+
+/* ==========================================================================
+   🛸 DRAG & DROP FÜR DIE ECHTE TODO-ITEM COMPONENT
+   ========================================================================== */
+
+/* Wenn die Komponente abhebt, verpassen wir ihr direkt am body ein stabiles Layout */
+body > .cdk-drag-preview {
+  width: 280px !important;
+  max-width: 280px !important;
+  min-width: 280px !important;
+  box-sizing: border-box !important;
+  pointer-events: none !important; /* Absolut wichtig gegen das Blei-Gefühl! */
+  z-index: 999999 !important;
+  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3) !important; /* Blauer schwebender Schatten */
+}
+
+/* Der Schattenplatzhalter im Quadranten während des Flugs */
+.todo-flex-grid .cdk-drag-placeholder {
+  opacity: 0.2 !important;
+  background: #cbd5e1 !important;
+  border: 2px dashed #3b82f6 !important;
+  height: 60px !important; /* Ungefähre Höhe einer Kanban-Karte */
+  border-radius: 8px !important;
+}
+
+/* ==========================================================================
+   🎯 DER MAGNETISCHE LANDEPLATZ-FIX FOR DEN FOKUS-BANNER
+   ========================================================================== */
+
+/* ==========================================================================
+   🎯 DER MAGNETISCHE LANDEPLATZ-FIX (Exakt IN der Leiste zentriert)
+   ========================================================================== */
+
+/* Die Dropzone ist der feste Anker */
+.active-todo-dropzone {
+  width: 100%;
+  margin-bottom: 12px;
+  position: relative; /* Absolut wichtig für die Überlagerung! */
+  box-sizing: border-box;
+}
+
+/* Der normale Platzhalter-Text im Ruhezustand */
+.active-todo-placeholder {
+  background-color: #f0f7ff;
+  border: 2px dashed #bfdbfe;
+  color: #3b82f6;
+  padding: 18px;
+  text-align: center;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  width: 100%;
+  box-sizing: border-box;
+  transition: background-color 0.2s ease;
+}
+
+/* 🪄 SCHRITT 1: Wenn eine Karte drüber schwebt, machen wir den Text unsichtbar,
+   aber er hält im Hintergrund die Box perfekt auf Spannung! */
+.active-todo-dropzone.cdk-drop-list-receiving .active-todo-placeholder {
+  visibility: hidden !important; 
+  background-color: rgba(59, 130, 246, 0.04) !important;
+}
+
+/* 🪄 SCHRITT 2: Der CDK-Landeplatz legt sich wie eine perfekte Maske 
+   über die gesamte Fläche der Box, ohne das Layout zu verschieben! */
+.active-todo-dropzone .cdk-drag-placeholder {
+  display: block !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: rgba(59, 130, 246, 0.08) !important; 
+  border: 2px dashed #2563eb !important;          
+  border-radius: 8px !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  z-index: 2;
 }
