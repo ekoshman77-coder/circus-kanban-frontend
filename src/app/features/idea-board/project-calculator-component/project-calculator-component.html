@@ -5,13 +5,10 @@
             <h1 class="main-title">🧮 Projekt-Kalkulator</h1>
             <p class="subtitle">Berechnung der Meilenstein-Phasen und Ermittlung der Gesamtdauer.</p>
         </div>
-        
+
         <div class="header-selector-wrapper">
-            <app-milestone-selector-component 
-                [canChooseProject]="true" 
-                [onlyProjects]="true" 
-                [filterByActiveProject]="false"
-                [appearance]="'modal'"
+            <app-milestone-selector-component [canChooseProject]="true" [onlyProjects]="true"
+                [filterByActiveProject]="false" [appearance]="'modal'"
                 (projectSelected)="onProjectSelectedFromWelcome($any($event))">
             </app-milestone-selector-component>
         </div>
@@ -21,221 +18,225 @@
 
     <!-- WEICHE A: EIN PROJEKT WIRD AKTIV BEARBEITET -->
     @if (activeProject()) {
-        <div class="calculator-active-container animate-fade-in">
-            
-            <div class="active-project-subbar">
-                <span>Aktiver Entwurf für: <strong>{{ activeProject()?.title }}</strong></span>
+    <div class="calculator-active-container animate-fade-in">
 
-                <button class="magic-template-btn" [class.general-btn]="suggestedArea() === 'Allgemein'"
-                    [disabled]="isMagicLoading()" (click)="applySmartTemplates()">
-                    @if (isMagicLoading()) {
-                        Analysiere Projekttitel...
-                    } @else {
-                        @if (suggestedArea() === 'Allgemein') {
-                            🔮 Allgemeine Vorschläge laden
-                        } @else {
-                            🪄 Smart {{ suggestedArea() }}-Vorschläge laden
-                        }
-                    }
-                </button>
-            </div>
+        <div class="active-project-subbar">
+            <span>Aktiver Entwurf für: <strong>{{ activeProject()?.title }}</strong></span>
 
-            <app-milestone-suggestions-component 
-                [projectTitle]="activeProject()?.title ?? ''"
-                (milestoneAccepted)="onMilestoneAdded($event)" 
-                (degradedAreShown)="degradedAreShown($event)">
-            </app-milestone-suggestions-component>
-
-            <table class="calc-table">
-                <thead>
-                    <tr>
-                        <th>Aufgabe / Meilenstein</th>
-                        <th>Bereich</th>
-                        <th>Geplante Zeit</th>
-                        <th>Aktionen</th>
-                    </tr>
-                </thead>
-                <tbody cdkDropList (cdkDropListDropped)="onMilestoneDropped($event)">
-                    @for (task of (activeProject()?.milestones ?? []); track $index) {
-
-                        @if (editingMilestoneId === task.id) {
-                        <tr class="edit-row-pastel">
-                            <td>
-                                <input type="text" [(ngModel)]="editTitle" class="calc-input table-edit-input" />
-                            </td>
-                            <td>
-                                <span class="tag-badge">{{ activeProject()?.area || 'Allgemein' }}</span>
-                            </td>
-                            <td>
-                                <select [(ngModel)]="editTime" class="calc-dropdown table-edit-dropdown">
-                                    @for (day of availableDays; track day) {
-                                    <option [value]="day">{{ day }} {{ day === 1 ? 'Tag' : 'Tage' }}</option>
-                                    }
-                                </select>
-                            </td>
-                            <td>
-                                <div class="action-btns-group">
-                                    <button class="calc-action-btn save" 
-                                        (click)="onMilestoneTitleChanged($index, editTitle); onMilestoneDurationChanged($index, editTime || 1); cancelEditMilestone()"
-                                        title="Speichern">💾</button>
-                                    <button class="calc-action-btn cancel" (click)="cancelEditMilestone()"
-                                        title="Abbrechen">❌</button>
-                                </div>
-                            </td>
-                        </tr>
-                        } 
-                        
-                        @else {
-                        <tr class="draggable-row" cdkDrag>
-                            <td>
-                                <span class="drag-handle" cdkDragHandle>:::</span>
-                                <strong>{{ task.title }}</strong>
-                            </td>
-                            <td><span class="tag-badge">{{ activeProject()?.area || 'Allgemein' }}</span></td>
-                            <td>{{ task.duration }} Tage</td>
-                            <td>
-                                <div class="action-btns-group">
-                                    <button class="calc-action-btn edit" (click)="startEditMilestone(task)"
-                                        title="Bearbeiten">✏️</button>
-                                    <button (click)="onMilestoneRemoved($index)" class="delete-task-btn"
-                                        title="Aufgabe löschen">🗑️</button>
-                                </div>
-                            </td>
-                        </tr>
-                        }
-                    } @empty {
-                    <tr>
-                        <td colspan="4" style="text-align: center; color: #94a3b8; padding: 30px;">
-                            Noch keine Meilensteine eingetragen. Tippe unten eine Aufgabe ein! 🚀
-                        </td>
-                    </tr>
-                    }
-                </tbody>
-                <tfoot>
-                    <tr class="total-row">
-                        <td colspan="2"><strong>Gesamtdauer des Entwurfs:</strong></td>
-                        <td>
-                            <span class="total-badge">{{ finalDays() }} Tage</span>
-                        </td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-            </table>
-
-            <div class="manual-milestone-form-zone" style="margin-top: 25px;">
-                <h4 style="margin-bottom: 10px; color: #334155;">🔨 Manuellen Meilenstein hinzufügen</h4>
-                <form (ngSubmit)="addNewMilestoneFromForm()" style="display: flex; gap: 15px; align-items: flex-end;">
-                    <div style="flex: 2; display: flex; flex-direction: column; gap: 5px;">
-                        <label style="font-size: 12px; color: #64748b; font-weight: 600;">Bezeichnung der Aufgabe</label>
-                        <input 
-                            type="text" 
-                            [ngModel]="newMilestoneTitle()" 
-                            (ngModelChange)="newMilestoneTitle.set($event)"
-                            name="formMilestoneTitle"
-                            placeholder="z. B. UI Design entwerfen..." 
-                            class="calc-input" 
-                            required />
-                    </div>
-                    <div style="flex: 1; display: flex; flex-direction: column; gap: 5px;">
-                        <label style="font-size: 12px; color: #64748b; font-weight: 600;">Dauer</label>
-                        <select 
-                            [ngModel]="newMilestoneDuration()" 
-                            (ngModelChange)="newMilestoneDuration.set(+$event)"
-                            name="formMilestoneDuration" 
-                            class="calc-dropdown">
-                            @for (day of availableDays; track day) {
-                            <option [value]="day">
-                                {{ day }} {{ day === 1 ? 'Tag' : 'Tage' }}
-                            </option>
-                            }
-                        </select>
-                    </div>
-                    <button 
-                        type="submit" 
-                        [disabled]="!newMilestoneTitle().trim()" 
-                        class="calc-btn" 
-                        style="margin-bottom: 2px; height: 42px; white-space: nowrap;">
-                        ➕ Hinzufügen
-                    </button>
-                </form>
-            </div>
-
-            <div class="calculator-actions" style="margin-top: 30px;">
-                <button type="button" class="btn-secondary" (click)="abortCalculation()">
-                    ❌ Kalkulation abbrechen
-                </button>
-
-                <!-- 👑 DIE AKTIVIERTE SPEICHER-WEICHE -->
-                @if (!localEditProject()) {
-                    <!-- Fall 1: Reiner geladener Entwurf/Draft -> Volle Creator-Rechte! -->
-                    <button type="button" class="btn-primary" (click)="finishCalculation()">            
-                        Kalkulation abschließen & Projekt starten! 🚀
-                    </button>
+            <button class="magic-template-btn" [class.general-btn]="suggestedArea() === 'Allgemein'"
+                [disabled]="isMagicLoading()" (click)="applySmartTemplates()">
+                @if (isMagicLoading()) {
+                Analysiere Projekttitel...
                 } @else {
-                    <!-- Fall 2: Existierendes Projekt bearbeiten -> Prüft Berechtigungen -->
-                    <button type="button" class="btn-primary" (click)="finishCalculation()" [disabled]="!canSaveCalculation()"
-                        [title]="canSaveCalculation() 
-                            ? 'Änderungen am Projekt speichern!' 
-                            : '💡 Reingeguckt! Du bist im sicheren Experimentier-Modus. Tob dich aus – zum offiziellen Speichern fehlen dir für dieses Projekt die Chef-Laborrechte.'">            
-                        @if (canSaveCalculation()) {
-                           💾 Änderungen speichern
-                        } @else {
-                            🔒 Labor-Modus aktiv
-                        }
-                    </button>
+                @if (suggestedArea() === 'Allgemein') {
+                🔮 Allgemeine Vorschläge laden
+                } @else {
+                🪄 Smart {{ suggestedArea() }}-Vorschläge laden
                 }
-            </div>
+                }
+            </button>
         </div>
 
-    } 
-    
+        <app-milestone-suggestions-component [projectTitle]="activeProject()?.title ?? ''"
+            (milestoneAccepted)="onMilestoneAdded($event)" (degradedAreShown)="degradedAreShown($event)">
+        </app-milestone-suggestions-component>
+
+        <table class="milestone-premium-table animate-fade-in">
+            <thead>
+                <tr>
+                    <th style="width: 60px; text-align: center;">#</th>
+                    <th>Meilenstein-Phase / Aufgabe</th>
+                    <th style="width: 180px;">Geplante Dauer</th>
+                    <th style="width: 120px; text-align: center;">Aktionen</th>
+                </tr>
+            </thead>
+
+<tbody cdkDropList (cdkDropListDropped)="onDrop($event)">
+                @for (task of activeProject()?.milestones; track task.id; let i = $index) {
+                
+                @if (editingMilestoneId === task.id) {
+                <tr class="edit-row-pastel" [class.editing-row]="editingMilestoneId === task.id">
+
+                    <td style="text-align: center;">
+                        <span class="row-index-badge">{{ i + 1 }}</span>
+                    </td>
+
+                    <td>
+                        <input type="text" class="calc-input table-edit-input" [(ngModel)]="editTitle"
+                            (keyup.enter)="saveInlineEdit(i)" (keyup.escape)="cancelEditMilestone()" />
+                    </td>
+
+                    <td>
+                        <div class="duration-select-wrapper">
+                            <select class="calc-dropdown table-edit-dropdown" [(ngModel)]="editTime">
+                                @for (day of availableDays; track day) {
+                                <option [value]="day">{{ day }} {{ day === 1 ? 'Tag' : 'Tage' }}</option>
+                                }
+                            </select>
+                        </div>
+                    </td>
+
+                    <td>
+                        <div class="action-btns-group">
+                            <button class="calc-action-btn save" 
+                                (click)="onMilestoneTitleChanged(i, editTitle); onMilestoneDurationChanged(i, editTime || 1); cancelEditMilestone()"
+                                title="Speichern">💾</button>
+                            <button class="calc-action-btn cancel" (click)="cancelEditMilestone()"
+                                title="Abbrechen">❌</button>
+                        </div>
+                    </td>
+                </tr>
+                } 
+                
+                @else {
+                <tr class="milestone-premium-row" cdkDrag [class.editing-row]="editingMilestoneId === task.id">
+
+                    <td style="text-align: center;">
+                        <span class="row-index-badge">{{ i + 1 }}</span>
+                    </td>
+
+                    <td>
+                        <span class="milestone-display-title" (click)="startEditMilestone(task)">{{ task.title }}</span>
+                    </td>
+
+                    <td>
+                        <div class="duration-select-wrapper">
+                            <select class="calc-dropdown table-edit-dropdown" [ngModel]="task.duration"
+                                (ngModelChange)="onMilestoneDurationChanged(i, $event)">
+                                @for (day of availableDays; track day) {
+                                <option [value]="day">{{ day }} {{ day === 1 ? 'Tag' : 'Tage' }}</option>
+                                }
+                            </select>
+                        </div>
+                    </td>
+
+                    <td>
+                        <div class="action-btns-group">
+                            <button class="calc-action-btn edit" (click)="startEditMilestone(task)"
+                                title="Bearbeiten">✏️</button>
+                            <button class="delete-task-btn" (click)="onMilestoneRemoved(i)"
+                                title="Aufgabe löschen">🗑️</button>
+                        </div>
+                    </td>
+                </tr>
+                }
+                }
+
+                @if (!activeProject()?.milestones || activeProject()?.milestones?.length === 0) {
+                <tr>
+                    <td colspan="4" class="empty-table-placeholder">
+                        <div class="placeholder-content">
+                            <span>📭 Keine Meilensteine vorhanden. Füge oben oder über die Vorschläge neue Phasen
+                                hinzu!</span>
+                        </div>
+                    </td>
+                </tr>
+                }
+            </tbody>
+                </table>
+        <div class="manual-milestone-form-zone" style="margin-top: 25px;">
+            <h4 style="margin-bottom: 10px; color: #334155;">🔨 Manuellen Meilenstein hinzufügen</h4>
+            <form (ngSubmit)="addNewMilestoneFromForm()" style="display: flex; gap: 15px; align-items: flex-end;">
+                <div style="flex: 2; display: flex; flex-direction: column; gap: 5px;">
+                    <label style="font-size: 12px; color: #64748b; font-weight: 600;">Bezeichnung der Aufgabe</label>
+                    <input type="text" [ngModel]="newMilestoneTitle()" (ngModelChange)="newMilestoneTitle.set($event)"
+                        name="formMilestoneTitle" placeholder="z. B. UI Design entwerfen..." class="calc-input"
+                        required />
+                </div>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 5px;">
+                    <label style="font-size: 12px; color: #64748b; font-weight: 600;">Dauer</label>
+                    <select [ngModel]="newMilestoneDuration()" (ngModelChange)="newMilestoneDuration.set(+$event)"
+                        name="formMilestoneDuration" class="calc-dropdown">
+                        @for (day of availableDays; track day) {
+                        <option [value]="day">
+                            {{ day }} {{ day === 1 ? 'Tag' : 'Tage' }}
+                        </option>
+                        }
+                    </select>
+                </div>
+                <button type="submit" [disabled]="!newMilestoneTitle().trim()" class="calc-btn"
+                    style="margin-bottom: 2px; height: 42px; white-space: nowrap;">
+                    ➕ Hinzufügen
+                </button>
+            </form>
+        </div>
+
+        <div class="calculator-actions" style="margin-top: 30px;">
+            <button type="button" class="btn-secondary" (click)="abortCalculation()">
+                ❌ Kalkulation abbrechen
+            </button>
+
+            <!-- 👑 DIE AKTIVIERTE SPEICHER-WEICHE -->
+            @if (!localEditProject()) {
+            <!-- Fall 1: Reiner geladener Entwurf/Draft -> Volle Creator-Rechte! -->
+            <button type="button" class="btn-primary" (click)="finishCalculation()">
+                Kalkulation abschließen & Projekt starten! 🚀
+            </button>
+            } @else {
+            <!-- Fall 2: Existierendes Projekt bearbeiten -> Prüft Berechtigungen -->
+            <button type="button" class="btn-primary" (click)="finishCalculation()" [disabled]="!canSaveCalculation()"
+                [title]="canSaveCalculation() 
+                            ? 'Änderungen am Projekt speichern!' 
+                            : '💡 Reingeguckt! Du bist im sicheren Experimentier-Modus. Tob dich aus – zum offiziellen Speichern fehlen dir für dieses Projekt die Chef-Laborrechte.'">
+                @if (canSaveCalculation()) {
+                💾 Änderungen speichern
+                } @else {
+                🔒 Labor-Modus aktiv
+                }
+            </button>
+            }
+        </div>
+    </div>
+
+    }
+
     <!-- WEICHE B: DER KALKULATOR IST LEER -->
     @else {
-        <div class="no-project-selected-container animate-fade-in">
-            <div class="welcome-card" style="text-align: center; padding: 40px 20px;">
-                <span class="empty-icon-neon" style="font-size: 64px; display: block; margin-bottom: 20px;">🧮</span>
-                <h3>Berechnungs-Maschine ist bereit</h3>
-                <p style="margin-bottom: 30px; color: #64748b;">
-                    Bitte wähle oben im Menü ein bestehendes Projekt aus der Liste aus oder lade eine Idee von der Pinnwand, um mit der Phasenanalyse zu starten.
-                </p>
+    <div class="no-project-selected-container animate-fade-in">
+        <div class="welcome-card" style="text-align: center; padding: 40px 20px;">
+            <span class="empty-icon-neon" style="font-size: 64px; display: block; margin-bottom: 20px;">🧮</span>
+            <h3>Berechnungs-Maschine ist bereit</h3>
+            <p style="margin-bottom: 30px; color: #64748b;">
+                Bitte wähle oben im Menü ein bestehendes Projekt aus der Liste aus oder lade eine Idee von der Pinnwand,
+                um mit der Phasenanalyse zu starten.
+            </p>
 
-                @if (showRestoreBanner() && draftTitleFromStorage()) {
-                    <div style="background-color: #fef08a; border: 1px solid #fde047; border-radius: 12px; padding: 18px; margin: 0 auto 30px auto; max-width: 500px; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                        <div style="display: flex; gap: 12px; align-items: flex-start;">
-                            <span style="font-size: 20px;">💡</span>
-                            <div>
-                                <h4 style="margin: 0; color: #854d0e; font-size: 15px; font-weight: 700;">Ungespeicherter Entwurf gefunden</h4>
-                                <p style="margin: 4px 0 0 0; color: #a16207; font-size: 14px; line-height: 1.4;">
-                                    Möchtest du die unfertige Kalkulation für <strong>"{{ draftTitleFromStorage() }}"</strong> fortsetzen?
-                                </p>
-                            </div>
-                        </div>
-                        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px;">
-                            <button (click)="rejectDraftFromBanner()" style="background: #ef4444; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">
-                                🗑️ Verwerfen
-                            </button>
-                            <button (click)="restoreDraftFromBanner()" style="background: #10b981; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">
-                                🛠️ Ja, laden
-                            </button>
-                        </div>
+            @if (showRestoreBanner() && draftTitleFromStorage()) {
+            <div
+                style="background-color: #fef08a; border: 1px solid #fde047; border-radius: 12px; padding: 18px; margin: 0 auto 30px auto; max-width: 500px; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <div style="display: flex; gap: 12px; align-items: flex-start;">
+                    <span style="font-size: 20px;">💡</span>
+                    <div>
+                        <h4 style="margin: 0; color: #854d0e; font-size: 15px; font-weight: 700;">Ungespeicherter
+                            Entwurf gefunden</h4>
+                        <p style="margin: 4px 0 0 0; color: #a16207; font-size: 14px; line-height: 1.4;">
+                            Möchtest du die unfertige Kalkulation für <strong>"{{ draftTitleFromStorage() }}"</strong>
+                            fortsetzen?
+                        </p>
                     </div>
-                }
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px;">
+                    <button (click)="rejectDraftFromBanner()"
+                        style="background: #ef4444; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                        🗑️ Verwerfen
+                    </button>
+                    <button (click)="restoreDraftFromBanner()"
+                        style="background: #10b981; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                        🛠️ Ja, laden
+                    </button>
+                </div>
             </div>
+            }
         </div>
+    </div>
     }
 </div>
 
 @if (showSuccessPopup()) {
-<app-universal-popup-component 
-    [animationIcon]="'🚀'" 
-    [title]="'Projekt erfolgreich berechnet!'"
+<app-universal-popup-component [animationIcon]="'🚀'" [title]="'Projekt erfolgreich berechnet!'"
     [message]="'Das Projekt wurde auf insgesamt <strong>' + finalDays() + ' Tage</strong> kalkuliert. Möchtest du es jetzt speichern?'"
-    [cancelText]="'Doch noch nicht starten! 🛑'" 
-    [confirmText]="'Ja, final speichern 💾'" 
-    [mode]="'success'" 
-    [showLoadingBar]="true"
-    (confirm)="handleAutoSaveConfirm()" 
-    (cancel)="cancelPopupCountdown()">
+    [cancelText]="'Doch noch nicht starten! 🛑'" [confirmText]="'Ja, final speichern 💾'" [mode]="'success'"
+    [showLoadingBar]="true" (confirm)="handleAutoSaveConfirm()" (cancel)="cancelPopupCountdown()">
 </app-universal-popup-component>
 }
 

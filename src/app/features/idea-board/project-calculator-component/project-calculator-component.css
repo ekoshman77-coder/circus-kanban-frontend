@@ -524,3 +524,56 @@ tr.total-row td {
 @keyframes neonFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+
+/* ==========================================================================
+   🧮 CDK DRAG & DROP MODERNE STYLES (Retter der Tabellen-Optik)
+   ========================================================================== */
+
+/* 1. Die Vorschau-Zeile, die an der Maus klebt während des Ziehens */
+.cdk-drag-preview {
+  display: table !important; /* Zwingt die Zeile, ein Tabellen-Layout beizubehalten */
+  width: 100%;
+  box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.3), 
+              0 8px 10px -6px rgba(99, 102, 241, 0.3) !important;
+  background-color: #ffffff !important;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Wichtig: Auch die einzelnen Zellen in der Vorschau-Zeile müssen ihre Struktur behalten */
+.cdk-drag-preview td {
+  padding: 14px 20px !important;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #334155 !important;
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+/* 2. Der gestrichelte, elegante Platzhalter, der an der alten Stelle liegen bleibt */
+.cdk-drag-placeholder {
+  opacity: 0.4;
+  background-color: #f1f5f9 !important;
+  border: 2px dashed #6366f1 !important;
+}
+
+.cdk-drag-placeholder td {
+  background-color: #e2e8f0 !important;
+  color: transparent !important; /* Versteckt den Text im Platzhalter für einen cleanen Look */
+}
+
+/* 3. Weiche Animation, wenn die Zeilen nach dem Loslassen an ihren neuen Platz rutschen */
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* 4. Sorgt dafür, dass sich die restlichen Zeilen smooth verschieben, während man scrollt/zieht */
+.calc-table tbody.cdk-drop-list-dragging tr:not(.cdk-drag-placeholder) {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* 5. Ein visueller Indikator, dass der Drag-Handle (:::) greifbar ist */
+.draggable-row:hover .drag-handle {
+  color: #6366f1;
+  transform: scale(1.1);
+  transition: all 0.2s ease;
+}

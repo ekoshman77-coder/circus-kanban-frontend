@@ -369,6 +369,41 @@ export class ProjectCalculatorComponent implements OnInit {
     this.editTime = 1;
   }
 
+public saveInlineEdit(index: number): void {
+    const currentProject = this.localProjectDraft();
+    if (!currentProject || !currentProject.milestones || !currentProject.milestones[index]) {
+      this.editingMilestoneId = null;
+      return;
+    }
+
+    const trimmedTitle = this.editTitle.trim();
+    if (!trimmedTitle) {
+      this.editingMilestoneId = null;
+      return;
+    }
+
+    if (this.isBrandNewDraft()) {
+      // Wenn es ein neuer Entwurf ist, über den DraftService aktualisieren
+      this.projectDraftService.updateMilestoneInDraft(index, { 
+        title: trimmedTitle 
+      });
+    } else {
+      // Wenn es ein existierendes Projekt ist, das lokale Signal aktualisieren
+      const updatedMilestones = currentProject.milestones.map((ms, i) => 
+        i === index ? new Milestone({ ...ms, title: trimmedTitle }) : ms
+      );
+      this.localEditProject.set(new Project({ 
+        ...currentProject, 
+        milestones: updatedMilestones 
+      }));
+    }
+
+    // Editier-Modus beenden
+    this.editingMilestoneId = null;
+    this.editTitle = '';
+    console.log(`📝 [InlineEdit] Meilenstein an Index ${index} erfolgreich umbenannt zu: "${trimmedTitle}"`);
+  }
+
 public cancelAndDiscardDraft(): void {
   console.log('❌ Kalkulation abgebrochen. Räume Speicher auf...');
   
