@@ -183,32 +183,42 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    /* Der harte weiße Hintergrund fliegt raus! */
-    border-radius: 16px; /* Etwas rundere, modernere Ecken */
-    padding: 20px 16px;   /* Mehr Luft zum Atmen für die Items */
-    box-shadow: 0 4px 15px rgba(148, 163, 184, 0.03);
-    transition: all 0.3s ease;
+    border-radius: 20px; /* Noch etwas weichere, modernere Ecken */
+    padding: 22px 18px;
+    /* Ein satterer, tieferer Schatten, der die Spalten anhebt */
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 📝 LINKE SPALTE: Aufgaben in dieser Phase (Ein sanfter, produktiver Pastell-Blau-Ton) */
+/* 📝 LINKE SPALTE: Aufgaben in dieser Phase (Sattes Ozean-Blau + bläulicher Schatten) */
 .workspace-column:first-child {
-    background: rgba(240, 246, 255, 0.7); /* Wunderschönes, reines Pastell-Blau mit Transparenz */
-    border: 1px solid #dbeafe;            /* Perfekt passender, weicher blauer Rahmen */
+    background: rgba(224, 242, 254, 0.75) !important;
+    border: 2px solid #7dd3fc !important;
+    /* 🌌 Ein satter, weicher Schatten, der nach unten strahlt (inklusive leichtem Blau-Anteil) */
+    box-shadow: 0 20px 40px rgba(3, 105, 161, 0.12), 
+                0 4px 12px rgba(3, 105, 161, 0.04) !important;
 }
 
-/* ➕ RECHTE SPALTE: Unzugeordnete Aufgaben (Ein edler, ruhiger Sand/Nebel-Ton) */
+/* ➕ RECHTE SPALTE: Unzugeordnete Aufgaben (Saftiges Magie-Lila + lila Schatten) */
 .workspace-column:last-child {
-    background: rgba(248, 250, 252, 0.6);  /* Sehr dezentes, edles Hellgrau-Weiß */
-    border: 1px solid #e2e8f0;             /* Unaufdringlicher Rahmen */
+    background: rgba(243, 232, 255, 0.7) !important;
+    border: 2px solid #c084fc !important;
+    /* 🌌 Ein passender tiefer Schatten mit einem sanften Lila-Anteil */
+    box-shadow: 0 20px 40px rgba(107, 33, 168, 0.12), 
+                0 4px 12px rgba(107, 33, 168, 0.04) !important;
 }
 
-/* 🏷️ DIE SPALTEN-TITEL (Machen wir auch farblich passend und knackiger) */
+/* 🏷️ DIE SPALTEN-TITEL (Bleiben knackig) */
 .workspace-column:first-child .workspace-title {
-    color: #1e40af; /* Dunkelblau für hervorragende Lesbarkeit */
+    color: #0369a1 !important;
+    font-size: 17px;
+    letter-spacing: -0.3px;
 }
 
 .workspace-column:last-child .workspace-title {
-    color: #475569; /* Schiefergrau für die "Ablage" */
+    color: #6b21a8 !important;
+    font-size: 17px;
+    letter-spacing: -0.3px;
 }
 
 .workspace-title {
@@ -278,9 +288,6 @@
     border-top: 1px dashed #cbd5e1;
 }
 
-/* ==========================================================================
-   🏝️ SPERRBILDSCHIRM (WENN KEIN MATCH EXISTIERT)
-   ========================================================================== */
 /* ==========================================================================
    🎪 VEREINHEITLICHTER PREMIUM EMPTY STATE (LEERER ZUSTAND)
    ========================================================================== */
@@ -402,4 +409,140 @@
     border: 1px dashed rgba(255, 255, 255, 0.1);
 }
 
+.workspace-scroll-container {
+    height: 480px;            /* Garantiert eine feste mathematische Box-Größe für das CDK */
+    overflow-y: auto;         /* Schaltet seidenweiches vertikales Scrollen ein */
+    overflow-x: hidden;       /* Verhindert horizontales Wackeln */
+    padding-right: 6px;
+}
 
+/* 🚫 ABSOLUTES QUETSCH-VERBOT FÜR KARTEN (Kopie aus dem fehlerfreien Kanban-Board!) */
+app-todo-item {
+    flex-shrink: 0 !important;
+}
+
+/* Visuelles Feedback, wenn man eine Karte über die Zone bewegt */
+.drag-drop-zone.cdk-drop-list-dragging {
+    background: rgba(255, 255, 255, 0.65);
+    border-color: #00b4d8;
+}
+
+/* 🧼 Schicker, unaufdringlicher Custom-Scrollbar */
+.workspace-scroll-container::-webkit-scrollbar { width: 6px; }
+.workspace-scroll-container::-webkit-scrollbar-track { background: transparent; }
+.workspace-scroll-container::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.3);
+    border-radius: 99px;
+}
+.workspace-scroll-container::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.5); }
+
+/* 🟢 WRAPPER FÜR DEN TOOLTIP */
+.action-btn-tooltip-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+/* 🎯 DER RUNDE BASIS-BUTTON */
+.add-todo-circle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 💎 VARIANTE A: ERFOLGREICH / AKTIV (BLAU) */
+.add-todo-circle-btn.type-success {
+  background: linear-gradient(135deg, #00b4d8 0%, #0077b6 100%);
+  box-shadow: 0 4px 6px -1px rgba(0, 180, 216, 0.2);
+}
+
+.add-todo-circle-btn.type-success:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 12px -2px rgba(0, 180, 216, 0.35);
+  background: linear-gradient(135deg, #00c4ec 0%, #0088ce 100%);
+}
+
+.add-todo-circle-btn.type-success:active {
+  transform: translateY(0) scale(0.95);
+}
+
+/* 🔒 VARIANTE B: GESPERRT / SCHLOSS (GRAU/ROT-ACCENT) */
+.add-todo-circle-btn.type-locked {
+  background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%); /* Schickes Schiefergrau */
+  box-shadow: 0 4px 6px -1px rgba(100, 116, 139, 0.2);
+  cursor: not-allowed; /* Zeigt das rote "Verboten"-Schild an der Maus */
+  opacity: 0.8;
+}
+
+/* Das Schloss wackelt ganz dezent rot auf, wenn man versucht, es zu berühren */
+.add-todo-circle-btn.type-locked:hover {
+  background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
+  box-shadow: 0 4px 8px -1px rgba(239, 68, 68, 0.2); /* Roter Schutzwall-Glüheffekt */
+}
+
+
+/* 🧠 DER CSS-TOOLTIP */
+.action-tooltip {
+  position: absolute;
+  bottom: 46px;
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background-color: #1e293b;
+  color: #f8fafc;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  padding: 6px 10px;
+  border-radius: 6px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  z-index: 150;
+  pointer-events: none;
+  
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+}
+
+.action-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: #1e293b transparent transparent transparent;
+}
+
+/* HOVER-TRIGGER (Funktioniert auch auf dem gesperrten Button perfekt!) */
+.action-btn-tooltip-wrapper:hover .action-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ACTION BAR UNTER DER ÜBERSCHRIFT */
+.column-action-bar {
+  display: flex;
+  justify-content: center; /* Sorgt dafür, dass Flex-Kinder mittig platziert werden */
+  align-items: center;
+  width: 100%;             /* Muss die volle Breite der Spalte einnehmen */
+  padding: 10px 0 16px 0;  /* Eleganter Abstand nach oben und unten */
+  box-sizing: border-box;
+}
+
+/* 🟢 2. DER TOOLTIP-WRAPPER (DIREKTES KIND DER ACTION BAR) */
+.action-btn-tooltip-wrapper {
+  position: relative;
+  display: flex;           /* Von inline-block auf flex ändern! */
+  justify-content: center; /* Zentriert den runden Button im Wrapper */
+  align-items: center;
+}

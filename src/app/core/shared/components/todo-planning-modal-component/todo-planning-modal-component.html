@@ -46,6 +46,7 @@
             <label>Meilenstein</label>
             <app-milestone-selector-component
                 [initialMilestoneId]="currentMilestoneId()"
+                [isDisabled]="disableMilestoneSelection()"
                 (milestoneSelected)="onMilestoneSelected($any($event))">
             </app-milestone-selector-component>
           </div>

@@ -1,0 +1,14 @@
+.universal-scroll-wrapper {
+    height: 480px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 4px;
+}
+
+/* Edler Scrollbar, der dann überall in deiner App gleich aussieht */
+.universal-scroll-wrapper::-webkit-scrollbar { width: 6px; }
+.universal-scroll-wrapper::-webkit-scrollbar-track { background: transparent; }
+.universal-scroll-wrapper::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.3);
+    border-radius: 99px;
+}

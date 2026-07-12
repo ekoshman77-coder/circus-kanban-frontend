@@ -23,6 +23,7 @@ export class TeamService {
             'TODO_CREATE', 'TODO_EDIT', 'TODO_DELETE', 'TODO_CHECK'
         ],
         DEVELOPER: [
+            'MILESTONE_CREATE', 'MILESTONE_EDIT',
             'TODO_CREATE', 'TODO_EDIT', 'TODO_DELETE', 'TODO_CHECK'
         ],
         DESIGNER: [
@@ -75,7 +76,7 @@ export class TeamService {
     public hasPermission(projectId: string | null, action: ProjectAction): boolean {
         const currentUserId = this.userService.getCurrentUserId();
         if (!currentUserId || !projectId) return false;
-
+        
         // Wir lesen ganz entspannt das synchrone Projekt-Signal aus!
         const members = this.currentProjectMembersSignal();
         const myBinding = members.find(m => m.user.id === currentUserId);

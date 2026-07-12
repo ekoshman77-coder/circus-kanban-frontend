@@ -20,6 +20,7 @@ export class TodoPlanningModalComponent implements OnInit {
   initialDescription = input<string>('');
   initialCategory = input<string>('');
   currentMilestoneId = input<string | null>(null);
+  disableMilestoneSelection = input<boolean>(false);
 
   closeModal = output<void>();
   todoPlanned = output<void>();
