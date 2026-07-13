@@ -144,24 +144,24 @@ private readonly fallbackActiveTodos = ['Refactoring UI', 'Bugfix Service', 'Cod
   /**
    * ❌ TODO LÖSCHEN
    */
-  public deleteTodo(id: string, aktuelleListe: Todo[], userId: string): Observable<Todo[]> {
-    const gefilterteListe = aktuelleListe.filter(t => t.id !== id).map(t => new Todo(t));
-
+// 🗑️ Einzelnes To-Do löschen
+  public deleteTodo(id: string): Observable<void> {
     if (this.connectionService.status() === 'OFFLINE') {
       return throwError(() => new Error('Löschen ist im Offline-Modus nicht erlaubt!'));
     }
 
     return this.todoRepository.deleteTodo(id).pipe(
-      map(() => {
+      tap(() => {
+        // Nutzt dein echtes allTodosPool-Signal!
+        const currentTodos = this.allTodosPool();
+        const gefilterteListe = currentTodos.filter(t => t.id !== id);
+        
         this.saveToLocalStorage(gefilterteListe);
-
-        // 💡 HIER! Signal nach dem Löschen aktualisieren
         this.allTodosPool.set(gefilterteListe);
-        return gefilterteListe;
       })
     );
   }
-
+  
   /**
    * 📝 TODO BEARBEITEN
    */
@@ -210,28 +210,30 @@ private readonly fallbackActiveTodos = ['Refactoring UI', 'Bugfix Service', 'Cod
     );
   }
 
-  /**
-   * TODOS LÖSCHEN (BULK)
-   */
-  public deleteTodosBulk(deletedTodos: Todo[], actualList: Todo[]): Observable<Todo[]> {
-    if (deletedTodos.length === 0) return of([]);
+// 🗑️ Erledigte private Aufgaben löschen (Footer links)
+  public deleteCompleted(userId: string): Observable<void> {
+    return this.todoRepository.deleteCompleted(userId).pipe(
+      tap(() => {
+        // Entfernt aus dem allTodosPool nur erledigte Aufgaben, die keinen Meilenstein haben
+        const currentTodos = this.allTodosPool();
+        const gefilterteListe = currentTodos.filter(t => !(t.done && !t.milestoneId));
+        
+        this.saveToLocalStorage(gefilterteListe);
+        this.allTodosPool.set(gefilterteListe);
+      })
+    );
+  }
 
-    const deletedMap = deletedTodos.map(t => t.id)
-    const filtered = actualList.filter(t => !deletedMap.includes(t.id)).map(t => new Todo(t));
-
-    if (this.connectionService.status() === 'OFFLINE') {
-      this.saveToLocalStorage(filtered);
-      // 💡 HIER! Signal bei Bulk-Delete offline aktualisieren
-      this.allTodosPool.set(filtered);
-      return of(filtered);
-    }
-
-    return this.todoRepository.deleteBulk(deletedMap).pipe(
-      map(() => {
-        this.saveToLocalStorage(filtered);
-        // 💡 HIER! Signal bei Bulk-Delete online aktualisieren
-        this.allTodosPool.set(filtered);
-        return filtered
+  // 🗑️ Alle privaten Aufgaben löschen (Footer rechts)
+  public deleteAll(userId: string): Observable<void> {
+    return this.todoRepository.deleteAll(userId).pipe(
+      tap(() => {
+        // Behält im allTodosPool nur die Aufgaben, die zu einem Meilenstein gehören (Projekt-Aufgaben)
+        const currentTodos = this.allTodosPool();
+        const gefilterteListe = currentTodos.filter(t => t.milestoneId);
+        
+        this.saveToLocalStorage(gefilterteListe);
+        this.allTodosPool.set(gefilterteListe);
       })
     );
   }
@@ -239,7 +241,6 @@ private readonly fallbackActiveTodos = ['Refactoring UI', 'Bugfix Service', 'Cod
   private saveToLocalStorage(todos: Todo[]): void {
     this.localStorageService.setItem(this.CACHE_KEY, todos);
   }
-
 
   /**
  * 🧠 Holt die intelligenten Vorschläge. Prüft den Online-Status,

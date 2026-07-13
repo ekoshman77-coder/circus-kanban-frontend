@@ -21,3 +21,18 @@
     </span>
   </div>
 }
+
+@if (activePopupConfig(); as config) {
+  <app-universal-popup-component
+    [title]="config.title"
+    [message]="config.message"
+    [mode]="config.mode"
+    [animationIcon]="config.animationIcon"
+    [confirmText]="config.confirmText || null"
+    [cancelText]="config.cancelText"
+    [showLoadingBar]="config.showLoadingBar"
+    [timerMs]="config.timerMs"
+    (confirm)="config.action(); closePopup()"
+    (cancel)="closePopup()">
+  </app-universal-popup-component>
+}

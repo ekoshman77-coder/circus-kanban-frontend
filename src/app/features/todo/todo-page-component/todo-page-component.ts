@@ -55,12 +55,7 @@ export class TodoPageComponent {
     this.todoService.latestGamificationResult.set(null);
   }
 
-  // 3. Eine lokale Methode, die dem Service sagt: "Fehler löschen!"
-  clearError() {
-    this.todoService.clearGlobalError();
-  }
-
-  // Methode zum Umschalten
+   // Methode zum Umschalten
   public setView(view: 'list' | 'kanban' | 'express'): void {
     this.currentView.set(view);
   }

@@ -58,24 +58,27 @@ export class TodoRepository {
       })
     );
   }
-
+  
+// 🗑️ 1. Einzelnes To-Do über den Mülleimer löschen
+  // Geht an: DELETE /api/todos/{id}
   deleteTodo(id: string): Observable<void> {
     return this.http.delete<void>(`${todoApiUrl}/${id}`);
   }
 
-  deleteAll(userId: string): Observable<void> {
-    const params = new HttpParams().set('userId', userId);
-    return this.http.delete<void>(`${todoApiUrl}/all`, { params });
-  }
-
+  // 🗑️ 2. Erledigte private Aufgaben löschen (Footer links)
+  // Geht an: POST /api/todos/completed?userId=xyz
   deleteCompleted(userId: string): Observable<void> {
     const params = new HttpParams().set('userId', userId);
-    console.log("params", params)
-    return this.http.delete<void>(`${todoApiUrl}/completed`, { params });
+    // WICHTIG: POST benötigt einen Body als 2. Parameter (den wir leer/null lassen). 
+    // Die params übergeben wir im Konfigurationsobjekt als 3. Parameter!
+    return this.http.post<void>(`${todoApiUrl}/completed`, null, { params });
   }
 
-  deleteBulk(ids: string[]): Observable<void> {
-    return this.http.post<void>(`${todoApiUrl}/delete-bulk`, ids)
+  // 🗑️ 3. Alle privaten Aufgaben löschen (Footer rechts)
+  // Geht an: POST /api/todos/all?userId=xyz
+  deleteAll(userId: string): Observable<void> {
+    const params = new HttpParams().set('userId', userId);
+    return this.http.post<void>(`${todoApiUrl}/all`, null, { params });
   }
 
   private mapToTodoClass(json: ITodoJSON): Todo {

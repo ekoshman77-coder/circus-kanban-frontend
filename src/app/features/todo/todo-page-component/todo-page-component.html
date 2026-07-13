@@ -38,33 +38,6 @@
     }
   </section>
 
-@if (todoService.showUndoToast()) {
-  <div class="undo-toast-wrapper animate-slide-up">
-    <div class="undo-toast">
-      <div class="toast-info">
-        <span class="icon">🗑️</span>
-        <span class="message">
-          <strong>"{{ todoService.lastDeletedTaskName() }}"</strong> gelöscht
-        </span>
-      </div>
-      
-      <button class="undo-button" (click)="todoService.undoDelete()">
-        <span class="btn-icon">↩️</span> Rückgängig
-      </button>
-      
-      <div class="progress-bar"></div>
-    </div>
-  </div>
-}
-
-@if (pageError()) {
-  <div class="error-toast">
-    <span>⚠️</span>
-    <span>{{ pageError() }}</span>
-    <button class="close-toast-btn" (click)="clearError()">Verstanden</button>
-  </div>
-}
-
 @if (localShowLevelUpBanner(); as result) {
   <div class="level-up-overlay">
     <div class="level-up-card animated pop-in">

@@ -8,6 +8,7 @@ import { GamificationResult } from '../../models/gamification';
 import { TodoDataManagerService } from '../todo-data-manager-service';
 import { TodoRepository } from '../../repositories/todo-repository';
 import { TodoQueryService } from '../todo-query-service'; // 💡 NEU: Der Kreis-Sprenger importiert!
+import { NotificationService } from '../notification-service';
 
 export enum Filter {
   ALL = 'all',
@@ -42,7 +43,8 @@ export class TodoService {
   private userService = inject(UserService);
   private loggerService = inject(LoggerService);
   private todoRepository = inject(TodoRepository);
-  private todoQueryService = inject(TodoQueryService); // 💡 NEU: Ersetzt den direkten TeamService-Check für Meilensteine
+  private todoQueryService = inject(TodoQueryService); 
+  private notificationService = inject(NotificationService)
 
   // --- REAKTIVER STATE (SIGNALS & GLOBAL POOL) ---
   // 🌍 DER TRICK: Verweist jetzt direkt auf das Signal im DataManager unten!
@@ -289,25 +291,14 @@ export class TodoService {
     return Todo.fromTodo(todo);
   }
 
+  // 🗑️ Einzelnes To-Do über die UI löschen
   public deleteTodo(id: string): void {
-    const todoToDelete = this.allTodosPool().find(t => t.id === id);
-    if (!todoToDelete) return;
-
-    this.lastDeletedTaskName.set(todoToDelete.task);
-    this.showUndoToast.set(true);
-
-    this.allTodosPool.set(this.allTodosPool().filter(t => t.id !== id));
-
-    this.dataManager.deleteTodosBulk([todoToDelete], this.allTodosPool()).subscribe({
-      next: (updatedList) => {
-        this.allTodosPool.set(updatedList);
-      },
-      error: (err) => {
-        this.loggerService.error("TodoService", "Fehler beim Löschen des To-Dos", err);
-        this.globalError.set("Aufgabe konnte nicht gelöscht werden.");
-      }
+    this.dataManager.deleteTodo(id).subscribe({
+      next: () => this.loggerService.info("TodoService", `Todo ${id} erfolgreich archiviert.`),
+      error: (err) => this.loggerService.error("TodoService", "Fehler beim Löschen des Todos", err)
     });
   }
+
 
   public undoDelete() {
     this.isUndoActive.set(true);
@@ -331,54 +322,42 @@ export class TodoService {
     return this.filteredTodos().filter(t => t.milestoneId === id)
   }
 
+// 🗑️ Footer-Aktion Links: Erledigte private Aufgaben löschen
   public clearCompletedTodos(): void {
-    const currentUser = this.userService.currentUser();
-    if (!currentUser) return;
+    const userId = this.userService.getCurrentUserId();
+    if (!userId) return;
 
-    const completedPrivateTodos = this.allTodosPool().filter(
-      todo => todo.done && todo.userId === currentUser.id && !todo.milestoneId
-    );
-
-    if (completedPrivateTodos.length === 0) return;
-
-    this.loggerService.info("TodoService", `Bulk-Löschen von ${completedPrivateTodos.length} erledigten privaten Aufgaben.`);
-
-    this.dataManager.deleteTodosBulk(completedPrivateTodos, this.allTodosPool()).subscribe({
-      next: (updatedList) => {
-        this.allTodosPool.set(updatedList);
+    this.dataManager.deleteCompleted(userId).subscribe({
+      next: () => {
+        this.loggerService.info("TodoService", "Erledigte private Aufgaben erfolgreich archiviert.");
+        // 🌟 Der NotificationService meldet Erfolg!
+        this.notificationService.showNotification("Erledigte private Aufgaben wurden erfolgreich archiviert! 🧹", "success");
       },
       error: (err) => {
-        this.loggerService.error("TodoService", "Fehler beim Bulk-Löschen der erledigten privaten To-Dos", err);
-        this.globalError.set("Erledigte private Aufgaben konnten nicht gelöscht werden.");
+        this.loggerService.error("TodoService", "Fehler beim Leeren der Aufgaben", err);
+        // 🌟 Der NotificationService meldet den Fehler!
+        this.notificationService.showNotification("Fehler beim Archivieren der erledigten Aufgaben. Bitte erneut versuchen! ⚠️", "error");
       }
     });
   }
 
+  // 🗑️ Footer-Aktion Rechts: Alle privaten Aufgaben löschen
   public clearAllTodos(): void {
-    const currentUser = this.userService.currentUser();
-    if (!currentUser) return;
+    const userId = this.userService.getCurrentUserId();
+    if (!userId) return;
 
-    const allUserPrivateTodos = this.allTodosPool().filter(
-      todo => todo.userId === currentUser.id && !todo.milestoneId
-    );
-
-    if (allUserPrivateTodos.length === 0) return;
-
-    this.loggerService.info("TodoService", `Bulk-Löschen von all den ${allUserPrivateTodos.length} privaten Aufgaben.`);
-
-    this.dataManager.deleteTodosBulk(allUserPrivateTodos, this.allTodosPool()).subscribe({
-      next: (updatedList) => {
-        this.allTodosPool.set(updatedList);
+    this.dataManager.deleteAll(userId).subscribe({
+      next: () => {
+        this.loggerService.info("TodoService", "Alle privaten Aufgaben erfolgreich archiviert.");
+        // 🌟 Der NotificationService meldet Erfolg!
+        this.notificationService.showNotification("Dein privates Board wurde komplett geleert! 🔥", "success");
       },
       error: (err) => {
-        this.loggerService.error("TodoService", "Fehler beim Bulk-Löschen aller privaten To-Dos", err);
-        this.globalError.set("Private Aufgaben konnten nicht gelöscht werden.");
+        this.loggerService.error("TodoService", "Fehler beim Löschen aller privaten Aufgaben", err);
+        // 🌟 Der NotificationService meldet den Fehler!
+        this.notificationService.showNotification("Das Board konnte nicht geleert werden. Server-Verbindung prüfen! ⚠️", "error");
       }
     });
-  }
-
-  public clearGlobalError() {
-    this.globalError.set(null);
   }
 
   private handleBackendError(err: any, isDelayedAction: boolean): void {
