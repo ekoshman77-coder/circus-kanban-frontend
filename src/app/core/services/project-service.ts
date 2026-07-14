@@ -1,6 +1,6 @@
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { catchError, map, switchMap, tap } from 'rxjs/operators';
+import { catchError, map, tap } from 'rxjs/operators';
 import { Project } from '../models/project';
 import { ProjectDataManagerService } from './project-data-mananger-service';
 import { UserService } from './user/user-service';
@@ -11,6 +11,8 @@ import { NoteService } from './note-service';
 import { UnifiedSuggestion } from '../models/unified-suggestion';
 import { MilestoneSuggestionsModel } from '../models/milestone-suggestions-model';
 import { DraftProjectWrapper } from '../models/draft-project-wrapper';
+import { NotificationService } from './notification-service';
+import { ProjectDashboardStatsDTO } from '../repositories/dto/project-dashboard-stats-dto';
 
 @Injectable({
   providedIn: 'root'
@@ -18,7 +20,8 @@ import { DraftProjectWrapper } from '../models/draft-project-wrapper';
 export class ProjectService {
   private dataManager = inject(ProjectDataManagerService);
   private userService = inject(UserService);
-  private noteService = inject(NoteService)
+  private noteService = inject(NoteService);
+  private notificationService = inject(NotificationService);
 
   // Das reaktive Speicherbecken für unseren unfertigen Entwurf
   private temporaryDraftSignal = signal<Project | null>(null);
@@ -26,6 +29,9 @@ export class ProjectService {
 
   private allProjectsPool = signal<Project[]>([]);
 
+  private dashboardStatsSignal = signal<ProjectDashboardStatsDTO | null>(null);
+  public readonly dashboardStats = this.dashboardStatsSignal.asReadonly();
+  
   // Die korrigierte Lese-Brille im ProjectService:
   public readonly projectsList = computed(() => {
     const rawProjects = this.allProjectsPool();
@@ -441,9 +447,42 @@ public loadMilestoneSuggestions(title: string, area: string): void {
 }
 
   /**
+   * 📊 Lädt die globalen Dashboard-Statistiken reaktiv.
+   * Bei Fehlern (z.B. Offline-Modus) wird der User über den NotificationService informiert!
+   */
+  public loadDashboardStatistics(): void {
+    const userId = this.userService.getCurrentUserId();
+    if (!userId) return;
+
+    this.dataManager.getDashboardStatistics(userId).subscribe({
+      next: (stats) => {
+        // Erfolgsfall: Wir speichern die echten Daten im Signal
+        this.dashboardStatsSignal.set(stats);
+      },
+      error: (err: Error) => {
+        this.dashboardStatsSignal.set(null);
+
+        if (err.message === 'OFFLINE_MODE') {
+          this.notificationService.showNotification(
+            'Globale Statistiken sind im Offline-Modus nicht verfügbar. 🔌',
+            'info'
+          ); 
+        } else {
+          this.notificationService.showNotification(
+            'Fehler beim Laden der Dashboard-Statistiken.',
+            'error'
+          ); 
+        }
+      }
+    });
+  }
+
+  /**
    * Leert die KI-Vorschläge komplett (wird beim Speichern/Abbrechen aufgerufen)
    */
   public cleanSuggestions(): void {
     this._aiSuggestionsSignal.set({ recommended: [], degraded: [] });
   }
+
+  
 }

@@ -10,6 +10,7 @@ import { FILTER_ANIMATION, TO_DO_ANIMATION } from './todo-list-animation';
 import { TodoViewModel } from '../../../core/viewmodel/todo-view-model';
 import { TodoQueryService } from '../../../core/services/todo-query-service'; // 💡 Unser Kreis-Sprenger!
 import { VisualStatus } from '../../../core/models/todo';
+import { TodoFooterComponent } from '../todo-footer-component/todo-footer-component';
 
 @Component({
   selector: 'app-todo-list',
@@ -19,7 +20,8 @@ import { VisualStatus } from '../../../core/models/todo';
     NgClass,
     TodoItemComponent,
     FilterComponent,
-    StatisticComponent
+    StatisticComponent,
+    TodoFooterComponent
   ],
   templateUrl: './todo-list-component.html',
   styleUrl: './todo-list-component.css',
@@ -27,7 +29,7 @@ import { VisualStatus } from '../../../core/models/todo';
 })
 export class TodoListComponent {
   private todoService = inject(TodoService);
-  private todoQueryService = inject(TodoQueryService); // 👑 Injizieren für Rechte-Prüfung!
+  private todoQueryService = inject(TodoQueryService); // Injizieren für Rechte-Prüfung!
 
   // Zustand für aufgeklappte Beschreibungen
   openedDescrIds = signal<Set<string>>(new Set());
@@ -48,7 +50,7 @@ export class TodoListComponent {
 
   // 🌍 DIE REAKTIVE BRÜCKE: Mapped Todos zu ViewModels samt Permissions!
   uiTodos = computed(() => {
-    const rawTodos = this.todoService.filteredTodos();
+    const rawTodos = this.todoService.filteredFocusedTodos();
     const now = Date.now();
     const todayEnd = new Date().setHours(23, 59, 59, 999);
     const openIds = this.openedDescrIds(); // 💡 Holt das reaktive Set der geöffneten IDs
@@ -65,7 +67,7 @@ export class TodoListComponent {
 
       // 💡 1. Prüfen, ob die ID dieses Todos im Set der geöffneten Beschreibungen existiert
       const isDescriptionOpen = openIds.has(todo.id);
-
+      
       const canEdit = this.todoQueryService.hasPermissionForMilestone(todo.milestoneId, 'TODO_EDIT');
       const canDelete = this.todoQueryService.hasPermissionForMilestone(todo.milestoneId, 'TODO_DELETE');
 
@@ -79,10 +81,8 @@ export class TodoListComponent {
     });
   });
 
-  // 🧮 STATISTIK-BERECHNUNG: Nutzt jetzt ganz einfach die neue Utility!
-  stats = computed(() => {
-    const allMyTodos = this.todoService.allTodos(); // Holt alle persönlichen Todos
-    return calculateTodoStats(allMyTodos); // 💡 Einzeiler dank Utility!
+  protected todosForStats = computed(() => {
+    return this.uiTodos().map(vm => vm.todo);
   });
 
   // Nachricht für leere Filter-Zustände

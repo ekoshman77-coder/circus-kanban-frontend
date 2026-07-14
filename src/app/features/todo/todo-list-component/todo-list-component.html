@@ -7,7 +7,7 @@
       (filterChanged)="onFilterChange($event)">
     </app-filter>
 
-    <app-statistic [stats]="stats()"></app-statistic>
+<app-statistic [todos]="todosForStats()"></app-statistic>
   </div>
 
   <h3>Deine Aufgaben ({{ uiTodos().length }})</h3>
@@ -35,4 +35,6 @@
       }
     </div>
   }
+  <app-todo-footer [currentTodos]="todosForStats()"></app-todo-footer>
 </div>
+

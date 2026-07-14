@@ -27,11 +27,9 @@
   <section class="todo-list-section">
     @if (currentView() === 'list') {
       <app-todo-list></app-todo-list>
-      <app-todo-footer></app-todo-footer>
     } 
     @if (currentView() === 'kanban') {
       <app-todo-kanban></app-todo-kanban>
-      <app-todo-footer></app-todo-footer>
     }
     @if (currentView() === 'express') {
       <app-archiv-express></app-archiv-express>

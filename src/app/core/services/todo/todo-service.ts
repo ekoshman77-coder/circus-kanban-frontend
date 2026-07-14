@@ -79,8 +79,44 @@ export class TodoService {
     return this.todosSignal().filter(t => !t.done);
   });
 
-  public allTodos = computed(() => {
-    return [...this.todosSignal()];
+// 0. Die absolute Rohquelle vom Server/Datenbank
+  private allTodos = computed(() => this.dataManager.allTodosPool());
+
+  // ==========================================
+  // 🌍 BOARD 1: Die persönliche To-Do-Liste (TodoListComponent)
+  // ==========================================
+  // Zeigt: Eigene private Aufgaben PLUS ihm zugewiesene Team-Aufgaben
+  public focusedTodos = computed(() => {
+    const currentUserId = this.userService.getCurrentUserId();
+    return this.allTodos().filter(t => !t.milestoneId || t.assignedUserId === currentUserId);
+  });
+
+  // ==========================================
+  // 👥 BOARD 2: Privates Board (TodoKanbanComponent)
+  // ==========================================
+  // Zeigt: AUSSCHLIESSLICH private Aufgaben (Kein Meilenstein/Projekt)
+  public privateTodos = computed(() => {
+    return this.allTodos().filter(t => !t.milestoneId);
+  });
+
+
+  // ==========================================
+  // 🏛️ BOARD 3: Project Milestone Board (ProjectMilestoneComponent)
+  // ==========================================
+  // Anforderung: Eigene private Aufgaben, um sie zuzuordnen PLUS alle Team-Aufgaben
+  // Zeigt: ALLES (weil der User hier die Brücke zwischen Privat und Team baut!)
+  public milestoneBoardTodos = computed(() => {
+    return this.allTodos(); // Einfach der gesamte Pool!
+  });
+
+
+  // ==========================================
+  // 🤝 BOARD 4: Team Board (TeamBoardComponent)
+  // ==========================================
+  // Anforderung: Nur Team-Aufgaben sehen, zuweisen, bearbeiten. KEINE privaten Aufgaben!
+  // Zeigt: Nur Aufgaben, die zu einem Meilenstein/Projekt gehören
+  public teamTodos = computed(() => {
+    return this.allTodos().filter(t => !!t.milestoneId);
   });
 
   constructor() {
@@ -122,6 +158,14 @@ export class TodoService {
         this.handleBackendError(err, false);
       }
     });
+  }
+
+  /**
+   * 🔍 Sucht ein To-Do anhand seiner ID aus dem aktuellen Signal-Zustand.
+   * Perfekt für Detail- oder Editier-Ansichten, ohne allTodos public machen zu müssen!
+   */
+  public getTodoById(id: string): Todo | undefined {
+    return this.todosSignal().find(t => t.id === id);
   }
 
   /**
@@ -319,7 +363,7 @@ export class TodoService {
     if (!id) {
       return [];
     }
-    return this.filteredTodos().filter(t => t.milestoneId === id)
+    return this.filteredFocusedTodos().filter(t => t.milestoneId === id)
   }
 
 // 🗑️ Footer-Aktion Links: Erledigte private Aufgaben löschen
@@ -393,13 +437,13 @@ export class TodoService {
   // --- COMPUTED STATES ---
   public isListEmpty = computed(() => this.todosSignal().length === 0);
 
-  public totalOpenEffort = computed(() => {
-    const todos = this.todosSignal().filter(t => !t.done);
-    return todos.reduce((prev, t) => prev + (t.effort || 0), 0);
-  });
+  // public totalOpenEffort = computed(() => {
+  //   const todos = this.todosSignal().filter(t => !t.done);
+  //   return todos.reduce((prev, t) => prev + (t.effort || 0), 0);
+  // });
 
-  public filteredTodos = computed(() => {
-    const todos = this.todosSignal();
+  public filteredFocusedTodos = computed(() => {
+    const todos = this.focusedTodos();
     const filter = this.filterSignal();
     const searchQuery = this.searchQuerySignal();
     const now = Date.now();
@@ -474,7 +518,7 @@ export class TodoService {
   });
 
   public totalEffort = computed(() => {
-    const tasks = this.filteredTodos();
+    const tasks = this.filteredFocusedTodos();
     const filter = this.filterSignal();
     const effortType = filter === Filter.COMPLETED ? EffortType.COMPLETED : EffortType.OPEN;
 

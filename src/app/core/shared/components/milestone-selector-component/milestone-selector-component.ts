@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, computed, ElementRef, HostListener, inject, input, output, signal } from '@angular/core';
+import { CommonModule, DOCUMENT } from '@angular/common';
+import { Component, computed, ElementRef, HostListener, inject, input, output, signal, effect } from '@angular/core';
 import { ProjectService } from '../../../services/project-service';
 
 @Component({
@@ -11,12 +11,15 @@ import { ProjectService } from '../../../services/project-service';
 })
 export class MilestoneSelectorComponent {
   private projectService = inject(ProjectService);
+  private elementRef = inject(ElementRef);
+  private document = inject(DOCUMENT); // 🌟 Ermöglicht den sicheren Zugriff auf den Body
+  
   public isDisabled = input<boolean>(false);
   
   // ⚙️ DIE DREI STEUER-INPUTS FÜR UNSERE VARIANTEN:
   public canChooseProject = input<boolean>(false);     // Erlaubt das Klicken auf Projekt-Header (Variante 1)
   public onlyProjects = input<boolean>(false);         // Blendet Meilensteine komplett aus (Variante 3)
-  public filterByActiveProject = input<boolean>(true); // (Optional) falls du nach einem aktiven Projekt filtern willst
+  public filterByActiveProject = input<boolean>(true); // (Optional)
 
   public initialMilestoneId = input<string | null>(null);
   public initialProjectId = input<string | null>(null);
@@ -29,9 +32,27 @@ export class MilestoneSelectorComponent {
   public searchQuery = signal<string>("");
   public isClosing = signal<boolean>(false);
 
-  private elementRef = inject(ElementRef);
+  constructor() {
+    // 🌟 DER AUTOMATISCHE BEAMER-EFFEKT:
+    // Zwingt das Modal physikalisch in den <body>, damit es niemals überdeckt wird!
+    effect(() => {
+      const open = this.isOpen();
+      const isModal = this.appearance() === 'modal';
+      
+      if (open && isModal) {
+        // Wir warten ganz kurz, bis Angular das HTML gerendert hat...
+        setTimeout(() => {
+          const backdrop = this.elementRef.nativeElement.querySelector('.modal-backdrop');
+          if (backdrop) {
+            // 🚀 BEAMEN! Wir hängen den Backdrop direkt an das Ende des <body> an!
+            this.document.body.appendChild(backdrop);
+          }
+        });
+      }
+    });
+  }
 
-  // 🔍 DER MAGISCHE FILTER (Berücksichtigt jetzt die 'onlyProjects' Variante)
+  // 🔍 DER MAGISCHE FILTER (Jetzt wieder vollständig repariert!)
   public filteredProjectsWithMilestones = computed(() => {
     const allProjects = this.projectService.projectsList();
     const query = this.searchQuery().toLowerCase().trim();
@@ -97,7 +118,14 @@ export class MilestoneSelectorComponent {
   public closeDropdown(): void {
     if (this.appearance() === 'modal') {
       this.isClosing.set(true);
+      
+      // Vor dem Schließen räumen wir das Element im Body wieder auf!
+      const backdrop = this.document.querySelector('body > .modal-backdrop');
+      
       setTimeout(() => {
+        if (backdrop) {
+          backdrop.remove(); // 🧹 Aus dem Body löschen
+        }
         this.isOpen.set(false);
         this.isClosing.set(false);
         this.searchQuery.set("");
@@ -129,8 +157,13 @@ export class MilestoneSelectorComponent {
   public onDocumentClick(event: MouseEvent): void {
     if (this.isDisabled() || !this.isOpen()) return;
 
-    // Klicks außerhalb des Selektors schließen das Dropdown (nur im Dropdown-Modus sinnvoll)
-    if (this.appearance() === 'dropdown' && !this.elementRef.nativeElement.contains(event.target)) {
+    // Wenn das Modal im Body gerendert ist, müssen wir prüfen, ob der Klick im Portal gelandet ist
+    const clickedInside = this.elementRef.nativeElement.contains(event.target);
+    const clickedInPortal = this.document.querySelector('body > .modal-backdrop')?.contains(event.target as Node);
+    
+    if (this.appearance() === 'dropdown' && !clickedInside) {
+      this.closeDropdown();
+    } else if (this.appearance() === 'modal' && !clickedInside && !clickedInPortal) {
       this.closeDropdown();
     }
   }

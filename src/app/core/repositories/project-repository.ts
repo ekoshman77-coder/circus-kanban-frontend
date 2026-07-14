@@ -1,8 +1,9 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { projectApiUrl } from './links';
 import { N } from '@angular/cdk/keycodes';
+import { ProjectDashboardStatsDTO } from './dto/project-dashboard-stats-dto';
 
 @Injectable({
   providedIn: 'root'
@@ -43,5 +44,12 @@ export class ProjectRepository {
   // 🔄 BULK SYNC: Schickt alle lokalen Projekte zum Abgleich ans Backend
   public syncLocalProjects(userId: string, localProjects: any[]): Observable<any[]> {
     return this.http.post<any[]>(`${projectApiUrl}/sync`, { userId, projects: localProjects });
+  }
+
+  // 🌟 NEU FÜR DASHBOARD: Holt die aggregierten Zahlen vom Server
+  // Temporär mit Mockdaten, bis der Server-Endpunkt bereit ist!
+  public getDashboardStatistics(userId: string): Observable<ProjectDashboardStatsDTO> {
+    // 🔌 Der echte Stecker zum Kotlin-Server!
+    return this.http.get<ProjectDashboardStatsDTO>(`${projectApiUrl}/statistics/${userId}`);
   }
 }

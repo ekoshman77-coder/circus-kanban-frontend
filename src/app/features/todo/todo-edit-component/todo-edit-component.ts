@@ -49,7 +49,7 @@ export class TodoEditComponent implements OnInit {
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      const todo = this.todoService.allTodos().find((todo) => todo.id === id );
+      const todo = this.todoService.getTodoById(id)
       if (todo) {
         this.currentTodo = todo;
         this.milestoneId.set(todo.milestoneId)
@@ -82,7 +82,7 @@ export class TodoEditComponent implements OnInit {
     } else {
       this.cancel();
     }
-  }
+  };
 
   private calculateSliderMetrics(days: number): void {
     const percent = (days / 30) * 100;

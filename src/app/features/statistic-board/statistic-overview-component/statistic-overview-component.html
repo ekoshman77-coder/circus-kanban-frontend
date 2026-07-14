@@ -1,5 +1,17 @@
 <div class="dashboard-wrapper">
   
+  <div class="dashboard-filter-bar">
+    <span class="filter-label">📈 Projekt analysieren:</span>
+    <app-milestone-selector-component
+      [initialProjectId]="selectedProjectId()"
+      [onlyProjects]="true"
+      [canChooseProject]="true"
+      [appearance]="'dropdown'"
+      [appearance]="'modal'"
+      (projectSelected)="onProjectSelected($event)">
+    </app-milestone-selector-component>
+  </div>
+
   <div class="dashboard-grid">
     
     <div class="dashboard-card personal-card">
@@ -9,7 +21,7 @@
       </div>
       <div class="card-body">
         <div class="big-number">{{ personalProgress() }}%</div>
-        <p>{{textLabel()}}</p>
+        <p>{{ textLabel() }}</p>
         
         <div class="progress-bar-container">
           <div class="progress-bar-fill" [style.width.%]="personalProgress()"></div>
@@ -24,7 +36,7 @@
       </div>
       <div class="card-body">
         <div class="big-number">{{ teamProgress() }}%</div>
-        <p>{{textLabel()}}</p>
+        <p>{{ textLabel() }}</p>
         
         <div class="progress-bar-container">
           <div class="progress-bar-fill team-fill" [style.width.%]="teamProgress()"></div>
@@ -49,11 +61,10 @@
         <h3>Wissens-Datenbank</h3>
       </div>
       <div class="card-body">
-        <div class="big-number">{{ notesCount() }}</div>
-        <p>Notizen & Geistesblitze gesichert</p>
+        <div class="big-number">{{ noteService.notesList().length }}</div>
+        <p>Einträge im Wiki gespeichert</p>
       </div>
     </div>
 
   </div>
-
 </div>

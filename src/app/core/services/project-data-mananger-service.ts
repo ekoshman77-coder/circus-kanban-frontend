@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { ConnectionService } from './connection-service';
 import { ProjectRepository } from '../repositories/project-repository';
@@ -10,6 +10,7 @@ import { MILESTONE_TEMPLATES } from '../shared/constants/milestone-template';
 import { UnifiedSuggestion } from '../models/unified-suggestion';
 import { MilestoneSuggestionsModel } from '../models/milestone-suggestions-model';
 import { Title } from '@angular/platform-browser';
+import { ProjectDashboardStatsDTO } from '../repositories/dto/project-dashboard-stats-dto';
 
 
 @Injectable({
@@ -300,4 +301,17 @@ public deleteProject(id: string, actualList: Project[]): Observable<void | undef
      return this.aiRepository.trackMilestonesIgnore(projectTitle, userId, milestoneTitles)
   }
 
+  /**
+   * 📊 Holt die Dashboard-Statistiken über das Repository.
+   * Wenn wir offline sind, geben wir einfach Nullen zurück (kein LocalStorage-Caching!).
+   */
+public getDashboardStatistics(userId: string): Observable<ProjectDashboardStatsDTO> {
+    if (this.connectionService.isOffline()) {
+      console.log('🔌 Offline-Modus: Globale Dashboard-Statistik ist lokal nicht verfügbar.');
+      // 🌟 Wir werfen einen echten Fehler statt fiktiver Nullen
+      return throwError(() => new Error('OFFLINE_MODE'));
+    }
+
+    return this.projectRepository.getDashboardStatistics(userId);
+  }
 }

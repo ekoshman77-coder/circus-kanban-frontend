@@ -1,11 +1,11 @@
 <div class="stats-bar">
-  <span class="stat-item all" title="Gesamte Aufgaben">📋 <strong>{{ stats.total }}</strong></span>
+  <span class="stat-item all" title="Gesamte Aufgaben">📋 <strong>{{ stats().total }}</strong></span>
   
-  <span class="stat-item open" title="Offene Aufgaben">⏳ <strong>{{ stats.open }}</strong></span>
+  <span class="stat-item open" title="Offene Aufgaben">⏳ <strong>{{ stats().open }}</strong></span>
   
-  <span class="stat-item overdue" title="Überfällige Aufgaben">⚠️ <strong>{{ stats.overdue }}</strong></span>
+  <span class="stat-item overdue" title="Überfällige Aufgaben">⚠️ <strong>{{ stats().overdue }}</strong></span>
   
-  <span class="stat-item done" title="Erledigte Aufgaben">✅ <strong>{{ stats.completed }}</strong></span>
+  <span class="stat-item done" title="Erledigte Aufgaben">✅ <strong>{{ stats().completed }}</strong></span>
   
   <span class="stat-percent" title="Dein aktueller Fortschritt">
     🎯 {{ calculatedPercent | percent:'1.0-1' }}

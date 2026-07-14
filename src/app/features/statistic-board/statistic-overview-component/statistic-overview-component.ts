@@ -1,64 +1,84 @@
-import { Component, inject, computed, input } from '@angular/core';
+import { Component, inject, computed, signal, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TodoService } from '../../../core/services/todo/todo-service'; 
 import { Todo } from '../../../core/models/todo';
 import { NoteService } from '../../../core/services/note-service';
 import { ProjectService } from '../../../core/services/project-service';
+// 🌟 NEU: Importiere deinen genialen Query-Service!
+import { TodoQueryService } from '../../../core/services/todo-query-service'; 
+import { MilestoneSelectorComponent } from '../../../core/shared/components/milestone-selector-component/milestone-selector-component';
 
 @Component({
   selector: 'app-statistic-overview-component',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, MilestoneSelectorComponent],
   templateUrl: './statistic-overview-component.html',
   styleUrl: './statistic-overview-component.css'
 })
 export class StatisticOverviewComponent {
   private todoService = inject(TodoService);
-  private noteService = inject(NoteService);
-  private projectService = inject(ProjectService);
+  private todoQueryService = inject(TodoQueryService); // 🌟 Hier injiziert!
+  public noteService = inject(NoteService);
+  protected projectService = inject(ProjectService);
  
-  // 🔄 Wir empfangen den Modus ('tasks' oder 'points') vom großen Steuer-Board
   mode = input.required<'tasks' | 'points'>();
 
-  // 👤 1. Signal: Mein persönlicher Fortschritt (schaltet dynamisch um!)
+  // 🎯 Das aktuell ausgewählte Projekt auf dem Dashboard
+  protected selectedProjectId = signal<string | null>(null);
+
+  // 👤 1. Mein persönlicher Fortschritt im ausgewählten Projekt
   protected personalProgress = computed(() => {
-    const todos = this.todoService.todosSignal(); // Hier müsstest du später noch filtern, welche To-Dos NUR DIR gehören!
-    if (todos.length === 0) return 0;
+    const todos = this.todoService.todosSignal(); // Dem User zugewiesene Aufgaben
+    const activeProjectId = this.selectedProjectId();
+
+    // Wenn kein Projekt gewählt ist, zeigen wir den Gesamtschnitt aller meiner Aufgaben
+    if (!activeProjectId) {
+      return todos.length === 0 ? 0 : this.tasksPercent(todos);
+    }
+
+    // 🌟 Wir filtern meine Aufgaben lokal: Gehört die milestoneId des To-Dos zum aktiven Projekt?
+    const myProjectTodos = todos.filter(t => {
+      const projId = this.todoQueryService.getProjectIdByMilestoneId(t.milestoneId);
+      return projId === activeProjectId;
+    });
     
-    return this.tasksPercent(todos)
+    if (myProjectTodos.length === 0) return 0;
+    return this.tasksPercent(myProjectTodos);
   });
 
-  private tasksPercent(todos: Todo[]): number{
+  // 👥 2. Team Sprint-Fortschritt im ausgewählten Projekt
+  protected teamProgress = computed(() => {
+    const activeProjectId = this.selectedProjectId();
+
+    // Wenn kein Projekt gewählt ist, zeigen wir 0% oder nutzen alle Team-Aufgaben
+    if (!activeProjectId) {
+      const allTeamTodos = this.todoService.teamTodos();
+      return allTeamTodos.length === 0 ? 0 : this.tasksPercent(allTeamTodos);
+    }
+
+    // 🌟 SENSATIONELL EINFACH: Wir holen alle Team-Aufgaben des Projekts direkt aus dem Query-Service!
+    const projectTeamTodos = this.todoQueryService.getTodosForProject(activeProjectId);
+
+    if (projectTeamTodos.length === 0) return 0;
+    return this.tasksPercent(projectTeamTodos);
+  });
+
+  protected onProjectSelected(projectId: string): void {
+    this.selectedProjectId.set(projectId);
+  }
+
+  private tasksPercent(todos: Todo[]): number {
     if (this.mode() === 'tasks') {
-      // Modus: Aufgaben zählen
       const completed = todos.filter(t => t.done).length;
       return Math.round((completed / todos.length) * 100);
     } else {
-      // Modus: Story Points zählen
       const totalPoints = todos.reduce((sum, t) => sum + (t.effort || 0), 0);
       if (totalPoints === 0) return 0;
       const completedPoints = todos.filter(t => t.done).reduce((sum, t) => sum + (t.effort || 0), 0);
       return Math.round((completedPoints / totalPoints) * 100);
     }  
   }
-  
 
-  // 👥 2. Signal: Team-Fortschritt
-  protected teamProgress = computed(() => {
-    const todos = this.todoService.allTodos(); // Hier nimmst du wirklich die To-Dos des gesamten Teams
-    if (todos.length === 0) return 0;
-
-    return this.tasksPercent(todos)
-  });
-
-
-  // Dynamischer Text für die Karten-Beschreibung unter der Zahl
-  protected textLabel = computed(() => {
-    return this.mode() === 'tasks' ? 'der Aufgaben erledigt' : 'der Story Points erreicht';
-  });
-
-  protected activeProjectsCount = computed(() => this.projectService.projectsList().length);
-  
-
-  protected notesCount = computed(() => this.noteService.notesList().length);
+  protected activeProjectsCount = computed(() => this.projectService.projectsList().length || 0);
+  protected textLabel = computed(() => this.mode() === 'tasks' ? 'Erledigte Aufgaben' : 'Erledigte Punkte');
 }

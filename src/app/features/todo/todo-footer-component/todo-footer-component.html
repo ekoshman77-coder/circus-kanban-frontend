@@ -1,4 +1,4 @@
-@if (!isListEmpty) {
+@if (!isListEmpty()) {
   <div class="actions">
     <span 
       [class.delete-completed-btn]="!disableDeleteButtons()"
@@ -9,7 +9,7 @@
     </span>
     
     <span class="total-time-display">
-      Offener Aufwand: {{ totalOpenEffort }} Story Points
+      Offener Aufwand: {{ totalOpenEffort() }} Story Points
     </span>
     
     <span 

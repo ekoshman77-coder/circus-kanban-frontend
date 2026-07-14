@@ -1,8 +1,7 @@
-import { Component, Input, computed } from '@angular/core';
+import { Component, computed, input } from '@angular/core'; // 🌟 input und computed importiert
 import { CommonModule, PercentPipe } from '@angular/common';
 import { Todo } from '../../../core/models/todo';
 
-// Definiere das Interface direkt hier, damit es überall sauber matcht
 export interface TodoStats {
   total: number;
   open: number;
@@ -11,10 +10,6 @@ export interface TodoStats {
   dueToday: number;
 }
 
-/**
- * 🧮 DIE RECHEN-MASCHINE (Deine Utility):
- * Nimmt eine beliebige Todo-Liste und berechnet die Statistik fehlerfrei!
- */
 export function calculateTodoStats(todos: Todo[]): TodoStats {
   const stats: TodoStats = { total: todos.length, open: 0, overdue: 0, completed: 0, dueToday: 0 };
   
@@ -43,17 +38,17 @@ export function calculateTodoStats(todos: Todo[]): TodoStats {
   styleUrl: './statistic-component.css'
 })
 export class StatisticComponent {
-  // Wir bekommen die rohen Zahlen aus der Hauptkomponente geliefert
-  @Input() stats: TodoStats = { total: 0, open: 0, overdue: 0, completed: 0, dueToday: 0 };
+  // 🌟 NEU: Wir verlangen die Todo-Liste statt der fertigen Zahlen!
+  public todos = input.required<Todo[]>();
 
-  // Der mathematische Fix für die 133%: Erledigt geteilt durch Gesamt!
-  // Wir nutzen ein computed Signal (oder eine einfache Methode), um den Wert sauber zu berechnen
-  get calculatedPercent(): number {
-    if (!this.stats || this.stats.total === 0) {
-      return 0;
-    }
-    // Formel: (Erledigte / Gesamt)
-    // Angulars eingebaute PercentPipe macht daraus später automatisch z.B. 0.75 -> 75%
-    return this.stats.completed / this.stats.total;
+  // 🌟 REAKTIVE BERECHNUNG: Die Statistik berechnet sich vollautomatisch
+  public stats = computed(() => {
+    return calculateTodoStats(this.todos());
+  });
+
+  protected get calculatedPercent(): number {
+    const s = this.stats(); // Signal auslesen mit ()
+    if (s.total === 0) return 0;
+    return s.completed / s.total;
   }
 }

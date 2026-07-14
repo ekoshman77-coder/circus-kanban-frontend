@@ -1,4 +1,4 @@
-<app-statistic [stats]="stats"></app-statistic>
+<app-statistic [todos]="privateTodos()"></app-statistic>
 
 <div class="kanban-container" cdkDropListGroup>
 
@@ -29,5 +29,6 @@
 
     </div>
   </div>
+  <app-todo-footer [currentTodos]="privateTodos()"></app-todo-footer>
 
 </div>

@@ -137,7 +137,7 @@ export class ProjectMilestonesComponent implements OnInit {
     if (!filter) return null;
 
     const allProjects = this.projectService.projectsList();
-    const allTodos = this.todoService.allTodos();
+    const allTodos = this.todoService.milestoneBoardTodos();
 
     const foundProject = allProjects.find((p) => p.id === filter.projectId);
     const foundMilestone = foundProject?.milestones.find((m) => m.id === filter.milestoneId);
@@ -198,7 +198,7 @@ public assignedTodos = computed(() => {
   // });
 
   public unassignedTodos = computed(() => {
-    const freeTodos = this.todoService.allTodos()
+    const freeTodos = this.todoService.milestoneBoardTodos()
       .filter((t) => t.milestoneId === null)
       .map((t) => new TodoViewModel(t, false));
     if (!freeTodos) return [];
@@ -239,7 +239,7 @@ public assignedTodos = computed(() => {
   });
 
   public removeTodoFromMilestone(todoId: string): void {
-    const todo = this.todoService.allTodos().find((t) => t.id === todoId);
+    const todo = this.todoService.milestoneBoardTodos().find((t) => t.id === todoId);
     if (todo) {
       const updatedTodo = Todo.fromTodo(todo);
       updatedTodo.milestoneId = null;

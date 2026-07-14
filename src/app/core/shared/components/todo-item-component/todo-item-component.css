@@ -526,3 +526,65 @@
   color: #ffffff;
   border-color: #ef4444;
 }
+
+/* ==========================================================================
+   🎭 MITARBEITER-ZUWEISUNG ALS SCHWEBENDES MODAL-OVERLAY
+   ========================================================================== */
+.assignee-popover {
+  /* 🌟 Befreit das Modal aus dem Karten-Käfig und zentriert es auf dem Bildschirm! */
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  
+  /* Styling als edle, schwebende Karte */
+  width: 280px !important;
+  max-height: 350px !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 16px !important;
+  padding: 20px !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 
+              0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+  z-index: 99999 !important; /* Steht über absolut allem */
+  
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+
+/* Scrollbare Liste innerhalb des Modals */
+.assignee-popover strong {
+  font-size: 14px !important;
+  color: #1e293b !important;
+  margin-bottom: 8px !important;
+  text-align: center;
+  display: block;
+}
+
+/* Die Liste der Mitarbeiter kriegt einen eigenen Scroll-Bereich */
+.assignee-popover button {
+  flex-shrink: 0 !important;
+  width: 100% !important;
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  padding: 8px 12px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #334155 !important;
+  transition: all 0.2s ease !important;
+}
+
+.assignee-popover button:hover {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  transform: translateY(-1px);
+}
+
+/* Schicker Scrollbar für die Liste, falls es sehr viele User sind */
+.assignee-popover {
+  overflow-y: auto !important;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}

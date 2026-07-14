@@ -1,7 +1,8 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
 import { TodoService } from '../../../core/services/todo/todo-service'; // Pfad anpassen
 import { ConnectionService } from '../../../core/services/connection-service';
 import { UniversalPopupComponent } from '../../../core/shared/components/universal-popup-component/universal-popup-component';
+import { Todo } from '../../../core/models/todo';
 
 @Component({
   selector: 'app-todo-footer',
@@ -15,6 +16,18 @@ export class TodoFooterComponent {
   protected todoService = inject(TodoService);
   protected connectionService = inject(ConnectionService)
 
+  public currentTodos = input.required<Todo[]>();
+
+  public totalOpenEffort = computed(() => {
+    // Keine Typen-Prüfung mehr nötig, da es garantiert Todo[] ist!
+    const openTodos = this.currentTodos().filter(t => !t.done);
+    return openTodos.reduce((prev, t) => prev + (t.effort || 0), 0);
+  });
+
+  public isListEmpty = computed(() => {
+    return this.currentTodos().length === 0;
+  });
+  
   protected activePopupConfig = signal<{
     title: string;
     message: string;
@@ -31,20 +44,12 @@ export class TodoFooterComponent {
      return this.connectionService.status() === "OFFLINE"
   })
 
-  get totalOpenEffort(): number {
-    return this.todoService.totalOpenEffort();
-  }
 
-  get isListEmpty(): boolean {
-    return this.todoService.isListEmpty();
-  }
-
-
-onClearCompleted(): void {
+  onClearCompleted(): void {
     // Statt confirm() öffnen wir lokal das schöne Universal-Popup
     this.activePopupConfig.set({
       title: 'Erledigte Aufgaben archivieren',
-      message: 'Möchten Sie wirklich alle abgeschlossenen privaten Aufgaben archivieren? Dieser Vorgang wird nach Ablauf des Balkens automatisch ausgeführt.',
+      message: 'Möchten Sie wirklich alle abgeschlossenen privaten Aufgaben löschen? Dieser Vorgang wird nach Ablauf des Balkens automatisch ausgeführt.',
       mode: 'danger',
       animationIcon: '🗑️',
       confirmText: 'Jetzt löschen',
@@ -62,7 +67,7 @@ onClearCompleted(): void {
   onClearAll(): void {
     this.activePopupConfig.set({
       title: 'Gesamtes privates Board leeren',
-      message: '<strong>Achtung!</strong> Sie sind im Begriff, ALLE Ihre privaten Aufgaben zu archivieren. Möchten Sie das wirklich tun?',
+      message: '<strong>Achtung!</strong> Sie sind im Begriff, ALLE Ihre privaten Aufgaben zu löschen. Möchten Sie das wirklich tun?',
       mode: 'danger',
       animationIcon: '🔥',
       confirmText: 'Ja, alles leeren',

@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ProjectService } from '../../../core/services/project-service';
 import { CommonModule } from '@angular/common';
 import { TabNavigationService } from '../tab-navigation-service';
@@ -17,7 +17,8 @@ import { TeamService } from '../../../core/services/team-service';
   templateUrl: './projects-component.html',
   styleUrl: './projects-component.css'
 })
-export class ProjectsComponent {
+
+export class ProjectsComponent implements OnInit {
   // 🏗️ Wir holen uns die Projekte und die Navigation
   public projectService = inject(ProjectService);
   private tabService = inject(TabNavigationService);
@@ -46,23 +47,19 @@ export class ProjectsComponent {
     });   
   });
 
-  /**
-   * 📊 STATISTIK 1: Anzahl aller strategischen Projekte
-   */
-  public totalProjectsCount = computed(() => this.projects().length);
-
-  /**
-   * 📊 STATISTIK 2: Summe aller Meilensteine über alle Projekte hinweg
-   */
-  public totalMilestonesCount = computed(() => {
-    return this.projects().reduce((sum, proj) => sum + proj.milestones.length, 0);
+// 2. 🧮 Die Kacheln lesen jetzt reaktiv das DTO aus dem Service!
+  // Wir nutzen einen sicheren Fallback (?? 0), falls die Statistik null/offline ist.
+  public totalProjectsCount = computed(() => {
+    return this.projectService.dashboardStats()?.totalProjects ?? 0;
   });
 
-  /**
-   * 📊 STATISTIK 3: Anzahl aller To-Dos im gesamten System
-   */
-  public totalTodosCount = computed(() => this.todoService.allTodos().length);
+  public totalMilestonesCount = computed(() => {
+    return this.projectService.dashboardStats()?.totalMilestones ?? 0;
+  });
 
+  public totalTodosCount = computed(() => {
+    return this.projectService.dashboardStats()?.totalTodos ?? 0;
+  });
 
   ngOnInit(): void {
     this.filterService.setInitialCategory('projects');

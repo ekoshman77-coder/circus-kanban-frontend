@@ -31,7 +31,7 @@ export class StatisticBoardComponent {
   protected currentTab = signal<StatTab>('statistic-overview');
 
   // ⚡ DEIN NEUES SIGNAL: Wir nutzen direkt deine ungefilterte Master-Liste!
-  protected allTodos = this.todoService.allTodos;
+  protected allTodos = this.todoService.focusedTodos;
 
   // --- REAKTIVE FILTER FÜR DIE UNTERSEITEN (reagieren sofort auf dein Service-Signal) ---
 

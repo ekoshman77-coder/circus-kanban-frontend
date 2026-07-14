@@ -7,12 +7,10 @@
     min-height: 85vh;
 }
 
-/* Den inneren Container passen wir kurz an, damit er kein doppeltes Padding erzeugt */
 .board-container {
-  max-width: 1000px; /* Gleiche maximale Breite wie im Meilenstein-Workspace */
+  max-width: 100% !important; /* 🚀 Erlaubt dem Board, sich voll auszudehnen! */
   margin: 0 auto;
   font-family: system-ui, -apple-system, sans-serif;
-  /* 👑 KORREKTUR: Das zerstörerische padding: 20px; wurde hier restlos GELÖSCHT! */
 }
 
 /* ==========================================================================
@@ -50,15 +48,6 @@
     font-weight: 500;
 }
 
-.kanban-column {
-  flex: 1;
-  background-color: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 16px;
-  min-height: 500px;
-}
-
 .column-header {
   margin-top: 0;
   margin-bottom: 16px;
@@ -70,15 +59,18 @@
   gap: 8px;
 }
 
-
 .cards-holder {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  flex-grow: 1 !important;
+  overflow-y: auto !important; /* 🚀 HIER ENTSTEHT DIE SCROLL-MAGIE! */
+  padding: 12px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  min-height: 100px !important;
   
-  /* 🚀 DIE RETTUNG FOR DRAG & DROP: */
-  min-height: 450px; /* Macht die Drop-Zone physikalisch riesig, auch wenn sie leer ist! */
-  height: 100%;       /* Nutzt den vollen Platz der Spalte aus */
+  /* Macht den Scrollbalken modern, schmal und unaufdringlich */
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
 }
 
 /* Kachel-Styling */
@@ -111,19 +103,16 @@
 /* ==========================================================================
    🌊 SCROLL-ZONEN FÜR ALLE SPALTEN (Karten scrollen unabhänig im Inneren)
    ========================================================================== */
-.cards-holder {
-  flex-grow: 1 !important;
-  overflow-y: auto !important; /* 🚀 HIER ENTSTEHT DIE SCROLL-MAGIE! */
-  padding: 12px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 12px !important;
-  min-height: 100px !important;
-  
-  /* Macht den Scrollbalken modern, schmal und unaufdringlich */
-  scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
+/* ==========================================================================
+   🚫 LOKALES QUETSCH-VERBOT FÜR UNSER TEAMBOARD
+   ========================================================================== */
+.cards-holder app-todo-item {
+  flex-shrink: 0 !important; /* ⚡ Verhindert, dass das Board die Karten zusammendrückt */
 }
+
+/* ==========================================================================
+   📜 SCROLLBAR FÜR DIE SPALTEN (Wie im Kanban- & Meilenstein-Workspace)
+   ========================================================================== */
 
 .assignee-avatar {
   width: 26px;
@@ -259,12 +248,6 @@
     font-weight: 600;
 }
 
-.kanban-workspace {
-  display: flex;
-  gap: 20px;
-  align-items: flex-start;
-}
-
 .board-control-header {
     display: flex;
     justify-content: space-between;
@@ -298,25 +281,31 @@
    ========================================================================== */
 
 .kanban-workspace {
-  display: flex;
-  gap: 12px; /* Etwas kompakter für 5 Spalten */
-  align-items: flex-start;
-  width: 100%;
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 16px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important; /* 🚫 Verhindert den horizontalen Scrollbar garantiert! */
 }
 
 /* Alle Spalten teilen sich den Platz mathematisch exakt auf */
+/* Jede Spalte bekommt genau gleich viel Platz */
+/* Jede Spalte bekommt genau gleich viel Platz und eine stabile maximale Höhe */
 .kanban-column {
-  background-color: #f8fafc !important; /* Dezentes, sauberes Studio-Grau */
-  border-radius: 20px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  /* 📐 Ausgewogene feste Höhe für den Bildschirm */
-  height: calc(100vh - 160px) !important; 
-  min-width: 250px !important;
-  max-width: 320px !important;
-  box-sizing: border-box !important;
-  border: 1px solid #e2e8f0 !important;
-  overflow: hidden !important; /* Verhindert, dass die Spalte selbst wächst */
+  flex: 1 1 0% !important; /* Verteilt alle Spalten absolut gleichmäßig */
+  min-width: 200px;
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  
+  /* 🌟 HIER BRINGEN WIR DIE FESTE HÖHE ZURÜCK: */
+  height: 70vh !important; /* Nutzt 70% der sichtbaren Bildschirmhöhe */
 }
 
 /* 🎨 Subtile, edle farbige Akzente für die Spaltenköpfe, passend zu deinem Design */

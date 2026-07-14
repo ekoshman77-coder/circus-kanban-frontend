@@ -103,13 +103,45 @@ export class TeamBoardComponent implements OnInit {
     this.filterService.setInitialCategory('todos')
   }
 
+// 🌟 UNSER REAKTIVER SUPER-FILTER: Perfekt abgestimmt auf dein Datenmodell!
   private getTodosForBoard = computed(() => {
-    const filter = this.boardFilter();
-    const rawTodos = filter.type === 'milestone'
-      ? this.todoService.getTodosForMilestone(filter.id)
-      : this.todoQueryService.getTodosForProject(filter.id).filter(t => this.filterWithQuery(this.filterService.searchTerm(), t));
-    return rawTodos;
-  })
+    const filter = this.boardFilter(); // { type: 'project'|'milestone'|null, id: string|null }
+    const allTeamTodos = this.todoService.teamTodos(); // 🎪 Hält die Reaktivität für Team-Aufgaben aufrecht
+
+    if (!filter || !filter.id) {
+      return [];
+    }
+
+    // Hilfsvariable für die passenden rohen Todos
+    let matchingTodos: Todo[] = [];
+
+    if (filter.type === 'milestone') {
+      // 🏁 Fall A: Filter für Meilenstein
+      // Nur Todos aus den Team-Aufgaben, die direkt zu diesem Meilenstein gehören
+      matchingTodos = allTeamTodos.filter(t => t.milestoneId === filter.id);
+    } else if (filter.type === 'project') {
+      // 📁 Fall B: Filter für das gesamte Projekt
+      // 🚀 HIER SPELEN WIR UNSERE TRUMPFKARTE AUS: Die Supermethode aus dem TodoQueryService!
+      const projectTodos = this.todoQueryService.getTodosForProject(filter.id);
+      
+      // Und wir filtern direkt noch nach dem Suchbegriff des Nutzers
+      matchingTodos = projectTodos.filter(t => 
+        this.filterWithQuery(this.filterService.searchTerm(), t)
+      );
+    }
+
+    // 🛠️ Jetzt wandeln wir die rohen Todos sauber in TodoViewModels um
+    const canInteract = this.canInteractWithBoard();
+
+    return matchingTodos.map(todo => {
+      return new TodoViewModel(
+        todo,
+        false,        // isDescriptionOpen standardmäßig geschlossen
+        canInteract,  // canEdit 
+        canInteract   // canDelete
+      );
+    });
+  });
 
   private filterWithQuery(query: string, todo: Todo): boolean {
     const trimmedQuery = query.toLowerCase().trim()
@@ -124,36 +156,31 @@ export class TeamBoardComponent implements OnInit {
 
   public backlogTasks = computed(() => {
     return this.getTodosForBoard()
-      .filter(t => t.teamStatus === "BACKLOG")
-      .map(t => new TodoViewModel(t, false, this.canEdit(), this.canDelete()));
+      .filter(t => t.todo.teamStatus === "BACKLOG")
   });
 
   // ⚪ 2. OPEN Spalte (Deine "alte" Offen-Spalte)
   public openTasks = computed(() => {
     return this.getTodosForBoard()
-      .filter(t => t.teamStatus === "OPEN")
-      .map(t => new TodoViewModel(t, false, this.canEdit(), this.canDelete()));
+      .filter(t => t.todo.teamStatus === "OPEN")
   });
 
   // 🟡 3. IN PROGRESS Spalte
   public inProgressTasks = computed(() => {
     return this.getTodosForBoard()
-      .filter(t => t.teamStatus === "IN_PROGRESS")
-      .map(t => new TodoViewModel(t, false, this.canEdit(), this.canDelete()));
+      .filter(t => t.todo.teamStatus === "IN_PROGRESS")
   });
 
   // 👁️ 4. REVIEW Spalte
   public reviewTasks = computed(() => {
     return this.getTodosForBoard()
-      .filter(t => t.teamStatus === "REVIEW")
-      .map(t => new TodoViewModel(t, false, this.canEdit(), this.canDelete()));
+      .filter(t => t.todo.teamStatus === "REVIEW")
   });
 
   // 🟢 5. DONE Spalte
   public doneTasks = computed(() => {
     return this.getTodosForBoard()
-      .filter(t => t.teamStatus === "DONE")
-      .map(t => new TodoViewModel(t, false, this.canEdit(), this.canDelete()));
+      .filter(t => t.todo.teamStatus === "DONE")
   });
 
   /**

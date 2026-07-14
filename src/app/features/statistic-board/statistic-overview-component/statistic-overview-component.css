@@ -162,3 +162,23 @@
 .notes-card .big-number {
   color: #d97706; /* Edles Dunkelgelb */
 }
+
+/* Styling für die neue Projekt-Filterleiste oben */
+.dashboard-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(8px);
+  padding: 12px 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(148, 163, 184, 0.05);
+  width: fit-content;
+}
+
+.filter-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #475569; /* Edles Schiefergrau */
+}
