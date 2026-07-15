@@ -8,6 +8,7 @@ import { FormsModule } from '@angular/forms';
 import { animate, style, transition, trigger } from '@angular/animations';
 import { TeamService } from '../../../services/team-service';
 import { UserModel } from '../../../models/user-model';
+import { Todo } from '../../../models/todo';
 
 @Component({
   selector: 'app-todo-item',
@@ -15,7 +16,7 @@ import { UserModel } from '../../../models/user-model';
   imports: [CommonModule, FormsModule],
   templateUrl: './todo-item-component.html',
   styleUrl: './todo-item-component.css',
-animations: [
+  animations: [
     trigger('fadeSlide', [
       // :enter -> Wenn das Element neu auf den Bildschirm kommt
       transition(':enter', [
@@ -50,6 +51,31 @@ export class TodoItemComponent {
   isEditingPoints = signal<boolean>(false);
   protected isOffline = computed(() => this.connectionService.isOffline());
   public isPopupOpen = computed(() => this.item().showEffortPopup());
+
+  // 👥 Der aktuell zugewiesene Benutzer
+  // 👥 Der aktuell zugewiesene Benutzer
+  public assignedUser = computed<UserModel | null>(() => {
+    const todo = this.item()?.todo;
+    const assignedId = todo?.assignedUserId;
+    if (!assignedId) return null;
+
+    // Wir holen uns die globalen TeamMitglieder und ziehen das .user Model heraus
+    const members = this.teamService.globalMembersSignal();
+    const foundMember = members.find(m => m.user.id === assignedId);
+    return foundMember ? foundMember.user : null;
+  });
+
+  // 🧠 Der vorherige Entwickler (aus dem Ticket-Gedächtnis)
+  public lastDeveloperUser = computed<UserModel | null>(() => {
+    const todo = this.item()?.todo;
+    const lastDevId = todo?.lastDeveloperId;
+    if (!lastDevId) return null;
+
+    // Auch hier mappen wir über das .user Model
+    const members = this.teamService.globalMembersSignal();
+    const foundMember = members.find(m => m.user.id === lastDevId);
+    return foundMember ? foundMember.user : null;
+  });
 
   selectPoints(newPoints: number) {
     if (this.isOffline()) return;
@@ -101,11 +127,46 @@ export class TodoItemComponent {
   /**
  * Wird aufgerufen, wenn im eingebetteten Popup ein Mitarbeiter ausgewählt wird!
  */
-public onAssigneeSelected(userId: string): void {
-    const currentTodo = this.item().todo;
-    currentTodo.assignedUserId = userId; // ID auf dem Todo setzen
+public onAssigneeSelected(userId: string | null): void {
+    const currentTodo = this.item()?.todo;
+    if (!currentTodo) return;
+
+    // 1. Eine saubere Kopie des aktuellen Todos erstellen
+    const updatedTodo = Todo.fromTodo(currentTodo);
     
-    this.todoService.updateTodo(currentTodo); // Ab ans Backend!
-    this.item().showAssigneePopup.set(false); // Popup zu
+    // 2. Die neue Zuweisung eintragen (oder null, falls gelöscht wird)
+    updatedTodo.assignedUserId = userId;
+
+    console.log(`👥 [Zuweisung] Todo '${updatedTodo.task}' wird an '${userId}' zugewiesen.`);
+
+    // 3. Das Update an den TodoService (und damit an Spring Boot!) übergeben
+    this.todoService.updateTodo(updatedTodo, true);
+
+    // 4. Das Popup reaktiv über das ViewModel wieder schließen
+    this.item().showAssigneePopup.set(false);
   }
+  
+  public toggleAssigneePopup(event: MouseEvent): void {
+    event.stopPropagation(); // Verhindert das Öffnen der Todo-Details
+    
+    // Wenn die Zuweisung gesperrt ist, machen wir gar nichts!
+    if (!this.isAssigneeEditable()) {
+      console.warn("🔒 Zuweisung in diesem Spalten-Zustand nicht erlaubt.");
+      return;
+    }
+    
+    if (this.item()) {
+      const currentState = this.item().showAssigneePopup();
+      this.item().showAssigneePopup.set(!currentState);
+    }
+  }
+
+  // 🔒 Bestimmt, ob die Zuweisung in diesem Status manuell geändert werden darf!
+  public isAssigneeEditable = computed<boolean>(() => {
+    const todo = this.item()?.todo;
+    if (!todo) return false;
+    
+    // Nur in Bearbeitung und im Review ist die Zuweisung editierbar!
+    return todo.teamStatus === 'IN_PROGRESS' || todo.teamStatus === 'REVIEW';
+  });
 }

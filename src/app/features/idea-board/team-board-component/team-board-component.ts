@@ -13,6 +13,7 @@ import { ProjectService } from '../../../core/services/project-service';
 import { FilterService } from '../../../core/services/filter-service';
 import { TodoQueryService } from '../../../core/services/todo-query-service';
 import { TodoPlanningModalComponent } from '../../../core/shared/components/todo-planning-modal-component/todo-planning-modal-component';
+import { UserService } from '../../../core/services/user/user-service';
 
 export type BoardFilterState = {
   type: 'project' | 'milestone' | null;
@@ -33,6 +34,7 @@ export class TeamBoardComponent implements OnInit {
   private projectService = inject(ProjectService)
   private filterService = inject(FilterService)
   private todoQueryService = inject(TodoQueryService)
+  private userService = inject(UserService)
 
 
   // 🏁 Die stabilen Steuerungssignale direkt auf dem Board:
@@ -186,7 +188,7 @@ export class TeamBoardComponent implements OnInit {
   /**
    * 🔄 DIE ZENTRALE DRAG & DROP STEUERUNG (MIT DEINEN WORKFLOW-REGELN)
    */
-  public onTodoDropped(event: CdkDragDrop<any>): void {
+public onTodoDropped(event: CdkDragDrop<any>): void {
     if (event.previousContainer === event.container) {
       return;
     }
@@ -194,66 +196,94 @@ export class TeamBoardComponent implements OnInit {
     const movedViewModel = event.previousContainer.data[event.previousIndex] as TodoViewModel;
     if (!movedViewModel) return;
 
-    const targetColumnId = event.container.id;
-    console.log("🏁 Zielspalten-ID erkannt:", targetColumnId);
+    // 1. 👥 Aktuelle User-ID holen
+    const currentUserId = this.userService.getCurrentUserId() ?? null;
 
+    // 2. 🎪 EINE SAUBERE KOPIE ERSTELLEN (Keine direkte Mutation des Originals!)
+    const updatedTodo = Todo.fromTodo(movedViewModel.todo);
+    const targetColumnId = event.container.id;
+
+    console.log("-----------------------------------------");
+    console.log("🏁 Drag & Drop gestartet für Task:", updatedTodo.task);
+
+    // 3. ⚡ DIE WORKFLOW-REGELN AUF DER KOPIE ANWENDEN
+    
     // 📦 REGELEFFEKT 1: Zurück ins BACKLOG gezogen
     if (targetColumnId === 'column-backlog-list') {
-      movedViewModel.todo.teamStatus = 'BACKLOG';
-      movedViewModel.todo.done = false;
-      movedViewModel.todo.isStarted = false;
-      movedViewModel.todo.assignedUserId = null; // 🧼 User radikal entfernen!
+      updatedTodo.teamStatus = 'BACKLOG';
+      updatedTodo.done = false;
+      updatedTodo.isStarted = false;
+      updatedTodo.lastDeveloperId = null;
+      updatedTodo.assignedUserId = null; // 🧼 User radikal entfernen
 
-      this.todoService.updateTodo(movedViewModel.todo, true);
+      this.todoService.updateTodo(updatedTodo, true);
     }
 
     // ⚪ REGELEFFEKT 2: Nach OPEN gezogen
     else if (targetColumnId === 'column-open-list') {
-      movedViewModel.todo.teamStatus = 'OPEN';
-      movedViewModel.todo.done = false;
-      movedViewModel.todo.isStarted = false;
-      // Hier lassen wir den User unberührt (falls mal einer eingetragen war), erzwungen wird er aber nicht.
-
-      this.todoService.updateTodo(movedViewModel.todo, true);
+      updatedTodo.teamStatus = 'OPEN';
+      updatedTodo.done = false;
+      updatedTodo.isStarted = false;
+      updatedTodo.lastDeveloperId = null;
+      updatedTodo.assignedUserId = null; // 🧼 Auch in Open leeren wir alles für ein freies Ticket
+      
+      this.todoService.updateTodo(updatedTodo, true);
     }
 
-    // 🟡 REGELEFFEKT 3: Nach IN PROGRESS gezogen (Hier muss ein User drauf sitzen!)
+    // 🟡 REGELEFFEKT 3: Nach IN PROGRESS gezogen
     else if (targetColumnId === 'column-progress-list') {
-      movedViewModel.todo.teamStatus = 'IN_PROGRESS';
-      movedViewModel.todo.done = false;
-      movedViewModel.todo.isStarted = true;
+      updatedTodo.teamStatus = 'IN_PROGRESS';
+      updatedTodo.done = false;
+      updatedTodo.isStarted = true;
 
-      if (!movedViewModel.todo.assignedUserId) {
-        console.log("👥 Kein Mitarbeiter im In-Progress-Zustand! Zeige Zuweisungs-Popup.");
-        movedViewModel.showAssigneePopup.set(true);
-        return;
-      } else {
-        this.todoService.updateTodo(movedViewModel.todo, true);
-      }
+      // Wenn das Ticket aus dem Review zurückkommt, kriegt es der vorherige Dev, sonst der aktuelle User
+      const chosenUserId = updatedTodo.lastDeveloperId ?? currentUserId;
+      updatedTodo.assignedUserId = chosenUserId;
+      
+      this.todoService.updateTodo(updatedTodo, true);
     }
 
-    // 👁️ REGELEFFEKT 4: Nach REVIEW gezogen (Kontroll-Modus)
+    // 👁️ REGELEFFEKT 4: Nach REVIEW gezogen
     else if (targetColumnId === 'column-review-list') {
-      movedViewModel.todo.teamStatus = 'REVIEW';
-      movedViewModel.todo.done = false;
-
-      if (!movedViewModel.todo.assignedUserId) {
-        console.log("👥 Für ein Review wird ebenfalls ein fester Bearbeiter erzwungen!");
-        movedViewModel.showAssigneePopup.set(true);
-        return;
-      } else {
-        this.todoService.updateTodo(movedViewModel.todo, true);
-      }
+      updatedTodo.teamStatus = 'REVIEW';
+      updatedTodo.done = false;
+      
+      // Entwickler im Gedächtnis sichern (der bisherige Bearbeiter)
+      updatedTodo.lastDeveloperId = updatedTodo.assignedUserId ?? null;
+      updatedTodo.assignedUserId = null; // 🧼 Zuweisung aufheben, damit andere reviewen können
+      
+      this.todoService.updateTodo(updatedTodo, true);
     }
 
-    // 🟢 REGELEFFEKT 5: Nach DONE gezogen (Erledigt & User saubermachen!)
+    // 🟢 REGELEFFEKT 5: Nach DONE gezogen
     else if (targetColumnId === 'column-done-list') {
-      movedViewModel.todo.teamStatus = 'DONE';
-      movedViewModel.todo.assignedUserId = null; // 🧼 Genialer Einfall von dir: User bei DONE entfernen!
+      updatedTodo.teamStatus = 'DONE';
+      updatedTodo.assignedUserId = null; // 🧼 User bei DONE entfernen
+      // lastDeveloperId bleibt unberührt im Gedächtnis!
 
-      console.log("🟢 Karte geht nach DONE. Schnappt zurück fürs Aufwands-Punkte-Popup.");
-      movedViewModel.onTodoChecked(this.todoService);
+      // Auf der Kopie die done-Methode triggern (oder wie in deinem ViewModel definiert)
+      updatedTodo.done = true;
+      updatedTodo.completedAt = Date.now();
+
+      console.log("🟢 Karte geht nach DONE. Öffne Punkte-Popup.");
+      
+      // Für das Punkte-Popup übergeben wir die Kopie
+      this.todoWaitingForPopup.set(updatedTodo);
+      this.popupEffortValue.set(updatedTodo.usedEffort > 0 ? updatedTodo.usedEffort : updatedTodo.effort);
+      this.showEffortPopup.set(true);
+    }
+  }
+    
+  private printUser(userId: string | null | undefined, message: string): void {
+    if (!userId) {
+      console.log(`👤 [User-Check] ${message}: KEINE ID (null/undefined)`);
       return;
+    }
+    const member = this.currentProjectMembers().find(m => m.user.id === userId);
+    if (member) {
+      console.log(`👤 [User-Check] ${message}: ${member.user.firstName} ${member.user.lastName} (ID: ${userId})`);
+    } else {
+      console.log(`👤 [User-Check] ${message}: Unbekannter User (ID: ${userId})`);
     }
   }
 

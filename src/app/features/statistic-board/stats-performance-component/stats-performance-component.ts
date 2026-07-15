@@ -15,7 +15,8 @@ export class StatsPerformanceComponent {
 
   // 1. Aufgaben-Modus: Express-Aufgaben zählen
   protected get expressCount(): number {
-    return this.completedTodos.filter(t => t.isExpress || (t.usedEffort && !t.dueDate)).length;
+    // Da jedes Todo-Modell jetzt selbst weiß, ob es "Express" ist:
+    return this.completedTodos.filter(t => t.isExpress).length;
   }
 
   protected get expressRatio(): number {
@@ -76,34 +77,22 @@ export class StatsPerformanceComponent {
     return this.predictabilityScore * 120;
   }
 
-  protected get averageLeadTime(): number {
+protected get averageLeadTime(): number {
     if (this.completedTodos.length === 0) return 0;
 
-    let validTodosCount = 0;
-
     const totalDays = this.completedTodos.reduce((sum, t) => {
-      if (!t.createdAt || !t.completedAt) return sum;
-
-      const created = new Date(t.createdAt).getTime();
-      const completed = new Date(t.completedAt).getTime();
-
-      // Differenz in Millisekunden
-      const differenceInMs = completed - created;
-      // Umrechnen in Tage
-      const differenceInDays = differenceInMs / (1000 * 60 * 60 * 24);
-
-      // Mathematische Präzision: Nur erhöhen, wenn der Datensatz valide ist!
-      validTodosCount++;
-
-      return sum + differenceInDays;
+      if (!t.completedAt || !t.createdAt) return sum;
+      
+      const diffMs = Math.abs(t.completedAt - t.createdAt);
+      const diffDays = diffMs / (1000 * 60 * 60 * 24); // Exakte Tage als Dezimalzahl
+      return sum + diffDays;
     }, 0);
 
-    // Wenn kein einziges Todo valide Daten hatte, verhindern wir eine Division durch 0
-    if (validTodosCount === 0) return 0;
-
-    // Jetzt teilen wir exakt durch die Anzahl der einberechneten Aufgaben!
-    const avg = totalDays / validTodosCount;
-    return Math.round(avg * 10) / 10;
+    const average = totalDays / this.completedTodos.length;
+    
+    // Wir runden auf eine Nachkommastelle (z.B. 1.3 Tage). 
+    // Wenn es sehr schnell ging (unter 0.1 Tagen), zeigen wir mindestens 0.1 an oder runden sauber.
+    return Math.round(average * 10) / 10;
   }
 
   protected get leadTimeMeta() {

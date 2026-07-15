@@ -18,4 +18,6 @@ export interface ITodoJSON {
   assignedUserId?: string | null;
   isStarted: boolean;
   teamStatus: string; 
+  // 🧠 UNSER NEUES TICKET-GEDÄCHTNIS (Synchron zum Kotlin-Backend!)
+  lastDeveloperId?: string | null;
 }

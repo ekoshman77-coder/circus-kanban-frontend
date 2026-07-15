@@ -36,7 +36,7 @@ import { StatMode } from '../statistic-board-component/statistic-board-component
         </div>
 
         <div class="chart-bar-wrapper overdue">
-          <div class="bar-label">⚠️ Überfällig</div>
+          <div class="bar-label">🚨 Überfällig</div>
           <div class="bar-track">
             <div class="bar-fill" [style.width]="getBarWidth('overdue')" [style.height]="getBarHeight('overdue')">
               <span class="bar-value">{{ getDisplayValue('overdue') }}{{ unit }}</span>
@@ -44,7 +44,7 @@ import { StatMode } from '../statistic-board-component/statistic-board-component
           </div>
         </div>
 
-        <div class="chart-bar-wrapper done">
+        <div class="chart-bar-wrapper completed">
           <div class="bar-label">✅ Erledigt</div>
           <div class="bar-track">
             <div class="bar-fill" [style.width]="getBarWidth('completed')" [style.height]="getBarHeight('completed')">
@@ -55,10 +55,10 @@ import { StatMode } from '../statistic-board-component/statistic-board-component
 
       </div>
 
-      <div class="chart-footer">
-        <div class="stat-percent">
-          <span class="progress-label">Gesamt-Fortschritt</span>
-          🎯 {{ calculatedPercent | percent:'1.0-1' }}
+      <div class="details-accordion">
+        <div class="accordion-summary">
+          <span>🎯 Gesamtfortschritt im aktuellen Scope</span>
+          <strong>{{ calculatedPercent | percent:'1.0-0' }}</strong>
         </div>
       </div>
 
@@ -73,22 +73,34 @@ export class TodoOverviewComponent {
   @Input({ required: true }) completedTodos: any[] = [];
   @Input({ required: true }) overdueTodos: any[] = [];
 
-  // Signal für die Rotation (true = horizontal liegend, false = vertikal stehend)
+  // Steuerung für das Drehen des Diagramms (Säulen vs Balken)
   protected isHorizontal = signal<boolean>(false);
 
   protected toggleRotation(): void {
     this.isHorizontal.update(v => !v);
   }
 
+  // Einheit für die Anzeige
   protected get unit(): string {
-    return this.mode === 'points' ? ' P' : '';
+    return this.mode === 'tasks' ? '' : ' P';
   }
 
-  // --- MATHEMATISCHE WERTERMITTLUNG ---
+  // --- REAKTIVE UND FEHLERFREIE SUMMIERUNG ---
+  private sumEffort(todos: any[]): number {
+    return todos.reduce((sum, t) => {
+      // Wenn die Aufgabe erledigt ist und wir tatsächliche Punkte eingetragen haben, nehmen wir diese.
+      // Ansonsten nehmen wir den geschätzten Aufwand (effort).
+      const points = (t.done && t.usedEffort !== undefined && t.usedEffort !== null) 
+        ? t.usedEffort 
+        : (t.effort || 0);
+      return sum + points;
+    }, 0);
+  }
+
   protected getDisplayValue(type: 'total' | 'open' | 'overdue' | 'completed'): number {
     if (this.mode === 'tasks') {
       switch (type) {
-        case 'total': return this.totalCount || (this.openTodos.length + this.completedTodos.length);
+        case 'total': return this.totalCount;
         case 'open': return this.openTodos.length;
         case 'overdue': return this.overdueTodos.length;
         case 'completed': return this.completedTodos.length;
@@ -117,16 +129,10 @@ export class TodoOverviewComponent {
   }
 
   protected getBarWidth(type: 'total' | 'open' | 'overdue' | 'completed'): string {
-    // Wenn horizontal: Breite animieren (100% Höhe), sonst volle Breite (100%)
     return this.isHorizontal() ? `${this.getPercentage(type)}%` : '100%';
   }
 
   protected getBarHeight(type: 'total' | 'open' | 'overdue' | 'completed'): string {
-    // Wenn vertikal: Höhe animieren, sonst volle Höhe (100%)
     return this.isHorizontal() ? '100%' : `${this.getPercentage(type)}%`;
-  }
-
-  private sumEffort(list: any[]): number {
-    return list.reduce((sum, t) => sum + (t.effort || 0), 0);
   }
 }

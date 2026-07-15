@@ -13,7 +13,7 @@
       
       <div class="workload-counter" [style.color]="workloadMeta().color">
         @if (mode === 'tasks') {
-          <strong>{{ todayTodos.length }}</strong><small>/5</small>
+          <strong>{{ myTodayTodos().length }}</strong><small>/5</small>
         } @else {
           <strong>{{ todayPoints() }}</strong><small>/8P</small>
         }

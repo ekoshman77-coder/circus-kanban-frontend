@@ -33,6 +33,8 @@ export class Todo {
   milestoneId: string | null;
   assignedUserId?: string | null;
   isStarted?: boolean;
+  // 🧠 UNSER NEUES TICKET-GEDÄCHTNIS (Synchron zum Kotlin-Backend!)
+  lastDeveloperId?: string | null;
 
   // 💡 DEIN NEUER ANSATZ: Nur das absolut Wichtigste (task) ist Pflicht. Alles andere optional (?)!
   constructor(init: {
@@ -53,6 +55,7 @@ export class Todo {
     milestoneId?: string | null;
     assignedUserId?: string | null;
     isStarted?: boolean;
+    lastDeveloperId?: string | null;
   }) {
     // 🛡️ Wenn ein Wert im 'init' fehlt, greift automatisch das '??' mit dem Standardwert!
     this.task = init.task;
@@ -72,6 +75,7 @@ export class Todo {
     this.assignedUserId = init.assignedUserId ?? null;
     this.isStarted = init.isStarted ?? false;
     this.teamStatus = (init.teamStatus as TeamStatus) ?? 'BACKLOG';
+    this.lastDeveloperId = init.lastDeveloperId?? null
   }
   public toJson(): ITodoJSON {
      return {
@@ -91,7 +95,8 @@ export class Todo {
       milestoneId: this.milestoneId,
       isStarted: this.isStarted?? false,
       assignedUserId: this.assignedUserId?? null,
-      teamStatus: this.teamStatus
+      teamStatus: this.teamStatus,
+      lastDeveloperId: this.lastDeveloperId ?? null
      }
   }
 
@@ -113,7 +118,8 @@ export class Todo {
              milestoneId: oldTodo.milestoneId,
              isStarted: oldTodo.isStarted?? false,
              assignedUserId: oldTodo.assignedUserId?? null,
-             teamStatus: oldTodo.teamStatus
+             teamStatus: oldTodo.teamStatus,
+             lastDeveloperId: oldTodo.lastDeveloperId
   });
     return copy
   }  
@@ -175,5 +181,13 @@ export class Todo {
    */
   public get isAssigned(): boolean {
     return this.assignedUserId !== null && this.assignedUserId !== undefined && this.assignedUserId .trim() !== '';
+  }
+
+  public get isExpress(): boolean {
+    if (this.createdAt && this.completedAt) {
+      const timeDiffMs = Math.abs(this.completedAt - this.createdAt);
+      return timeDiffMs < 5 * 60 * 1000; // Unter 5 Minuten = Echter Spontan-Erfolg!
+    }
+    return false;
   }
 }

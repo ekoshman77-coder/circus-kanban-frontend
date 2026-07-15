@@ -98,7 +98,8 @@ export class TodoRepository {
       milestoneId: json.milestoneId,
       isStarted: json.isStarted ?? false,
       assignedUserId: json.assignedUserId ?? null,
-      teamStatus: (json.teamStatus as TeamStatus) ?? 'BACKLOG'
+      teamStatus: (json.teamStatus as TeamStatus) ?? 'BACKLOG',
+      lastDeveloperId: json.lastDeveloperId?? null
     });
     return todo;
   }
