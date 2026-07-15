@@ -39,7 +39,7 @@ export class TodoItemComponent {
   item = input.required<TodoViewModel>();
 
   @Input() isDescriptionOpen: boolean = false;
-  @Input() isKanbanMode: boolean = false;
+  @Input() isKanbanMode: boolean = true;
   public isTeamsPopupEnabled = input<boolean>(false);
   public assignableUsers = input<UserModel[]>([]);
 

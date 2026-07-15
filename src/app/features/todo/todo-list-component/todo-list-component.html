@@ -26,6 +26,7 @@
           <app-todo-item 
             [item]="item" 
             [isDescriptionOpen]="item.isDescriptionOpen"
+            [isKanbanMode]="false"
             [ngClass]="'status-' + item.visualStatus" 
             (toggleDescription)="toggleDescription(item.id)"
             (toggleComplete)="onToggleComplete(item.id)" 
