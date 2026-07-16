@@ -10,12 +10,8 @@ import { IdeaSortingService } from '../../../core/services/board-state-service';
 import { NoteSortOrder } from '../../../core/models/note-sort-order';
 import { BoardFilterComponent, FilterState } from '../board-filter-component/board-filter-component';
 import { NotesStatisticsComponent } from '../notes-statistics-component/notes-statistics-component';
-import { ProjectService } from '../../../core/services/project-service';
-import { Router } from '@angular/router';
-import { Project } from '../../../core/models/project';
 import { TabNavigationService } from '../tab-navigation-service';
 import { BoardTab } from '../tab-navigation-service';
-import { UniversalTagInputComponent } from '../../../core/shared/components/universal-tag-input-component/universal-tag-input-component';
 import { NoteInputComponent } from '../note-input-component/note-input-component';
 import { FilterService } from '../../../core/services/filter-service';
 import { TodoPlanningModalComponent } from '../../../core/shared/components/todo-planning-modal-component/todo-planning-modal-component';
@@ -118,9 +114,6 @@ export class IdeaBoardComponent {
   }
 
   /**
-     * 🔄 DRAG & DROP HANDLER (Erweitert um den Automaten!)
-     */
-  /**
      * 🔄 DER ZENTRALE DRAG & DROP VERTEILER
      */
   public onDropped(event: CdkDragDrop<any[]>): void {
@@ -163,9 +156,6 @@ export class IdeaBoardComponent {
   };
 
   /**
-   * 🎰 Hilfsmethode: Schickt eine Note in die Projektkalkulation
-   */
-  /**
      * 🎰 Hilfsmethode: Schickt eine Note in die Projektkalkulation
      */
   private handleCalculatorDrop(data: any): void {
@@ -175,14 +165,7 @@ export class IdeaBoardComponent {
     console.log('🎰 Münze eingeworfen für:', vmToCalculator.note.title);
 
     try {
-      // 1. 🌟 OPTISCHE SPERRE: Note auf dem Board direkt als "In Kalkulation" markieren
-      // const updatedNote: Note = {
-      //   ...vmToCalculator.note,
-      //   isInCalculation: true
-      // };
-      // this.noteService.updateNote(updatedNote);
-
-      // 2. 🗺️ NAVIGATION TRIGGERN: Übergreifend Bescheid geben
+      // 🗺️ NAVIGATION TRIGGERN: Übergreifend Bescheid geben
       console.log('🗺️ Schalte Tab auf Kalkulator für Idee-ID:', vmToCalculator.note.id);
 
       this.tabService.changeTab(BoardTab.Calculator, {
