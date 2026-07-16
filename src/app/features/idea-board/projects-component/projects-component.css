@@ -14,15 +14,10 @@
 
 .projects-dashboard {
     max-width: 1200px;
-    margin: 0 auto; /* 👑 KORREKTUR: Margin oben/unten auf 0, da das jetzt der :host übernimmt! */
-    padding: 0;      /* 👑 KORREKTUR: Padding auf 0, damit der Header links bündig sitzt */
-}
-
-.projects-dashboard {
-    max-width: 1200px;
     margin: 20px auto;
     padding: 0 20px;
     font-family: system-ui, -apple-system, sans-serif;
+    box-sizing: border-box;
 }
 
 /* ==========================================================================

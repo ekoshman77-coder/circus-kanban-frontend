@@ -577,3 +577,46 @@ tr.total-row td {
   transform: scale(1.1);
   transition: all 0.2s ease;
 }
+
+/* ==========================================================================
+   📊 PREMIUM TABLE FOOTER STYLES
+   ========================================================================== */
+.table-total-footer {
+  background-color: #f8fafc;
+  border-top: 3px double #e2e8f0;
+}
+
+.total-row td {
+  padding: 16px 20px !important;
+  font-weight: 700;
+  vertical-align: middle; /* Sorgt dafür, dass alles auf einer Höhe ist */
+}
+
+/* 🔥 KORREKTUR: Das Flexbox-Layout liegt jetzt auf dem inneren Wrapper! */
+.total-label-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.total-text {
+  font-size: 15px;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.total-duration-cell {
+  font-size: 16px;
+  color: #2563eb;
+}
+
+.total-days-badge {
+  background-color: #dbeafe;
+  color: #1e40af;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: 800;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.1);
+  display: inline-block;
+}

@@ -10,6 +10,9 @@ import { ProjectService } from '../../../core/services/project-service';
 export class MilestoneSuggestionsComponent {
   public projectService = inject(ProjectService);
 
+  // 🔥 NEU: Holt die Liste der bereits im Calculator vorhandenen Meilensteine
+  public existingMilestones = input<any[]>([]);
+
   // 📥 Wir brauchen den Projekttitel von der Mutter-Komponente, um Meilensteine hinzuzufügen
   public projectTitle = input.required<string>();
 
@@ -40,9 +43,19 @@ export class MilestoneSuggestionsComponent {
     if (!model) {
       return []
     }
-    return this.showAll()
+    const suggestionsToShow = this.showAll()
         ? [ ...model.recommended, ...model.degraded]
         : model.recommended
+
+    // Die Titel aller bereits existierenden Meilensteine als bereinigte Strings sammeln
+    const existingTitles = new Set(
+      this.existingMilestones().map(m => m.title.trim().toLowerCase())
+    );
+
+    // Filter anwenden: Nur Vorschläge behalten, die noch NICHT im Projekt sind!
+    return suggestionsToShow.filter(suggestion => 
+      !existingTitles.has(suggestion.title.trim().toLowerCase())
+    );
   });
 
   // Diese Methode wird jetzt von den "+" Buttons aufgerufen

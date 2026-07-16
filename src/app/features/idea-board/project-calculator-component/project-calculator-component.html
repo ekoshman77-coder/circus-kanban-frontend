@@ -38,6 +38,7 @@
         </div>
 
         <app-milestone-suggestions-component [projectTitle]="activeProject()?.title ?? ''"
+            [existingMilestones]="activeProject()?.milestones ?? []"
             (milestoneAccepted)="onMilestoneAdded($event)" (degradedAreShown)="degradedAreShown($event)">
         </app-milestone-suggestions-component>
 
@@ -51,8 +52,8 @@
                 </tr>
             </thead>
 
-<tbody cdkDropList (cdkDropListDropped)="onDrop($event)">
-                @for (task of activeProject()?.milestones; track task.id; let i = $index) {
+            <tbody cdkDropList (cdkDropListDropped)="onDrop($event)">
+                @for (task of activeProject()?.milestones; track $index; let i = $index) {
                 
                 @if (editingMilestoneId === task.id) {
                 <tr class="edit-row-pastel" [class.editing-row]="editingMilestoneId === task.id">
@@ -133,7 +134,26 @@
                 </tr>
                 }
             </tbody>
-                </table>
+            @if (activeProject()?.milestones?.length?? 0 > 0) {
+                <tfoot class="table-total-footer">
+                <tr class="milestone-premium-row total-row">
+                    <td colspan="2">
+                        <div class="total-label-wrapper">
+                            <span class="row-index-badge">📊</span>
+                            <strong class="total-text">Gesamt:</strong>
+                        </div>
+                    </td>
+                    <td class="total-duration-cell">
+                        <span class="total-days-badge">
+                            {{ finalDays() }} {{ finalDays() === 1 ? 'Tag' : 'Tage' }}
+                        </span>
+                    </td>
+                    <td></td>
+                </tr>
+            </tfoot>
+            }
+
+        </table>
         <div class="manual-milestone-form-zone" style="margin-top: 25px;">
             <h4 style="margin-bottom: 10px; color: #334155;">🔨 Manuellen Meilenstein hinzufügen</h4>
             <form (ngSubmit)="addNewMilestoneFromForm()" style="display: flex; gap: 15px; align-items: flex-end;">

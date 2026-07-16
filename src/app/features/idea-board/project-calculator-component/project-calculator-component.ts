@@ -92,7 +92,7 @@ export class ProjectCalculatorComponent implements OnInit {
   public finalDays = computed(() => {
     const proj = this.localProjectDraft();
     if (!proj || !proj.milestones) return 0;
-    return proj.milestones.reduce((sum, ms) => sum + (ms.duration || 0), 0);
+    return proj.milestones.reduce((sum, ms) => sum + (+ms.duration || 0), 0);
   });
 
   constructor() {
@@ -369,7 +369,7 @@ export class ProjectCalculatorComponent implements OnInit {
     this.editTime = 1;
   }
 
-public saveInlineEdit(index: number): void {
+  public saveInlineEdit(index: number): void {
     const currentProject = this.localProjectDraft();
     if (!currentProject || !currentProject.milestones || !currentProject.milestones[index]) {
       this.editingMilestoneId = null;

@@ -10,6 +10,14 @@ import { ProjectStatsComponent } from '../project-stats-component/project-stats-
 import { FilterService } from '../../../core/services/filter-service';
 import { TeamService } from '../../../core/services/team-service';
 
+/**
+ * @component ProjectsComponent
+ * @description 
+ * Das Cockpit und die strategische Zentrale für alle aktiven Team-Projekte.
+ * Verwaltet die Projektübersicht, filtert Projekte in Echtzeit über eine globale Suche,
+ * prüft Benutzerberechtigungen für administrative Aktionen und steuert ein reaktives,
+ * ausklappbares Statistik-Panel.
+ */
 @Component({
   selector: 'app-projects-component',
   standalone: true,
@@ -17,27 +25,37 @@ import { TeamService } from '../../../core/services/team-service';
   templateUrl: './projects-component.html',
   styleUrl: './projects-component.css'
 })
-
 export class ProjectsComponent implements OnInit {
-  // 🏗️ Wir holen uns die Projekte und die Navigation
-  public projectService = inject(ProjectService);
-  private tabService = inject(TabNavigationService);
-  public todoService = inject(TodoService)
-  private filterService = inject(FilterService)
-  private teamService = inject(TeamService)
+  // --- Services ---
+  public readonly projectService = inject(ProjectService);
+  public readonly todoService = inject(TodoService);
+  private readonly tabService = inject(TabNavigationService);
+  private readonly filterService = inject(FilterService);
+  private readonly teamService = inject(TeamService);
 
-  public showDeletePopup = signal<boolean>(false);
-  public projectToDelete = signal<Project | null>(null)
-  // 🚀 Ein neues Signal, um zu steuern, ob das Statistik-Panel offen ist
-  public isStatsPanelOpen = signal<boolean>(false);
+  // --- UI-Zustände (Signals) ---
+  /** Signal zur Steuerung der Sichtbarkeit des Lösch-Bestätigungs-Popups */
+  public readonly showDeletePopup = signal<boolean>(false);
+  
+  /** Hält das aktuell zur Löschung ausgewählte Projekt */
+  public readonly projectToDelete = signal<Project | null>(null);
+  
+  /** Steuert, ob das rechte System-Statistiken-Panel ausgefaltet ist */
+  public readonly isStatsPanelOpen = signal<boolean>(false);
 
-  // Reaktiver Zugriff auf die geladenen Projekte aus dem Service
-  public projects = computed(() => {
-    const list =  this.projectService.projectsList();
+  // --- Reaktive Selektoren (Computed) ---
+  /**
+   * Filtert die geladenen Projekte in Echtzeit basierend auf dem globalen Suchbegriff.
+   * Durchsucht Titel, Beschreibung (Content) und Projektbereich (Area).
+   */
+  public readonly projects = computed(() => {
+    const list = this.projectService.projectsList();
     const query = this.filterService.searchTerm().toLowerCase().trim();
+    
     if (!query) {
-      return list
+      return list;
     } 
+    
     return list.filter(project => {
       const title = (project.title || '').toLowerCase();
       const content = (project.content || '').toLowerCase();
@@ -47,77 +65,100 @@ export class ProjectsComponent implements OnInit {
     });   
   });
 
-// 2. 🧮 Die Kacheln lesen jetzt reaktiv das DTO aus dem Service!
-  // Wir nutzen einen sicheren Fallback (?? 0), falls die Statistik null/offline ist.
-  public totalProjectsCount = computed(() => {
+  /** Gesamtzahl aller Projekte aus den synchronisierten Dashboard-Statistiken */
+  public readonly totalProjectsCount = computed(() => {
     return this.projectService.dashboardStats()?.totalProjects ?? 0;
   });
 
-  public totalMilestonesCount = computed(() => {
+  /** Gesamtzahl aller Meilensteine über alle Projekte hinweg */
+  public readonly totalMilestonesCount = computed(() => {
     return this.projectService.dashboardStats()?.totalMilestones ?? 0;
   });
 
-  public totalTodosCount = computed(() => {
+  /** Gesamtzahl aller verknüpften Aufgaben (Todos) */
+  public readonly totalTodosCount = computed(() => {
     return this.projectService.dashboardStats()?.totalTodos ?? 0;
   });
 
-  ngOnInit(): void {
+  /**
+   * Initialisierungsschritt.
+   * Setzt den initialen Filterfokus des globalen Such- und Filtersystems auf 'projects'.
+   */
+  public ngOnInit(): void {
     this.filterService.setInitialCategory('projects');
   }
 
+  /**
+   * Berechtigungsprüfung zum Löschen eines Projekts.
+   * @param projectId Die ID des zu prüfenden Projekts.
+   * @returns boolean - True, wenn der aktuelle User die Berechtigung besitzt.
+   */
   public canDeleteProject(projectId: string): boolean {
     if (!projectId) {
-      return false
+      return false;
     }
-    console.log("check permission to delete")
-    const hasPermission = this.teamService.hasPermission(projectId, 'PROJECT_DELETE')
-    return hasPermission
-//    return 
+    return this.teamService.hasPermission(projectId, 'PROJECT_DELETE');
   }
 
   /**
-   * RE-KALKULATION STARTEN:
-   * Schnappt sich ein bestehendes Projekt und schickt es zurück in den Kalkulator.
+   * Schickt ein existierendes Projekt zurück in den Kalkulations-Workspace,
+   * um Phasen, Budgets oder Aufwände neu zu berechnen.
+   * @param project Das zu re-kalkulierende Projekt.
    */
   public openInCalculator(project: Project): void {
-    console.log('🔄 Schicke bestehendes Projekt in die Re-Kalkulation:', project.title);
-
-    // Wir übergeben den Typ 'project' und die echte ID!
+    console.log('🔄 Re-Kalkulation für Projekt initiiert:', project.title);
     this.tabService.changeTab(BoardTab.Calculator, {
       type: 'project',
       id: project.id
     });
   }
 
-  public triggerDeletePopup(project: Project) {
-    this.projectToDelete.set(project)
+  /**
+   * Öffnet das Lösch-Popup und setzt das zu löschende Projekt in den State.
+   * @param project Das Projekt, das gelöscht werden soll.
+   */
+  public triggerDeletePopup(project: Project): void {
+    this.projectToDelete.set(project);
     this.showDeletePopup.set(true);
   }
 
-  public closeDeletePopup() {
-    this.showDeletePopup.set(false)
-    this.projectToDelete.set(null)
+  /**
+   * Schließt das Lösch-Popup und setzt den temporären Projekt-State zurück.
+   */
+  public closeDeletePopup(): void {
+    this.showDeletePopup.set(false);
+    this.projectToDelete.set(null);
   }
 
-  public confirmDelete() {
-    this.showDeletePopup.set(false)
-    const project = this.projectToDelete()
+  /**
+   * Bestätigt den Löschvorgang.
+   * Entfernt das Projekt über den ProjectService unwiderruflich aus dem System.
+   */
+  public confirmDelete(): void {
+    this.showDeletePopup.set(false);
+    const project = this.projectToDelete();
     if (project && project.id) {
-      console.log(`💥 Einstampfen läuft für: ${project.title}`);
-      this.projectService.removeProject(project.id)
+      console.log(`💥 Projekt-Einstampfen gestartet für: ${project.title}`);
+      this.projectService.removeProject(project.id);
     }
   }
 
+  /**
+   * Wechselt zum Meilenstein-Tab und setzt den Fokus auf das ausgewählte Projekt.
+   * @param project Das Zielprojekt für die Meilenstein-Verwaltung.
+   */
   public openMilestones(project: Project): void {
-    console.log('🎯 Navigiere zu den Meilensteinen für:', project.title);
-
-    // Wir wechseln zum neuen Tab und übergeben den State, genau wie beim Kalkulator!
+    console.log('🎯 Navigiere zur Meilensteinverwaltung für:', project.title);
     this.tabService.changeTab(BoardTab.Milestones, {
       type: 'project',
       id: project.id
     });
   }
 
+  /**
+   * Springt direkt zu einer spezifischen Projektphase (Meilenstein).
+   * @param milestoneId Die ID des Meilensteins.
+   */
   public openSpecificMilestone(milestoneId: string): void {
     this.tabService.changeTab(BoardTab.Milestones, {
       type: 'milestone',
@@ -125,19 +166,26 @@ export class ProjectsComponent implements OnInit {
     });
   }
 
-  // Zwei kleine Methoden zum Umschalten
+  /**
+   * Schaltet das Statistik-Panel (Drawer) an der rechten Bildschirmkante an oder aus.
+   */
   public toggleStatsPanel(): void {
     this.isStatsPanelOpen.update(open => !open);
   }
 
+  /**
+   * Schließt das Statistik-Panel explizit.
+   */
   public closeStatsPanel(): void {
     this.isStatsPanelOpen.set(false);
   }
 
+  /**
+   * Navigiert den Benutzer direkt zum Team-Kanban-Board des ausgewählten Projekts.
+   * @param project Das Zielprojekt für das Board.
+   */
   public openTeamBoard(project: Project): void {
-    console.log('🎪 Navigiere direkt zum Team-Board für Projekt:', project.title);
-
-    // Wir wechseln zum Team-Board-Tab und übergeben den Zustand als 'project'!
+    console.log('🎪 Direktsprung zum Team-Board für:', project.title);
     this.tabService.changeTab(BoardTab.team, {
       type: 'project',
       id: project.id

@@ -1,14 +1,14 @@
 :host {
     display: block;
     padding: 20px 20px 40px 20px;
-    background: radial-gradient(circle at top left, #f3e8ff 0%, #e0f2fe 100%); /* Gleicher lila-blauer Pastell-Traum! */
+    background: radial-gradient(circle at top left, #f3e8ff 0%, #e0f2fe 100%); /* Lila-blauer Pastell-Traum */
     border-radius: 12px;
     border: 1px solid #e2e8f0;
     min-height: 85vh;
 }
 
 .board-container {
-  max-width: 100% !important; /* 🚀 Erlaubt dem Board, sich voll auszudehnen! */
+  max-width: 100% !important; /* Erlaubt dem Board, sich voll auszudehnen */
   margin: 0 auto;
   font-family: system-ui, -apple-system, sans-serif;
 }
@@ -22,7 +22,7 @@
     justify-content: space-between;
     align-items: flex-end;
     margin-bottom: 24px; 
-    padding: 0; /* 👑 KORREKTUR: Auf 0 gesetzt, damit der Titel perfekt links bündig abschließt! */
+    padding: 0; /* Auf 0 gesetzt, damit der Titel perfekt links bündig abschließt */
     position: relative;
     z-index: 1000;
 }
@@ -48,10 +48,46 @@
     font-weight: 500;
 }
 
+.section-divider {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, #e2e8f0 0%, #cbd5e1 50%, #e2e8f0 100%);
+    margin: 0 0 24px 0; /* Schiebt den Inhalt darunter mit exakt 24px Abstand weg */
+    opacity: 0.6;
+}
+
+/* ==========================================================================
+   🔄 DAS 5-SPALTEN-KANBAN-SYSTEM
+   ========================================================================== */
+
+.kanban-workspace {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 16px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important; /* Verhindert den horizontalen Scrollbar garantiert */
+}
+
+/* Jede Spalte bekommt genau gleich viel Platz und eine stabile maximale Höhe */
+.kanban-column {
+  flex: 1 1 0% !important; /* Verteilt alle Spalten absolut gleichmäßig */
+  min-width: 200px;
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  height: 70vh !important; /* Nutzt 70% der sichtbaren Bildschirmhöhe */
+}
+
 .column-header {
   margin-top: 0;
   margin-bottom: 16px;
-  font-size: 16px; /* Exakt angeglichen */
+  font-size: 16px;
   color: #1e293b; 
   font-weight: 700;
   display: flex;
@@ -59,9 +95,20 @@
   gap: 8px;
 }
 
+/* Subtile, edle farbige Akzente für die Spaltenköpfe */
+.column-backlog .column-header { color: #64748b; } /* Schickes Grau */
+.column-open .column-header { color: #475569; }    /* Dunkleres Slate-Grau */
+.column-progress .column-header { color: #b45309; }/* Warmes Bernstein/Gelb */
+.column-review .column-header { color: #6d28d9; }  /* Magisches Violett */
+.column-done .column-header { color: #15803d; }    /* Frisches Grün */
+
+/* ==========================================================================
+   📦 KARTEN-CONTAINER & SCROLL-MAGIE
+   ========================================================================== */
+
 .cards-holder {
   flex-grow: 1 !important;
-  overflow-y: auto !important; /* 🚀 HIER ENTSTEHT DIE SCROLL-MAGIE! */
+  overflow-y: auto !important; /* Scroll-Magie innerhalb der Spalte */
   padding: 12px !important;
   display: flex !important;
   flex-direction: column !important;
@@ -73,69 +120,9 @@
   scrollbar-color: #cbd5e1 transparent;
 }
 
-/* Kachel-Styling */
-.todo-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 14px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-  transition: all 0.2s ease;
-}
-.todo-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 12px rgba(148,163,184,0.12);
-}
-
-.todo-title { margin: 0 0 6px 0; color: #0f172a; font-size: 14px; }
-.todo-desc { margin: 0 0 12px 0; color: #64748b; font-size: 12px; }
-
-/* Footer im Kachel inneren */
-.card-team-footer {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 10px;
-  padding-top: 8px;
-  border-top: 1px dashed #f1f5f9;
-}
-
-/* ==========================================================================
-   🌊 SCROLL-ZONEN FÜR ALLE SPALTEN (Karten scrollen unabhänig im Inneren)
-   ========================================================================== */
-/* ==========================================================================
-   🚫 LOKALES QUETSCH-VERBOT FÜR UNSER TEAMBOARD
-   ========================================================================== */
+/* Quetsch-Verbot für Karten im Kanban-Board */
 .cards-holder app-todo-item {
-  flex-shrink: 0 !important; /* ⚡ Verhindert, dass das Board die Karten zusammendrückt */
-}
-
-/* ==========================================================================
-   📜 SCROLLBAR FÜR DIE SPALTEN (Wie im Kanban- & Meilenstein-Workspace)
-   ========================================================================== */
-
-.assignee-avatar {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  font-weight: 700;
-  color: #1e293b;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
-}
-.assignee-avatar.unassigned { background: #e2e8f0; font-size: 11px; color: #64748b; }
-
-.assignee-select {
-  padding: 3px 6px;
-  font-size: 12px;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  background: #fff;
-  cursor: pointer;
-  max-width: 120px;
+  flex-shrink: 0 !important; 
 }
 
 .empty-info {
@@ -146,9 +133,85 @@
   padding: 20px 0;
 }
 
-/* 🎪 STYLING FÜR DIE WILLKOMMENS-BOX */
 /* ==========================================================================
-   🎪 DER GLOBALE STUDIO-STANDARD FÜR EMPTY STATES (LEERE ZUSTÄNDE)
+   ➕ NEUE-AUFGABE-BUTTON (Im Backlog-Header fixiert)
+   ========================================================================== */
+
+.column-planning-header {
+  padding: 10px 12px !important;
+  background: #f1f5f9 !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  flex-shrink: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.btn-minimal-plus {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
+  background: #ffffff !important;
+  border: 2px dashed #3b82f6 !important;
+  color: #3b82f6 !important;
+  font-size: 20px !important;
+  font-weight: bold !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important; /* Wichtig für die Positionierung des Tooltips */
+  transition: all 0.25s ease-in-out !important;
+}
+
+/* Das Plus-Icon im Button */
+.btn-minimal-plus .plus-icon {
+  display: inline-block !important; 
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important; 
+}
+
+/* Hover-Effekte für den Plus-Button */
+.btn-minimal-plus:hover {
+  background: #3b82f6 !important;
+  color: #ffffff !important;
+  border-style: solid !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
+}
+
+.btn-minimal-plus:hover .plus-icon {
+  transform: rotate(90deg) scale(1.2) !important; /* Dreht das Plus-Icon sanft */
+}
+
+/* Der CSS-Tooltip unter dem Button */
+.btn-minimal-plus::after {
+  content: "Neue Aufgabe schmieden... 🛠️" !important;
+  position: absolute !important;
+  bottom: -45px !important;
+  left: 50% !important;
+  transform: translateX(-50%) scale(0.8) !important;
+  background: #1e293b !important;
+  color: #ffffff !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  padding: 6px 12px !important;
+  border-radius: 8px !important;
+  white-space: nowrap !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15) !important;
+  z-index: 99999 !important;
+}
+
+.btn-minimal-plus:hover::after {
+  opacity: 1 !important;
+  transform: translateX(-50%) scale(1) !important;
+}
+
+/* ==========================================================================
+   🎪 WILLKOMMENS-BOX (Empty State bei geschlossenem Vorhang)
    ========================================================================== */
 
 .no-milestone-selected-container {
@@ -174,7 +237,6 @@
     gap: 16px;
 }
 
-/* 🔥 DER MAGISCHE NEON-EFFEKT FÜR DAS EMOJI */
 .empty-icon-neon {
     font-size: 54px;
     margin-bottom: 8px;
@@ -199,201 +261,16 @@
     line-height: 1.6;
 }
 
-/* ✨ Kleine, feine Animationen für das Premium-Gefühl */
+/* ==========================================================================
+   ✨ FEINE EFFEKT-ANIMATIONEN
+   ========================================================================== */
+
 @keyframes neonFloat {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-6px); }
 }
+
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
-}
-
-.section-divider {
-    border: none;
-    height: 1px;
-    background: linear-gradient(to right, #e2e8f0 0%, #cbd5e1 50%, #e2e8f0 100%);
-    margin: 0 0 24px 0; /* Schiebt den Inhalt darunter mit exakt 24px Abstand weg */
-    opacity: 0.6;
-}
-
-.board-control-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: rgba(255, 255, 255, 0.85); /* Gleicher satinierter Hintergrund */
-    backdrop-filter: blur(10px);
-    border: 1px solid #e2e8f0;
-    padding: 16px 24px; /* Exakt gleiche Abstände */
-    border-radius: 12px;
-    margin-bottom: 24px;
-    box-shadow: 0 4px 20px rgba(148, 163, 184, 0.08); /* Exakt gleicher Schatten */
-    position: relative;
-    z-index: 10;
-}
-
-.active-filter-info {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    color: #475569;
-}
-
-.active-filter-info strong {
-    color: #0f172a;
-    background-color: #f1f5f9;
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-weight: 600;
-}
-
-.board-control-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: #ffffff;
-    border: 1px solid #e2e8f0;
-    padding: 12px 20px;
-    border-radius: 12px;
-    margin-bottom: 24px; /* 👈 Drückt deine Spalten von gestern sanft nach unten */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-}
-
-.active-filter-info {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    color: #475569;
-}
-
-.active-filter-info strong {
-    color: #0f172a;
-    background-color: #f1f5f9;
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-weight: 600;
-}
-
-/* ==========================================================================
-   🔄 ERWEITERUNG FÜR DAS 5-SPALTEN-KANBAN-SYSTEM
-   ========================================================================== */
-
-.kanban-workspace {
-  display: flex !important;
-  flex-direction: row !important;
-  gap: 16px !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
-  overflow-x: hidden !important; /* 🚫 Verhindert den horizontalen Scrollbar garantiert! */
-}
-
-/* Alle Spalten teilen sich den Platz mathematisch exakt auf */
-/* Jede Spalte bekommt genau gleich viel Platz */
-/* Jede Spalte bekommt genau gleich viel Platz und eine stabile maximale Höhe */
-.kanban-column {
-  flex: 1 1 0% !important; /* Verteilt alle Spalten absolut gleichmäßig */
-  min-width: 200px;
-  background: rgba(255, 255, 255, 0.45);
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  border-radius: 12px;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-  
-  /* 🌟 HIER BRINGEN WIR DIE FESTE HÖHE ZURÜCK: */
-  height: 70vh !important; /* Nutzt 70% der sichtbaren Bildschirmhöhe */
-}
-
-/* 🎨 Subtile, edle farbige Akzente für die Spaltenköpfe, passend zu deinem Design */
-.column-backlog .column-header { color: #64748b; } /* Schickes Grau */
-.column-open .column-header { color: #475569; }    /* Dunkleres Slate-Grau */
-.column-progress .column-header { color: #b45309; }/* Warmes Bernstein/Gelb */
-.column-review .column-header { color: #6d28d9; }  /* Magisches Violett */
-.column-done .column-header { color: #15803d; }    /* Frisches Grün */
-
-/* ==========================================================================
-   📌 DER FIXIERTE HEADER-BEREICH FÜR DEN BUTTON
-   ========================================================================== */
-.column-planning-header {
-  padding: 10px 12px !important;
-  background: #f1f5f9 !important;
-  border-bottom: 1px solid #cbd5e1 !important;
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  flex-shrink: 0 !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
-}
-
-/* ➕ DEIN RUNDER DESIGNER-PLUS-BUTTON (Der Anker) */
-.btn-minimal-plus {
-  width: 40px !important;
-  height: 40px !important;
-  border-radius: 50% !important;
-  background: #ffffff !important;
-  border: 2px dashed #3b82f6 !important;
-  color: #3b82f6 !important;
-  font-size: 20px !important;
-  font-weight: bold !important;
-  cursor: pointer !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  position: relative !important; /* Absolut wichtig für den Tooltip! */
-  transition: all 0.25s ease-in-out !important;
-}
-
-/* 🌀 DAS SPEZIELLE PLUS-ICON (Muss inline-block sein, damit es sich drehen DARF!) */
-.btn-minimal-plus .plus-icon {
-  display: inline-block !important; /* 🔑 DAS WAR DER FEHLENDE SCHLÜSSEL! */
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important; /* Super geschmeidige Drehung */
-}
-
-/* 🌟 Hover-Effekt für den Button-Hintergrund */
-.btn-minimal-plus:hover {
-  background: #3b82f6 !important;
-  color: #ffffff !important;
-  border-style: solid !important;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
-}
-
-/* 🌀 JETZT WIRD ES UMWERFEND: Nur das Plus dreht sich beim Hover um 90 Grad! */
-.btn-minimal-plus:hover .plus-icon {
-  transform: rotate(90deg) scale(1.2) !important; /* Dreht sich UND wird minimal größer für den Kick! */
-}
-
-/* 🛠️ DER CSS-TOOLTIP (Steht felsenfest darunter) */
-.btn-minimal-plus::after {
-  content: "Neue Aufgabe schmieden... 🛠️" !important;
-  position: absolute !important;
-  bottom: -45px !important;
-  left: 50% !important;
-  transform: translateX(-50%) scale(0.8) !important; /* Bleibt komplett gerade stehen */
-  background: #1e293b !important;
-  color: #ffffff !important;
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  padding: 6px 12px !important;
-  border-radius: 8px !important;
-  white-space: nowrap !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  transition: all 0.2s ease !important;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15) !important;
-  z-index: 99999 !important;
-}
-
-/* Tooltip einblenden */
-.btn-minimal-plus:hover::after {
-  opacity: 1 !important;
-  transform: translateX(-50%) scale(1) !important;
-}
-
-.btn-minimal-plus:hover .plus-icon {
-  transform: rotate(90deg) scale(1.2) !important;
 }
