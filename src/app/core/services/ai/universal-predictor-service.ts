@@ -1,8 +1,15 @@
 import { inject, Injectable } from '@angular/core';
 import { ConnectionService } from '../connection/connection-service';
 import { AiRepository } from '../../repositories/ai-repository';
-import { firstValueFrom, Observable } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 
+/**
+ * Universeller Vorhersage-Service für das gesamte System.
+ * * Agiert als zentraler, hybrider Detektiv, der:
+ * 1. Kategorien für To-Dos und Notizen basierend auf Textanalysen prognostiziert (Online via KI, Offline via LocalStorage-Heuristik).
+ * 2. Aufwandsschätzungen (Effort-Predictions) anhand von globalen Team-Benchmarks berechnet.
+ * 3. Dynamisch Kategorielisten ausliest, um sie in Formularen anzubieten.
+ */
 @Injectable({
   providedIn: 'root'
 })
@@ -11,13 +18,19 @@ export class UniversalPredictorService {
   private connectionService = inject(ConnectionService);
 
   /**
-   * 🌟 DER UNIVERSELLE HYBRID-DETEKTIV
-   * Entscheidet blitzschnell zwischen Online (Server-KI) und Offline (Frontend-Zähler)
+   * Sagt die am besten passende Kategorie für ein To-Do oder eine Notiz voraus.
+   * * Entscheidet dynamisch anhand des Verbindungsstatus:
+   * - **ONLINE:** Ruft das serverbasierte KI-Modell auf.
+   * - **OFFLINE:** Analysiert lokal gespeicherte Daten im LocalStorage über ein Häufigkeits-Punktesystem.
+   * * @param text Der Freitext des Elements (z. B. Titel oder Beschreibung).
+   * @param userId Die ID des Benutzers (für den Offline-Fallback).
+   * @param contextType Der Kontext der Anfrage ('todo' oder 'note').
+   * @returns Ein Promise mit der vorgeschlagenen Kategorie oder einem leeren String bei ungültigem Input.
    */
-public async predict(text: string, userId: string, contextType: 'todo' | 'note'): Promise<string> {
+  public async predict(text: string, userId: string, contextType: 'todo' | 'note'): Promise<string> {
     if (!text || text.trim().length < 3) return '';
 
-    // 🌐 Online-Pfad: Schickt die 3 Daten zum Server
+    // 🌐 Online-Pfad: Nutzt die Server-KI
     if (this.connectionService.status() === 'ONLINE') {
       try {
         return (await firstValueFrom(this.aiRepository.getServerPrediction(text, contextType))).suggestedCategory;
@@ -27,15 +40,17 @@ public async predict(text: string, userId: string, contextType: 'todo' | 'note')
       }
     }
 
-    // 🔌 Offline-Pfad: Holt sich die Daten selbst aus dem LocalStorage
+    // 🔌 Offline-Pfad: Holt sich die Daten autonom aus dem LocalStorage
     return this.predictOffline(text, userId, contextType);
   }
 
   /**
-   * ⏱️ DER GLOBALE AUFWANDS-DETEKTIV (Komplett ohne userId!)
-   * Schaut im Team-Benchmark nach, wie viele Stunden ähnliche Aufgaben brauchten.
+   * Sagt den voraussichtlichen Zeitaufwand (in Stunden) für eine Aufgabe voraus.
+   * Nutzt dafür einen globalen Team-Benchmark auf dem Server.
+   * * @param text Der Aufgabentext.
+   * @returns Ein Promise mit der geschätzten Stundenzahl oder `null`, falls offline oder nicht ermittelbar.
    */
-public async predictEffort(text: string): Promise<number | null> {
+  public async predictEffort(text: string): Promise<number | null> {
     if (!text || text.trim().length < 3) return null;
 
     if (this.connectionService.status() === 'ONLINE') {
@@ -44,8 +59,6 @@ public async predictEffort(text: string): Promise<number | null> {
           text: text,
           contextType: "todo"
         }));
-
-        // Wir extrahieren die Zahl (das Repo gibt uns z.B. ein Objekt mit { suggestedEffort: number } zurück)
         return res.suggestedEffort;
       } catch (err) {
         console.warn('⚡ Server-KI für Aufwand nicht erreichbar.');
@@ -56,8 +69,13 @@ public async predictEffort(text: string): Promise<number | null> {
   }
 
   /**
-   * 📋 Funktion 2: Kategorieliste fürs Dropdown beim Öffnen
-   * Spiegelt und funkt – holt entweder Server-Daten oder nutzt das lokale Backup.
+   * Liefert alle verfügbaren Kategorien für Dropdown-Auswahlen.
+   * Versucht im Online-Modus globale Kategorien zu laden, andernfalls werden
+   * die bereits genutzten Kategorien aus dem lokalen Cache des Nutzers extrahiert.
+   * * @param userId Die ID des Benutzers.
+   * @param contextType Der Kontext der Anfrage ('todo' oder 'note').
+   * @param localCategories Optionale Standardkategorien als finaler Fallback.
+   * @returns Ein Promise mit einem sortierten Array von Kategorienamen.
    */
   public async getAvailableCategories(userId: string, contextType: 'todo' | 'note', localCategories: string[]): Promise<string[]> {
     if (this.connectionService.status() === 'ONLINE') {
@@ -68,15 +86,16 @@ public async predictEffort(text: string): Promise<number | null> {
       }
     }
 
-    const tagSet = this.getCategoriesFromLocalStorage(userId, contextType)
-    return Array.from(tagSet).sort();
+    const tagSet = this.getCategoriesFromLocalStorage(userId, contextType);
+    return tagSet.length > 0 ? tagSet : localCategories;
   }
 
   /**
-   * 🕵️‍♂️ Der bereinigte Offline-Detektiv: Holt sich seine Daten jetzt AUTONOM aus dem LocalStorage!
+   * Heuristischer Offline-Algorithmus.
+   * Durchsucht den LocalStorage nach Übereinstimmungen im Titel und Inhalt/Beschreibung
+   * und bewertet, welche Kategorie am häufigsten mit ähnlichen Wörtern verknüpft war.
    */
   private predictOffline(text: string, userId: string, contextType: 'todo' | 'note'): string {
-    // Welcher Key? local_notes_123 oder local_todos_123
     const storageKey = contextType === 'note' ? `local_notes_${userId}` : `local_todos_${userId}`;
     const rawData = localStorage.getItem(storageKey);
     if (!rawData) return '';
@@ -88,7 +107,6 @@ public async predictEffort(text: string): Promise<number | null> {
 
       const scoreTable = new Map<string, number>();
 
-      // Feld-Mapping je nach Kontext (Notes nutzen 'tag', Todos nutzen 'category')
       const targetField = contextType === 'note' ? 'tag' : 'category';
       const fieldsToSearch = contextType === 'note' ? ['title', 'content'] : ['title', 'description'];
 
@@ -113,7 +131,10 @@ public async predictEffort(text: string): Promise<number | null> {
       let bestCategory = '';
       let highestScore = 0;
       scoreTable.forEach((score, category) => {
-        if (score > highestScore) { highestScore = score; bestCategory = category; }
+        if (score > highestScore) {
+          highestScore = score;
+          bestCategory = category;
+        }
       });
 
       return bestCategory;
@@ -124,7 +145,7 @@ public async predictEffort(text: string): Promise<number | null> {
   }
 
   /**
-   * Reiner Offline-Kanal: Holt die echten Zettel/Todos aus dem LocalStorage und zieht die Tags raus
+   * Extrahiert alle einzigartigen Kategorien oder Tags direkt aus dem LocalStorage.
    */
   private getCategoriesFromLocalStorage(userId: string, contextType: 'todo' | 'note'): string[] {
     const storageKey = contextType === 'note' ? `local_notes_${userId}` : `local_todos_${userId}`;
@@ -135,7 +156,6 @@ public async predictEffort(text: string): Promise<number | null> {
       const items = JSON.parse(data) as any[];
       const tagSet = new Set<string>();
       
-      // Das Feld heißt bei Notes 'tag' und bei Todos meistens 'category' oder 'tag'
       const targetField = contextType === 'note' ? 'tag' : 'category';
 
       for (const item of items) {
