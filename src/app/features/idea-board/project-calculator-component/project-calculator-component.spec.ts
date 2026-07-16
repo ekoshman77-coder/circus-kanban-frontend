@@ -1,13 +1,13 @@
 import { TestBed, ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { ProjectCalculatorComponent } from './project-calculator-component';
-import { ProjectService } from '../../../core/services/project-service';
-import { NoteService } from '../../../core/services/note-service';
+import { ProjectService } from '../../../core/services/project/project-service';
+import { NoteService } from '../../../core/services/note/note-service';
 import { TabNavigationService, BoardTab } from '../tab-navigation-service';
 import { TodoService } from '../../../core/services/todo/todo-service';
 import { UserService } from '../../../core/services/user/user-service';
-import { ProjectDraftService } from '../../../core/services/project-draft-service';
-import { NotificationService } from '../../../core/services/notification-service';
-import { TeamService } from '../../../core/services/team-service';
+import { ProjectDraftService } from '../../../core/services/project/project-draft-service';
+import { NotificationService } from '../../../core/services/notification/notification-service';
+import { TeamService } from '../../../core/services/team/team-service';
 import { signal } from '@angular/core';
 import { Project } from '../../../core/models/project';
 import { Milestone } from '../../../core/models/milestone';

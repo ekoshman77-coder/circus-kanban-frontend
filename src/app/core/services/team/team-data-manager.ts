@@ -1,10 +1,10 @@
 import { Injectable, effect, inject, signal, untracked } from '@angular/core';
-import { ProjectRole, UserModel } from '../models/user-model';
-import { TeamRepository } from '../repositories/team-repository';
-import { ProjectMember } from '../models/project-member';
-import { IUser, UserRepository } from '../repositories/user-repository';
-import { ConnectionService } from './connection-service';
-import { UserService } from './user/user-service'; // 🎯 NEU importiert!
+import { ProjectRole, UserModel } from '../../models/user-model';
+import { TeamRepository } from '../../repositories/team-repository';
+import { ProjectMember } from '../../models/project-member';
+import { IUser, UserRepository } from '../../repositories/user-repository';
+import { ConnectionService } from '../connection/connection-service';
+import { UserService } from '../user/user-service'; // 🎯 NEU importiert!
 
 @Injectable({
   providedIn: 'root'

@@ -1,6 +1,6 @@
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { Component, computed, ElementRef, HostListener, inject, input, output, signal, effect } from '@angular/core';
-import { ProjectService } from '../../../services/project-service';
+import { ProjectService } from '../../../services/project/project-service';
 
 @Component({
   selector: 'app-milestone-selector-component',

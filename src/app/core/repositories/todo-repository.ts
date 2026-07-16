@@ -5,7 +5,7 @@ import { Observable, map } from 'rxjs';
 import { GamificationResult, TodoStatusUpdatePayload } from '../models/gamification';
 import { aiCategoriesApiUrl, bulkApiUrl, gamificationApiUrl, todoApiUrl } from './links';
 import { SyncResult } from './dto/sync-result';
-import { LoggerService } from '../services/logger-service';
+import { LoggerService } from '../services/logger/logger-service';
 import { TodoUpdateResponse } from './dto/dto-interface';
 import { ITodoJSON } from './dto/todo-json';
 

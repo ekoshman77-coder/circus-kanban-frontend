@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal, effect, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ProjectService } from '../../../core/services/project-service';
-import { NoteService } from '../../../core/services/note-service';
+import { ProjectService } from '../../../core/services/project/project-service';
+import { NoteService } from '../../../core/services/note/note-service';
 import { Project } from '../../../core/models/project';
 import { Milestone } from '../../../core/models/milestone';
 import { BoardTab, NavigationState, TabNavigationService } from '../tab-navigation-service';
@@ -11,12 +11,12 @@ import { TodoService } from '../../../core/services/todo/todo-service';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { MilestoneSuggestionsComponent } from '../milestone-suggestions-component/milestone-suggestions-component';
 import { UserService } from '../../../core/services/user/user-service';
-import { ProjectDraftService } from '../../../core/services/project-draft-service';
+import { ProjectDraftService } from '../../../core/services/project/project-draft-service';
 import { MilestoneSelectorComponent } from '../../../core/shared/components/milestone-selector-component/milestone-selector-component';
 import { Note } from '../../../core/models/note';
-import { NotificationService } from '../../../core/services/notification-service';
+import { NotificationService } from '../../../core/services/notification/notification-service';
 import { HttpErrorResponse } from '@angular/common/http';
-import { TeamService } from '../../../core/services/team-service';
+import { TeamService } from '../../../core/services/team/team-service';
 
 @Component({
   selector: 'app-project-calculator-component',

@@ -1,18 +1,18 @@
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
-import { Project } from '../models/project';
+import { Project } from '../../models/project';
 import { ProjectDataManagerService } from './project-data-mananger-service';
-import { UserService } from './user/user-service';
-import { Milestone } from '../models/milestone';
-import { TodoTeamStatus } from '../repositories/dto/milestone-json';
-import { TodoViewModel } from '../viewmodel/todo-view-model';
-import { NoteService } from './note-service';
-import { UnifiedSuggestion } from '../models/unified-suggestion';
-import { MilestoneSuggestionsModel } from '../models/milestone-suggestions-model';
-import { DraftProjectWrapper } from '../models/draft-project-wrapper';
-import { NotificationService } from './notification-service';
-import { ProjectDashboardStatsDTO } from '../repositories/dto/project-dashboard-stats-dto';
+import { UserService } from '../user/user-service';
+import { Milestone } from '../../models/milestone';
+import { TodoTeamStatus } from '../../repositories/dto/milestone-json';
+import { TodoViewModel } from '../../viewmodel/todo-view-model';
+import { NoteService } from '../note/note-service';
+import { UnifiedSuggestion } from '../../models/unified-suggestion';
+import { MilestoneSuggestionsModel } from '../../models/milestone-suggestions-model';
+import { DraftProjectWrapper } from '../../models/draft-project-wrapper';
+import { NotificationService } from '../notification/notification-service';
+import { ProjectDashboardStatsDTO } from '../../repositories/dto/project-dashboard-stats-dto';
 
 @Injectable({
   providedIn: 'root'

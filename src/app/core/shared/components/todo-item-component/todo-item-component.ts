@@ -2,11 +2,11 @@ import { Component, Input, Output, EventEmitter, signal, inject, computed, input
 import { CommonModule } from '@angular/common';
 import { TodoService } from '../../../services/todo/todo-service';
 import { Router } from '@angular/router';
-import { ConnectionService } from '../../../services/connection-service';
+import { ConnectionService } from '../../../services/connection/connection-service';
 import { TodoViewModel } from '../../../viewmodel/todo-view-model';
 import { FormsModule } from '@angular/forms';
 import { animate, style, transition, trigger } from '@angular/animations';
-import { TeamService } from '../../../services/team-service';
+import { TeamService } from '../../../services/team/team-service';
 import { UserModel } from '../../../models/user-model';
 import { Todo } from '../../../models/todo';
 

@@ -1,5 +1,5 @@
 import { computed, Injectable, signal } from "@angular/core";
-import { generateLocalId } from "../shared/constants/id-const";
+import { generateLocalId } from "../../shared/constants/id-const";
 
 export interface AppNotification {
     id: string;

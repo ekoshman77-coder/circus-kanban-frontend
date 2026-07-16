@@ -1,10 +1,10 @@
 import { computed, inject, Injectable, signal, Signal } from '@angular/core';
 import { Observable } from 'rxjs';
 import { TeamDataManager } from './team-data-manager';
-import { ProjectRole, UserModel } from '../models/user-model';
-import { ProjectAction } from '../enums/project-action-enum';
-import { UserService } from './user/user-service';
-import { ProjectMember } from '../models/project-member';
+import { ProjectRole, UserModel } from '../../models/user-model';
+import { ProjectAction } from '../../enums/project-action-enum';
+import { UserService } from '../user/user-service';
+import { ProjectMember } from '../../models/project-member';
 
 @Injectable({
     providedIn: 'root',

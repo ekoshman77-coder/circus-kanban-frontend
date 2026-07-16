@@ -1,6 +1,6 @@
 import { Injectable, inject, signal, computed, effect } from '@angular/core';
 import { UserRepository, IUser, PlannerSettingsDto } from '../../repositories/user-repository';
-import { LocalStorageService } from '../local-storage-service';
+import { LocalStorageService } from './local-storage-service';
 import { GamificationResult } from '../../models/gamification';
 import { Observable, tap } from 'rxjs';
 

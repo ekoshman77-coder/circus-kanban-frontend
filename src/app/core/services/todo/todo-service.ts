@@ -2,13 +2,13 @@ import { Injectable, signal, computed, inject, effect, untracked } from '@angula
 import { Todo } from '../../models/todo';
 import { catchError, map, Observable, of } from 'rxjs';
 import { UserService } from '../user/user-service';
-import { LoggerService } from '../logger-service';
+import { LoggerService } from '../logger/logger-service';
 import { ErrorCode } from '../../enums/error-enum';
 import { GamificationResult } from '../../models/gamification';
-import { TodoDataManagerService } from '../todo-data-manager-service';
+import { TodoDataManagerService } from './todo-data-manager-service';
 import { TodoRepository } from '../../repositories/todo-repository';
-import { TodoQueryService } from '../todo-query-service'; // 💡 NEU: Der Kreis-Sprenger importiert!
-import { NotificationService } from '../notification-service';
+import { TodoQueryService } from './todo-query-service'; // 💡 NEU: Der Kreis-Sprenger importiert!
+import { NotificationService } from '../notification/notification-service';
 
 export enum Filter {
   ALL = 'all',

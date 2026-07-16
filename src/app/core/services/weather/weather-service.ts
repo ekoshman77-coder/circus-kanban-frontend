@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, from, map, of, switchMap, tap } from 'rxjs';
-import { MilestoneRepository } from '../repositories/milestone-repository';
-import { WeatherJSON } from '../repositories/dto/weather-data';
-import { WeatherRepository } from '../repositories/weather-api-repository';
+import { MilestoneRepository } from '../../repositories/milestone-repository';
+import { WeatherJSON } from '../../repositories/dto/weather-data';
+import { WeatherRepository } from '../../repositories/weather-api-repository';
 
 @Injectable({
   providedIn: 'root'

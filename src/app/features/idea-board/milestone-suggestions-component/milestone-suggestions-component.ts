@@ -1,5 +1,5 @@
 import { Component, computed, inject, input, output, signal } from '@angular/core';
-import { ProjectService } from '../../../core/services/project-service';
+import { ProjectService } from '../../../core/services/project/project-service';
 
 @Component({
   selector: 'app-milestone-suggestions-component',

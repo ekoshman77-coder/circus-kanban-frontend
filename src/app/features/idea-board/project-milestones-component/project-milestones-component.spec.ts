@@ -1,11 +1,11 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { ProjectMilestonesComponent } from './project-milestones-component';
-import { ProjectService } from '../../../core/services/project-service';
+import { ProjectService } from '../../../core/services/project/project-service';
 import { TabNavigationService, BoardTab } from '../tab-navigation-service';
 import { TodoService } from '../../../core/services/todo/todo-service';
-import { FilterService } from '../../../core/services/filter-service';
-import { TeamService } from '../../../core/services/team-service';
-import { TodoQueryService } from '../../../core/services/todo-query-service';
+import { FilterService } from '../../../core/services/filter/filter-service';
+import { TeamService } from '../../../core/services/team/team-service';
+import { TodoQueryService } from '../../../core/services/todo/todo-query-service';
 import { signal } from '@angular/core';
 import { Todo } from '../../../core/models/todo';
 import { CdkDragDrop } from '@angular/cdk/drag-drop';

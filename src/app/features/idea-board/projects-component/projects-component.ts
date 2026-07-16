@@ -1,5 +1,5 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
-import { ProjectService } from '../../../core/services/project-service';
+import { ProjectService } from '../../../core/services/project/project-service';
 import { CommonModule } from '@angular/common';
 import { TabNavigationService } from '../tab-navigation-service';
 import { BoardTab } from '../tab-navigation-service';
@@ -7,8 +7,8 @@ import { Project } from '../../../core/models/project';
 import { UniversalPopupComponent } from '../../../core/shared/components/universal-popup-component/universal-popup-component';
 import { TodoService } from '../../../core/services/todo/todo-service';
 import { ProjectStatsComponent } from '../project-stats-component/project-stats-component';
-import { FilterService } from '../../../core/services/filter-service';
-import { TeamService } from '../../../core/services/team-service';
+import { FilterService } from '../../../core/services/filter/filter-service';
+import { TeamService } from '../../../core/services/team/team-service';
 
 /**
  * @component ProjectsComponent

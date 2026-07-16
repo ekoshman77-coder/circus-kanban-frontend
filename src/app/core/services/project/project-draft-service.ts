@@ -1,9 +1,9 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
-import { Project } from '../models/project';
-import { Milestone } from '../models/milestone';
-import { UserService } from './user/user-service';
+import { Project } from '../../models/project';
+import { Milestone } from '../../models/milestone';
+import { UserService } from '../user/user-service';
 import { ProjectService } from './project-service';
-import { Note } from '../models/note';
+import { Note } from '../../models/note';
 
 @Injectable({
     providedIn: 'root'

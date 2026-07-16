@@ -1,9 +1,9 @@
 import { inject, Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { Note } from '../models/note';
-import { ConnectionService } from './connection-service';
-import { NoteRepository } from '../repositories/note-repository';
+import { Note } from '../../models/note';
+import { ConnectionService } from '../connection/connection-service';
+import { NoteRepository } from '../../repositories/note-repository';
 
 @Injectable({
   providedIn: 'root'

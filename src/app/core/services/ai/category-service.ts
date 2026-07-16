@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
-import { TodoRepository } from '../repositories/todo-repository';
-import { ConnectionService } from './connection-service';
-import { Todo } from '../models/todo';
+import { TodoRepository } from '../../repositories/todo-repository';
+import { ConnectionService } from '../connection/connection-service';
+import { Todo } from '../../models/todo';
 import { firstValueFrom } from 'rxjs';
 
 @Injectable({

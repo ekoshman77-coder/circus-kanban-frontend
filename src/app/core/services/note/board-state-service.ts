@@ -1,6 +1,6 @@
 import { inject, Injectable, signal, computed, effect } from '@angular/core';
-import { NoteSortOrder } from '../../core/models/note-sort-order';
-import { UserService } from './user/user-service';
+import { NoteSortOrder } from '../../models/note-sort-order';
+import { UserService } from '../user/user-service';
 import { NoteService } from './note-service'; // Pfad ggf. anpassen
 
 @Injectable({

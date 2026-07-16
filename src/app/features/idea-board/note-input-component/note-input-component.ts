@@ -1,12 +1,12 @@
 import { Component, EventEmitter, inject, Output, signal } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { UniversalTagInputComponent } from '../../../core/shared/components/universal-tag-input-component/universal-tag-input-component';
-import { NoteService } from '../../../core/services/note-service';
+import { NoteService } from '../../../core/services/note/note-service';
 import { NOTE_COLORS, NOTE_COLOR_PALETTE } from '../../../core/shared/constants/colors';
 import { debounceTime, distinctUntilChanged, firstValueFrom } from 'rxjs';
 import { TodoService } from '../../../core/services/todo/todo-service';
-import { AiSuggestionService } from '../../../core/services/ai-suggestion-service';
-import { WeatherService } from '../../../core/services/weather-service';
+import { AiSuggestionService } from '../../../core/services/ai/ai-suggestion-service';
+import { WeatherService } from '../../../core/services/weather/weather-service';
 
 /**
  * Komponente für die Eingabe neuer Notizen/Ideen.

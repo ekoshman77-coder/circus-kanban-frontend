@@ -1,15 +1,15 @@
 import { Inject, Injectable, effect, inject, signal } from '@angular/core';
-import { Todo } from '../models/todo';
-import { TodoRepository } from '../repositories/todo-repository';
-import { ConnectionService } from './connection-service';
-import { LocalStorageService } from './local-storage-service';
+import { Todo } from '../../models/todo';
+import { TodoRepository } from '../../repositories/todo-repository';
+import { ConnectionService } from '../connection/connection-service';
+import { LocalStorageService } from '../user/local-storage-service';
 import { Observable, of, throwError } from 'rxjs';
 import { map, catchError, tap, switchMap } from 'rxjs/operators'; // 💡 tap importiert!
-import { GamificationResult } from '../models/gamification';
-import { SyncResult } from '../repositories/dto/sync-result';
-import { UserService } from './user/user-service';
-import { LoggerService } from './logger-service';
-import { TodoUpdateResponse } from '../repositories/dto/dto-interface';
+import { GamificationResult } from '../../models/gamification';
+import { SyncResult } from '../../repositories/dto/sync-result';
+import { UserService } from '../user/user-service';
+import { LoggerService } from '../logger/logger-service';
+import { TodoUpdateResponse } from '../../repositories/dto/dto-interface';
 
 @Injectable({
   providedIn: 'root'

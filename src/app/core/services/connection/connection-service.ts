@@ -2,7 +2,7 @@ import { computed, Injectable, signal, NgZone, inject } from '@angular/core'; //
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, interval } from 'rxjs';
 import { map, catchError, tap, startWith, switchMap } from 'rxjs/operators';
-import { healthApiUrl } from '../repositories/links';
+import { healthApiUrl } from '../../repositories/links';
 
 export type ConnectionStatus = 'UNKNOWN' | 'ONLINE' | 'OFFLINE';
 

@@ -1,6 +1,6 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { ProjectStatsComponent } from './project-stats-component';
-import { ProjectService } from '../../../core/services/project-service';
+import { ProjectService } from '../../../core/services/project/project-service';
 import { signal } from '@angular/core';
 import { describe, beforeEach, it, expect, vi } from 'vitest';
 

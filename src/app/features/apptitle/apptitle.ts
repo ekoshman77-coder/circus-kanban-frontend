@@ -2,7 +2,7 @@
 import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { UserService } from '../../core/services/user/user-service'; // Pfad zu deinem UserService prüfen!
-import { ConnectionService } from '../../core/services/connection-service';
+import { ConnectionService } from '../../core/services/connection/connection-service';
 
 @Component({
   selector: 'app-apptitle',

@@ -8,7 +8,7 @@ import { trigger, transition, style, animate } from '@angular/animations';
 import confetti from 'canvas-confetti';
 import { FILTER_ANIMATION, TO_DO_ANIMATION } from './todo-list-animation';
 import { TodoViewModel } from '../../../core/viewmodel/todo-view-model';
-import { TodoQueryService } from '../../../core/services/todo-query-service'; // 💡 Unser Kreis-Sprenger!
+import { TodoQueryService } from '../../../core/services/todo/todo-query-service'; // 💡 Unser Kreis-Sprenger!
 import { VisualStatus } from '../../../core/models/todo';
 import { TodoFooterComponent } from '../todo-footer-component/todo-footer-component';
 

@@ -2,14 +2,14 @@ import { Component, signal, inject, effect, computed, OnInit } from '@angular/co
 import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { Apptitle } from './features/apptitle/apptitle';
 import { UserService } from './core/services/user/user-service'; // 👈 Pfad zu deinem UserService anpassen
-import { ConnectionService } from './core/services/connection-service';
+import { ConnectionService } from './core/services/connection/connection-service';
 import { filter } from 'rxjs';
-import { NavigationHistoryService } from './core/services/navigation-history-service';
+import { NavigationHistoryService } from './core/services/navigation/navigation-history-service';
 import { IdeaBoardComponent } from './features/idea-board/idea-board-component/idea-board-component';
 import { NotificationComponent } from './features/notification/notification-component/notification-component';
 import { FilterComponent } from './features/todo/filter-component/filter-component';
 import { SearchCenterComponent } from './features/global-search/search-center-component/search-center-component';
-import { FilterService } from './core/services/filter-service';
+import { FilterService } from './core/services/filter/filter-service';
 
 @Component({
   selector: 'app-root',

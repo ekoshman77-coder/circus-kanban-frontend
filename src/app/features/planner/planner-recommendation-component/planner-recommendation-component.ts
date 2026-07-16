@@ -1,7 +1,7 @@
 import { Component, inject, signal, output } from '@angular/core'; 
 import { CommonModule } from '@angular/common';
 import { UserService } from '../../../core/services/user/user-service';
-import { PlannerService } from '../../../core/services/planner-service';
+import { PlannerService } from '../../../core/services/ai/planner-service';
 
 @Component({
   selector: 'app-planner-recommendation',

@@ -1,10 +1,10 @@
 import { Component, inject, signal, computed, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TeamService } from '../../../../core/services/team-service';
+import { TeamService } from '../../../../core/services/team/team-service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ProjectMembersListComponent } from '../project-members-list/project-members-list';
 import { AvailablePoolListComponent } from '../available-pool-list/available-pool-list';
-import { ProjectService } from '../../../../core/services/project-service';
+import { ProjectService } from '../../../../core/services/project/project-service';
 import { MemberCardComponent } from '../../../../core/shared/components/member-card/member-card-component/member-card-component';
 import { ProjectRole } from '../../../../core/models/user-model';
 import { FormsModule } from '@angular/forms'; // 🎯 Wichtig fürs Dropdown-Binding!

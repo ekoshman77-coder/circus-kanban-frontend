@@ -1,10 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TeamBoardComponent } from './team-board-component';
 import { TodoService } from '../../../core/services/todo/todo-service';
-import { TeamService } from '../../../core/services/team-service';
-import { ProjectService } from '../../../core/services/project-service';
-import { FilterService } from '../../../core/services/filter-service';
-import { TodoQueryService } from '../../../core/services/todo-query-service';
+import { TeamService } from '../../../core/services/team/team-service';
+import { ProjectService } from '../../../core/services/project/project-service';
+import { FilterService } from '../../../core/services/filter/filter-service';
+import { TodoQueryService } from '../../../core/services/todo/todo-query-service';
 import { UserService } from '../../../core/services/user/user-service';
 import { signal } from '@angular/core';
 import { Todo } from '../../../core/models/todo';

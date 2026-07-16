@@ -1,16 +1,16 @@
 import { inject, Injectable } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { ConnectionService } from './connection-service';
-import { ProjectRepository } from '../repositories/project-repository';
-import { Project } from '../models/project';
-import { Milestone } from '../models/milestone';
-import { AiRepository, MilestoneSuggestion, MilestoneSuggestionsResponse } from '../repositories/ai-repository';
-import { MILESTONE_TEMPLATES } from '../shared/constants/milestone-template';
-import { UnifiedSuggestion } from '../models/unified-suggestion';
-import { MilestoneSuggestionsModel } from '../models/milestone-suggestions-model';
+import { ConnectionService } from '../connection/connection-service';
+import { ProjectRepository } from '../../repositories/project-repository';
+import { Project } from '../../models/project';
+import { Milestone } from '../../models/milestone';
+import { AiRepository, MilestoneSuggestion, MilestoneSuggestionsResponse } from '../../repositories/ai-repository';
+import { MILESTONE_TEMPLATES } from '../../shared/constants/milestone-template';
+import { UnifiedSuggestion } from '../../models/unified-suggestion';
+import { MilestoneSuggestionsModel } from '../../models/milestone-suggestions-model';
 import { Title } from '@angular/platform-browser';
-import { ProjectDashboardStatsDTO } from '../repositories/dto/project-dashboard-stats-dto';
+import { ProjectDashboardStatsDTO } from '../../repositories/dto/project-dashboard-stats-dto';
 
 
 @Injectable({

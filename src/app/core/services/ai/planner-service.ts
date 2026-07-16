@@ -1,7 +1,7 @@
 import { inject, Injectable, signal } from '@angular/core';
-import { UserService } from './user/user-service';
-import { AiRepository, RecommendedTodoResponse } from '../repositories/ai-repository'; 
-import { Todo } from '../models/todo'; // 👈 Wir importieren deine echte Klasse!
+import { UserService } from '../user/user-service';
+import { AiRepository } from '../../repositories/ai-repository'; 
+import { Todo } from '../../models/todo';
 
 // Wir bauen uns ein Interface für die Service-Antwort, die bereits die echte Domänen-Klasse enthält
 export interface RecommendedTodoServiceResponse {

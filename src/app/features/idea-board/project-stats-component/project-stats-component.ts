@@ -1,5 +1,5 @@
 import { Component, computed, inject, OnInit } from '@angular/core';
-import { ProjectService } from '../../../core/services/project-service';
+import { ProjectService } from '../../../core/services/project/project-service';
 
 /**
  * @component ProjectStatsComponent

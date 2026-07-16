@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
-import { ConnectionService } from './connection-service';
-import { AiRepository } from '../repositories/ai-repository';
+import { ConnectionService } from '../connection/connection-service';
+import { AiRepository } from '../../repositories/ai-repository';
 import { firstValueFrom, Observable } from 'rxjs';
 
 @Injectable({

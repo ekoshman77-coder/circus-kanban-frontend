@@ -1,6 +1,6 @@
 import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ProjectService } from '../../../core/services/project-service';
+import { ProjectService } from '../../../core/services/project/project-service';
 import { BoardTab, TabNavigationService } from '../tab-navigation-service';
 import { MilestoneSelectorComponent } from '../../../core/shared/components/milestone-selector-component/milestone-selector-component';
 import { TodoService } from '../../../core/services/todo/todo-service';
@@ -10,9 +10,9 @@ import { TodoFormComponent } from '../../../core/shared/components/todo-form/tod
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { TodoViewModel } from '../../../core/viewmodel/todo-view-model';
 import { TodoItemComponent } from '../../../core/shared/components/todo-item-component/todo-item-component';
-import { FilterService } from '../../../core/services/filter-service';
-import { TeamService } from '../../../core/services/team-service';
-import { TodoQueryService } from '../../../core/services/todo-query-service';
+import { FilterService } from '../../../core/services/filter/filter-service';
+import { TeamService } from '../../../core/services/team/team-service';
+import { TodoQueryService } from '../../../core/services/todo/todo-query-service';
 import { TodoPlanningModalComponent } from '../../../core/shared/components/todo-planning-modal-component/todo-planning-modal-component';
 
 /**

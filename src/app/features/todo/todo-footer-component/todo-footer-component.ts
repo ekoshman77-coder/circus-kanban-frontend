@@ -1,6 +1,6 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { TodoService } from '../../../core/services/todo/todo-service'; // Pfad anpassen
-import { ConnectionService } from '../../../core/services/connection-service';
+import { ConnectionService } from '../../../core/services/connection/connection-service';
 import { UniversalPopupComponent } from '../../../core/shared/components/universal-popup-component/universal-popup-component';
 import { Todo } from '../../../core/models/todo';
 

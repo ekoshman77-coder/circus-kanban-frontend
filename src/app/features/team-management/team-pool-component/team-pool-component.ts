@@ -1,10 +1,10 @@
 import { Component, inject, computed, signal, HostListener, OnInit, OnDestroy } from '@angular/core'; // 🎯 OnDestroy hinzugefügt
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
-import { TeamService } from '../../../core/services/team-service';
+import { TeamService } from '../../../core/services/team/team-service';
 import { UserModel } from '../../../core/models/user-model';
 import { Subject, Subscription, throttleTime } from 'rxjs'; // 🎯 Subscription importieren
-import { FilterService } from '../../../core/services/filter-service';
+import { FilterService } from '../../../core/services/filter/filter-service';
 
 @Component({
   selector: 'app-team-pool',

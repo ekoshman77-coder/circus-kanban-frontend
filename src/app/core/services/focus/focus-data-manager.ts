@@ -1,11 +1,11 @@
 import { Injectable, inject, effect } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
-import { ConnectionService } from './connection-service';
-import { GamificationRepository } from '../repositories/gamification-repsoitory';
-import { UserService } from './user/user-service';
-import { LoggerService } from './logger-service';
-import { GamificationResult } from '../models/gamification';
+import { ConnectionService } from '../connection/connection-service';
+import { GamificationRepository } from '../../repositories/gamification-repsoitory';
+import { UserService } from '../user/user-service';
+import { LoggerService } from '../logger/logger-service';
+import { GamificationResult } from '../../models/gamification';
 
 @Injectable({
   providedIn: 'root'

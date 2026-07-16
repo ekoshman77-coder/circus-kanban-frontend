@@ -1,5 +1,5 @@
 import { Component, effect, EventEmitter, inject, input, OnInit, Output, signal, OnDestroy } from '@angular/core';
-import { UniversalPredictorService } from '../../../services/universal-predictor-service';
+import { UniversalPredictorService } from '../../../services/ai/universal-predictor-service';
 import { UserService } from '../../../services/user/user-service';
 import { FormsModule } from '@angular/forms';
 import { Subject, Subscription } from 'rxjs';

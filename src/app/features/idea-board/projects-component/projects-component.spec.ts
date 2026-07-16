@@ -1,9 +1,9 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { ProjectsComponent } from './projects-component';
-import { ProjectService } from '../../../core/services/project-service';
+import { ProjectService } from '../../../core/services/project/project-service';
 import { TabNavigationService, BoardTab } from '../tab-navigation-service';
-import { FilterService } from '../../../core/services/filter-service';
-import { TeamService } from '../../../core/services/team-service';
+import { FilterService } from '../../../core/services/filter/filter-service';
+import { TeamService } from '../../../core/services/team/team-service';
 import { TodoService } from '../../../core/services/todo/todo-service';
 import { signal } from '@angular/core';
 import { Project } from '../../../core/models/project';

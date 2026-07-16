@@ -2,12 +2,12 @@ import { TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { firstValueFrom, of } from 'rxjs';
 import { TodoDataManagerService } from './todo-data-manager-service';
-import { TodoRepository } from '../repositories/todo-repository';
-import { ConnectionService } from './connection-service';
-import { LocalStorageService } from './local-storage-service';
-import { UserService } from './user/user-service';
+import { TodoRepository } from '../../repositories/todo-repository';
+import { ConnectionService } from '../connection/connection-service';
+import { LocalStorageService } from '../user/local-storage-service';
+import { UserService } from '../user/user-service';
 import { signal } from '@angular/core'; // 🌟 WICHTIG FÜR UNSERE NEUEN TESTS
-import { Todo } from '../models/todo';
+import { Todo } from '../../models/todo';
 
 if (typeof window !== 'undefined' && !window.localStorage) {
   (window as any).localStorage = {

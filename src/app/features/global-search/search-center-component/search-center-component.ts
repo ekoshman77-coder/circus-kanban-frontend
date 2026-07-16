@@ -1,5 +1,5 @@
 import { Component, computed, inject, OnInit, OnDestroy } from '@angular/core';
-import { FilterService, SearchCategory } from '../../../core/services/filter-service';
+import { FilterService, SearchCategory } from '../../../core/services/filter/filter-service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, Subscription } from 'rxjs';
