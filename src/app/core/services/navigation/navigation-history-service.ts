@@ -2,47 +2,55 @@ import { Injectable, inject } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 
+/**
+ * Service zur intelligenten Verwaltung des internen Navigationsverlaufs.
+ * * **Architektur-Vorteil:** Verhindert, dass Benutzer beim Verwenden von "Zurück"-Buttons
+ * die App unbeabsichtigt verlassen (z. B. nach einem direkten Einstieg über einen geteilten Link).
+ * * Bietet einen sicheren Fallback-Mechanismus, falls der Verlauf durch einen Browser-Refresh (F5) geleert wurde.
+ */
 @Injectable({
   providedIn: 'root'
 })
 export class NavigationHistoryService {
   private router = inject(Router);
   
-  // Hier drin speichern wir die echten URLs, die der User innerhalb der App besucht
+  /** Interner Stack zur Speicherung der tatsächlich besuchten URLs innerhalb der App. */
   private history: string[] = [];
 
   constructor() {
-    console.log('🚀 NavigationHistoryService wurde initialisiert!');
-    // 🧠 Wir lauschen reaktiv auf jeden erfolgreichen Routenwechsel (NavigationEnd)
+    // Lauscht reaktiv auf jeden erfolgreich abgeschlossenen Routenwechsel
     this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe((event: any) => {
-        // Wir fügen die neue URL zu unserem internen Verlauf hinzu
         this.history.push(event.urlAfterRedirects);
-        console.log('📚 Aktueller History-Stack:', [...this.history]);
       });
   }
 
   /**
-   * Navigiert im App-Verlauf einen Schritt zurück.
-   * Falls der Verlauf leer ist (z.B. nach einem F5-Browser-Refresh),
-   * springt die App sicher auf die angegebene Fallback-Route.
+   * Navigiert im internen App-Verlauf genau einen Schritt zurück.
+   * * Falls kein Verlauf existiert (z. B. direkter Einstieg oder F5),
+   * navigiert die App sicher auf die angegebene Fallback-Route.
+   * * @param fallbackRoute Die Ausweich-Route, falls der Stack leer ist (Standard: `/`).
    */
   public back(fallbackRoute: string = '/'): void {
-    console.log('↩️ .back() wurde aufgerufen!');
-    console.log('📉 History VOR dem Entfernen der aktuellen Seite:', [...this.history]);
-    // Die aktuelle Seite (auf der wir gerade stehen) aus dem Stack entfernen
-    const current = this.history.pop(); 
-    console.log(`🗑️ Aktuelle Seite aus dem Stack geworfen: ${current}`);
+    // Die aktuelle Seite, auf der wir uns gerade befinden, vom Stack entfernen
+    this.history.pop(); 
+
     if (this.history.length > 0) {
-      // Wenn wir noch eine Seite im Verlauf haben, navigieren wir genau dorthin
+      // Wenn noch URLs im Stack liegen, ist das unser Ziel
       const previousUrl = this.history[this.history.length - 1];
-      console.log(`🎯 Navigiere zurück zur vorherigen URL: ${previousUrl}`);
       this.router.navigateByUrl(previousUrl);
     } else {
-      console.log(`⚠️ Keine App-History vorhanden! Nutze sicheren Fallback: ${fallbackRoute}`);
-      // Sicheres Netz, falls die Historie leer war
+      // Fallback, falls der Stack leer ist
       this.router.navigate([fallbackRoute]);
     }
+  }
+
+  /**
+   * Hilfsmethode für Unit-Tests, um den aktuellen Stack-Inhalt zu prüfen.
+   * @internal
+   */
+  public getHistoryStack(): string[] {
+    return [...this.history];
   }
 }

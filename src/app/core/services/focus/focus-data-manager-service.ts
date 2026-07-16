@@ -7,6 +7,14 @@ import { UserService } from '../user/user-service';
 import { LoggerService } from '../logger/logger-service';
 import { GamificationResult } from '../../models/gamification';
 
+/**
+ * Service für das Offline-sichere Tracken und Synchronisieren von Fokus-Zeiten (Pomodoro).
+ * * **Architektur-Highlight (Offline-First):** 
+ * - Bei aktiver Verbindung werden Pomodoros direkt ans Backend gefunkt.
+ * - Ist der Nutzer offline (z. B. im Zug), werden Sitzungen in einer LocalStorage-Warteschlange gepuffert.
+ * - Ein reaktiver Angular-Wächter (`effect`) überwacht den Online-Status und stößt vollautomatisch 
+ *   einen Bulk-Sync an, sobald die Verbindung wiederhergestellt ist.
+ */
 @Injectable({
   providedIn: 'root'
 })
@@ -16,10 +24,13 @@ export class FocusDataManagerService {
   private userService = inject(UserService);
   private loggerService = inject(LoggerService);
 
+  /** Schlüssel für die Offline-Warteschlange im LocalStorage */
   private readonly OFFLINE_POMODORO_KEY = 'offline_pomodoro_queue';
 
   constructor() {
     // 🛰️ Der automatische Sync-Wächter:
+    // Lauscht reaktiv auf Statusänderungen des ConnectionService.
+    // Sobald wir ONLINE gehen, triggern wir die Nachsynchronisation.
     effect(() => {
       if (this.connectionService.status() === 'ONLINE') {
         this.syncOfflinePomodoros();
@@ -28,24 +39,27 @@ export class FocusDataManagerService {
   }
 
   /**
-   * Registriert ein beendetes Pomodoro-Intervall (Offline-sicher!)
+   * Registriert ein erfolgreich beendetes Pomodoro-Intervall.
+   * Speichert die Session bei Offline-Zustand lokal ab, um Datenverlust zu verhindern.
+   * * @param todoId Die ID der verknüpften Aufgabe.
+   * @returns Ein Observable mit dem Gamification-Ergebnis (XP, Level-Ups) oder `null`.
    */
   public recordCompletedPomodoro(todoId: string): Observable<GamificationResult | null> {
     const userId = this.userService.getCurrentUserId();
     if (!userId) return of(null);
 
-    // 🚂 Szenario A: Im Zug (Offline)
+    // 🚂 Szenario A: Offline-Modus
     if (this.connectionService.status() === 'OFFLINE') {
       this.pushToOfflineQueue({ todoId, timestamp: Date.now() });
       this.loggerService.info('FocusDataManager', 'Pomodoro offline im Speicher gesichert.');
       return of(null); 
     }
 
-    // 🌐 Szenario B: Online (Direkt ans Backend funken)
+    // 🌐 Szenario B: Online-Modus (Direkt ans Backend senden)
     return this.gamificationRepository.sendPomodoroSession(userId, { todoId, count: 1 }).pipe(
       tap(gamificationResult => {
         if (gamificationResult) {
-          // Reaktiv den Header updaten mit den neuen XP und dem neuen KI-Titel!
+          // Gamification-Daten im Header (XP, Level, Titel) reaktiv aktualisieren
           this.userService.updateGamification(gamificationResult);
           this.loggerService.info('FocusDataManager', 'Pomodoro online verbucht. XP erhalten!');
         }
@@ -59,7 +73,8 @@ export class FocusDataManagerService {
   }
 
   /**
-   * Sendet die gepufferten Offline-Pomodoros gesammelt zum Server
+   * Sendet sämtliche lokal gepufferten Offline-Pomodoros als Sammelübertragung (Bulk)
+   * an den Server und leert bei Erfolg die Warteschlange[cite: 7].
    */
   private syncOfflinePomodoros(): void {
     const userId = this.userService.getCurrentUserId();
@@ -83,17 +98,21 @@ export class FocusDataManagerService {
   }
 
   // --- Lokale Hilfsfunktionen für den LocalStorage ---
+
+  /** Holt die aktuelle Offline-Warteschlange aus dem Speicher[cite: 7]. */
   private getOfflineQueue(): any[] {
     const data = localStorage.getItem(this.OFFLINE_POMODORO_KEY);
     return data ? JSON.parse(data) : [];
   }
 
+  /** Fügt einen neuen Eintrag an das Ende der Offline-Warteschlange an[cite: 7]. */
   private pushToOfflineQueue(item: any): void {
     const queue = this.getOfflineQueue();
     queue.push(item);
     localStorage.setItem(this.OFFLINE_POMODORO_KEY, JSON.stringify(queue));
   }
 
+  /** Löscht die Offline-Warteschlange vollständig[cite: 7]. */
   private clearOfflineQueue(): void {
     localStorage.removeItem(this.OFFLINE_POMODORO_KEY);
   }

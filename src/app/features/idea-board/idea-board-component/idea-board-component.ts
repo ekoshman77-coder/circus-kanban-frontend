@@ -6,7 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { NoteComponent } from '../note-component/note-component';
 import { NoteService } from '../../../core/services/note/note-service';
 import { NoteViewModel } from '../../../core/viewmodel/note-view-model';
-import { IdeaSortingService } from '../../../core/services/note/board-state-service';
+import { IdeaSortingService } from '../../../core/services/note/idea-sorting-service';
 import { NoteSortOrder } from '../../../core/models/note-sort-order';
 import { BoardFilterComponent, FilterState } from '../board-filter-component/board-filter-component';
 import { NotesStatisticsComponent } from '../notes-statistics-component/notes-statistics-component';

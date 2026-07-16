@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TodoService } from '../../../core/services/todo/todo-service'; // Pfad prüfen!
 import { Todo } from '../../../core/models/todo';
-import { FocusDataManagerService } from '../../../core/services/focus/focus-data-manager';
+import { FocusDataManagerService } from '../../../core/services/focus/focus-data-manager-service';
 
 @Component({
   selector: 'app-focus-timer',
