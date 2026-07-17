@@ -28,6 +28,12 @@ export class IdeaPageComponent {
 
   // Wenn der Benutzer manuell auf die Nav-Buttons klickt, steuern wir den Service an
   public setTab(tabName: BoardTab): void {
-    this.tabService.changeTab(tabName, null);
+    if (tabName === BoardTab.Calculator) {
+      // 🌟 Wenn der User auf den Kalkulator-Reiter klickt, senden wir ein klares Signal!
+      this.tabService.changeTab(tabName, { type: 'tab-click', id: '' });
+    } else {
+      // Alle anderen Tabs verhalten sich neutral wie vorher
+      this.tabService.changeTab(tabName, null);
+    }
   }
 }

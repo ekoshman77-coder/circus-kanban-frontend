@@ -11,7 +11,7 @@ export enum BoardTab {
 }
 
 export interface NavigationState {
-  type: 'idea' | 'project' | 'milestone' | 'team';
+  type: 'idea' | 'project' | 'milestone' | 'team' | 'tab-click'; 
   id: string;
 }
 

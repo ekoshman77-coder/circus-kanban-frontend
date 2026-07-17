@@ -83,7 +83,7 @@ export class IdeaBoardComponent {
 
       // Speicher für die ViewModels befüllen
       this.viewModels.set(this.viewModelCache);
-    }, { allowSignalWrites: true }); // 👈 Das ist das magische Schutzschild!
+    }); // 👈 Das ist das magische Schutzschild!
   }
 
   public createNewNote(): void {
