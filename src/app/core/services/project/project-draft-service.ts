@@ -64,16 +64,15 @@ export class ProjectDraftService {
     public initDraftFromIdea(idea: Note): void {
         this.clearDraft();
 
-        const newProj = new Project({
+    const newProj = new Project({
             title: idea.title,
-            description: idea.content || '',
-            status: 'Calculation',
-            milestones: [],
+            area: idea.tag?? "", 
+            ideaId: idea.id?? "",
             userId: this.userService.getCurrentUserId() ?? "",
-            // @ts-ignore
-            ideaId: idea.id
+            content: idea.content || '', // 🎯 Hier! 'content' statt 'description'
+            status: 'Calculation',
+            milestones: []
         });
-
         this.currentDraft.set(newProj);
         console.log(`💡 [DraftService] Sauberes Draft aus Idee "${idea.title}" erzeugt.`);
     }

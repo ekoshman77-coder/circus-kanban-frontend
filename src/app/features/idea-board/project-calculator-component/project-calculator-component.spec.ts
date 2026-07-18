@@ -1,4 +1,4 @@
-import { TestBed, ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
+import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { ProjectCalculatorComponent } from './project-calculator-component';
 import { ProjectService } from '../../../core/services/project/project-service';
 import { NoteService } from '../../../core/services/note/note-service';
@@ -20,7 +20,6 @@ describe('ProjectCalculatorComponent (Vitest Edition)', () => {
     let component: ProjectCalculatorComponent;
     let fixture: ComponentFixture<ProjectCalculatorComponent>;
 
-    // 1. Konstante Testdaten vorbereiten
     const sampleProject = new Project({
         id: 'proj-123',
         title: 'App-Redesign',
@@ -45,14 +44,14 @@ describe('ProjectCalculatorComponent (Vitest Edition)', () => {
         weatherCode: null
     });
 
-    // 2. Feste Mock-Objekte deklarieren (Referenzen bleiben für das TestBed IMMER gleich!)
     const mockNotificationService = {
         showNotification: vi.fn()
     };
 
-    const mockProjectService = {
+ const mockProjectService = {
         projectsList: signal<Project[]>([]),
         dashboardStats: signal<any>(null),
+        loadProjects: vi.fn(), // 🟢 HIER! Das hat dem Compiler im Test gefehlt!
         addProjectFromCalculation: vi.fn(),
         updateProjectFromCalculation: vi.fn(),
         saveCalculatedProject: vi.fn(),
@@ -62,7 +61,8 @@ describe('ProjectCalculatorComponent (Vitest Edition)', () => {
         suggestions: signal<any>({
             recommended: [],
             degraded: []
-        })
+        }),
+        acceptSuggestion: vi.fn()
     };
 
     const sampleDraftSignal = signal<Project | null>(null);
@@ -99,15 +99,12 @@ describe('ProjectCalculatorComponent (Vitest Edition)', () => {
     };
 
     beforeEach(async () => {
-        // Vor jedem Test alle Spione/Aufrufe zurücksetzen
         vi.clearAllMocks();
 
-        // Daten in die bestehenden Signals füllen (OHNE die Referenzen der Mocks neu zuzuweisen!)
         mockProjectService.projectsList.set([sampleProject]);
         mockNoteService.notesList.set([sampleNote]);
         sampleDraftSignal.set(sampleProject);
 
-        // Standard-Rückgabewerte für asynchrone API-Methoden definieren
         mockProjectService.saveCalculatedProject.mockReturnValue(of(sampleProject));
         mockProjectService.addProjectFromCalculation.mockReturnValue(of(sampleProject));
         mockProjectService.updateProjectFromCalculation.mockReturnValue(of(sampleProject));
@@ -129,32 +126,20 @@ describe('ProjectCalculatorComponent (Vitest Edition)', () => {
         fixture = TestBed.createComponent(ProjectCalculatorComponent);
         component = fixture.componentInstance;
 
-        // Lifecycle-Hooks ausführen (OnInit etc.)
         fixture.detectChanges();
     });
 
-    // ==========================================================================
-    // 📐 BERECHNUNGS-LOGIK (computed-Signals)
-    // ==========================================================================
     describe('Berechnungs-Logik (computed-Signals)', () => {
         it('sollte die Gesamtdauer (finalDays) über alle Meilensteine akkurat aufsummieren', () => {
-            // Das berechnete Signal auswerten (3 + 7 = 10 Tage)
             expect(component.finalDays()).toBe(10);
         });
     });
 
-    // ==========================================================================
-    // ⚡ EVENT HANDLER & INTERAKTIONEN
-    // ==========================================================================
-    // ==========================================================================
-    // ⚡ EVENT HANDLER & INTERAKTIONEN
-    // ==========================================================================
     describe('Event Handler & Interaktionen', () => {
         it('sollte die Bearbeitung einer Phase initialisieren', () => {
             const milestone = sampleProject.milestones[0];
-
-            // Falls startEditMilestone geschützt (protected) ist, nutzen wir compAny
             const compAny = component as any;
+            
             compAny.startEditMilestone(milestone);
 
             expect(compAny.editingMilestoneId).toBe(milestone.id);
@@ -167,22 +152,16 @@ describe('ProjectCalculatorComponent (Vitest Edition)', () => {
             const compAny = component as any;
 
             compAny.startEditMilestone(milestone);
-
-            // 🛠️ Hier rufen wir deine echte public-Methode auf!
             component.cancelEditMilestone();
 
             expect(compAny.editingMilestoneId).toBeNull();
         });
     });
 
-    // ==========================================================================
-    // 💾 SPEICHERUNG & API INTERAKTION (HttpErrorResponse Handling)
-    // ==========================================================================
     describe('Speicherung auf Server (Success & Error Handling)', () => {
-
         it('sollte beim Speichern eines brandneuen Drafts den Add-Workflow triggern', () => {
-            // @ts-ignore
-            component.isBrandNewDraft.set(true);
+            const compAny = component as any;
+            compAny.isBrandNewDraft.set(true);
 
             component.handleAutoSaveConfirm();
 
@@ -194,8 +173,8 @@ describe('ProjectCalculatorComponent (Vitest Edition)', () => {
         });
 
         it('sollte Fehlerbehandlung des Servers (HttpErrorResponse) abfangen und dem User präsentieren', () => {
-            // @ts-ignore
-            component.isBrandNewDraft.set(true);
+            const compAny = component as any;
+            compAny.isBrandNewDraft.set(true);
 
             const errorResponse = new HttpErrorResponse({
                 error: { message: 'Der Projektname ist leider unzulässig!' },

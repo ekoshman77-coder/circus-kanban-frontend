@@ -6,48 +6,60 @@ import { NoteViewModel } from '../../../core/viewmodel/note-view-model';
 import { WeatherIconPipe } from '../../../core/shared/pipes/weather-icon-pipe';
 import { UserService } from '../../../core/services/user/user-service';
 
+/**
+ * Komponente zur Darstellung einer einzelnen Notizkarte (Post-It) auf der Pinnwand.
+ * Verwaltet das reaktive Inline-Editing, schreibgeschützte Ansichten für Fremdnutzer
+ * und stellt erweiterte UI-Zustände wie das Detail-Popup über ein dediziertes ViewModel dar.
+ */
 @Component({
   selector: 'app-note-component',
+  standalone: true,
   imports: [CommonModule, FormsModule, WeatherIconPipe],
   templateUrl: './note-component.html',
   styleUrl: './note-component.css',
 })
 export class NoteComponent {
-  // Das schlaue, langlebige ViewModel kommt von der Pinnwand rein
+  /** 
+   * Das langlebige UI-ViewModel für diese Notiz.
+   * Steuert visuelle Zustände wie Edit-Modus, Popup-Anzeige und die zufällige Magnetfarbe.
+   */
   @Input({ required: true }) vm!: NoteViewModel;
 
-  // 📢 Event nach oben für die PostgreSQL-Datenbank
+  /** 
+   * Event-Emitter, der nach erfolgreicher Bearbeitung das aktualisierte Note-Modell 
+   * nach oben funkt, um die Änderungen persistent in der PostgreSQL-Datenbank zu speichern.
+   */
   @Output() updated = new EventEmitter<Note>();
 
-  private userService = inject(UserService)
+  /** Service zur Ermittlung von Benutzerdaten und Rechten */
+  private userService = inject(UserService);
 
-  public currentUserId = computed(() => this.userService.getCurrentUserId())
+  /** 
+   * Ein abgeleitetes (computed) Signal, das stets die aktuell eingeloggte User-ID bereithält.
+   * Wird für den Live-Abgleich der Editier-Rechte im Template genutzt.
+   */
+  public currentUserId = computed(() => this.userService.getCurrentUserId());
+
+  /**
+   * Beendet den Edit-Modus im ViewModel und triggert das Datenbank-Update 
+   * für die übergeordnete Pinnwand.
+   */
   public saveEdit(): void {
-    // 1. Dem ViewModel sagen, dass der Edit-Modus vorbei ist
     this.vm.closeEdit();
-    // 2. Das veränderte Note-Objekt an das Board funken für das Backend
     this.updated.emit(this.vm.note);
   }
 
+  /**
+   * Abfangjäger für Tastatureingaben innerhalb des Edit-Modus.
+   * Drückt der User einfaches 'Enter', wird die Notiz sofort gespeichert.
+   * Die Kombination 'Shift + Enter' wird durchgelassen, um normale Zeilenumbrüche im Textfeld zu erlauben.
+   * 
+   * @param event Das native Tastatur-Event aus dem DOM.
+   */
   public onKeyDown(event: KeyboardEvent): void {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       this.saveEdit();
     }
-  }
-
-  // 🌤️ Unsere neue Wetter-Übersetzung für die WMO-Codes von Open-Meteo
-  public getWeatherIcon(code: number | undefined): string {
-    if (code === undefined) return '☁️';
-    
-    if (code === 0) return '☀️'; // Klarer Himmel
-    if (code >= 1 && code <= 3) return '🌤️'; // Leicht bewölkt
-    if (code >= 45 && code <= 48) return '🌫️'; // Nebel
-    if (code >= 51 && code <= 67) return '🌧️'; // Regen
-    if (code >= 71 && code <= 77) return '❄️'; // Schnee
-    if (code >= 80 && code <= 82) return '🌦️'; // Regenschauer
-    if (code >= 95 && code <= 99) return '⛈️'; // Gewitter
-    
-    return '☁️';
   }
 }

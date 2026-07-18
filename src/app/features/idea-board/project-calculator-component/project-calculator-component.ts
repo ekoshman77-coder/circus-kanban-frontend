@@ -18,6 +18,12 @@ import { NotificationService } from '../../../core/services/notification/notific
 import { HttpErrorResponse } from '@angular/common/http';
 import { TeamService } from '../../../core/services/team/team-service';
 
+/**
+ * @component ProjectCalculatorComponent
+ * @description Kern-Komponente des Project-Calculators. Sie dient als Laborumgebung, 
+ * um Meilensteine für neue Projekt-Entwürfe (Drafts) zu kalkulieren oder bestehende 
+ * Projekte aus der Datenbank reaktiv zu bearbeiten.
+ */
 @Component({
   selector: 'app-project-calculator-component',
   standalone: true,
@@ -33,7 +39,9 @@ import { TeamService } from '../../../core/services/team/team-service';
   styleUrl: './project-calculator-component.css'
 })
 export class ProjectCalculatorComponent implements OnInit {
-  // Services
+  // -------------------------------------------------------------------------
+  // 🛠️ INJIZIERTE SERVICES
+  // -------------------------------------------------------------------------
   protected projectService = inject(ProjectService);
   protected noteService = inject(NoteService);
   protected navigationService = inject(TabNavigationService);
@@ -43,44 +51,76 @@ export class ProjectCalculatorComponent implements OnInit {
   private notificationService = inject(NotificationService);
   private teamService = inject(TeamService);
 
-  // States
+  // -------------------------------------------------------------------------
+  // 🚦 REAKTIVE ZUSTÄNDE (SIGNALS)
+  // -------------------------------------------------------------------------
+  
+  /** Die zugrundeliegende Idee (Notiz), aus welcher der Entwurf gestartet wurde */
   public currentIdea = signal<Note | null>(null);
+  
+  /** Flag, ob wir ein brandneues Projekt kalkulieren (true) oder ein existierendes bearbeiten (false) */
   protected isBrandNewDraft = signal<boolean>(true);
+  
+  /** Zustand der KI-Vorschläge-Sidebar (offen/geschlossen) */
   protected isSidebarOpen = signal<boolean>(false);
 
-  // Banner
+  /** Steuert die Anzeige des Wiederherstellungs-Banners für ungespeicherte Entwürfe */
   protected showRestoreBanner = signal<boolean>(false);
+  
+  /** Der aus dem LocalStorage ausgelesene Titel des ungespeicherten Entwurfs */
   protected draftTitleFromStorage = signal<string>('');
 
-  // Form
+  /** Formular-Zustand für den Titel eines manuell hinzuzufügenden Meilensteins */
   protected newMilestoneTitle = signal<string>('');
+  
+  /** Formular-Zustand für die Dauer eines manuell hinzuzufügenden Meilensteins */
   protected newMilestoneDuration = signal<number>(1);
 
-  // Labormodus für existierende Datenbank-Projekte
+  /** Zwischenspeicher (Labor-RAM) für die Bearbeitung eines bereits existierenden DB-Projekts */
   protected localEditProject = signal<Project | null>(null);
 
-  // AI-Templates
+  /** Der Fachbereich (Tag) des Projekts zur gezielten Abfrage passender KI-Templates */
   protected suggestedArea = signal<string>('Allgemein');
+  
+  /** Steuert die Lade-Animation während KI-Vorschläge abgerufen werden */
   protected isMagicLoading = signal<boolean>(false);
 
-  // Popups
+  /** Steuert die Anzeige des Erfolgs-Popups nach Abschluss der Kalkulation */
   protected showSuccessPopup = signal<boolean>(false);
+  
+  /** Hält den finalen Projekttitel für die Anzeige im Erfolgs-Popup bereit */
   protected finalProjectTitle = signal<string>('');
 
-  // Inline Edit
+  /** Die ID des Meilensteins, der sich aktuell im Inline-Edit-Modus befindet (null falls keiner) */
   protected editingMilestoneId: string | null = null;
+  
+  /** Temporärer Titel während des Inline-Edits */
   protected editTitle: string = '';
+  
+  /** Temporäre Dauer während des Inline-Edits */
   protected editTime: number = 1;
+  
+  /** Array von 1 bis 30 für die Dropdown-Auswahl der Meilenstein-Tage */
   public availableDays: number[] = Array.from({ length: 30 }, (_, i) => i + 1);
 
+  /** Merkt sich den Ursprungs-Tab, um den User beim Abbrechen wieder dorthin zurückzuschicken */
   protected originTab = signal<BoardTab | null>(null);
 
-  // 🌟 DIE EINZIGE LESE-BRILLE FÜR DAS HTML
+  // -------------------------------------------------------------------------
+  // 🧮 COMPUTED SIGNALS (REAKTIVE ABLEITUNGEN)
+  // -------------------------------------------------------------------------
+
+  /** 
+   * 🌟 DIE EINZIGE LESE-BRILLE FÜR DAS HTML
+   * Schaltet je nach Modus automatisch zwischen dem globalen Draft-Signal und dem lokalen Labor-Projekt um.
+   */
   public activeProject = computed<Project | null>(() => {
     return this.isBrandNewDraft() ? this.projectDraftService.currentDraft() : this.localEditProject();
   });
 
-  // Calculation anhand der Lese-Brille
+  /** 
+   * Berechnet vollautomatisch die summierten Gesamttage aller Meilensteine des aktiven Projekts.
+   */
   public finalDays = computed(() => {
     const proj = this.activeProject();
     if (!proj || !proj.milestones) return 0;
@@ -88,23 +128,27 @@ export class ProjectCalculatorComponent implements OnInit {
   });
 
   /**
-   * 🎯 DIE REAKTIVE WEICHE FÜR ÄNDERUNGEN
-   * Gibt uns direkt das beschreibbare Signal zurück, das gerade aktiv ist!
+   * 🎯 DIE REAKTIVE WEICHE FÜR SCHREIBZUGRIFFE
+   * Gibt das aktuell beschreibbare Signal zurück, auf dem Änderungen angewendet werden müssen.
    */
   private getActiveSignal() {
     return this.isBrandNewDraft() ? this.projectDraftService.currentDraft : this.localEditProject;
   }
 
+  // -------------------------------------------------------------------------
+  // 🏗️ CONSTRUCTOR & LIFECYCLE HOOKS
+  // -------------------------------------------------------------------------
+  
   constructor() {
-    console.log('🏗️ [Kalkulator] Constructor geladen.');
-
+    /**
+     * Reagiert autark auf Änderungen des Navigation-States und steuert den internen State
+     * der Komponente (ob eine Idee, ein Projekt geladen oder der nackte Tab geklickt wurde).
+     */
     effect(() => {
       const navState = this.navigationService.currentNavigationState();
       const userId = this.userService.getCurrentUserId();
 
       if (!userId || navState === null) return;
-
-      console.log('🎯 [Effect] Eine definierte Aktion wurde im System erkannt:', navState);
 
       if (navState.type === 'tab-click') {
         this.originTab.set(BoardTab.Calculator);
@@ -120,13 +164,15 @@ export class ProjectCalculatorComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    console.log('⛺ [ngOnInit] Kalkulator betreten. Projekte werden geladen...');
     this.projectService.loadProjects();
   }
 
+  /**
+   * Verarbeitet die Navigations-Daten und entscheidet, ob Daten geladen, überschrieben 
+   * oder ein Wiederherstellungsbanner eingeblendet werden muss.
+   */
   private handleNavigationStateChange(navState: NavigationState, userId: string): void {
     if (navState.type === 'tab-click') {
-      console.log('⛺ [Way 3] Pure tab click detected safely via state. Checking storage...');
       const hasDraft = this.projectDraftService.hasExistingDraftInStorage(userId);
       const isSignalEmpty = !this.projectDraftService.currentDraft();
 
@@ -149,17 +195,14 @@ export class ProjectCalculatorComponent implements OnInit {
         const cachedTitle = this.projectDraftService.getDraftTitleFromStorage(userId);
 
         if (cachedTitle && cachedTitle.trim().toLowerCase() === foundIdea.title.trim().toLowerCase()) {
-          console.log('♻️ [Way 1] Titles match! Restoring existing draft from storage...');
           this.projectDraftService.loadDraftFromStorageIntoSignal();
         } else {
-          console.log('🧹 [Way 1] Old mismatching draft found. Overwriting with new idea draft!');
           this.projectDraftService.initDraftFromIdea(foundIdea);
         }
         this.suggestedArea.set(foundIdea.tag || 'Allgemein');
       }
     }
     else if (navState.type === 'project') {
-      console.log('🧪 [Way 2] Active project loaded.');
       this.isBrandNewDraft.set(false);
       this.currentIdea.set(null);
       this.showRestoreBanner.set(false);
@@ -174,14 +217,17 @@ export class ProjectCalculatorComponent implements OnInit {
       }
     }
 
-    console.log('🧹 NavigationState wird bereinigt...');
     this.navigationService.currentNavigationState.set(null);
   }
 
-  // ==========================================================================
-  // AB HIER: DIE ABSTREAKTEN, WEICHENLOSEN MUTATIONS-METHODEN 🔥
-  // ==========================================================================
+  // -------------------------------------------------------------------------
+  // 🔥 WEICHENLOSE MUTATIONS-METHODEN (BUSINESS-LOGIK)
+  // -------------------------------------------------------------------------
 
+  /**
+   * Fügt dem aktiven Projekt einen neuen Meilenstein hinzu, fängt Duplikate ab 
+   * und triggert den Akzeptanz-Lerneffekt für das KI-Modell.
+   */
   public onMilestoneAdded(milestoneTitle: string, customDuration?: number): void {
     const targetSignal = this.getActiveSignal();
     const currentProject = targetSignal();
@@ -210,7 +256,6 @@ export class ProjectCalculatorComponent implements OnInit {
       isNew: true
     });
 
-    // Direkt in das aktive Signal schreiben!
     targetSignal.set(new Project({
       ...currentProject,
       milestones: [...currentMilestones, newMilestone]
@@ -219,6 +264,9 @@ export class ProjectCalculatorComponent implements OnInit {
     this.projectService.acceptSuggestion(currentProject.title, trimmedTitle);
   }
 
+  /**
+   * Liest das manuelle Meilenstein-Formular aus und leitet die Daten an die Kern-Add-Methode weiter.
+   */
   public addNewMilestoneFromForm(): void {
     const titel = this.newMilestoneTitle().trim();
     const tage = this.newMilestoneDuration();
@@ -229,6 +277,10 @@ export class ProjectCalculatorComponent implements OnInit {
     this.newMilestoneDuration.set(1);
   }
 
+  /**
+   * Entfernt einen Meilenstein anhand seines Index aus dem aktiven Projekt 
+   * und meldet den "Abwertungs-Lerneffekt" (Degradation) an das KI-Backend.
+   */
   public onMilestoneRemoved(index: number): void {
     const targetSignal = this.getActiveSignal();
     const currentProject = targetSignal();
@@ -248,6 +300,10 @@ export class ProjectCalculatorComponent implements OnInit {
     this.projectService.degradeSuggestion(currentProject.title, milestoneToDegrade.title);
   }
 
+  /**
+   * Verarbeitet das Drag&Drop Event von Angular CDK, ordnet die Meilensteine im Array 
+   * neu an und berechnet alle 'orderIndex'-Eigenschaften frisch.
+   */
   public onMilestoneDropped(event: CdkDragDrop<Milestone[]>): void {
     const targetSignal = this.getActiveSignal();
     const currentProject = targetSignal();
@@ -264,6 +320,9 @@ export class ProjectCalculatorComponent implements OnInit {
     }));
   }
 
+  /**
+   * Ändert die geplante Dauer eines spezifischen Meilensteins im aktiven Signal.
+   */
   public onMilestoneDurationChanged(index: number, newDuration: number): void {
     const targetSignal = this.getActiveSignal();
     const currentProject = targetSignal();
@@ -282,6 +341,9 @@ export class ProjectCalculatorComponent implements OnInit {
     }));
   }
 
+  /**
+   * Ändert den Titel eines spezifischen Meilensteins im aktiven Signal.
+   */
   public onMilestoneTitleChanged(index: number, newTitle: string): void {
     const targetSignal = this.getActiveSignal();
     const currentProject = targetSignal();
@@ -301,6 +363,10 @@ export class ProjectCalculatorComponent implements OnInit {
     }));
   }
 
+  /**
+   * Speichert den veränderten Titel und die geänderte Dauer eines Meilensteins 
+   * nach dem Inline-Editing gleichzeitig ab und schließt den Bearbeitungsmodus.
+   */
   public saveInlineEdit(index: number): void {
     const targetSignal = this.getActiveSignal();
     const currentProject = targetSignal();
@@ -321,7 +387,6 @@ export class ProjectCalculatorComponent implements OnInit {
       i === index ? new Milestone({ ...ms, title: trimmedTitle, duration: validatedMilestoneDuration }) : ms
     );
 
-    // Aktualisiert Titel UND Dauer gleichzeitig in einem Rutsch im aktiven Signal!
     targetSignal.set(new Project({
       ...currentProject,
       milestones: updatedMilestones
@@ -329,32 +394,34 @@ export class ProjectCalculatorComponent implements OnInit {
 
     this.editingMilestoneId = null;
     this.editTitle = '';
-    console.log(`📝 [InlineEdit] Meilenstein an Index ${index} erfolgreich aktualisiert.`);
   }
 
-  // Fallbacks
-  public removeMilestone(index: number): void { this.onMilestoneRemoved(index); }
-  public onDrop(event: any): void { this.onMilestoneDropped(event); }
+  // -------------------------------------------------------------------------
+  // 🖼️ UI EVENT HANDLER (BANNER, SIDEBAR & INTERAKTIONEN)
+  // -------------------------------------------------------------------------
 
+  /** Stellt den ungespeicherten Entwurf aktiv aus dem Storage wieder her */
   public restoreDraftFromBanner(): void {
     this.isBrandNewDraft.set(true);
     this.projectDraftService.loadDraftFromStorageIntoSignal();
     const geladenerDraft = this.projectDraftService.currentDraft();
     if (geladenerDraft) {
       this.suggestedArea.set(geladenerDraft.area || 'Allgemein');
-      if ((geladenerDraft as any).ideaId) {
-        const passendeIdee = this.noteService.notesList().find(n => n.id === (geladenerDraft as any).ideaId);
+      if (geladenerDraft.ideaId) {
+        const passendeIdee = this.noteService.notesList().find(n => n.id === geladenerDraft.ideaId);
         if (passendeIdee) this.currentIdea.set(passendeIdee);
       }
     }
     this.showRestoreBanner.set(false);
   }
 
+  /** Verwürft den Entwurf im Speicher dauerhaft und schließt das Banner */
   public rejectDraftFromBanner(): void {
     this.projectDraftService.clearDraft();
     this.showRestoreBanner.set(false);
   }
 
+  /** Aktiviert den Bearbeitungsmodus (Labor-Modus) für ein existierendes Projekt */
   public onProjectSelectedFromWelcome(id: string): void {
     this.isBrandNewDraft.set(false);
     this.currentIdea.set(null);
@@ -369,27 +436,25 @@ export class ProjectCalculatorComponent implements OnInit {
     }
   }
 
+  /** Öffnet oder schließt die KI-Vorschläge-Sidebar */
   public toggleSidebar(): void {
     this.isSidebarOpen.set(!this.isSidebarOpen());
   }
 
+  /**
+   * Bricht die aktuelle Kalkulation komplett ab, putzt bei Bedarf den LocalStorage 
+   * und leitet den Anwender sicher auf seinen Ursprungstab zurück.
+   */
   public cancelAndDiscardDraft(): void {
-    console.log('❌ [Kalkulator] Aktion abgebrochen. Räume Speicher auf...');
-
     if (this.isBrandNewDraft()) {
-      // 🗑️ Fall 1: Es war ein ungespeicherter Entwurf -> RAM leeren + Festplatte putzen!
       this.projectDraftService.clearDraft();
       this.currentIdea.set(null);
     } else {
-      // 🛡️ Fall 2: Es war ein existierendes Projekt -> Nur Labor-RAM leeren, Draft im Service bleibt unberührt!
       this.localEditProject.set(null);
-      console.log('🛡️ [Kalkulator] Existierendes Projekt geschlossen. Gespeicherter Entwurf bleibt im Hintergrund intakt.');
     }
 
-    // Zurücksetzen auf Standard-State für den nächsten Besuch
     this.isBrandNewDraft.set(true);
 
-    // User sanft dorthin zurückschicken, wo er herkam
     if (this.originTab() === BoardTab.Pinboard) {
       this.navigationService.changeTab(BoardTab.Pinboard, { type: 'idea', id: "" });
     } else {
@@ -397,9 +462,8 @@ export class ProjectCalculatorComponent implements OnInit {
     }
     this.originTab.set(null);
   }
-  
-  public abortCalculation(): void { this.cancelAndDiscardDraft(); }
 
+  /** Öffnet das finale Bestätigungs-Popup zur Speicherung auf dem Server */
   public finishCalculation(): void {
     const project = this.activeProject();
     if (!project) return;
@@ -407,6 +471,7 @@ export class ProjectCalculatorComponent implements OnInit {
     this.showSuccessPopup.set(true);
   }
 
+  /** Validiert, ob das Projekt Meilensteine besitzt und ob der User Schreibrechte besitzt */
   public canSaveCalculation(): boolean {
     const project = this.activeProject();
     if (!project || !project.milestones || project.milestones.length === 0) return false;
@@ -416,6 +481,7 @@ export class ProjectCalculatorComponent implements OnInit {
     return true;
   }
 
+  /** Schickt den Projekttitel an das Bayes-Backend ab, um passende Template-Vorschläge zu generieren */
   public applySmartTemplates(): void {
     const proj = this.activeProject();
     if (!proj || !proj.title) return;
@@ -424,10 +490,15 @@ export class ProjectCalculatorComponent implements OnInit {
     setTimeout(() => this.isMagicLoading.set(false), 800);
   }
 
+  /** Logger für Sichtbarkeitsänderungen abgelehnter Meilensteine */
   public degradedAreShown(event: any): void {
     console.log('Sichtbarkeit geändert:', event);
   }
 
+  /**
+   * Schickt das fertige Rechenergebnis per HTTP-Request an das Backend. 
+   * Löscht bei Erfolg lokale Entwurfsdaten und wechselt reaktiv in die Projektübersicht.
+   */
   public handleAutoSaveConfirm(): void {
     const project = this.activeProject();
     if (!project || !project.milestones || project.milestones.length === 0) {
@@ -450,7 +521,7 @@ export class ProjectCalculatorComponent implements OnInit {
       : (this.projectService as any).updateProject?.(project) || this.projectService.saveCalculatedProject(project);
 
     saveObservable.subscribe({
-      next: (response: Project) => {
+      next: () => {
         const erfolgsNachricht = this.isBrandNewDraft()
           ? `Projekt "${project.title}" wurde erfolgreich gestartet! 🚀`
           : `Änderungen am Projekt "${project.title}" wurden gespeichert! 💾`;
@@ -476,31 +547,42 @@ export class ProjectCalculatorComponent implements OnInit {
     });
   }
 
+  /** Schließt das Bestätigungs-Popup ohne zu speichern */
   public cancelPopupCountdown(): void {
     this.showSuccessPopup.set(false);
   }
 
-  // ==========================================================================
-  // INLINE EDIT UI METHODS (ZURÜCKGEHOLT) ✏️
-  // ==========================================================================
-
-  /**
-   * Startet den Inline-Edit-Modus für eine bestimmte Meilenstein-Zeile
-   */
+  /** Aktiviert den Inline-Edit-Modus für eine bestimmte Meilenstein-Zeile */
   public startEditMilestone(task: Milestone): void {
     this.editingMilestoneId = task.id;
     this.editTitle = task.title;
     this.editTime = task.duration || 1;
-    console.log(`✏️ [Kalkulator] Inline-Edit gestartet für: "${task.title}"`);
   }
 
-  /**
-   * Bricht das Inline-Editing ab und setzt die Formularfelder zurück
-   */
+  /** Bricht das Inline-Editing ab und bereinigt die Formular-Buffer */
   public cancelEditMilestone(): void {
     this.editingMilestoneId = null;
     this.editTitle = '';
     this.editTime = 1;
-    console.log('❌ [Kalkulator] Inline-Edit abgebrochen.');
+  }
+
+  // -------------------------------------------------------------------------
+  // 🔄 HTML-ALIAS METHODEN (VOM TEMPLATE BENÖTIGT)
+  // -------------------------------------------------------------------------
+
+  /**
+   * @deprecated Nutze stattdessen bevorzugt cancelAndDiscardDraft() direkt.
+   * Alias-Methode fürs HTML, um die aktuelle Kalkulation abzubrechen.
+   */
+  public abortCalculation(): void {
+    this.cancelAndDiscardDraft();
+  }
+
+  /**
+   * @deprecated Nutze stattdessen bevorzugt onMilestoneDropped($event) direkt.
+   * Alias-Methode fürs HTML, um das Drag&Drop-Event der Meilensteine zu verarbeiten.
+   */
+  public onDrop(event: any): void {
+    this.onMilestoneDropped(event);
   }
 }
