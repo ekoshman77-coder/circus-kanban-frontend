@@ -1,32 +1,98 @@
 .members-list-container {
-  background-color: rgba(248, 250, 252, 0.6);
-  border: 2px dashed #fca5a5; /* Weiches Rot signalisiert die Team-Zone */
-  border-radius: 16px;
+  /* 🩵 Klares, feierliches Pastell-Eisblau mit 70% Deckkraft */
+  background: rgba(240, 249, 255, 0.70) !important; 
+  backdrop-filter: blur(12px); 
+  
+  /* Hauchdünne, leuchtende Eisblau-Kante */
+  border: 1px solid rgba(186, 230, 253, 0.6); 
+  
+  border-radius: 12px;
   padding: 20px;
-  min-height: 480px;
+  height: 520px;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  
+  /* Ein ganz leichtes, magisches Leuchten für den "Hura"-Effekt */
+  box-shadow: 0 8px 32px rgba(14, 165, 233, 0.04); 
   transition: all 0.2s ease;
 }
 
-.members-list-container {
-  background-color: rgba(248, 250, 252, 0.6);
-  /* ✨ Edles Indigo statt Gefahr-Rot: Das wirkt einladend und spannend! */
-  border: 2px dashed #a5b4fc; 
-  border-radius: 16px;
-  padding: 20px;
-  min-height: 480px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+/* Der Scrollbar im passenden Eisblau */
+.members-list-container::-webkit-scrollbar-thumb {
+  background: rgba(56, 189, 248, 0.25);
+  border-radius: 10px;
+}
+.members-list-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(56, 189, 248, 0.45);
+}
+
+.members-list-container h3 {
+  margin: 0 0 12px 0;
+  font-size: 15px;
+  color: #2c1d11; 
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* 🎨 Ultraschlanker, dynamischer Eisblau-Scrollbar */
+.members-list-container::-webkit-scrollbar {
+  width: 6px;
+}
+.members-list-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+/* Ruhezustand: Sehr dezent */
+.members-list-container::-webkit-scrollbar-thumb {
+  background: rgba(56, 189, 248, 0.2);
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+/* Hover: Wird deutlich sichtbar */
+.members-list-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(56, 189, 248, 0.5);
+}
+/* Aktiv (Gezogen/Geklickt): Klares "Hurra"-Blau statt grau! */
+.members-list-container::-webkit-scrollbar-thumb:active {
+  background: rgba(14, 165, 233, 0.8) !important;
+}
+
+/* 📦 Der Wrapper für Karte + Rolle */
+.member-row-wrapper {
+  margin-bottom: 8px;
+  position: relative;
   transition: all 0.2s ease;
 }
 
+/* 🏷️ Die sauber gestylte Rolle (ohne Inline-Styles!) */
+.role-badge {
+  display: block;
+  font-size: 0.8rem;
+  color: #64748b;
+  padding-left: 55px;
+  margin-top: -5px;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+}
+
+/* 🪄 DER ZAUBER-TRICK: Rolle ausblenden während des Ziehens! 
+   (Funktioniert für native Drags und Angular CDK Drag) */
+.member-row-wrapper:has(.cdk-drag-placeholder) .role-badge,
+.member-row-wrapper:active .role-badge,
+.member-row-wrapper.dragging .role-badge {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* CSS für die leere Meldung (damit sie auch hübsch ist) */
 .empty-hint {
   text-align: center;
-  color: #94a3b8;
+  color: #2c1d11;
+  opacity: 0.6;
   font-size: 13px;
-  margin-top: 60px;
+  margin-top: 40px;
   font-style: italic;
 }

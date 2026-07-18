@@ -1,8 +1,9 @@
 import { Component, input, output } from '@angular/core';
-import { UserModel } from '../../../../models/user-model';
+import { UserModel, ProjectRole } from '../../../../models/user-model'; // 🎯 ProjectRole hinzugefügt!
 
 @Component({
   selector: 'app-member-card-component',
+  standalone: true,
   imports: [],
   templateUrl: './member-card-component.html',
   styleUrl: './member-card-component.css',
@@ -10,7 +11,10 @@ import { UserModel } from '../../../../models/user-model';
 export class MemberCardComponent {
   // 📥 Inputs vom Typ Signal
   public user = input.required<UserModel>();
-  public actionType = input<'add' | 'remove'>('add'); // Standardmäßig 'add'
+  public actionType = input<'add' | 'remove'>('add'); 
+
+  // 🎭 DAS NEUE HIGHLIGHT: Ein optionales Input für die Projekt-Rolle!
+  public projectRole = input<ProjectRole | null>(null);
 
   // 📤 Output-Event nach oben
   public actionClicked = output<void>();
@@ -21,10 +25,7 @@ export class MemberCardComponent {
 
   public onDragStart(event: DragEvent): void {
     if (event.dataTransfer) {
-      // Wir packen die ID als reinen Text ('text/plain') in den Daten-Transport
       event.dataTransfer.setData('text/plain', this.user().id);
-      
-      // Das erlaubt dem Browser, die Karte visuell sauber zu "verschieben"
       event.dataTransfer.effectAllowed = 'move';
     }
   }

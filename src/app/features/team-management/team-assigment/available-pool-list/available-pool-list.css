@@ -1,28 +1,58 @@
 .pool-list-container {
-  background-color: rgba(248, 250, 252, 0.6);
-  border: 2px dashed #86efac; /* Weiches Grün signalisiert die Wartebank-Zone */
-  border-radius: 16px;
+  /* 🍏 Saftiges, helles Pastell-Grün mit 70% Deckkraft */
+  background: rgba(240, 253, 244, 0.70) !important; 
+  backdrop-filter: blur(12px); 
+  
+  /* Hauchdünne grüne Glaskante */
+  border: 1px solid rgba(187, 247, 208, 0.5); 
+  
+  border-radius: 12px;
   padding: 20px;
-  min-height: 480px;
+  height: 520px;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  box-shadow: 0 8px 32px rgba(22, 163, 74, 0.02); 
   transition: all 0.2s ease;
 }
 
+/* Der Scrollbar passt sich dezent dem Grün an */
+.pool-list-container::-webkit-scrollbar-thumb {
+  background: rgba(34, 197, 94, 0.2);
+  border-radius: 10px;
+}
+.pool-list-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 197, 94, 0.4);
+}
+
 .pool-list-container h3 {
-  margin: 0 0 8px 0;
+  margin: 0 0 12px 0;
   font-size: 15px;
-  color: #166534;
-  font-weight: 700;
+  color: #2c1d11; /* Bleibt im Espressobraun für den roten Faden */
+  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-.empty-hint {
-  text-align: center;
-  color: #94a3b8;
-  font-size: 13px;
-  margin-top: 60px;
-  font-style: italic;
+/* 🎨 Ultraschlanker, dynamischer Mintgrün-Scrollbar */
+.pool-list-container::-webkit-scrollbar {
+  width: 6px;
+}
+.pool-list-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+/* Ruhezustand: Sehr dezent */
+.pool-list-container::-webkit-scrollbar-thumb {
+  background: rgba(34, 197, 94, 0.15);
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+/* Hover: Wird deutlich sichtbar */
+.pool-list-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 197, 94, 0.45);
+}
+/* Aktiv (Gezogen/Geklickt): Knackiges Aktiv-Grün! */
+.pool-list-container::-webkit-scrollbar-thumb:active {
+  background: rgba(22, 163, 74, 0.8) !important;
 }

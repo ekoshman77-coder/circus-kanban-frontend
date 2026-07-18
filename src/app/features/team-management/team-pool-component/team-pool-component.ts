@@ -115,7 +115,6 @@ public filteredUsers = computed(() => {
     this.userForm.reset();
   }
 
-  // ... ab hier bleiben onDeleteUser, onOpenEditPopup, onSaveEdit und onClosePopup HAARGENAU identisch ...
   public onDeleteUser(id: string): void {
     if (confirm('Möchtest du diesen Benutzer wirklich löschen?')) {
       this.teamService.deleteMember(null, id);

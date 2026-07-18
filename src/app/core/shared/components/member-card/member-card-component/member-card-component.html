@@ -9,6 +9,13 @@
   <div class="mini-user-info">
     <h5>{{ user().firstName }} {{ user().lastName }}</h5>
     <p>&#64;{{ user().username }}</p>
+
+    <!-- 🏷️ HIER ZIEHT DIE ROLLE EIN: Nur da, wenn auch übergeben! -->
+    @if (projectRole() && projectRole() !== 'NONE') {
+      <span class="card-role-badge" style="display: inline-block; font-size: 0.75rem; color: #64748b; margin-top: 4px;">
+        🛠️ Rolle: <strong>{{ projectRole() }}</strong>
+      </span>
+    }
   </div>
 
   <div class="mini-card-action">
