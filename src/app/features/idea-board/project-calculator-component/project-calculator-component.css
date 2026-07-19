@@ -620,3 +620,119 @@ tr.total-row td {
   box-shadow: 0 1px 2px rgba(37, 99, 235, 0.1);
   display: inline-block;
 }
+
+/* --- DRAFT RESTORE BANNER --- */
+.draft-restore-banner {
+  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+  border: 1px solid #7dd3fc;
+  border-left: 5px solid #0284c7;
+  border-radius: 14px;
+  padding: 20px;
+  margin: 0 auto 30px auto;
+  max-width: 520px;
+  text-align: left;
+  box-shadow: 0 10px 25px -5px rgba(14, 165, 233, 0.15), 
+              0 8px 10px -6px rgba(14, 165, 233, 0.1);
+  animation: bannerFadeIn 0.4s ease-out;
+}
+
+.draft-restore-banner .banner-body {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.draft-restore-banner .banner-icon {
+  font-size: 24px;
+  background: #ffffff;
+  padding: 6px;
+  border-radius: 10px;
+  border: 1px solid #7dd3fc;
+  line-height: 1;
+  display: inline-block;
+  filter: drop-shadow(0 4px 6px rgba(14, 165, 233, 0.2));
+}
+
+.draft-restore-banner .banner-content {
+  display: block;
+}
+
+.draft-restore-banner .banner-title {
+  margin: 0;
+  color: #0369a1;
+  font-size: 15.5px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+
+.draft-restore-banner .banner-text {
+  margin: 5px 0 0 0;
+  color: #0c4a6e;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.draft-restore-banner .banner-highlight {
+  color: #0369a1;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+/* Button-Leiste */
+.draft-restore-banner .banner-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
+/* Button: Verwerfen */
+.draft-restore-banner .btn-discard {
+  background: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.draft-restore-banner .btn-discard:hover {
+  background: rgba(239, 68, 68, 0.15);
+  transform: translateY(-1px);
+}
+
+/* Button: Laden */
+.draft-restore-banner .btn-restore {
+  background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+  color: #ffffff;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+  transition: all 0.2s ease-in-out;
+}
+
+.draft-restore-banner .btn-restore:hover {
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Sanfte Animation beim Einblenden */
+@keyframes bannerFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

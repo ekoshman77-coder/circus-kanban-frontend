@@ -134,3 +134,19 @@
     }
 
 </div>
+
+<!-- 💥 DAS NEUE, SCHICKE LÖSCH-POPUP -->
+    @if (userToDelete()) {
+      <app-universal-popup-component
+        [title]="'Mitarbeiter unwiderruflich löschen?'"
+        [message]="'Möchtest du dieses Teammitglied wirklich global aus dem System entfernen?<br>Alle Verknüpfungen zu laufenden Projekten und Meilensteinen werden gelöst.'"
+        [animationIcon]="'🗑️'"
+        [mode]="'danger'"
+        [confirmText]="'Ja, löschen'"
+        [cancelText]="'Abbrechen'"
+        [showLoadingBar]="false"
+        [dataContext]="userToDelete()"
+        (confirm)="executeDeletion($event)"
+        (cancel)="cancelDeletion()">
+      </app-universal-popup-component>
+    }

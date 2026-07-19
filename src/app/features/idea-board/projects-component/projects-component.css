@@ -209,6 +209,9 @@
 }
 
 /* 🛞 CARD FOOTER & BUTTONS */
+/* ==========================================================================
+   🛞 CARD FOOTER & BUTTONS - Jetzt absolut sprengsicher und einheitlich!
+   ========================================================================== */
 .project-card-footer {
     padding: 16px 20px;
     background: #ffffff;
@@ -216,26 +219,37 @@
     display: flex;
     gap: 8px;
     align-items: center;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .btn-footer {
     height: 36px;
+    /* 🎯 DIE RETTUNG: Alle Inhaltsbuttons teilen sich den Platz zu 100% identisch */
+    flex: 1; 
+    min-width: 0; /* Zwingt Flexbox, den Button bei Bedarf zu verkleinern */
+    
     border: 1px solid #cbd5e1;
     border-radius: 8px;
-    font-size: 13px;
+    font-size: 12px; /* Minimal kleiner für mehr Textkomfort */
     font-weight: 600;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 4px;
     transition: all 0.15s ease-in-out;
     box-sizing: border-box;
+
+    /* 🛡️ TEXT-SCHUTZWALL: Verhindert, dass Text umbricht oder herausspringt */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 4px; 
 }
 
 /* Hauptbutton: Phasen verwalten */
 .btn-milestones {
-    flex: 2;
     background-color: #3b82f6;
     color: white;
     border-color: #3b82f6;
@@ -246,9 +260,8 @@
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
 }
 
-/* Zweiter Button: Kalkulator */
+/* Zweiter Button: Kalkulator (Phasen anpassen) */
 .btn-recalc {
-    flex: 1.5;
     background-color: #ffffff;
     color: #475569;
 }
@@ -259,16 +272,45 @@
     border-color: #94a3b8;
 }
 
-/* Lösch-Button */
-.btn-delete {
-    width: 36px;
+/* Dritter Button: Team-Board */
+.btn-kanban-direct {
     background-color: #ffffff;
-    color: #ef4444;
+    color: #475569;
 }
 
-.btn-delete:hover {
+.btn-kanban-direct:hover {
+    background-color: #f8fafc;
+    color: #0f172a;
+    border-color: #94a3b8;
+}
+
+/* Lösch-Button (Mülleimer) - Bleibt starr quadratisch am Rand */
+.btn-delete, .action-icon-btn.delete-btn {
+    flex: 0 0 36px; /* Wächst nicht, schrumpft nicht, bleibt 36px */
+    width: 36px;
+    height: 36px;
+    background-color: #ffffff;
+    color: #ef4444;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease-in-out;
+    box-sizing: border-box;
+}
+
+.btn-delete:hover, .action-icon-btn.delete-btn:hover:not(:disabled) {
     background-color: #fef2f2;
     border-color: #fca5a5;
+}
+
+.action-icon-btn.delete-btn:disabled {
+    background-color: #f1f5f9;
+    color: #cbd5e1;
+    border-color: #e2e8f0;
+    cursor: not-allowed;
 }
 
 /* 🏜️ FALLBACK (Wenn keine Projekte da sind) */

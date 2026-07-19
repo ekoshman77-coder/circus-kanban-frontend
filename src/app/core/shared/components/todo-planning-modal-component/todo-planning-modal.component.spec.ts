@@ -14,10 +14,21 @@ describe('TodoPlanningModalComponent 🎪', () => {
     createAndAddTodo: vi.fn()
   };
 
-  beforeEach(async () => {
+beforeEach(async () => {
+    // 🛡️ GLOBALER STORAGE-SCHUTZWALL: Verhindert den Absturz durch Kindkomponenten
+    Object.defineProperty(window, 'localStorage', {
+      value: {
+        getItem: vi.fn(() => null),
+        setItem: vi.fn(),
+        removeItem: vi.fn(),
+        clear: vi.fn(),
+      },
+      writable: true
+    });
+
     await TestBed.configureTestingModule({
       imports: [
-        TodoPlanningModalComponent, // Standalone importieren
+        TodoPlanningModalComponent, 
         ReactiveFormsModule,
         FormsModule
       ],
@@ -30,7 +41,6 @@ describe('TodoPlanningModalComponent 🎪', () => {
     component = fixture.componentInstance;
     fixture.detectChanges();
 
-    // Spione vor jedem Test säubern
     vi.clearAllMocks();
   });
 

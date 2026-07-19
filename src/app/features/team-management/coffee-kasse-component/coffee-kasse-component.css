@@ -182,14 +182,16 @@
 }
 
 /* 💵 +5€ Einzahlen Button - Frisches Geld-Grün */
+/* 💵 +5€ Einzahlen Button - Edles Caramel-Gold statt Giftgrün */
 .coffee-pay-btn.btn-deposit {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%); /* Warmes Bernstein/Gold */
+  color: white;
+  box-shadow: 0 4px 6px rgba(217, 119, 6, 0.2);
 }
 
 .coffee-pay-btn.btn-deposit:hover {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
-  box-shadow: 0 6px 14px rgba(16, 185, 129, 0.35);
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); /* Leuchtet einladend auf */
+  box-shadow: 0 6px 14px rgba(217, 119, 6, 0.35);
 }
 
 /* Edit-Stift */
@@ -352,7 +354,22 @@
   font-size: 13px;
   cursor: pointer;
 }
-.btn-save { background: #10b981; color: white; }
-.btn-save:hover { background: #059669; }
-.btn-cancel { background: #ef4444; color: white; }
-.btn-cancel:hover { background: #dc2626; }
+
+.btn-save { 
+  background: linear-gradient(135deg, #6f4e37 0%, #4a3525 100%); 
+  color: white; 
+}
+.btn-save:hover { 
+  background: linear-gradient(135deg, #855838 0%, #5c402e 100%); 
+}
+
+.btn-cancel { 
+  background-color: #f4ebe1; /* Weicher Latte-Ton */
+  color: #6f4e37; /* Kaffeebraune Schrift */
+  border: 1px solid #e6dcd0 !important;
+}
+
+.btn-cancel:hover { 
+  background-color: #eadcc9; 
+  color: #4a3525;
+}

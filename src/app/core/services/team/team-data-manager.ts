@@ -5,6 +5,7 @@ import { ProjectMember } from '../../models/project-member';
 import { IUser, UserRepository } from '../../repositories/user-repository';
 import { ConnectionService } from '../connection/connection-service';
 import { UserService } from '../user/user-service'; // 🎯 NEU importiert!
+import { NotificationService } from '../notification/notification-service';
 
 @Injectable({
   providedIn: 'root'
@@ -14,6 +15,7 @@ export class TeamDataManager {
   private userRepository = inject(UserRepository);
   private connectionService = inject(ConnectionService);
   private userService = inject(UserService); // 🎯 NEU injiziert!
+  private notificationService = inject(NotificationService)
 
   // 🎯 Reaktive Signals für die UI
   public currentProjectMembersSignal = signal<ProjectMember[]>([]);
@@ -200,18 +202,38 @@ export class TeamDataManager {
     }
   }
 
-  public deleteGlobalMember(memberId: string): void {
-    const updatedList = this.globalMembersSignal().filter(m => m.user.id !== memberId);
-    this.globalMembersSignal.set(updatedList);
-    localStorage.setItem(this.STORAGE_KEY_GLOBAL, JSON.stringify(updatedList));
+public deleteGlobalMember(memberId: string): void {
+  // Wir suchen uns kurz den Namen raus, bevor er aus dem lokalen Signal fliegt
+  const user = this.globalMembersSignal().map(m => m.user).find(u => u.id === memberId);
+  const userName = user ? `${user.firstName} ${user.lastName}` : 'Mitarbeiter';
 
-    if (this.connectionService.isOnline()) {
-      this.userRepository.deleteGlobalUser$(memberId).subscribe({
-        next: () => this.loadGlobalMembers()
-      });
-    }
+  const updatedList = this.globalMembersSignal().filter(m => m.user.id !== memberId);
+  this.globalMembersSignal.set(updatedList);
+  localStorage.setItem(this.STORAGE_KEY_GLOBAL, JSON.stringify(updatedList));
+
+  if (this.connectionService.isOnline()) {
+    this.userRepository.deleteGlobalUser$(memberId).subscribe({
+      next: () => {
+        console.log(`✨ [DataManager] User ${memberId} erfolgreich gelöscht.`);
+        this.loadGlobalMembers();
+        
+        // 🟢 Erst JETZT, wo der Server "OK" gesagt hat, feuern wir den Toast!
+        this.notificationService.showNotification(
+          `🗑️ ${userName} wurde erfolgreich aus der Datenbank gelöscht.`, 
+          'success'
+        );
+      },
+      error: (err) => {
+        console.error("❌ Fehler beim Löschen des Users:", err);
+        // 🔴 Falls das Backend meckert, kriegt der Admin sofort die Wahrheit gesagt!
+        this.notificationService.showNotification(
+          `🛑 Fehler beim Löschen von ${userName}: ${err.message || 'Server-Fehler'}`, 
+          'error'
+        );
+      }
+    });
   }
-
+}
   public createMember(member: UserModel, password: string, onError?: (errorMessage: string) => void): void {
     if (!this.connectionService.isOnline()) {
       if (onError) onError("Registrierungen sind im Offline-Modus nicht möglich.");
