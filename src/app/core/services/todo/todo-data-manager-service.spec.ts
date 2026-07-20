@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { firstValueFrom, of } from 'rxjs';
+import { firstValueFrom, of, Subject } from 'rxjs';
 import { TodoDataManagerService } from './todo-data-manager-service';
 import { TodoRepository } from '../../repositories/todo-repository';
 import { ConnectionService } from '../connection/connection-service';
@@ -53,7 +53,8 @@ describe('TodoDataManagerService (TDD Offline-Sperren mit Vitest)', () => {
 
     mockUserService = {
       currentUser: vi.fn(() => ({ id: 'user-123', username: 'TestUser' })),
-      getCurrentUserId: vi.fn(() => 'user-123')
+      getCurrentUserId: vi.fn(() => 'user-123'),
+      onLogout$: new Subject<void>()
     };
 
     mockLocalStorageService = {
@@ -102,7 +103,8 @@ describe('TodoDataManagerService (TDD Offline-Sperren mit Vitest)', () => {
       const localUserMock = {
         // Wir übergeben das steuerbare Signal direkt
         currentUser: localUserSignal,
-        getCurrentUserId: () => localUserSignal()?.id || null
+        getCurrentUserId: () => localUserSignal()?.id || null,
+        onLogout$: new Subject<void>()
       };
 
       // Wir überschreiben die Provider NUR für diesen spezifischen Testlauf im TestBed

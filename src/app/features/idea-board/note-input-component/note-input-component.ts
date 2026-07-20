@@ -88,7 +88,7 @@ export class NoteInputComponent {
     let weatherCode: number | undefined = undefined;
 
     try {
-      const weatherData = await firstValueFrom(this.weatherService.getWEatherCurrentLocation());
+      const weatherData = await firstValueFrom(this.weatherService.getWeatherCurrentLocation());
       
       if (weatherData && weatherData.current_weather) {
         temperature = weatherData.current_weather.temperature;

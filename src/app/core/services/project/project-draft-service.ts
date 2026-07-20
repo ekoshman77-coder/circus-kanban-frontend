@@ -3,45 +3,58 @@ import { Project } from '../../models/project';
 import { UserService } from '../user/user-service';
 import { Note } from '../../models/note';
 
+/**
+ * Service zur Verwaltung ungespeicherter Projektentwürfe im lokalen Speicher (LocalStorage).
+ * Verhindert Datenverlust bei unerwartetem Neuladen der Seite während der Kalkulationsphase.
+ */
 @Injectable({
     providedIn: 'root'
 })
 export class ProjectDraftService {
     private userService = inject(UserService);
 
-    // 🌟 1. Das Signal ist jetzt ÖFFENTLICH und BESCHREIBBAR! Die ultimative Source of Truth.
+    /**
+     * Das reaktive Signal, welches den aktuellen Projektentwurf hält.
+     * Dient als globale 'Source of Truth' für die aktive Kalkulation.
+     */
     public currentDraft = signal<Project | null>(null);
 
-    // 🧠 2. Das Signal für die abgelehnten KI-Vorschläge
+    /**
+     * Internes Signal für zurückgestufte oder abgelehnte Meilensteine.
+     */
     private degradedMilestonesSignal = signal<string[]>([]);
+    
+    /**
+     * Schreibgeschützter Zugriff auf die Liste der zurückgestuften Meilensteine.
+     */
     public readonly degradedMilestones = this.degradedMilestonesSignal.asReadonly();
 
     constructor() {
-        // 🤖 DER AUTOMATISCHE SPEICHER-WÄCHTER
-        // Reagiert völlig autark auf JEDE direkte Änderung am currentDraft-Signal!
+        /**
+         * Reagiert automatisch auf Änderungen an den Draft-Signalen 
+         * und synchronisiert den Zustand mit dem LocalStorage.
+         */
         effect(() => {
             const userId = this.userService.getCurrentUserId();
             const draft = this.currentDraft();
             const degraded = this.degradedMilestonesSignal();
 
-            // Wir sichern nur dann im LocalStorage, wenn es ein ungespeichertes Projekt (Calculation) ist
             if (userId && draft && draft.status === 'Calculation') {
-                const storageKey = 'local_project_draft_' + userId;
+                const storageKey = `local_project_draft_${userId}`;
                 const wrapperData = { project: draft, degradedMilestones: degraded };
                 localStorage.setItem(storageKey, JSON.stringify(wrapperData));
-                console.log(`🤖 [DraftService Effect] Entwurf automatisch im Storage gesichert für User: ${userId}`);
             }
         });
     }
 
     /**
-     * Holt den Entwurf aktiv aus dem Storage und setzt das Signal.
+     * Lädt einen existierenden Entwurf aus dem LocalStorage und setzt die entsprechenden Signale.
      */
     public loadDraftFromStorageIntoSignal(): void {
         const userId = this.userService.getCurrentUserId();
         if (!userId) return;
 
-        const storageKey = 'local_project_draft_' + userId;
+        const storageKey = `local_project_draft_${userId}`;
         const raw = localStorage.getItem(storageKey);
         
         if (raw) {
@@ -50,40 +63,55 @@ export class ProjectDraftService {
                 if (parsed?.project) {
                     this.currentDraft.set(new Project(parsed.project));
                     this.degradedMilestonesSignal.set(parsed.degradedMilestones || []);
-                    console.log(`📥 [DraftService] Entwurf erfolgreich aus Storage geladen.`, this.currentDraft());
                 }
             } catch (e) {
-                console.error('[DraftService] Fehler beim Laden des Entwurfs:', e);
+                console.error('[ProjectDraftService] Fehler beim Parsen des Entwurfs:', e);
             }
         }
     }
 
     /**
-     * Initialisiert ein brandneues Projekt-Grundgerüst direkt aus einer Note (Idee).
+     * Initialisiert einen neuen Projektentwurf basierend auf einer bestehenden Idee (Note).
+     * Setzt den Status automatisch auf 'Calculation'.
+     * 
+     * @param idea Die zugrundeliegende Notiz/Idee für das neue Projekt.
      */
     public initDraftFromIdea(idea: Note): void {
         this.clearDraft();
 
-    const newProj = new Project({
+        const newProj = new Project({
             title: idea.title,
-            area: idea.tag?? "", 
-            ideaId: idea.id?? "",
-            userId: this.userService.getCurrentUserId() ?? "",
-            content: idea.content || '', // 🎯 Hier! 'content' statt 'description'
+            area: idea.tag ?? '', 
+            ideaId: idea.id ?? '',
+            userId: this.userService.getCurrentUserId() ?? '',
+            content: idea.content || '',
             status: 'Calculation',
             milestones: []
         });
+        
         this.currentDraft.set(newProj);
-        console.log(`💡 [DraftService] Sauberes Draft aus Idee "${idea.title}" erzeugt.`);
     }
 
+    /**
+     * Prüft, ob für die übergebene Benutzer-ID ein Entwurf im LocalStorage existiert.
+     * 
+     * @param userId Die ID des aktuellen Benutzers.
+     * @returns True, wenn ein Entwurf existiert, andernfalls false.
+     */
     public hasExistingDraftInStorage(userId: string): boolean {
-        const storageKey = 'local_project_draft_' + userId;
+        const storageKey = `local_project_draft_${userId}`;
         return localStorage.getItem(storageKey) !== null;
     }
 
+    /**
+     * Holt den Titel des gespeicherten Projektentwurfs aus dem LocalStorage, ohne das Signal zu verändern.
+     * Wird primär für UI-Banner-Meldungen verwendet.
+     * 
+     * @param userId Die ID des aktuellen Benutzers.
+     * @returns Den Projekttitel oder null, falls kein Entwurf existiert.
+     */
     public getDraftTitleFromStorage(userId: string): string | null {
-        const storageKey = 'local_project_draft_' + userId;
+        const storageKey = `local_project_draft_${userId}`;
         const raw = localStorage.getItem(storageKey);
         if (!raw) return null;
 
@@ -96,7 +124,7 @@ export class ProjectDraftService {
     }
 
     /**
-     * Alles komplett aufräumen & physisch aus dem LocalStorage tilgen!
+     * Setzt alle Signale zurück und löscht den Entwurf physisch aus dem LocalStorage.
      */
     public clearDraft(): void {
         const userId = this.userService.getCurrentUserId();
@@ -104,9 +132,8 @@ export class ProjectDraftService {
         this.degradedMilestonesSignal.set([]);
 
         if (userId) {
-            const storageKey = 'local_project_draft_' + userId;
+            const storageKey = `local_project_draft_${userId}`;
             localStorage.removeItem(storageKey);
-            console.log(`🗑️ [DraftService] Entwurf physisch aus LocalStorage für User ${userId} gelöscht.`);
         }
     }
 }

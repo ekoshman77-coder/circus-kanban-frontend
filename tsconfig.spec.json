@@ -11,5 +11,5 @@
   "include": [
     "src/**/*.d.ts",
     "src/**/*.spec.ts"
-, "src/app/app.spe.ts"  ]
+, "src/app/app.spe.ts", "src/app/core/shared/test-utils/local-storage-mock.ts"  ]
 }

@@ -18,7 +18,7 @@ describe('NoteInputComponent', () => {
   };
 
   const mockWeatherService = {
-    getWEatherCurrentLocation: vi.fn().mockReturnValue(of({
+    getWeatherCurrentLocation: vi.fn().mockReturnValue(of({
       current_weather: { temperature: 22.5, weathercode: 0 }
     }))
   };
@@ -109,7 +109,7 @@ describe('NoteInputComponent', () => {
     });
 
     it('sollte die Notiz auch dann speichern, wenn der Wetter-Service fehlschlägt', async () => {
-      mockWeatherService.getWEatherCurrentLocation.mockReturnValueOnce(throwError(() => new Error('API Down')));
+      mockWeatherService.getWeatherCurrentLocation.mockReturnValueOnce(throwError(() => new Error('API Down')));
 
       component.noteForm.patchValue({
         title: 'Fehler-Test-Notiz',

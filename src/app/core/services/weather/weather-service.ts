@@ -1,6 +1,5 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, from, map, of, switchMap, tap } from 'rxjs';
-import { MilestoneRepository } from '../../repositories/milestone-repository';
 import { WeatherJSON } from '../../repositories/dto/weather-data';
 import { WeatherRepository } from '../../repositories/weather-api-repository';
 
@@ -30,7 +29,7 @@ export class WeatherService {
   // - Nutze den RxJS-Operator `switchMap(coords => ...)` 
   // um von den Koordinaten auf den HTTP-Aufruf deines Repositories umzuspringen!
 
-  public getWEatherCurrentLocation(): Observable<WeatherJSON> {
+  public getWeatherCurrentLocation(): Observable<WeatherJSON> {
    
     return from(this.getBrowserLocation()).pipe(
         switchMap(({lat, lon}) => this.weatherRepo.getWeather(lat, lon))

@@ -9,6 +9,7 @@ import { computed, signal } from '@angular/core';
 import { Note } from '../../../core/models/note';
 import { NoteViewModel } from '../../../core/viewmodel/note-view-model';
 import { describe, beforeEach, it, expect, vi } from 'vitest';
+import { Subject } from 'rxjs';
 
 // 🌐 GLOBALER LOCALSTORAGE-MOCK FÜR VITEST
 vi.stubGlobal('localStorage', {
@@ -45,7 +46,9 @@ describe('IdeaBoardComponent (Vitest Edition)', () => {
 
     const mockUserService = {
         currentUser: computed(() => mockUserSignal()),
-        getCurrentUserId: vi.fn().mockReturnValue('user-123')
+        getCurrentUserId: vi.fn().mockReturnValue('user-123'),
+        onLogout$: new Subject<void>()
+
     };
 
     const mockTabService = {

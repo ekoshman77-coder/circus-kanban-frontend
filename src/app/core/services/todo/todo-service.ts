@@ -43,7 +43,7 @@ export class TodoService {
   private userService = inject(UserService);
   private loggerService = inject(LoggerService);
   private todoRepository = inject(TodoRepository);
-  private todoQueryService = inject(TodoQueryService); 
+  private todoQueryService = inject(TodoQueryService);
   private notificationService = inject(NotificationService)
 
   // --- REAKTIVER STATE (SIGNALS & GLOBAL POOL) ---
@@ -79,7 +79,7 @@ export class TodoService {
     return this.todosSignal().filter(t => !t.done);
   });
 
-// 0. Die absolute Rohquelle vom Server/Datenbank
+  // 0. Die absolute Rohquelle vom Server/Datenbank
   private allTodos = computed(() => this.dataManager.allTodosPool());
 
   // ==========================================
@@ -137,16 +137,25 @@ export class TodoService {
     effect(() => {
       const syncResult = this.dataManager.syncCompleted();
       if (syncResult !== null) {
-        this.allTodosPool.set(syncResult.liste);
-        this.gamificationState.set(syncResult.gamificationResult);
-        if (syncResult.gamificationResult.levelUp) {
-          alert(`🎉 LEVEL UP! Du bist jetzt Level ${syncResult.gamificationResult.currentLevel}!`);
-        }
-        untracked(() => {
-          this.dataManager.clearSyncResult();
-        });
+        this.handleSyncCompleted(syncResult);
       }
     });
+  }
+
+  private handleSyncCompleted(syncResult: any): void {
+    // 1. Daten ohne reaktive Schleifen setzen
+    this.allTodosPool.set(syncResult.liste);
+    this.gamificationState.set(syncResult.gamificationResult);
+
+    // 2. Das blockierende alert() durch den NotificationService ersetzen
+    if (syncResult.gamificationResult.levelUp) {
+      this.notificationService.showNotification(
+        `🎉 LEVEL UP! Du bist jetzt Level ${syncResult.gamificationResult.currentLevel}!`, 'success'
+      );
+    }
+
+    // 3. Den Sync-Zustand aufräumen
+    this.dataManager.clearSyncResult();
   }
 
   private loadTodosFromBackend(userId: string) {
@@ -366,7 +375,7 @@ export class TodoService {
     return this.filteredFocusedTodos().filter(t => t.milestoneId === id)
   }
 
-// 🗑️ Footer-Aktion Links: Erledigte private Aufgaben löschen
+  // 🗑️ Footer-Aktion Links: Erledigte private Aufgaben löschen
   public clearCompletedTodos(): void {
     const userId = this.userService.getCurrentUserId();
     if (!userId) return;

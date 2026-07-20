@@ -25,9 +25,9 @@ export class TodoDataManagerService {
   private readonly PREDICTIONS_ACTIVE_KEY = 'cached_predictions_active';
   private readonly PREDICTIONS_PAUSE_KEY = 'cached_predictions_pause';
 
-// 2. Die ultimativen Notfall-Fallbacks (wenn der Cache komplett leer ist)
-private readonly fallbackPauseTodos = ['Kaffee trinken', 'Dehnen', 'Wasser holen', 'Kurz lüften'];
-private readonly fallbackActiveTodos = ['Refactoring UI', 'Bugfix Service', 'Code Review', 'Doku schreiben'];
+  // 2. Die ultimativen Notfall-Fallbacks (wenn der Cache komplett leer ist)
+  private readonly fallbackPauseTodos = ['Kaffee trinken', 'Dehnen', 'Wasser holen', 'Kurz lüften'];
+  private readonly fallbackActiveTodos = ['Refactoring UI', 'Bugfix Service', 'Code Review', 'Doku schreiben'];
   // 🌍 Das Signal ist jetzt beschreibbar (nicht mehr 'readonly' für diesen Service)
   public allTodosPool = signal<Todo[]>([]);
 
@@ -45,6 +45,15 @@ private readonly fallbackActiveTodos = ['Refactoring UI', 'Bugfix Service', 'Cod
         if (!currentUser) return;
         this.triggerBulkSync(currentUser.id);
       }
+    });
+
+    // 🎧 2. NEU: Auf das Radio-Signal vom UserService hören!
+    this.userService.onLogout$.subscribe(() => {
+      console.log('=== 🧼 DATA MANAGER: Lösche To-Do-Caches und Pool ===');
+
+      // UI-Zustand sofort leeren, damit keine To-Dos flackern
+      this.allTodosPool.set([]);
+      this.clearLocalStorage();
     });
   }
 
@@ -144,7 +153,7 @@ private readonly fallbackActiveTodos = ['Refactoring UI', 'Bugfix Service', 'Cod
   /**
    * ❌ TODO LÖSCHEN
    */
-// 🗑️ Einzelnes To-Do löschen
+  // 🗑️ Einzelnes To-Do löschen
   public deleteTodo(id: string): Observable<void> {
     if (this.connectionService.status() === 'OFFLINE') {
       return throwError(() => new Error('Löschen ist im Offline-Modus nicht erlaubt!'));
@@ -155,13 +164,13 @@ private readonly fallbackActiveTodos = ['Refactoring UI', 'Bugfix Service', 'Cod
         // Nutzt dein echtes allTodosPool-Signal!
         const currentTodos = this.allTodosPool();
         const gefilterteListe = currentTodos.filter(t => t.id !== id);
-        
+
         this.saveToLocalStorage(gefilterteListe);
         this.allTodosPool.set(gefilterteListe);
       })
     );
   }
-  
+
   /**
    * 📝 TODO BEARBEITEN
    */
@@ -210,14 +219,14 @@ private readonly fallbackActiveTodos = ['Refactoring UI', 'Bugfix Service', 'Cod
     );
   }
 
-// 🗑️ Erledigte private Aufgaben löschen (Footer links)
+  // 🗑️ Erledigte private Aufgaben löschen (Footer links)
   public deleteCompleted(userId: string): Observable<void> {
     return this.todoRepository.deleteCompleted(userId).pipe(
       tap(() => {
         // Entfernt aus dem allTodosPool nur erledigte Aufgaben, die keinen Meilenstein haben
         const currentTodos = this.allTodosPool();
         const gefilterteListe = currentTodos.filter(t => !(t.done && !t.milestoneId));
-        
+
         this.saveToLocalStorage(gefilterteListe);
         this.allTodosPool.set(gefilterteListe);
       })
@@ -231,7 +240,7 @@ private readonly fallbackActiveTodos = ['Refactoring UI', 'Bugfix Service', 'Cod
         // Behält im allTodosPool nur die Aufgaben, die zu einem Meilenstein gehören (Projekt-Aufgaben)
         const currentTodos = this.allTodosPool();
         const gefilterteListe = currentTodos.filter(t => t.milestoneId);
-        
+
         this.saveToLocalStorage(gefilterteListe);
         this.allTodosPool.set(gefilterteListe);
       })
@@ -279,4 +288,8 @@ private readonly fallbackActiveTodos = ['Refactoring UI', 'Bugfix Service', 'Cod
     );
   }
 
+  private clearLocalStorage(): void {
+    this.localStorageService.removeItem(this.CACHE_KEY);
+    this.clearLocalOfflineStorage();
+  }
 }

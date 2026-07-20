@@ -2,7 +2,7 @@ import { Injectable, inject, signal, computed, effect } from '@angular/core';
 import { UserRepository, IUser, PlannerSettingsDto } from '../../repositories/user-repository';
 import { LocalStorageService } from './local-storage-service';
 import { GamificationResult } from '../../models/gamification';
-import { Observable, tap } from 'rxjs';
+import { Observable, Subject, tap } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -16,6 +16,9 @@ export class UserService {
   public currentUser = computed(() => this.currentUserSignal());
   public isLoggedIn = computed(() => this.currentUserSignal() !== null);
 
+  // 📻 Der Event-Kanal für den Logout-Funkspruch
+  public readonly onLogout$ = new Subject<void>();
+  
   // Zustand für den Browser-Speicher (LocalStorage)
   userEnergy = signal<'low' | 'normal' | 'high'>('normal');
   workingTimeLeft = signal<number>(8);
@@ -176,10 +179,8 @@ export class UserService {
   public logout(): void {
     console.log('=== 🧹 LOGOUT: Bereinige alle Session-Daten ===');
 
-    // 🌟 Ein einziger Aufruf löscht jetzt alle definierten Keys im StorageService!
     this.storageService.clearAllSessionData();
-
-    // Signale zurücksetzen
+    this.onLogout$.next();
     this.currentUserSignal.set(null);
   }
 
