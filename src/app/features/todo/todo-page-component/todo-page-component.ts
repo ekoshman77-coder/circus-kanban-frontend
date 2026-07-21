@@ -16,7 +16,6 @@ import { GamificationResult } from '../../../core/models/gamification';
   imports: [CommonModule, 
     TodoFormComponent, 
     TodoListComponent, 
-    TodoFooterComponent, 
     TodoKanbanComponent,
     ArchivExpressComponent
   ], 

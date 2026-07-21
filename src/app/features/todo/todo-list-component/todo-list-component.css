@@ -1,49 +1,43 @@
 /* --- 1. Der äußere Rahmen für die gesamte Liste --- */
 .todo-list-container {
   width: 100%;
-  /* Erhöht für das Grid, damit Kärtchen nebeneinander genug Platz zum Atmen haben */
   max-height: 650px; 
   display: flex;
   flex-direction: column;
-  background-color: #ffffff; 
-  border: 1px solid #cfdadf; 
-  border-radius: 10px;       
-  padding: 16px;             
+  
+  /* 🌊 Der magische, hauchdünne Verlauf: Von deinem Minzgrün zu einem sanften Pastellblau */
+  background: linear-gradient(
+    135deg, 
+    hsla(165, 36%, 96%, 0.4) 0%,   /* Dein geliebtes, zartes Minzgrün */
+    hsla(195, 45%, 96%, 0.45) 100%  /* Ein hauchdünnes, frisches Eisblau */
+  ) !important;
+  
+  /* Falls du den Glas-Schimmer magst, lässt dieser Wert den Verlauf edel mit dem weißen Page-Hintergrund verschmelzen */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  
+  /* Ein ganz feiner, sauberer Rahmen, der farblich matcht */
+  border: 1px solid rgba(186, 230, 253, 0.4); 
+  border-radius: 16px;       
+  padding: 24px;             
   box-sizing: border-box;
-  box-shadow: 0 2px 8px rgba(16, 42, 58, 0.04); 
+  
+  /* Minimaler, cleaner Schatten */
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.02); 
   overflow-x: hidden;
 }
 
-/* --- 2. Der neue, reaktionsfähige Grid-Bereich wird scrollbar --- */
 .todo-grid-layout {
   flex-grow: 1;         
-  overflow-y: auto;     /* Aktiviert Scrollbar nur bei Bedarf! */
+  overflow-y: auto;     
   padding-right: 8px;   
   padding-top: 5px;
   overflow-x: hidden;
 
-  /* 🎴 DAS MAGISCHE GRID-SYSTEM */
   display: grid;
-  /* Erstellt automatisch so viele Spalten wie Platz auf dem Monitor ist (mind. 320px breit) */
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 16px; /* Harmonischer Abstand zwischen deinen Kärtchen */
-  align-content: start; /* Verhindert, dass Zeilen gestreckt werden, wenn es wenige Items gibt */
-
-  /* Deine hübsche, dezente Scrollbar (Bleibt voll erhalten!) */
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
-  &::-webkit-scrollbar-track {
-    background: #f1f5f9;
-    border-radius: 10px;
-  }
-  &::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 10px;
-  }
-  &::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
-  }
+  gap: 16px; 
+  align-content: start; 
 }
 
 /* Ein kleiner Container für jedes einzelne Kärtchen, damit die Animation sauber läuft */

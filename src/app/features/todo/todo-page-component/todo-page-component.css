@@ -1,31 +1,51 @@
 /* Styling für das Navigations-Menü */
+.todo-page-layout {
+  /* 🌊 Ein sehr softer, moderner Graublau-Verlauf statt sterilem Weiß */
+  background: #ffffff !important;
+
+  /* Dehnt die Seite auf die volle Höhe aus, damit der Verlauf zieht */
+  min-height: 100vh; 
+  padding: 30px;
+  box-sizing: border-box;
+  
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
 .nav-menu { 
   display: flex; 
   justify-content: center; 
   gap: 15px; 
-  margin: 20px 0; 
+  margin: 10px 0 20px 0; 
   width: 100%; 
 }
 
 .nav-btn { 
-  padding: 8px 20px; 
-  font-weight: bold; 
+  padding: 10px 24px; 
+  font-weight: 600; 
+  font-size: 14px;
   cursor: pointer; 
-  border: 1px solid #ccc; 
-  background: #fff; 
-  border-radius: 4px; 
+  border: 1px solid #cbd5e1; 
+  background: #ffffff; 
+  color: #475569;
+  border-radius: 8px; /* Runder wirkt moderner */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
   transition: all 0.2s ease-in-out;
 }
 
-/* Aktiver Zustand bekommt dein schickes App-Blau */
+/* Aktiver Zustand bekommt dein App-Blau */
 .nav-btn.active { 
-  background: #007bff; 
+  background: #3b82f6; 
   color: white; 
-  border-color: #0056b3; 
+  border-color: #2563eb; 
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
 }
 
 .nav-btn:hover:not(.active) {
-  background: #f0f0f0;
+  background: #f8fafc;
+  color: #1e293b;
+  border-color: #94a3b8;
 }
 
 .undo-toast-wrapper {
@@ -387,3 +407,4 @@
 .animated.pop-in {
   animation: popIn 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
+

@@ -1,77 +1,95 @@
+/* statistic-component.css */
+
 .stats-bar {
   display: flex;
   align-items: center;
-  gap: 16px;
-  background-color: #ffffff;
-  padding: 12px 16px;
-  border: 1px solid #c8d6e0;
-  border-radius: 8px;
-  box-shadow: 0 4px 10px rgba(16, 42, 58, 0.05);
-  margin-bottom: 20px;
+  
+  /* 🧲 DIE RETTUNG: Schiebt den gesamten Inhalt der Leiste nach rechts! */
+  justify-content: flex-end; 
+  gap: 12px; 
+  
+  background-color: transparent; 
+  padding: 8px 0px 16px 0px; 
+  border: none; 
+  box-shadow: none; 
+  
+  margin-bottom: 12px;
   flex-wrap: wrap;
   width: 100%;
   box-sizing: border-box;
 }
 
+/* 🎨 DIE STATUS-KAPSELN */
 .stat-item {
   font-size: 13px;
-  color: #64748b;
-  padding: 4px 10px;
-  border-radius: 6px;
-  background-color: #f8fafc;
-}
-
-.stat-item.all strong {
-  color: #2c3e50;
-}
-
-.stat-item.open strong {
-  color: #00b4d8; /* Dein Kärtchen-Blau */
-}
-
-.stat-item.overdue {
-  background-color: #fffafa;
-}
-.stat-item.overdue strong {
-  color: #e74c3c; /* Dein Kärtchen-Rot */
-}
-
-.stat-item.done {
-  background-color: #f8fafc;
-}
-.stat-item.done strong {
-  color: #2ecc71; /* Dein Kärtchen-Grün */
-}
-
-/* Prozentanzeige elegant rechts andocken */
-/* Die Prozent-Kapsel bekommt einen dezenten grünen Touch */
-.stat-percent {
-  margin-left: auto;
-  font-size: 14px;
-  font-weight: 700;
-  color: #14532d; /* Ein dunkles, edles Grün für die Schrift */
-  background-color: #dcfce7; /* Ein sehr helles, modernes Erfolg-Grün als Hintergrund */
+  font-weight: 600; 
+  color: #475569;
   padding: 6px 14px;
-  border-radius: 12px;
+  border-radius: 20px; 
   display: flex;
   align-items: center;
   gap: 6px;
+  transition: all 0.2s ease;
 }
 
-/* Das Wort "Fortschritt" machen wir etwas dezenter als die Zahl selbst */
-.progress-label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 500;
-  color: #166534;
-  opacity: 0.8;
+/* 📋 Gesamt-Aufgaben */
+.stat-item.all {
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+}
+.stat-item.all strong { color: #1e293b; }
+
+/* ⏳ Offen */
+.stat-item.open {
+  background-color: #f0f9ff;
+  border: 1px solid #bae6fd;
+}
+.stat-item.open strong { color: #0284c7; }
+
+/* ⚠️ Überfällig */
+.stat-item.overdue {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+}
+.stat-item.overdue strong { color: #dc2626; }
+
+/* ✅ Erledigt */
+.stat-item.done {
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+.stat-item.done strong { color: #16a34a; }
+
+
+/* 🎯 DIE PROZENTANZEIGE */
+.stat-percent {
+  /* 🚨 WICHTIG: Das 'margin-left: auto' fliegt raus, da wir jetzt über die 'stats-bar' global nach rechts ausrichten */
+  font-size: 14px;
+  font-weight: 800; 
+  color: #065f46; 
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); 
+  padding: 8px 18px;
+  border-radius: 20px; 
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.12); 
+  animation: pulseProgress 2s infinite ease-in-out;
+}
+
+@keyframes pulseProgress {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
 }
 
 @media (max-width: 480px) {
+  .stats-bar {
+    /* Auf Mobilgeräten zentrieren wir es lieber, damit nichts unschön bricht */
+    justify-content: center;
+  }
   .stat-percent {
-    margin-left: 0;
     width: 100%;
-    text-align: center;
+    justify-content: center;
   }
 }

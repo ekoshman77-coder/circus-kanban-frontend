@@ -29,7 +29,6 @@
             [isKanbanMode]="false"
             [ngClass]="'status-' + item.visualStatus" 
             (toggleDescription)="toggleDescription(item.id)"
-            (toggleComplete)="onToggleComplete(item.id)" 
             (delete)="onDeleteTodo(item.id)">
           </app-todo-item>
         </div>

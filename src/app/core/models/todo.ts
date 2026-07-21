@@ -1,18 +1,18 @@
 import { ITodoJSON, TodoSyncState } from "../repositories/dto/todo-json";
 
 export enum DateStatus {
-    DUE = "due",
-    COMPLETED = "completed"
+  DUE = "due",
+  COMPLETED = "completed"
 }
 
 export type TeamStatus = 'BACKLOG' | 'OPEN' | 'IN_PROGRESS' | 'REVIEW' | 'DONE';
 
 export enum VisualStatus {
-    ON_TIME = "on-time",
-    COMPLETED = "completed",
-    OVERDUE = "overdue",
-    PENDING = "pending",
-    DUE_TODAY = "due-today"
+  ON_TIME = "on-time",
+  COMPLETED = "completed",
+  OVERDUE = "overdue",
+  PENDING = "pending",
+  DUE_TODAY = "due-today"
 }
 
 export class Todo {
@@ -75,15 +75,15 @@ export class Todo {
     this.assignedUserId = init.assignedUserId ?? null;
     this.isStarted = init.isStarted ?? false;
     this.teamStatus = (init.teamStatus as TeamStatus) ?? 'BACKLOG';
-    this.lastDeveloperId = init.lastDeveloperId?? null
+    this.lastDeveloperId = init.lastDeveloperId ?? null
   }
   public toJson(): ITodoJSON {
-     return {
-      id: this.id?? null,
+    return {
+      id: this.id ?? null,
       task: this.task,
       description: this.description,
       done: this.done,
-      dueDate: this.dueDate, 
+      dueDate: this.dueDate,
       completedAt: this.completedAt,
       effort: this.effort,
       usedEffort: this.usedEffort,
@@ -93,94 +93,89 @@ export class Todo {
       category: this.category,
       effortChangesCount: this.effortChangesCount,
       milestoneId: this.milestoneId,
-      isStarted: this.isStarted?? false,
-      assignedUserId: this.assignedUserId?? null,
+      isStarted: this.isStarted ?? false,
+      assignedUserId: this.assignedUserId ?? null,
       teamStatus: this.teamStatus,
       lastDeveloperId: this.lastDeveloperId ?? null
-     }
+    }
   }
 
   static fromTodo(oldTodo: Todo): Todo {
-    const copy = new Todo( {            
-             task: oldTodo.task,
-             description: oldTodo.description,
-             effort: oldTodo.effort,
-             dueDate: oldTodo.dueDate,
-             userId: oldTodo.userId,             
-             usedEffort: oldTodo.usedEffort,
-             createdAt: oldTodo.createdAt,
-             id: oldTodo.id,
-             syncState: oldTodo.syncState,
-             done: oldTodo.done,
-             completedAt: oldTodo.completedAt,
-             category: oldTodo.category,
-             effortChangesCount: oldTodo.effortChangesCount,
-             milestoneId: oldTodo.milestoneId,
-             isStarted: oldTodo.isStarted?? false,
-             assignedUserId: oldTodo.assignedUserId?? null,
-             teamStatus: oldTodo.teamStatus,
-             lastDeveloperId: oldTodo.lastDeveloperId
-  });
+    const copy = new Todo({
+      task: oldTodo.task,
+      description: oldTodo.description,
+      effort: oldTodo.effort,
+      dueDate: oldTodo.dueDate,
+      userId: oldTodo.userId,
+      usedEffort: oldTodo.usedEffort,
+      createdAt: oldTodo.createdAt,
+      id: oldTodo.id,
+      syncState: oldTodo.syncState,
+      done: oldTodo.done,
+      completedAt: oldTodo.completedAt,
+      category: oldTodo.category,
+      effortChangesCount: oldTodo.effortChangesCount,
+      milestoneId: oldTodo.milestoneId,
+      isStarted: oldTodo.isStarted ?? false,
+      assignedUserId: oldTodo.assignedUserId ?? null,
+      teamStatus: oldTodo.teamStatus,
+      lastDeveloperId: oldTodo.lastDeveloperId
+    });
     return copy
-  }  
+  }
 
   toggleComplete() {
     this.done = !this.done
     if (this.done) {
-        this.completedAt = Date.now() 
+      this.completedAt = Date.now()
     } else {
-        this.completedAt = null
+      this.completedAt = null
     }
   }
 
   setDescription(text: string) {
-     this.description = text
+    this.description = text
   }
 
   getTimeStamp(): number {
     if (this.done && this.completedAt !== null) {
-        return this.completedAt
+      return this.completedAt
     } else {
-        return this.dueDate
+      return this.dueDate
     }
   }
 
   getDateStatus(): DateStatus {
-    return this.done ?  DateStatus.COMPLETED : DateStatus.DUE;
+    return this.done ? DateStatus.COMPLETED : DateStatus.DUE;
   }
 
-    public getVisualStatus(): VisualStatus {
-      const now = Date.now();
-  
-      // Wir holen uns "Heute" um 00:00:00 Uhr zum Vergleichen
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-  
-      // Wir holen uns den Fälligkeitstag um 00:00:00 Uhr
-      const dueDate = new Date(this.dueDate);
-      dueDate.setHours(0, 0, 0, 0);
-  
-      // Fall 1: Aufgabe ist erledigt
-      if (this.done) {
-        return (this.completedAt !== null && this.completedAt <= this.dueDate)
-          ? VisualStatus.ON_TIME
-          : VisualStatus.COMPLETED;
-      }
-  
-      // Fall 2: Aufgabe ist offen
-      if (now > this.dueDate) {
-        return VisualStatus.OVERDUE;
-      } else if (dueDate.getTime() === today.getTime()) {
-        return VisualStatus.DUE_TODAY; // 🍊 Wenn das Datum genau heute ist!
-      } else {
-        return VisualStatus.PENDING;
-      }
+  public getVisualStatus(): VisualStatus {
+    // 1. FALL: Aufgabe ist ERLEDIGT ✅
+    if (this.done) {
+      // Rechtzeitig erledigt? (Erledigt-Zeitstempel liegt vor oder auf der Deadline)
+      return (this.completedAt !== null && this.completedAt <= this.dueDate)
+        ? VisualStatus.ON_TIME
+        : VisualStatus.COMPLETED;
     }
-/**
+
+    // 2. FALL: Aufgabe ist NOCH OFFEN ⏳
+    const now = Date.now();
+    const todayEnd = new Date().setHours(23, 59, 59, 999);
+
+    if (this.dueDate < now) {
+      return VisualStatus.OVERDUE;     // Zu spät / überfällig 🚨
+    } else if (this.dueDate <= todayEnd) {
+      return VisualStatus.DUE_TODAY;   // Muss heute erledigt werden 📅
+    } else {
+      return VisualStatus.PENDING;     // Hat noch reichlich Zeit ☕
+    }
+  }
+
+  /**
    * 👥 Gibt an, ob die Aufgabe bereits einem Teammitglied zugewiesen wurde
    */
   public get isAssigned(): boolean {
-    return this.assignedUserId !== null && this.assignedUserId !== undefined && this.assignedUserId .trim() !== '';
+    return this.assignedUserId !== null && this.assignedUserId !== undefined && this.assignedUserId.trim() !== '';
   }
 
   public get isExpress(): boolean {

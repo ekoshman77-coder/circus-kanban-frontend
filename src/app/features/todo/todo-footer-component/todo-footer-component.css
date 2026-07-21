@@ -1,40 +1,80 @@
-/* Erzeugt die perfekte Dreier-Reihe nebeneinander */
+/* todo-footer-component.css */
+
 .actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 15px;
-  padding-top: 10px;
-  border-top: 1px solid #eee;
+  margin-top: 24px;
+  padding-top: 16px;
+  /* 🪄 Eine viel weichere Trennung passend zur weißen Page */
+  border-top: 1px solid rgba(226, 232, 240, 0.8); 
   font-size: 13px;
   width: 100%;
+  box-sizing: border-box;
 }
 
-/* Die Text-Buttons nutzen das originale Blau deiner App */
+/* 🔘 DEZENTE BUTTONS STATT NACKTEM TEXT */
 .delete-completed-btn,
 .delete-all-btn {
-  color: #007bff;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 20px; /* Schön rund passend zur Statistik! */
   cursor: pointer;
-  text-decoration: none;
-  transition: color 0.2s;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid transparent;
 }
 
-.disable-btn {
-  color: #adb5bd !important; /* Ein schönes, dezentes Grau */
-  cursor: not-allowed !important; /* Verhindert die Klick-Hand */
-  text-decoration: none !important; /* Verhindert Unterstreichung */
+/* 🗑️ Erledigte löschen: Ein sanftes Graublau, das bei Hover dezent reagiert */
+.delete-completed-btn {
+  color: #475569;
+  background-color: #f1f5f9;
+  border-color: #e2e8f0;
 }
 
-.delete-completed-btn:hover,
+.delete-completed-btn:hover {
+  background-color: #e2e8f0;
+  color: #1e293b;
+}
+
+/* 🔥 Alle löschen: Ein dezentes Warn-Pastell, das erst bei Hover signalisiert */
+.delete-all-btn {
+  color: #64748b;
+  background-color: #f8fafc;
+  border-color: #e2e8f0;
+}
+
 .delete-all-btn:hover {
-  text-decoration: underline;
-  color: #0056b3;
+  background-color: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.08);
 }
 
-/* Der Aufwand in der Mitte bekommt das neutrale Grau des alten Gesamt-Zählers */
+/* 🔌 Offline-Zustand: Wunderschön stummgeschaltet */
+.disable-btn {
+  color: #94a3b8 !important; 
+  background-color: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  cursor: not-allowed !important; 
+  opacity: 0.6;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* 📊 DIE AUFWANDS-ANZEIGE IN DER MITTE */
 .total-time-display {
-  color: #666;
-  font-weight: 500;
+  color: #475569;
+  font-weight: 600;
   cursor: default;
   text-align: center;
+  background-color: #f8fafc;
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }

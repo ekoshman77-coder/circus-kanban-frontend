@@ -28,7 +28,6 @@ import { TodoPlanningModalComponent } from '../../../core/shared/components/todo
   imports: [
     CommonModule, 
     MilestoneSelectorComponent, 
-    TodoFormComponent, 
     DragDropModule, 
     TodoItemComponent,
     TodoPlanningModalComponent
