@@ -1,7 +1,8 @@
-import { Component, inject, signal, output } from '@angular/core'; 
+import { Component, inject, signal, output, computed } from '@angular/core'; 
 import { CommonModule } from '@angular/common';
 import { UserService } from '../../../core/services/user/user-service';
 import { PlannerService } from '../../../core/services/ai/planner-service';
+import { NotificationService } from '../../../core/services/notification/notification-service';
 
 @Component({
   selector: 'app-planner-recommendation',
@@ -12,10 +13,13 @@ import { PlannerService } from '../../../core/services/ai/planner-service';
 })
 export class PlannerRecommendationComponent {
   private userService = inject(UserService);
-  public plannerService = inject(PlannerService); // 👈 Auf 'public' geändert, damit das HTML direkt auf die Signals zugreifen kann!
+  public plannerService = inject(PlannerService); 
+  private notificationService = inject(NotificationService)
+
+  closeRequest = output<{ accepted: boolean; todoId: string }>();
 
   showFeedbackReasons = signal<boolean>(false);
-  closeRequest = output<{ accepted: boolean; todoId: string }>();
+  isComputing = computed(() => this.plannerService.isLoading());  
 
   // 🌐 Unser Wörterbuch für die Internationalisierung (Frontend-Driven UI)
   readonly PLANNER_MESSAGES: Record<string, Record<string, string>> = {
@@ -77,11 +81,24 @@ export class PlannerRecommendationComponent {
     console.log('Feedback gesendet:', reason);
     const currentEnergy = this.userService.userEnergy();
 
-    // 1. Feedback via Service an das Backend jagen (Der Frust-Hammer wartet dort! 🔨)
-    this.plannerService.sendFeedback(todo.id, false, reason, currentEnergy);
+    // 🎯 REIHENFOLGE ERZWUNGEN: Wir subscriben direkt auf den Service-Call!
+    this.plannerService.sendFeedback(todo.id, false, reason, currentEnergy).subscribe({
+      next: () => {
+        this.loadNextRecommendation();
+      },
+      error: (err) => {
+        console.error('Feedback fehlgeschlagen:', err);
+        
+        // 1. Schicke Toast-Nachricht auf den Bildschirm 🍿
+        this.notificationService.showNotification(
+          'Verbindung abgebrochen! Dein Feedback konnte nicht gespeichert werden.', 
+          'error'
+        );
 
-    // 2. Direkt die nächste Empfehlung laden – ohne die nervige alte Aufgabe!
-    this.loadNextRecommendation();
+        // 2. Wir schleißen die Empfehlungs-Komponente, 
+        // damit der User nicht auf dem alten To-Do hängen bleibt.
+        this.closeRequest.emit({ accepted: false, todoId: todo.id });      }
+    });
   }
 
   loadNextRecommendation() {
@@ -93,4 +110,6 @@ export class PlannerRecommendationComponent {
     // 🚀 RAUS MIT DEM MOCK! Wir rufen jetzt die echte Server-Logik auf:
     this.plannerService.loadSmartRecommendation(energy, timeLeft);
   }
+
+  
 }

@@ -10,6 +10,7 @@ export interface GamificationResult {
   currentLevel: number;
   levelUp: boolean;
   levelTitle: string;
+  levelIcon: string;
   currentLevelXpStart: number;
   nextLevelXpRequired: number;
 }

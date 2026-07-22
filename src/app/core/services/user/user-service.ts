@@ -30,9 +30,10 @@ export class UserService {
 
   public gamificationSignal = signal<GamificationResult>({
     currentXp: 0,
-    currentLevel: 1,
+    currentLevel: 0,
     levelUp: false,
-    levelTitle: 'To-Do-Lehrling 👶',
+    levelTitle: 'To-Do-Lehrling',
+    levelIcon: '👶',
     currentLevelXpStart: 0,
     nextLevelXpRequired: 100
   });

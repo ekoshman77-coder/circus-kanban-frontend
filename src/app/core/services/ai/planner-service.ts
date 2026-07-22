@@ -2,6 +2,7 @@ import { inject, Injectable, signal } from '@angular/core';
 import { UserService } from '../user/user-service';
 import { AiRepository } from '../../repositories/ai-repository'; 
 import { Todo } from '../../models/todo';
+import { delay, Observable, tap } from 'rxjs';
 
 /**
  * Interface für die Antwort des KI-Planer-Services.
@@ -94,17 +95,20 @@ export class PlannerService {
     accepted: boolean, 
     reason: 'no_motivation' | 'too_heavy' | 'too_long' | null, 
     energy: string
-  ): void {
+  ): Observable<void> {
     const currentUserId = this.userService.getCurrentUserId();
+    this.isLoading.set(true);
 
-    this.aiRepository.sendPlannerFeedback({ 
+    return this.aiRepository.sendPlannerFeedback({ 
       userId: currentUserId ?? "",
       todoId: todoId, 
       accepted: accepted, 
       rejectReason: reason, 
       currentEnergy: energy 
     })
-    .subscribe({
+    .pipe(
+      delay(800),
+      tap({
       next: () => {
         console.log('🧠 KI hat das Feedback erfolgreich gelernt!');
         
@@ -112,11 +116,13 @@ export class PlannerService {
         if (accepted) {
           this.recommendedTodo.set(null);
           this.aiResponseCode.set(null);
+          this.isLoading.set(false)
         }
       },
       error: (err) => {
         console.error('Fehler beim Senden des KI-Feedbacks:', err);
+        this.isLoading.set(false)
       }
-    });
+    }));
   }
 }
