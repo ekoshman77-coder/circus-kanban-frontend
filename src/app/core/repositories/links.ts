@@ -16,10 +16,11 @@
   export const getAiMilestonesUrl = `${baseUrl}/projects/suggest`;
   export const trackAiMilestoneSelectionUrl = `${baseUrl}/projects/track-selection`;
   export const trackAiMilestoneDegradationUrl = `${baseUrl}/projects/track-degradation`;
- export const trackAiIgnoredMilestoneUrl = `${baseUrl}/projects/track-ignorance`;
+  export const trackAiIgnoredMilestoneUrl = `${baseUrl}/projects/track-ignorance`;
   export const aiNotePredictionUrl = `${baseUrl}/ai/notes/predict`;
   export const aiCategoriesApiUrl = `${baseUrl}/ai/todos/categories`;
   export const aiNoteCategoriesUrl = `${baseUrl}/ai/notes/categories`;
-  export const API_URL = 'http://localhost:8080/api/gamification'
+ // export const API_URL = 'http://localhost:8080/api/gamification';
+  export const aiTodoSnoozingUrl = `${baseUrl}/ai/planner/snooze`;
 
   

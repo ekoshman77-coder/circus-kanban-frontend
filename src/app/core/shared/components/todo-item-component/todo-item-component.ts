@@ -120,6 +120,17 @@ export class TodoItemComponent {
     //    this.isPopupOpen.set(false);
   }
 
+  public onDropdownChange(event: Event): void {
+  const selectElement = event.target as HTMLSelectElement;
+  const newValue = Number(selectElement.value);
+  
+  if (!isNaN(newValue)) {
+    this.selectPoints(newValue);
+  } else {
+    this.isEditingPoints.set(false);
+  }
+}
+
   public cancelEffortPopup() {
     this.item().cancelEffortPopup()
   }

@@ -1,10 +1,11 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { aiCategoriesApiUrl, aiNoteCategoriesUrl, aiNotePredictionUrl, aiPredictionApiUrl, aiPredictionEffortUrl, getAiMilestonesUrl, smartPlannerFeedbackUrl, smartPlannerUrl, trackAiIgnoredMilestoneUrl, trackAiMilestoneDegradationUrl, trackAiMilestoneSelectionUrl } from './links';
+import { aiCategoriesApiUrl, aiNoteCategoriesUrl, aiNotePredictionUrl, aiPredictionApiUrl, aiPredictionEffortUrl, aiTodoSnoozingUrl, getAiMilestonesUrl, smartPlannerFeedbackUrl, smartPlannerUrl, trackAiIgnoredMilestoneUrl, trackAiMilestoneDegradationUrl, trackAiMilestoneSelectionUrl } from './links';
 import { ITodoJSON } from './dto/todo-json';
 import { MilestoneSuggestionsModel } from '../models/milestone-suggestions-model';
 import { IgnoredMilestones } from './dto/ignored-milestones';
+import { TodoSnoozyPayload } from './dto/todo-snoozy-payload';
 
 /**
  *  Die internationalisierungssichere Server-Antwort für die Empfehlung
@@ -131,5 +132,10 @@ export class AiRepository {
    */
   public trackMilestoneDegradation(projectTitle: string, milestoneTitle: string, userId: string): Observable<void> {
     return this.http.post<void>(trackAiMilestoneDegradationUrl, { projectTitle, milestoneTitle, userId });
+  }
+
+  public snoozyTodo(todoId: string, durationInMin: number): Observable<void> {
+    const payload: TodoSnoozyPayload = {todoId: todoId, durationInMin: durationInMin}
+    return this.http.post<void>(aiTodoSnoozingUrl, payload)
   }
 }

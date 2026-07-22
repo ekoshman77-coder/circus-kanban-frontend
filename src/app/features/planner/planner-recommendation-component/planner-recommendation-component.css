@@ -67,12 +67,14 @@
   100% { opacity: 0.95; }
 }
 
+/* 🛠️ FIX: Basiert auf einer sauberen Links-Rechts-Aufteilung */
 .content-state {
   display: flex;
-  align-items: center;
+  align-items: flex-start; /* ⚡ Richtet Text und Buttons oben bündig aus, kein vertikales Verrutschen mehr! */
   justify-content: space-between;
-  flex: 1;
-  gap: 16px;
+  flex-index: 1;
+  gap: 20px;
+  width: 100%;
 }
 
 /* Das vorgeschlagene To-Do als flache Zeile */
@@ -83,8 +85,9 @@
   margin: 0;
   box-shadow: none;
   display: flex;
-  align-items: center;
-  gap: 10px;
+  align-items: flex-start; /* ⚡ Richtet das Stunden-Badge und den Text sauber oben aus */
+  gap: 12px;
+  flex: 1; /* ⚡ Nimmt sich den restlichen Platz links, drückt aber die Buttons nicht weg */
 }
 
 .todo-effort {
@@ -125,6 +128,25 @@
 }
 .btn-accept:hover { background: #059669; }
 
+.btn-snooze {
+  padding: 6px 12px;
+  background: #ffffff;
+  color: #64748b; /* Ein schickes Schiefer-Grau */
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.btn-snooze:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #334155;
+}
+
 .btn-reject { 
   padding: 6px 12px; 
   background: #f1f5f9; /* ⚡ Dezentes Grau statt aggressivem Rot! */
@@ -138,7 +160,7 @@
 }
 .btn-reject:hover { background: #e2e8f0; }
 
-* 📋 Das Feedback-Overlay – sitzt als kompakter Block ganz RECHTS */
+/* 📋 Das Feedback-Overlay – sitzt als kompakter Block ganz RECHTS */
 .feedback-overlay { 
   display: flex;
   flex-direction: column;    /* Frage OBEN, Buttons DARUNTER */
@@ -338,4 +360,50 @@
 .content-state {
   flex-wrap: wrap; /* Erlaubt Elementen, untereinander zu rutschen */
   gap: 12px;
+}
+
+/* 🧠 KI-Stimmungs-Barometer Style */
+.ai-mood-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px; /* Schöner Abstand unter dem Aufgabentitel */
+  padding: 6px 12px;
+  background: rgba(14, 165, 233, 0.06); /* Ein ganz feiner Hauch von edlem KI-Blau */
+  border-left: 3px solid #0ea5e9; /* Stylische blaue Akzentlinie links */
+  border-radius: 0 6px 6px 0;
+  width: fit-content; /* Passt sich kompakt der Textlänge an */
+}
+
+.mood-icon {
+  font-size: 14px;
+}
+
+.mood-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: #0369a1; /* Dunkleres Info-Blau für beste Lesbarkeit */
+  font-style: italic; /* Macht es als "Gedankengang" der KI erkennbar */
+}
+
+/* Stellt sicher, dass Titel und Barometer eine saubere, vertikale Spalte bilden */
+.todo-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px; /* Abstand zwischen To-Do-Text und Barometer */
+  flex: 1;
+}
+
+/* 🧠 KI-Stimmungs-Barometer Style */
+.ai-mood-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(14, 165, 233, 0.06); 
+  border-left: 3px solid #0ea5e9; 
+  border-radius: 0 6px 6px 0;
+  width: fit-content;
+  margin: 0 !important; /* ⚡ Verhindert unerwartete Abstände */
 }

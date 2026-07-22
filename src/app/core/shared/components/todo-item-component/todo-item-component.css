@@ -457,16 +457,18 @@
    DAS INLINE-AUSWAHLMENÜ (FIBONACCI) FÜR OFFENE TODOS
    ========================================================================== */
 
+/* ==========================================================================
+   DAS INLINE-AUSWAHLMENÜ (FIBONACCI)
+   ========================================================================== */
 .points-container {
   position: relative;
   display: inline-flex;
   align-items: center;
-  /* Wir geben ihm eine minimale Breite/Höhe, damit der Ankerpunkt berechenbar ist */
   min-width: 35px; 
   height: 14px;
 }
 
-/* 2. 🛸 JETZT SCHWEBT ES PERFEKT RECHTS DANEBEN */
+/* Standard-Verhalten (Listen-Ansicht): Schwebt absolut neben/über der Pille */
 .points-selector {
   display: inline-flex;
   gap: 3px;
@@ -475,18 +477,22 @@
   border-radius: 6px;
   border: 1.5px solid #4e54c8;
   
-  /* Löst die Box komplett aus dem Platzbedarf der Karte */
   position: absolute;
-  
-  /* 🟢 DIE ANPASSUNG: Orientierung an der Oberkante statt Unterkante! */
-  top: 50%;                   /* Setzt die Box genau auf die vertikale Mitte des Ankers */
-  transform: translateY(-50%); /* Zentriert sie mathematisch exakt */
-  left: 0px;                  /* Startet genau dort, wo sonst die Klammer-Pille saß */
-  
-  white-space: nowrap;        /* Buttons bleiben stur in einer Reihe */
-  z-index: 99;                /* Schiebt sich über absolut jeden Text drüber */
-  
-  box-shadow: 0 3px 10px rgba(78, 84, 200, 0.22); /* Hochwertiger, schwebender Schatten */
+  top: 50%;                   
+  transform: translateY(-50%); 
+  left: 0px;                  
+  white-space: nowrap;        
+  z-index: 99;                
+  box-shadow: 0 3px 10px rgba(78, 84, 200, 0.22); 
+}
+
+/* 🎯 DER RETTER FÜR DIE 5 KANBAN-SPALTEN: Inline-Modus */
+.points-selector.kanban-inline {
+  position: static;          /* Hebt absolute Positionierung auf! */
+  transform: none;           /* Löscht das Verschieben */
+  box-shadow: none;          /* Kann flach sein, da es IN der Karte liegt */
+  border: 1px solid #cbd5e1; /* Etwas dezenterer Rahmen, da direkt im Kärtchen */
+  padding: 0;                /* Maximal kompakt */
 }
 
 /* Die einzelnen Zahlen-Knöpfe (1, 2, 3, 5...) auf strenge Diät setzen */
@@ -587,4 +593,47 @@
   overflow-y: auto !important;
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
+}
+
+.points-dropdown-native {
+  display: inline-flex;
+  align-items: center;
+  font-weight: bold;
+  color: #64748b;
+  padding: 1px 6px !important;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background-color: #f8fafc;
+  font-size: 11px;
+  height: 18px;
+  cursor: default;
+  font-family: inherit;
+  
+  /* Entfernt den Standard-Dropdown-Pfeil in allen Browsern */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+/* 🟢 ONLINE-MODUS: Wenn klickbar, lila Design wie deine alte Pille! */
+.points-dropdown-native.clickable {
+  cursor: pointer;
+  background-color: #f5f3ff !important;
+  color: #4e54c8 !important;
+  border: 1px dashed #c084fc !important;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Hover-Effekt im Online-Modus */
+.points-dropdown-native.clickable:hover {
+  background-color: #4e54c8 !important;
+  color: #ffffff !important;
+  border-color: #4e54c8 !important;
+  transform: scale(1.05);
+}
+
+/* Styling für die Optionen im geöffneten Zustand */
+.points-dropdown-native option {
+  background-color: #ffffff;
+  color: #1e293b;
 }

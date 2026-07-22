@@ -47,7 +47,8 @@ export class PlannerService {
    * * @param energy Das aktuelle Energielevel des Nutzers ('low', 'normal', 'high').
    * @param timeLeft Die verbleibende Arbeitszeit in Stunden.
    */
-  public loadSmartRecommendation(energy: string, timeLeft: number): void {  
+  public loadSmartRecommendation(energy: string, timeLeft: number): void { 
+    console.log("service: startet loadSmatRecomendation") 
     const currentUserId = this.userService.getCurrentUserId();
     
     this.isLoading.set(true);
@@ -124,5 +125,18 @@ export class PlannerService {
         this.isLoading.set(false)
       }
     }));
+  }
+
+  public snoozyrecommendedTodo(todoId: string, durationInMin: number) {
+    return this.aiRepository.snoozyTodo(todoId, durationInMin).pipe(
+      tap({
+        next: () => 
+          {
+            console.log("todo war snoozed erfolgreich")
+            this.recommendedTodo.set(null)
+          },
+        error: (err) => console.error("Fehler bei Snoozing", err)
+      })
+    )
   }
 }

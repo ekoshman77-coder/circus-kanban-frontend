@@ -41,41 +41,52 @@
   }
 
   <!-- WENN BEREIT UND EINE AUFGABE DA IST -->
-  @if (!isComputing() && plannerService.recommendedTodo(); as todo) {
-    <div class="content-state">
+<!-- WENN BEREIT UND EINE AUFGABE DA IST -->
+@if (!isComputing() && plannerService.recommendedTodo(); as todo) {
+  <div class="content-state">
+    
+    <div class="todo-highlight">
+      @if (todo.effort > 0) {
+        <span class="todo-effort">⏳ {{ todo.effort }} Std.</span>
+      }
       
-      <div class="todo-highlight">
-        @if (todo.effort > 0) {
-          <span class="todo-effort">⏳ {{ todo.effort }} Std.</span>
-        }
+      <!-- NEU: Diese Kapsel hält Text und Barometer untereinander! -->
+      <div class="todo-details">
         <h2 class="todo-task">{{ todo.task }}</h2>
         
-        @if (plannerService.aiResponseCode()?.modeCode === 'RECHERCHE') {
-          <p class="research-desc">
-            {{ PLANNER_MESSAGES[currentLanguage][descKey] }}
-          </p>
+        <!-- 🧠 Das KI-Stimmungs-Barometer -->
+        @if (moodExplanation; as mood) {
+          <div class="ai-mood-bar">
+            <span class="mood-icon">{{ mood.icon }}</span>
+            <span class="mood-text">{{ mood.text }}</span>
+          </div>
         }
       </div>
-
-      @if (!showFeedbackReasons()) {
-        <div class="action-buttons">
-          <button (click)="acceptTodo(todo)" class="btn-accept">🚀 Starten!</button>
-          <button (click)="rejectTodo()" class="btn-reject">👎 Passt gerade nicht</button>
-        </div>
+      
+      @if (plannerService.aiResponseCode()?.modeCode === 'RECHERCHE') {
+        <p class="research-desc">{{ moodExplanation }}</p>
       }
-
-      @if (showFeedbackReasons()) {
-        <div class="feedback-overlay">
-          <p class="feedback-prompt">Schade! Warum passt es gerade nicht? 🤔</p>
-          <div class="reason-grid">
-            <button (click)="sendDetailedFeedback(todo, 'no_motivation')" class="reason-btn">🥱 Keine Lust darauf</button>
-            <button (click)="sendDetailedFeedback(todo, 'too_heavy')" class="reason-btn">🧠 Zu schwer für jetzt</button>
-            <button (click)="sendDetailedFeedback(todo, 'too_long')" class="reason-btn">⏱️ Dauert mir zu lange</button>
-            <button (click)="cancelReject()" class="reason-btn cancel">Zurück</button>
-          </div>
-        </div>
-      }
-
     </div>
-  }
-</div>
+
+    @if (!showFeedbackReasons()) {
+      <div class="action-buttons">
+        <button (click)="acceptTodo(todo)" class="btn-accept">🚀 Starten!</button>
+        <button (click)= "snoozeTodo(todo)" class="btn-snooze">⏱️ Später</button>
+        <button (click)="rejectTodo()" class="btn-reject">👎 Passt gerade nicht</button>
+      </div>
+    }
+
+    @else {
+      <div class="feedback-overlay">
+        <p class="feedback-prompt">Schade! Warum passt es gerade nicht? 🤔</p>
+        <div class="reason-grid">
+          <button (click)="sendDetailedFeedback(todo, 'no_motivation')" class="reason-btn">🥱 Keine Lust darauf</button>
+          <button (click)="sendDetailedFeedback(todo, 'too_heavy')" class="reason-btn">🧠 Zu schwer für jetzt</button>
+          <button (click)="sendDetailedFeedback(todo, 'too_long')" class="reason-btn">⏱️ Dauert mir zu lange</button>
+          <button (click)="cancelReject()" class="reason-btn cancel">Zurück</button>
+        </div>
+      </div>
+    }
+
+  </div>
+}
