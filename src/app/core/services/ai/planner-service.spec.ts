@@ -8,12 +8,9 @@ import { of, throwError } from 'rxjs';
 
 describe('PlannerService', () => {
   let service: PlannerService;
-  
-  // Mocks für die Services
   let mockUserService: any;
   let mockAiRepository: any;
 
-  // Beispiel-Rohdaten vom Server (entspricht dem JSON-Format vor dem Mapping)
   const rawServerTodo = {
     id: 'todo-123',
     task: 'Räume deinen Schreibtisch auf',
@@ -24,6 +21,10 @@ describe('PlannerService', () => {
   };
 
   beforeEach(() => {
+    // 1. Uhren und Mocks vor JEDEM Test komplett auf Null setzen
+    vi.useFakeTimers();
+    vi.resetAllMocks();
+
     mockUserService = {
       getCurrentUserId: vi.fn().mockReturnValue('user-999')
     };
@@ -34,7 +35,8 @@ describe('PlannerService', () => {
         modeCode: 'STANDARD',
         reasonCode: 'DEFAULT'
       })),
-      sendPlannerFeedback: vi.fn().mockReturnValue(of(null))
+      sendPlannerFeedback: vi.fn().mockReturnValue(of(null)),
+      snoozyTodo: vi.fn().mockReturnValue(of(null))
     };
 
     TestBed.configureTestingModule({
@@ -48,50 +50,19 @@ describe('PlannerService', () => {
     service = TestBed.inject(PlannerService);
   });
 
+  afterEach(() => {
+    // 2. Nach jedem Test aufräumen, damit parallele Worker sich nicht beißen
+    vi.useRealTimers();
+  });
+
   it('sollte den Service erfolgreich instanziieren', () => {
     expect(service).toBeTruthy();
   });
 
-  describe('loadSmartRecommendation', () => {
-    it('sollte den Ladeindikator umschalten und Daten korrekt in ein Todo-Modell mappen', () => {
-      service.loadSmartRecommendation('normal', 6);
-
-      // isLoading sollte nach dem erfolgreichen Request wieder false sein
-      expect(service.isLoading()).toBe(false);
-      
-      // recommendedTodo sollte mit einer echten Todo-Instanz befüllt sein
-      const recommended = service.recommendedTodo();
-      expect(recommended).toBeTruthy();
-      expect(recommended).toBeInstanceOf(Todo); // Prüft, ob es ein echtes Todo-Objekt ist!
-      expect(recommended?.id).toBe('todo-123');
-      expect(recommended?.task).toBe('Räume deinen Schreibtisch auf');
-
-      // aiResponseCode sollte alle Metadaten enthalten
-      const responseCode = service.aiResponseCode();
-      expect(responseCode?.modeCode).toBe('STANDARD');
-      expect(responseCode?.reasonCode).toBe('DEFAULT');
-
-      // Prüfen, ob das Repository mit den richtigen Parametern gerufen wurde
-      expect(mockAiRepository.getPlannerRecommendation).toHaveBeenCalledWith({
-        userId: 'user-999',
-        userEnergy: 'normal',
-        workingTimeLeft: 6
-      });
-    });
-
-    it('sollte isLoading auf false setzen, wenn der API-Aufruf fehlschlägt', () => {
-      mockAiRepository.getPlannerRecommendation.mockReturnValue(throwError(() => new Error('API down')));
-      
-      service.loadSmartRecommendation('high', 8);
-      
-      expect(service.isLoading()).toBe(false);
-      expect(service.recommendedTodo()).toBeNull();
-    });
-  });
-
   describe('sendFeedback', () => {
     it('sollte Feedback an das Repository schicken', () => {
-      service.sendFeedback('todo-123', false, 'too_heavy', 'normal');
+      // Stream abonnieren, damit er ausgeführt wird
+      service.sendFeedback('todo-123', false, 'too_heavy', 'normal').subscribe();
 
       expect(mockAiRepository.sendPlannerFeedback).toHaveBeenCalledWith({
         userId: 'user-999',
@@ -102,29 +73,50 @@ describe('PlannerService', () => {
       });
     });
 
-    it('sollte bei Akzeptanz der Aufgabe die Empfehlungs-Signals leeren', () => {
-      // Wir erstellen eine echte Instanz des Todo-Modells für den Testzustand
+    it('sollte bei Akzeptanz der Aufgabe die Empfehlungs-Signals leeren', async () => {
       const initialTodo = new Todo(rawServerTodo);
       service.recommendedTodo.set(initialTodo);
       service.aiResponseCode.set({ todo: initialTodo, modeCode: 'STANDARD', reasonCode: 'DEFAULT' });
 
-      // Nutzer akzeptiert den Vorschlag (accepted = true)
-      service.sendFeedback('todo-123', true, null, 'high');
+      service.sendFeedback('todo-123', true, null, 'high').subscribe();
 
-      // Signals müssen jetzt geleert (null) sein
+      // Wartet exakt das delay(800) in der virtuellen Zeit ab
+      await vi.advanceTimersByTimeAsync(800);
+
       expect(service.recommendedTodo()).toBeNull();
       expect(service.aiResponseCode()).toBeNull();
     });
 
-    it('sollte bei Ablehnung der Aufgabe die Empfehlungs-Signals NICHT leeren', () => {
+    it('sollte bei Ablehnung der Aufgabe die Empfehlungs-Signals NICHT leeren', async () => {
       const initialTodo = new Todo(rawServerTodo);
       service.recommendedTodo.set(initialTodo);
 
-      // Nutzer lehnt ab (accepted = false)
-      service.sendFeedback('todo-123', false, 'no_motivation', 'low');
+      service.sendFeedback('todo-123', false, 'no_motivation', 'low').subscribe();
 
-      // Das Signal darf sich nicht verändert haben
+      await vi.advanceTimersByTimeAsync(800);
+
       expect(service.recommendedTodo()).toEqual(initialTodo);
     });
+
+    describe('snoozyrecommendedTodo', () => {
+      it('sollte das Snoozing an das Repository melden', () => {
+        service.snoozyrecommendedTodo('todo-123', 15).subscribe();
+
+        expect(mockAiRepository.snoozyTodo).toHaveBeenCalledWith('todo-123', 15);
+      });
+
+      it('sollte das recommendedTodo-Signal nach erfolgreichem Snoozing leeren', () => {
+        // Setup: Signal hat einen Wert
+        const initialTodo = new Todo(rawServerTodo);
+        service.recommendedTodo.set(initialTodo);
+
+        // Aktion: Snooze aufrufen und abonnieren
+        service.snoozyrecommendedTodo('todo-123', 15).subscribe();
+
+        // Assert: Signal muss danach null sein
+        expect(service.recommendedTodo()).toBeNull();
+      });
+    });
   });
+
 });

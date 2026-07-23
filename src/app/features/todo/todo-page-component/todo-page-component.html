@@ -1,58 +1,68 @@
 <div class="todo-page-layout">
-  
+
   <section class="todo-form-section">
     <app-todo-form></app-todo-form>
   </section>
 
   <div class="nav-menu">
-    <button 
-      class="nav-btn" 
-      [class.active]="currentView() === 'list'" 
-      (click)="setView('list')">
+    <button class="nav-btn" [class.active]="currentView() === 'list'" (click)="setView('list')">
       Listen-Ansicht
     </button>
-    <button 
-      class="nav-btn" 
-      [class.active]="currentView() === 'kanban'" 
-      (click)="setView('kanban')">
+    <button class="nav-btn" [class.active]="currentView() === 'kanban'" (click)="setView('kanban')">
       Kanban-Board
     </button>
-    <button 
-      class="nav-btn" 
-      [class.active]="currentView() === 'express'" 
-      (click)="setView('express')">
+    <button class="nav-btn" [class.active]="currentView() === 'express'" (click)="setView('express')">
       ⚡ Express-Erfassung
-  </button>
- </div> 
+    </button>
+  </div>
   <section class="todo-list-section">
     @if (currentView() === 'list') {
-      <app-todo-list></app-todo-list>
-    } 
+    <app-todo-list></app-todo-list>
+    }
     @if (currentView() === 'kanban') {
-      <app-todo-kanban></app-todo-kanban>
+    <app-todo-kanban></app-todo-kanban>
     }
     @if (currentView() === 'express') {
-      <app-archiv-express></app-archiv-express>
+    <app-archiv-express></app-archiv-express>
     }
   </section>
 
-@if (localShowLevelUpBanner(); as result) {
+<!-- 🍞 DER UNDO-TOAST MIT DYNAMISCHER ZEIT -->
+@if (activeDeletedTodo(); as deletedTodo) {
+  <div class="undo-toast-wrapper">
+    
+    <div class="undo-toast animate-slide-up">
+      <div class="toast-info">
+        <span>🗑️ "{{ deletedTodo.task }}" wurde gelöscht.</span>
+      </div>
+      <button class="undo-button" (click)="restoreTodo()">
+        ↩️ Rückgängig
+      </button>
+      
+      <!-- 🚀 Das ist die ganze Magie: Das Signal bestimmt die Breite! -->
+      <div class="progress-bar" [style.width.%]="deleteToastProgress()"></div>
+    </div>
+
+  </div>
+}
+  @if (localShowLevelUpBanner(); as result) {
   <div class="level-up-overlay">
     <div class="level-up-card animated pop-in">
       <div class="stars">✨ ⭐ ✨</div>
       <h1>LEVEL UP!</h1>
-      
+
       <p class="level-title-name">» {{ result.levelTitle }} «</p>
-      
+
       <div class="level-badge">
         <span>{{ result.currentLevel }}</span>
       </div>
-      
-      <p class="congrats-text">Du hast erfolgreich Stufe {{ result.currentLevel }} erreicht. Deine Produktivität ist legendär! 🚀</p>
-      
+
+      <p class="congrats-text">Du hast erfolgreich Stufe {{ result.currentLevel }} erreicht. Deine Produktivität ist
+        legendär! 🚀</p>
+
       <button class="close-btn" (click)="closeBanner()">
         Weiter rocken!
       </button>
     </div>
   </div>
-}
+  }

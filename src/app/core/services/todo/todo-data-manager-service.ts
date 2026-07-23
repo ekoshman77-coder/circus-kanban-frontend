@@ -174,28 +174,38 @@ export class TodoDataManagerService {
   /**
    * 📝 TODO BEARBEITEN
    */
+/**
+   * 📝 TODO BEARBEITEN (Hauptmethode - Jetzt übersichtlich strukturiert)
+   */
   public updateTodo(updatedTodo: Todo, currentList: Todo[]): Observable<Todo[]> {
     if (this.connectionService.status() === 'OFFLINE') {
-      const originalTodo = currentList.find(t => t.id === updatedTodo.id);
-      if (originalTodo && Number(originalTodo.effort) !== Number(updatedTodo.effort)) {
-        return throwError(() => new Error('Effort estimations cannot be changed while offline!'));
-      }
-
-      const updatedOfflineList = currentList.map(todo => {
-        if (todo.id === updatedTodo.id) {
-          updatedTodo.syncState = updatedTodo.syncState === 'new' ? 'new' : 'dirty';
-          return new Todo(updatedTodo);
-        }
-        return new Todo(todo);
-      });
-
-      this.saveToLocalStorage(updatedOfflineList);
-
-      // 💡 HIER! Signal offline bearbeiten
-      this.allTodosPool.set(updatedOfflineList);
-      return of(updatedOfflineList);
+      return this.processOfflineUpdate(updatedTodo, currentList);
     }
 
+    return this.processOnlineUpdate(updatedTodo, currentList);
+  }
+
+  /** 🔴 Verarbeitet die Änderung rein lokal im Offline-Modus */
+  private processOfflineUpdate(updatedTodo: Todo, currentList: Todo[]): Observable<Todo[]> {
+    const originalTodo = currentList.find(t => t.id === updatedTodo.id);
+    if (originalTodo && Number(originalTodo.effort) !== Number(updatedTodo.effort)) {
+      return throwError(() => new Error('Effort estimations cannot be changed while offline!'));
+    }
+
+    const updatedOfflineList = currentList.map(todo => {
+      if (todo.id === updatedTodo.id) {
+        updatedTodo.syncState = updatedTodo.syncState === 'new' ? 'new' : 'dirty';
+        return new Todo(updatedTodo);
+      }
+      return new Todo(todo);
+    });
+
+    this.applyLocalStateUpdate(updatedOfflineList);
+    return of(updatedOfflineList);
+  }
+
+  /** 🟢 Sendet die Änderung zum Server und verarbeitet die Antwort (inkl. Gamification) */
+  private processOnlineUpdate(updatedTodo: Todo, currentList: Todo[]): Observable<Todo[]> {
     return this.todoRepository.updateTodo(updatedTodo).pipe(
       map((response: TodoUpdateResponse) => {
         const serverTodo = response.todo as unknown as Todo;
@@ -205,18 +215,22 @@ export class TodoDataManagerService {
           todo.id === serverTodo.id ? new Todo(serverTodo) : new Todo(todo)
         );
 
+        // Gamification-Konfetti werfen 🎉
         if (response.gamificationResult) {
           this.userService.updateGamification(response.gamificationResult);
         }
 
-        this.saveToLocalStorage(finalUpdatedList);
-
-        // 💡 HIER! Signal online bearbeiten
-        this.allTodosPool.set(finalUpdatedList);
+        this.applyLocalStateUpdate(finalUpdatedList);
         return finalUpdatedList;
       }),
       catchError((err) => throwError(() => err))
     );
+  }
+
+  /** 💾 Aktualisiert synchron den LocalStorage und das reaktive Pool-Signal */
+  private applyLocalStateUpdate(updatedList: Todo[]): void {
+    this.saveToLocalStorage(updatedList);
+    this.allTodosPool.set(updatedList);
   }
 
   // 🗑️ Erledigte private Aufgaben löschen (Footer links)

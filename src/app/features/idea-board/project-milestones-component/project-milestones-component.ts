@@ -202,22 +202,32 @@ export class ProjectMilestonesComponent implements OnInit {
    * @description Holt alle im System registrierten "freien" Aufgaben (milestoneId === null)
    * und sortiert sie reaktiv nach LIFO (Zuletzt erstellt steht ganz oben).
    */
-  public readonly unassignedTodos = computed(() => {
-    const freeTodos = this.todoService.milestoneBoardTodos()
-      .filter((t) => t.milestoneId === null)
-      .map((t) => new TodoViewModel(t, false));
-    if (!freeTodos) return [];
+public readonly unassignedTodos = computed(() => {
+  const allTodosFromService = this.todoService.milestoneBoardTodos();
+  
+  // 🔍 Detektiv-Log: Zeigt uns im Browser genau, wie viele Todos überhaupt ankommen!
+  console.log('🕵️‍♂️ Pool im Milestone-Board:', allTodosFromService.length, 'Todos gesamt.');
 
-    return freeTodos.slice().sort((a, b) => {
-      const checkedDiff = (a.todo.done ? 1 : 0) - (b.todo.done ? 1 : 0);
-      if (checkedDiff !== 0) return checkedDiff;
+  const freeTodos = allTodosFromService
+ //   .filter((t) => t.milestoneId === null || t.milestoneId === undefined || t.milestoneId === '')
+    .filter((t) => !t.milestoneId)
+    .map((t) => new TodoViewModel(t, false));
 
-      const timeA = a.todo.createdAt ? new Date(a.todo.createdAt).getTime() : 0;
-      const timeB = b.todo.createdAt ? new Date(b.todo.createdAt).getTime() : 0;
+  if (!freeTodos) return [];
 
-      return timeB - timeA;
-    });
+  // Logge die IDs der freien Todos, um zu sehen, wer es geschafft hat
+  console.log('🎯 Davon als "frei" erkannt:', freeTodos.length);
+
+  return freeTodos.slice().sort((a, b) => {
+    const checkedDiff = (a.todo.done ? 1 : 0) - (b.todo.done ? 1 : 0);
+    if (checkedDiff !== 0) return checkedDiff;
+
+    const timeA = a.todo.createdAt ? new Date(a.todo.createdAt).getTime() : 0;
+    const timeB = b.todo.createdAt ? new Date(b.todo.createdAt).getTime() : 0;
+
+    return timeB - timeA;
   });
+});
   
   /** Berechnet den aktuellen Fortschritt der aktiven Phase in Prozent */
   public readonly milestoneProgress = computed(() => {

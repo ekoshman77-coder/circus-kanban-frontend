@@ -118,19 +118,30 @@ export class TodoListComponent implements OnInit {
   }
 
   onDeleteTodo(id: string): void {
-    this.todoService.deleteTodo(id);
-  }
+    console.log("TodoList: onDeleteTodo startet");
 
-  onClearCompleted(): void {
-    const completedTodos = this.uiTodos().filter(todoViewModel => todoViewModel.done);
-    const allowed = completedTodos.filter(todoViewModel =>
-      this.todoQueryService.hasPermissionForMilestone(todoViewModel.todo.milestoneId, 'TODO_DELETE')
-    );
-
-    allowed.forEach(todoViewModel => {
-      this.todoService.deleteTodo(todoViewModel.id);
-    });
+  // 1. Finde das echte To-Do-Objekt aus dem Stream
+  const todo = this.filteredTodos().find(t => t.id === id);
+  
+  if (todo) {
+    // 2. HIER MUSS UNSERE NEUE UNDO-METHODE REIN!
+    this.todoService.deleteTodoWithUndo(todo);
+  } else {
+    // Nur zur Sicherheit, falls es im ViewModel-Mapping verschluckt wurde:
+    console.warn("Todo nicht im gefilterten Stream gefunden!");
   }
+}
+
+//   onClearCompleted(): void {
+//     const completedTodos = this.uiTodos().filter(todoViewModel => todoViewModel.done);
+//     const allowed = completedTodos.filter(todoViewModel =>
+//       this.todoQueryService.hasPermissionForMilestone(todoViewModel.todo.milestoneId, 'TODO_DELETE')
+//     );
+
+//     allowed.forEach(todoViewModel => {
+// //      this.todoService.deleteTodo(todoViewModel.id);
+//     });
+//   }
 
   toggleDescription(id: string): void {
     const currentSet = new Set(this.openedDescrIds());

@@ -51,28 +51,30 @@
 .undo-toast-wrapper {
   position: fixed;
   bottom: 30px;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: center;
-  z-index: 9999;       /* Immer ganz oben über allen Karten schweben! */
+  right: 30px;          /* 🧭 Exakt 30px Abstand vom rechten Rand! */
+  z-index: 9999;        /* Immer ganz oben über allen Karten schweben! */
   pointer-events: none; /* Klicks gehen durch den leeren Raum des Wrappers hindurch */
 }
 
-/* 🧰 Die eigentliche Toast-Kachel */
+/* 🧰 Die harmonisierte Toast-Kachel */
 .undo-toast {
-  pointer-events: auto; /* Die Kachel selbst fängt Klicks (wie den Button) natürlich ab */
-  background-color: #1e293b; /* Edles, dunkles Anthrazit/Slate */
+  pointer-events: auto;
+  /* 🌊 Ein edles, tiefes Nachtblau statt hartem Schwarz */
+  background-color: hsl(228, 91%, 21%); 
   color: #f8fafc;
-  padding: 12px 22px;
-  border-radius: 12px;
+  padding: 14px 24px;
+  /* Etwas runder für den modernen Pastell-Look */
+  border-radius: 16px; 
   display: flex;
   align-items: center;
   gap: 24px;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  min-width: 340px;
-  overflow: hidden; /* Schneidet die Progressbar unten sauber ab */
+  /* Ein viel weicherer, diffuserer Schatten mit einem Hauch von Blau-Anteil */
+  box-shadow: 0 10px 40px rgba(15, 23, 42, 0.15), 
+              0 0 20px rgba(59, 130, 246, 0.1); 
+  /* Ein feiner bläulicher Rahmen, der den Übergang sanfter macht */
+  border: 1px solid rgba(59, 130, 246, 0.2); 
+  min-width: 360px;
+  overflow: hidden;
   position: relative;
 }
 
@@ -82,6 +84,12 @@
   gap: 10px;
   font-size: 14px;
   font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* ⚡ Der Text im Toast bekommt etwas mehr Eleganz */
+.toast-info span {
+  font-weight: 500;
+  color: #e2e8f0; /* Leicht abgemildertes Weiß, schont das Auge */
 }
 
 /* ⚡ Der interaktive Undo-Button */
@@ -125,15 +133,14 @@
   }
 }
 
-/* ⏱️ Der schrumpfende Zeitbalken (läuft exakt synchron zu deinen 5000ms im Service!) */
+/* ⏱️ Der Signal-gesteuerte Zeitbalken */
 .progress-bar {
   position: absolute;
   bottom: 0;
   left: 0;
-  height: 3px;
+  height: 4px; /* Minimal dicker für bessere Sichtbarkeit bei 10s */
   background-color: #3b82f6;
-  width: 100%;
-  animation: shrinkBar 5s linear forwards;
+  transition: width 0.05s linear; 
 }
 
 @keyframes shrinkBar {
