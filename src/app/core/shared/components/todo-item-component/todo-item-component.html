@@ -1,163 +1,176 @@
 @if (item()) {
 <div class="todo-item-card">
   <div class="header-row">
+    
+    <!-- 1. Pfeil für Beschreibung: Nur in der Listenansicht -->
     @if (!isKanbanMode) {
-    <span class="arrow" (click)="toggleDescription.emit()">
-      {{ isDescriptionOpen ? '▼' : '▶' }}
-    </span>
+      <span class="arrow" (click)="toggleDescription.emit()">
+        {{ isDescriptionOpen ? '▼' : '▶' }}
+      </span>
     }
 
+    <!-- 2. Hauptinhalt & Metadaten -->
     <div class="title-wrapper">
       <span class="text" [class.completed-text]="item().done">{{ item().task }}</span>
 
       <div class="todo-metadata">
+        <!-- Fällig/Erledigt Text + Datum: Immer -->
         <span class="todo-date">
           📅 {{ item().dateText }} {{ item().timestamp | date:'dd.MM.yyyy HH:mm' }}
         </span>
 
+        <!-- Kategorie: Immer, wenn vorhanden -->
         @if (item().category) {
-        <span class="category-badge">{{ item().category }}</span>
+          <span class="category-badge">{{ item().category }}</span>
         }
 
-<!-- 🎯 WIEDERHERSTELLUNG: Geplantes Effort (Fibonacci-Selektor) -->
-@if (!item().done) {
-  <div class="points-container">
-    <select 
-      class="points-dropdown-native"
-      [class.clickable]="!isOffline()"
-      [disabled]="isOffline()"
-      [ngModel]="item().effort"
-      (change)="onDropdownChange($event)"
-      [title]="isOffline() ? 'Geplanten Aufwand ansehen (Offline gesperrt)' : 'Geplanten Aufwand bearbeiten'"
-    >
-      <!-- Der aktuell gespeicherte Wert wird immer als erste, ausgewählte Option angezeigt -->
-      <option [value]="item().effort" hidden>{{ !isOffline() ? '✍️ ' : '' }}{{ item().effort }} P</option>
-      
-      <!-- Die auswählbaren Fibonacci-Optionen -->
-      @for (p of todoService.fibonacciSequence; track p) {
-        <option [value]="p">{{ p }} P</option>
-      }
-    </select>
-  </div>
-} 
-        @if (assignedUser(); as user) {
-        <div class="assignee-badge-wrapper" [class.read-only]="!isAssigneeEditable()"
-          (click)="toggleAssigneePopup($event)" [style.cursor]="isAssigneeEditable() ? 'pointer' : 'default'"
-          [title]="isAssigneeEditable() ? 'Zuweisung ändern' : 'Zuweisung gesperrt'">
-          <div class="avatar-circle" [style.background-color]="user.getColorHash()"
-            [title]="'Zugewiesen an: ' + user.fullName">
-            {{ user.getInitials() }}
+        <!-- Story-Points (Effort): Nur für offene Todos -->
+        @if (!item().done) {
+          <div class="points-container">
+            <!-- Offline-Modus: Reine Text-Anzeige (Gesperrt) -->
+            @if (isOffline()) {
+              <span class="points-badge offline-text" title="Geplanten Aufwand ansehen (Offline gesperrt)">
+                {{ item().effort }} P
+              </span>
+            } 
+<!-- Online-Modus: Interaktive Pille mit Dropdown -->
+            @else {
+              <select 
+                class="points-dropdown-native clickable"
+                [value]="item().effort"
+                [ngModel]="item().effort"
+                (change)="onDropdownChange($event)"
+                title="Geplanten Aufwand bearbeiten"
+              >
+                <!-- Wir nehmen das saubere @for, überlassen das Suchen 
+                     aber dem [value] des select-Tags! -->
+                @for (p of todoService.fibonacciSequence; track p) {
+                  <option [value]="p">
+                    {{ p === item().effort ? '✍️ ' : '' }}{{ p }} P
+                  </option>
+                }
+              </select>
+            }
           </div>
-          <span class="assignee-name">{{ user.firstName }}</span>
-        </div>
-        } @else if (item().todo.teamStatus === 'REVIEW') {
-        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+        } 
 
-          <div class="assignee-badge-wrapper" [class.read-only]="!isAssigneeEditable()"
-            (click)="toggleAssigneePopup($event)"
-            style="cursor: pointer; border: 1px dashed #cbd5e1; background: #f8fafc; padding: 2px 6px; border-radius: 12px; display: flex; align-items: center; gap: 4px;"
-            title="Reviewer gesucht! Klicke, um dich einzutragen.">
-            <span style="font-size: 11px;">🔍</span>
-            <span class="assignee-name"
-              style="font-size: 10px; color: #475569; text-transform: uppercase; font-weight: 600; letter-spacing: 0.3px;">
-              Review frei
-            </span>
-          </div>
+        <!-- Mitarbeiter-Zuweisung: Nur bei Team-Todos (isTeamsPopupEnabled) -->
+        @if (isTeamsPopupEnabled()) {
+          @if (assignedUser(); as user) {
+            <div class="assignee-badge-wrapper" 
+                 [class.read-only]="!isAssigneeEditable()"
+                 (click)="toggleAssigneePopup($event)" 
+                 [style.cursor]="isAssigneeEditable() ? 'pointer' : 'default'"
+                 [title]="isAssigneeEditable() ? 'Zuweisung ändern' : 'Zuweisung gesperrt'">
+              <div class="avatar-circle" [style.background-color]="user.getColorHash()" [title]="'Zugewiesen an: ' + user.fullName">
+                {{ user.getInitials() }}
+              </div>
+              <span class="assignee-name">{{ user.firstName }}</span>
+            </div>
+          } @else if (item().todo.teamStatus === 'REVIEW') {
+            <div class="review-status-container">
+              <div class="assignee-badge-wrapper review-free-badge" 
+                   (click)="toggleAssigneePopup($event)"
+                   title="Reviewer gesucht! Klicke, um dich einzutragen.">
+                <span class="search-icon">🔍</span>
+                <span class="assignee-name review-free-text">Review frei</span>
+              </div>
 
-          @if (lastDeveloperUser(); as dev) {
-          <span style="font-size: 9px; color: #94a3b8; cursor: help;" [title]="'Entwickelt von: ' + dev.fullName">
-            Dev: {{ dev.firstName }}
-          </span>
+              @if (lastDeveloperUser(); as dev) {
+                <span class="dev-info-text" [title]="'Entwickelt von: ' + dev.fullName">
+                  Dev: {{ dev.firstName }}
+                </span>
+              }
+            </div>
           }
-        </div>
         }
       </div>
     </div>
 
+    <!-- 3. Rechte Aktions-Buttons: Nur in der Listenansicht (nicht bei Kanban) -->
     @if (!isKanbanMode) {
-    <div class="right-actions">
-      <label class="circle">
-        <input class="done" type="checkbox" [checked]="item().done" (click)="onCheckClick($event)">
-        <span class="custom-circle"></span>
-      </label>
+      <div class="right-actions">
+        <!-- Checkbox: Immer da, aber nur aktiv wenn canEdit -->
+        <label class="circle" [class.disabled-label]="!item().canEdit">
+          <input class="done" type="checkbox" 
+                 [checked]="item().done" 
+                 [disabled]="!item().canEdit" 
+                 (click)="item().canEdit && onCheckClick($event)">
+          <span class="custom-circle"></span>
+        </label>
 
-      <button class="btn-utility btn-action-edit" [class.hidden-edit]="item().done" (click)="onEditClick()">
-        ✏️
-      </button>
+        <!-- Editieren: Verschwindet optisch, wenn das Todo erledigt ist -->
+        <button class="btn-utility btn-action-edit" 
+                [class.hidden-edit]="item().done" 
+                (click)="onEditClick()">
+          ✏️
+        </button>
 
-      <button class="btn-utility btn-action-delete" [disabled]="item().canDelete" (click)="delete.emit()">
-        🗑️
-      </button>
-    </div>
+        <!-- Löschen: Immer da, aber deaktiviert, wenn kein canDelete vorliegt -->
+        <button class="btn-utility btn-action-delete" 
+                [disabled]="!item().canDelete" 
+                [title]="!item().canDelete ? 'Keine Berechtigung zum Löschen' : 'Aufgabe löschen'"
+                (click)="item().canDelete && delete.emit()">
+          🗑️
+        </button>
+      </div>
     }
   </div>
 
+  <!-- 4. Ausklappbare Beschreibung -->
   @if (!isKanbanMode && isDescriptionOpen) {
-  <div class="description-box">
-    <textarea class="descr-text" readonly>{{ item().description }}</textarea>
-  </div>
-  }
-
-  @if (isPopupOpen()) {
-  <div class="satellite-popover">
-    <div class="popover-controls-row">
-
-      <div class="input-wrapper">
-        <input type="number" [(ngModel)]="item().popupEffortValue"
-          (keydown.enter)="onEffortConfirmed(item().popupEffortValue())" />
-        <span class="unit">P</span>
-      </div>
-
-      <div class="popover-buttons-column">
-        <button class="btn-primary" (click)="onEffortConfirmed(item().popupEffortValue())">
-          ✔
-        </button>
-        <button class="btn-secondary" (click)="item().showEffortPopup.set(false)">
-          ✖
-        </button>
-      </div>
-
+    <div class="description-box">
+      <textarea class="descr-text" readonly>{{ item().description }}</textarea>
     </div>
-  </div>
   }
-  @if (isTeamsPopupEnabled() && item().showAssigneePopup()) {
-  <div class="satellite-popover assignee-popover"
-    style="position: absolute; background: white; border: 1px solid #cbd5e1; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 8px; padding: 12px; z-index: 999; width: 200px; display: flex; flex-direction: column; gap: 6px; top: 50%; left: 10px; transform: translateY(-50%);">
-    <strong style="font-size: 11px; color: #64748b; margin-bottom: 4px;">Mitarbeiter zuweisen:</strong>
-    <button type="button" (click)="onAssigneeSelected(null)"
-      style="display: flex; align-items: center; gap: 8px; width: 100%; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 4px; padding: 6px; cursor: pointer; text-align: left; color: #be123c; font-weight: 600; font-size: 11px;">
-      ❌ Zuweisung aufheben
-    </button>
 
-    @for (user of assignableUsers(); track user.id) {
-    @let isLastDev = item().todo.teamStatus === 'REVIEW' && item().todo.lastDeveloperId === user.id;
-
-    <button type="button" (click)="!isLastDev && onAssigneeSelected(user.id)" [disabled]="isLastDev"
-      [style.opacity]="isLastDev ? '0.5' : '1'" [style.cursor]="isLastDev ? 'not-allowed' : 'pointer'"
-      [title]="isLastDev ? 'Entwickler dürfen ihr eigenes Ticket nicht reviewen!' : 'Als Reviewer zuweisen'"
-      style="display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px; text-align: left;">
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <div [style.background-color]="user.getColorHash()"
-          style="width: 18px; height: 18px; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold;">
-          {{ user.getInitials() }}
+  <!-- 5. Popovers -->
+  @if (isPopupOpen()) {
+    <div class="satellite-popover">
+      <div class="popover-controls-row">
+        <div class="input-wrapper">
+          <input type="number" [(ngModel)]="item().popupEffortValue" (keydown.enter)="onEffortConfirmed(item().popupEffortValue())" />
+          <span class="unit">P</span>
         </div>
-        <span style="font-size: 11px; font-weight: 500;">{{ user.fullName }}</span>
+        <div class="popover-buttons-column">
+          <button class="btn-primary" (click)="onEffortConfirmed(item().popupEffortValue())">✔</button>
+          <button class="btn-secondary" (click)="item().showEffortPopup.set(false)">✖</button>
+        </div>
       </div>
+    </div>
+  }
 
-      @if (isLastDev) {
-      <span
-        style="font-size: 9px; color: #ef4444; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; padding-right: 8px;">
-        🛠️ Autor
-      </span>
+  @if (isTeamsPopupEnabled() && item().showAssigneePopup()) {
+    <div class="satellite-popover assignee-popover">
+      <strong class="popover-title">Mitarbeiter zuweisen:</strong>
+      <button type="button" (click)="onAssigneeSelected(null)" class="btn-remove-assignee">
+        ❌ Zuweisung aufheben
+      </button>
+
+      @for (user of assignableUsers(); track user.id) {
+        @let isLastDev = item().todo.teamStatus === 'REVIEW' && item().todo.lastDeveloperId === user.id;
+
+        <button type="button" 
+                (click)="!isLastDev && onAssigneeSelected(user.id)" 
+                [disabled]="isLastDev"
+                class="btn-assignee-option"
+                [title]="isLastDev ? 'Entwickler dürfen ihr eigenes Ticket nicht reviewen!' : 'Als Reviewer zuweisen'">
+          <div class="assignee-option-left">
+            <div [style.background-color]="user.getColorHash()" class="avatar-circle-small">
+              {{ user.getInitials() }}
+            </div>
+            <span class="user-fullname">{{ user.fullName }}</span>
+          </div>
+          @if (isLastDev) {
+            <span class="author-badge">🛠️ Autor</span>
+          }
+        </button>
       }
-    </button>
-    }
 
-    <button (click)="item().showAssigneePopup.set(false)"
-      style="margin-top: 4px; background: #64748b; color: white; border: none; border-radius: 4px; padding: 6px; font-size: 11px; cursor: pointer; border-radius: 4px;">
-      Abbrechen 🛑
-    </button>
-  </div>
+      <button (click)="item().showAssigneePopup.set(false)" class="btn-popover-cancel">
+        Abbrechen 🛑
+      </button>
+    </div>
   }
 </div>
 }
