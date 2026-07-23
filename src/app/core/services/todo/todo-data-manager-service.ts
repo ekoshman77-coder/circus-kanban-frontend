@@ -10,6 +10,7 @@ import { SyncResult } from '../../repositories/dto/sync-result';
 import { UserService } from '../user/user-service';
 import { LoggerService } from '../logger/logger-service';
 import { TodoUpdateResponse } from '../../repositories/dto/dto-interface';
+import { TodoBulkDto } from '../../models/todo-bulk';
 
 @Injectable({
   providedIn: 'root'
@@ -57,23 +58,27 @@ export class TodoDataManagerService {
     });
   }
 
-  private triggerBulkSync(userId: string): void {
-    const offlineTodos = this.getOfflineTodosFromStorage();
+private triggerBulkSync(userId: string): void {
+    // 🎯 Holt die intelligenten Bulk-DTOs mit ihren Zettelchen aus dem Storage
+    const offlineTodos = this.getBulkQueueFromStorage();
     if (!offlineTodos || offlineTodos.length === 0) return;
 
+    // Wir übergeben das saubere Array an das Repository
     this.todoRepository.syncBulkTodos(userId, offlineTodos).subscribe({
       next: (result) => {
         this.syncCompleted.set(result);
-        // 💡 HIER! Wenn der Groß-Sync durch ist, befüllen wir den Pool mit der neuen Liste
+        // Pool mit der vom Server korrigierten (und um Projekt-Todos ergänzten) Liste befüllen
         this.allTodosPool.set(result.liste.map(t => new Todo(t)));
+        
+        // 🧼 Wenn alles erfolgreich war: Die Offline-Warteschlange leeren!
         return this.clearLocalOfflineStorage();
+      },
+      error: (err) => {
+        console.error('Fehler beim Bulk-Sync:', err);
+        // Im Fehlerfall lassen wir die Queue im Storage, damit beim nächsten
+        // Netzwerkhubbel ein neuer Versuch gestartet wird.
       }
     });
-  }
-
-  private getOfflineTodosFromStorage(): Todo[] {
-    const data = localStorage.getItem(this.OFFLINE_CHANGES_KEY);
-    return data ? JSON.parse(data) : [];
   }
 
   private clearLocalOfflineStorage(): void {
@@ -128,15 +133,16 @@ export class TodoDataManagerService {
    */
   public createTodo(todo: Todo, aktuelleListe: Todo[]): Observable<Todo[]> {
     if (this.connectionService.status() === 'OFFLINE') {
-      todo.syncState = 'new';
+      todo.syncState = 'new'; // Für die UI
       const neueListe = [...aktuelleListe, todo].map(t => new Todo(t));
       this.saveToLocalStorage(neueListe);
 
-      // 💡 HIER! Signal offline aktualisieren
+      // 🏷️ Ab in die Bulk-Queue!
+      this.updateBulkQueue(todo, 'CREATED');
+
       this.allTodosPool.set(neueListe);
       return of(neueListe);
     }
-
     return this.todoRepository.createTodo(todo).pipe(
       map(savedTodo => {
         savedTodo.syncState = 'fine';
@@ -154,29 +160,38 @@ export class TodoDataManagerService {
    * ❌ TODO LÖSCHEN
    */
   // 🗑️ Einzelnes To-Do löschen
-  public deleteTodo(id: string): Observable<void> {
-    if (this.connectionService.status() === 'OFFLINE') {
-      return throwError(() => new Error('Löschen ist im Offline-Modus nicht erlaubt!'));
+public deleteTodo(id: string): Observable<void> {
+  const currentTodos = this.allTodosPool();
+  const todoToDelete = currentTodos.find(t => t.id === id);
+
+  if (this.connectionService.status() === 'OFFLINE') {
+    if (todoToDelete) {
+      // 🏷️ Ab in die Bulk-Queue mit dem Löschbefehl!
+      this.updateBulkQueue(todoToDelete, 'DELETED');
+
+      // Aus dem UI-Pool filtern, damit es sofort verschwindet
+      const gefilterteListe = currentTodos.filter(t => t.id !== id);
+      this.saveToLocalStorage(gefilterteListe);
+      this.allTodosPool.set(gefilterteListe);
     }
-
-    return this.todoRepository.deleteTodo(id).pipe(
-      tap(() => {
-        // Nutzt dein echtes allTodosPool-Signal!
-        const currentTodos = this.allTodosPool();
-        const gefilterteListe = currentTodos.filter(t => t.id !== id);
-
-        this.saveToLocalStorage(gefilterteListe);
-        this.allTodosPool.set(gefilterteListe);
-      })
-    );
+    return of(void 0); // Erfolgreich lokal gelöscht!
   }
 
+  // Online-Modus bleibt unverändert...
+  return this.todoRepository.deleteTodo(id).pipe(
+    tap(() => {
+      const gefilterteListe = this.allTodosPool().filter(t => t.id !== id);
+      this.saveToLocalStorage(gefilterteListe);
+      this.allTodosPool.set(gefilterteListe);
+    })
+  );
+}
   /**
    * 📝 TODO BEARBEITEN
    */
-/**
-   * 📝 TODO BEARBEITEN (Hauptmethode - Jetzt übersichtlich strukturiert)
-   */
+  /**
+     * 📝 TODO BEARBEITEN (Hauptmethode - Jetzt übersichtlich strukturiert)
+     */
   public updateTodo(updatedTodo: Todo, currentList: Todo[]): Observable<Todo[]> {
     if (this.connectionService.status() === 'OFFLINE') {
       return this.processOfflineUpdate(updatedTodo, currentList);
@@ -187,22 +202,26 @@ export class TodoDataManagerService {
 
   /** 🔴 Verarbeitet die Änderung rein lokal im Offline-Modus */
   private processOfflineUpdate(updatedTodo: Todo, currentList: Todo[]): Observable<Todo[]> {
-    const originalTodo = currentList.find(t => t.id === updatedTodo.id);
-    if (originalTodo && Number(originalTodo.effort) !== Number(updatedTodo.effort)) {
-      return throwError(() => new Error('Effort estimations cannot be changed while offline!'));
-    }
-
-    const updatedOfflineList = currentList.map(todo => {
-      if (todo.id === updatedTodo.id) {
-        updatedTodo.syncState = updatedTodo.syncState === 'new' ? 'new' : 'dirty';
-        return new Todo(updatedTodo);
-      }
-      return new Todo(todo);
-    });
-
-    this.applyLocalStateUpdate(updatedOfflineList);
-    return of(updatedOfflineList);
+  const originalTodo = currentList.find(t => t.id === updatedTodo.id);
+  if (originalTodo && Number(originalTodo.effort) !== Number(updatedTodo.effort)) {
+    return throwError(() => new Error('Effort estimations cannot be changed while offline!'));
   }
+
+  const updatedOfflineList = currentList.map(todo => {
+    if (todo.id === updatedTodo.id) {
+      updatedTodo.syncState = updatedTodo.syncState === 'new' ? 'new' : 'dirty';
+      
+      // 🏷️ Ab in die Bulk-Queue!
+      this.updateBulkQueue(updatedTodo, 'UPDATED');
+      
+      return new Todo(updatedTodo);
+    }
+    return new Todo(todo);
+  });
+
+  this.applyLocalStateUpdate(updatedOfflineList);
+  return of(updatedOfflineList);
+}
 
   /** 🟢 Sendet die Änderung zum Server und verarbeitet die Antwort (inkl. Gamification) */
   private processOnlineUpdate(updatedTodo: Todo, currentList: Todo[]): Observable<Todo[]> {
@@ -305,5 +324,55 @@ export class TodoDataManagerService {
   private clearLocalStorage(): void {
     this.localStorageService.removeItem(this.CACHE_KEY);
     this.clearLocalOfflineStorage();
+  }
+
+  private getBulkQueueFromStorage(): TodoBulkDto[] {
+    const data = localStorage.getItem(this.OFFLINE_CHANGES_KEY);
+    return data ? JSON.parse(data) : [];
+  }
+
+  private saveBulkQueueToStorage(queue: TodoBulkDto[]): void {
+    localStorage.setItem(this.OFFLINE_CHANGES_KEY, JSON.stringify(queue));
+  }
+
+  private updateBulkQueue(todo: Todo, action: 'CREATED' | 'UPDATED' | 'DELETED'): void {
+    let queue = this.getBulkQueueFromStorage();
+    const existingIndex = queue.findIndex(q => q.id === todo.id);
+
+    // Das DTO-Paket schnüren
+    const bulkItem: TodoBulkDto = {
+      ...todo,
+      syncAction: action
+    };
+
+    if (existingIndex > -1) {
+      const previousAction = queue[existingIndex].syncAction;
+
+      if (action === 'DELETED') {
+        if (previousAction === 'CREATED') {
+          // Fall A: Offline erstellt UND offline gelöscht
+          queue[existingIndex] = { ...bulkItem, syncAction: 'CREATED_AND_DELETED' };
+        } else if (previousAction === 'UPDATED' || previousAction === 'DIRTY_AND_DELETED') {
+          // Fall B: Auf Server bekannt, offline geändert UND danach gelöscht!
+          queue[existingIndex] = { ...bulkItem, syncAction: 'DIRTY_AND_DELETED' };
+        } else {
+          queue[existingIndex] = bulkItem;
+        }
+      } else if (action === 'UPDATED') {
+        if (previousAction === 'CREATED' || previousAction === 'CREATED_AND_DELETED') {
+          // Bleibt ein neues Todo, kriegt nur die neuesten Werte
+          queue[existingIndex] = { ...bulkItem, syncAction: previousAction };
+        } else {
+          queue[existingIndex] = bulkItem;
+        }
+      } else {
+        queue[existingIndex] = bulkItem;
+      }
+    } else {
+      // Noch nicht in der Queue? Einfach reinschreiben!
+      queue.push(bulkItem);
+    }
+
+    this.saveBulkQueueToStorage(queue);
   }
 }

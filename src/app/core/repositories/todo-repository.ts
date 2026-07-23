@@ -8,6 +8,7 @@ import { SyncResult } from './dto/sync-result';
 import { LoggerService } from '../services/logger/logger-service';
 import { TodoUpdateResponse } from './dto/dto-interface';
 import { ITodoJSON } from './dto/todo-json';
+import { TodoBulkDto } from '../models/todo-bulk';
 
 
 @Injectable({
@@ -107,7 +108,7 @@ export class TodoRepository {
   /**
    * 🔄 Schickt alle Offline-Änderungen gesammelt ans Kotlin-Backend
    */
-  public syncBulkTodos(userId: string, offlineTodos: Todo[]): Observable<SyncResult> {
+  public syncBulkTodos(userId: string, offlineTodos: TodoBulkDto[]): Observable<SyncResult> {
     // Wichtig: userId wird als Query-Param (?userId=...) übergeben, die Liste als JSON-Body
     return this.http.post<SyncResult>(`${bulkApiUrl}?userId=${userId}`, offlineTodos).pipe(
       map((result) => {

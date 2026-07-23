@@ -85,7 +85,7 @@
         ✏️
       </button>
 
-      <button class="btn-utility btn-action-delete" [disabled]="isOffline()" (click)="delete.emit()">
+      <button class="btn-utility btn-action-delete" [disabled]="item().canDelete" (click)="delete.emit()">
         🗑️
       </button>
     </div>
