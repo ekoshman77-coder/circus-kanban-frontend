@@ -33,8 +33,8 @@ Da das Projekt auf den neuesten Framework-Features aufbaut, werden folgende Mind
 ### Schritte
 1. Repository klonen:
    ```bash
-   git clone <DEIN_FRONTEND_GITHUB_LINK>
-   cd <PROJEKT_ORDNER_NAME>
+   git clone <https://github.com/ekoshman77-coder/circus-kanban-frontend>
+   cd <StartProject>
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.0.2.
 
