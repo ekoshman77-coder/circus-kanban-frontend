@@ -1,4 +1,40 @@
-# Schulung
+# SyncFocus & ProjectHub – Frontend 🚀
+> Reaktives Fullstack-Ökosystem für agiles Projekt- und Selbstmanagement
+
+Dieses Repository enthält das **Frontend** der Applikation, eine ganzheitliche Plattform, die klassisches Taskmanagement mit strategischer Projektplanung, Team-Kollaboration und datengestützter Optimierung vereint.
+
+---
+
+## 🏗️ Technologischer Stack (Frontend)
+* **Framework:** Angular (Moderne Standalone-Architektur)
+* **Reaktivität & Datenfluss:** RxJS-Pipelines, Reactive Forms
+* **Netzwerk:** HTTP-Interceptoren (z. B. für Auth-Tokens/Error-Handling)
+* **Design/UI:** HTML5, CSS3/SCSS (Responsive Design)
+
+---
+
+## 🧩 Die 5 Kern-Module des Gesamtprojekts
+
+1. **Agiles Task-Board:** Flexibles Arbeiten über Listenansichten oder ein interaktives Kanban-Board, erweitert um eine Expresserfassung für retrospektive Aufgaben.
+2. **Smarte Projekt- & Meilenstein-Kalkulation (Ideenboard):** Ideenfindung direkt gekoppelt an ein Projektkalkulations-Tool zur Definition von Meilensteinen und Teamzuweisungen.
+3. **KI-gestützter Smartplaner & Fokus-Zentrum:** Pomodoro-Fokustimer und Quickcenter für Workflows (gekoppelt an die Backend-Logik).
+4. **Teamboard & Ressourcenplanung:** Verwaltung von Teammitgliedern, Projektzuweisungen und spielerischen Elementen (digitale Kaffeekasse).
+5. **Analytisches Statistik-Dashboard:** Deep-Dive-Auswertungen (Überblick, Performance & Fokus, visuelle Tagesauslastung).
+
+---
+
+## 🛠️ Installation & Start
+
+### Voraussetzungen
+Da das Projekt auf den neuesten Framework-Features aufbaut, werden folgende Mindestversionen zwingend benötigt:
+* **Node.js:** v20.x oder v22.x (LTS)
+* **Angular CLI:** v21.x oder höher 🚀
+* 
+### Schritte
+1. Repository klonen:
+   ```bash
+   git clone <DEIN_FRONTEND_GITHUB_LINK>
+   cd <PROJEKT_ORDNER_NAME>
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.0.2.
 
@@ -57,3 +93,8 @@ Angular CLI does not come with an end-to-end testing framework by default. You c
 ## Additional Resources
 
 For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+
+## 👥 Team & Projektbeteiligte
+
+* **Elena Koshman** – Lead Developer & Software-Architektin
+* **Gemini 3.5 Flash (Google)** – KI-Entwicklungsassistent (Unterstützung bei Architekturfragen, Codeentwicklung und Code-Review)
