@@ -10,6 +10,10 @@ import { NotificationComponent } from './features/notification/notification-comp
 import { FilterComponent } from './features/todo/filter-component/filter-component';
 import { SearchCenterComponent } from './features/global-search/search-center-component/search-center-component';
 import { FilterService } from './core/services/filter/filter-service';
+import { TodoService } from './core/services/todo/todo-service';
+import { GamificationResult } from './core/models/gamification';
+import confetti from 'canvas-confetti';
+import { NotificationService } from './core/services/notification/notification-service';
 
 @Component({
   selector: 'app-root',
@@ -21,9 +25,10 @@ export class App implements OnInit {
   // 👥 Wir injizieren den UserService, um den Login-Status global abzufragen
   public userService = inject(UserService);
   public connectionService = inject(ConnectionService)
-  private navigationHistory = inject(NavigationHistoryService);
-
-  
+  public todoService = inject(TodoService);
+  public notificationService = inject(NotificationService)
+  // 🎯 Das globale Signal, das unser HTML mit den frischen Level-Daten füttert
+  protected globalLevelUpResult = signal<GamificationResult | null>(null);
   private filterService = inject(FilterService);
 
   // 2. Die Werte als einfache computed Signals für dein HTML bereitstellen
@@ -35,19 +40,93 @@ export class App implements OnInit {
   protected readonly title = signal('schulung');
 
   private router = inject(Router);
+  private lastKnownLevel: number | null = null;
 
-  constructor() {
-    // 🌟 Ein eigener Effekt NUR für das UI-Routing!
+constructor() {
+    // 🌟 EIN EINZIGER, KONTROLLIERTER EFFEKT FÜR DEN GESAMTEN USER-STATUS
     effect(() => {
       const isLoggedIn = this.userService.isLoggedIn();
-      
+      const gamification = this.userService.gamificationSignal();
+
+      // 🛑 FALL 1: User ist nicht eingeloggt
       if (!isLoggedIn) {
-        console.log('UI-Wächter: User ist ausgeloggt. Navigiere zu /welcome');
+        console.log('UI-Wächter: User ist ausgeloggt. Caches zurücksetzen.');
+        this.lastKnownLevel = null; // Sofort synchron nullen!
         this.router.navigate([''], { queryParams: { reason: 'session_expired' } });
+        return; // Effekt hier abbrechen
+      }
+
+      // 🎯 FALL 2: User ist eingeloggt und Gamification-Daten sind da
+      if (gamification) {
+        const currentLevel = gamification.currentLevel;
+
+        // Sicherheitsnetz: Level 0 ist der initiale Standardwert im Service, den ignorieren wir
+        if (currentLevel === 0) {
+          return;
+        }
+
+        // A) Initialer Zustand nach dem Login:
+        // Wir merken uns das Level vom Server, feuern aber kein Konfetti.
+        if (this.lastKnownLevel === null) {
+          this.lastKnownLevel = currentLevel;
+          return;
+        }
+
+        // B) Echtes Level-Up während der aktiven Session:
+        if (currentLevel > this.lastKnownLevel) {
+          console.log(`🎉 LEVEL UP! Von ${this.lastKnownLevel} auf ${currentLevel}`);
+          
+          this.fireEpicConfetti();
+          this.notificationService.showNotification(
+            `Aufgestiegen! ${gamification.levelIcon} Du bist jetzt Level ${currentLevel}: ${gamification.levelTitle}!`,
+            'success'
+          );
+        }
+
+        // Zustand für den nächsten Vergleich aktualisieren
+        this.lastKnownLevel = currentLevel;
       }
     });
+  }  
+
+  private fireEpicConfetti() {
+    const duration = 2.5 * 1000; // 2,5 Sekunden dezente Freude
+    const end = Date.now() + duration;
+
+    const neonColors = [
+      '#ff007f', // Cyber-Pink (knallt extrem gut)
+      '#00f5d4', // Neon-Türkis / Mint
+      '#7b2cbf', // Intensives Elektro-Lila
+      '#ffee32', // Strahlendes Signal-Gelb
+      '#39ff14'  // Giftiges Neon-Grün
+    ];
+
+    const frame = () => {
+      // Linke Kanone
+      confetti({
+        particleCount: 3,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0, y: 0.8 },
+        colors: neonColors // 👈 Hier die neuen Leuchtfarben rein
+      });
+      
+      // Rechte Kanone
+      confetti({
+        particleCount: 3,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1, y: 0.8 },
+        colors: neonColors // 👈 Und hier auch
+      });
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    };
+    frame();
   }
-ngOnInit() {
+
+  ngOnInit() {
     // Jedes Mal, wenn der Router eine Navigation beendet (auch wenn man auf derselben Seite bleibt)
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
@@ -69,4 +148,5 @@ ngOnInit() {
   closeBanner() {
     this.showOfflineBanner.set(false);
   }
+
 }

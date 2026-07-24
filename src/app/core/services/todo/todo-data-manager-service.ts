@@ -11,15 +11,16 @@ import { UserService } from '../user/user-service';
 import { LoggerService } from '../logger/logger-service';
 import { TodoUpdateResponse } from '../../repositories/dto/dto-interface';
 import { TodoBulkDto } from '../../models/todo-bulk';
+import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 
 @Injectable({
   providedIn: 'root'
 })
-export class TodoDataManagerService {
+export class TodoDataManagerService extends BaseDataManager {
   private todoRepository = inject(TodoRepository);
   private connectionService = inject(ConnectionService);
   private userService = inject(UserService)
-  private localStorageService = inject(LocalStorageService);
+ // private localStorageService = inject(LocalStorageService);
 
   private readonly CACHE_KEY = 'global_todos_pool';
   private readonly OFFLINE_CHANGES_KEY = 'offline_todos_queue';
@@ -37,6 +38,7 @@ export class TodoDataManagerService {
   private loggerService = Inject(LoggerService)
 
   constructor() {
+    super()
     effect(() => {
       const status = this.connectionService.status();
       if (status === 'UNKNOWN') return;
@@ -47,18 +49,14 @@ export class TodoDataManagerService {
         this.triggerBulkSync(currentUser.id);
       }
     });
-
-    // 🎧 2. NEU: Auf das Radio-Signal vom UserService hören!
-    this.userService.onLogout$.subscribe(() => {
-      console.log('=== 🧼 DATA MANAGER: Lösche To-Do-Caches und Pool ===');
-
-      // UI-Zustand sofort leeren, damit keine To-Dos flackern
-      this.allTodosPool.set([]);
-      this.clearLocalStorage();
-    });
   }
 
-private triggerBulkSync(userId: string): void {
+  public resetData(): void {
+    this.allTodosPool.set([]);
+    this.clearLocalStorage();
+  }
+
+  private triggerBulkSync(userId: string): void {
     // 🎯 Holt die intelligenten Bulk-DTOs mit ihren Zettelchen aus dem Storage
     const offlineTodos = this.getBulkQueueFromStorage();
     if (!offlineTodos || offlineTodos.length === 0) return;

@@ -145,6 +145,8 @@ export class UserService {
   }
 
   public login(username: string, password: string): Observable<IUser> {
+    this.logout();
+
     return this.userRepository.login(username, password).pipe(
       tap((user) => {
         this.saveSession(user);
@@ -168,6 +170,8 @@ export class UserService {
   }
 
   public register(username: string, firstName: string, lastName: string, password: string): Observable<IUser> {
+    this.logout();
+
     return this.userRepository.register(username, firstName, lastName, password).pipe(
       tap((user) => {
         this.saveSession(user);

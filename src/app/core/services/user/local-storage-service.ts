@@ -1,5 +1,5 @@
-// local-storage.service.ts
 import { Injectable } from '@angular/core';
+import { ResettableDataService } from '../abstract-base-data-manager/ressettable-data-service';
 
 @Injectable({
   providedIn: 'root'
@@ -13,6 +13,16 @@ export class LocalStorageService {
     USER_ENERGY: 'user_energy',
     WORKING_TIME_LEFT: 'working_time_left'
   };
+
+  // 👥 Hier drin landen alle Services, die von BaseDataManager erben
+  private registeredServices: ResettableDataService[] = [];
+
+
+  public register(service: ResettableDataService): void {
+    if (!this.registeredServices.includes(service)) {
+      this.registeredServices.push(service);
+    }
+  }
 
   // Speichert beliebige Daten als JSON-String
   public setItem(key: string, value: any): void {
@@ -44,6 +54,15 @@ export class LocalStorageService {
   public clearAllSessionData(): void {
     Object.values(LocalStorageService.KEYS).forEach(key => {
       localStorage.removeItem(key);
+    });
+
+console.log(`🧼 STORAGE-SERVICE: Rufe resetData() für ${this.registeredServices.length} Services auf...`);
+    this.registeredServices.forEach(service => {
+      try {
+        service.resetData();
+      } catch (error) {
+        console.error('Fehler beim Reset eines Services:', error);
+      }
     });
   }
 }

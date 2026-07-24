@@ -6,11 +6,12 @@ import { IUser, UserRepository } from '../../repositories/user-repository';
 import { ConnectionService } from '../connection/connection-service';
 import { UserService } from '../user/user-service'; // 🎯 NEU importiert!
 import { NotificationService } from '../notification/notification-service';
+import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 
 @Injectable({
   providedIn: 'root'
 })
-export class TeamDataManager {
+export class TeamDataManager extends BaseDataManager {
   private teamRepository = inject(TeamRepository);
   private userRepository = inject(UserRepository);
   private connectionService = inject(ConnectionService);
@@ -29,6 +30,7 @@ export class TeamDataManager {
   private readonly STORAGE_KEY_PROJECT_PREFIX = 'offline_project_members_';
 
   constructor() {
+    super()
     // 1. ⚡ SOFORT den alten globalen Cache laden, damit die UI steht und die Projekt-IDs DA sind!
     this.loadGlobalMembersFromCache();
 
@@ -258,4 +260,19 @@ public deleteGlobalMember(memberId: string): void {
       this.globalMembersSignal.set(hydrated);
     }
   }
+
+  public override resetData(): void {
+    this.globalMembersSignal.set([]);
+    this.currentProjectMembersSignal.set([]);
+    this.isProjectOfflineAvailable.set(false); 
+
+    this.localStorageService.removeItem(this.STORAGE_KEY_GLOBAL)
+
+    Object.keys(localStorage)
+      .filter(key => key.startsWith(this.STORAGE_KEY_PROJECT_PREFIX))
+      .forEach(key => this.localStorageService.removeItem(key));
+
+    console.log('✨ [TeamDataManager] Filter-Reinigung abgeschlossen.');
+  }
+
 }
