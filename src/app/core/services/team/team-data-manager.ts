@@ -7,6 +7,13 @@ import { ConnectionService } from '../connection/connection-service';
 import { UserService } from '../user/user-service'; // 🎯 NEU importiert!
 import { NotificationService } from '../notification/notification-service';
 import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
+import { concat, toArray } from 'rxjs';
+
+// Typdefinition für unsere Queue-Einträge
+interface OfflineTeamAction {
+  type: 'ADD_MEMBER' | 'REMOVE_MEMBER' | 'UPDATE_COFFEE' | 'UPDATE_PROFILE';
+  payload: any;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -21,18 +28,22 @@ export class TeamDataManager extends BaseDataManager {
   // 🎯 Reaktive Signals für die UI
   public currentProjectMembersSignal = signal<ProjectMember[]>([]);
   public globalMembersSignal = signal<ProjectMember[]>([]);
+  public hasOfflineChanges = signal<boolean>(false);
+
 
   // 📡 Premium-Zusatz: Signalisiert der UI, ob das gewählte Projekt offline da ist!
   public isProjectOfflineAvailable = signal<boolean>(true);
+  private offlineQueueSignal = signal<OfflineTeamAction[]>([]);
 
-  // 🔑 Keys für den LocalStorage
   private readonly STORAGE_KEY_GLOBAL = 'offline_global_members';
   private readonly STORAGE_KEY_PROJECT_PREFIX = 'offline_project_members_';
+  private readonly STORAGE_KEY_QUEUE = 'offline_team_actions_queue';
 
   constructor() {
     super()
     // 1. ⚡ SOFORT den alten globalen Cache laden, damit die UI steht und die Projekt-IDs DA sind!
     this.loadGlobalMembersFromCache();
+    this.loadQueueFromCache();
 
     /**
      * 2. 📡 DER REAKTIVE ONLINE-TRIGGER (Der unermüdliche Wächter)
@@ -41,19 +52,29 @@ export class TeamDataManager extends BaseDataManager {
      */
     effect(() => {
       const online = this.connectionService.isOnline();
-      console.log(`📡 [DataManager] Connection-Wächter spürt Zustand: ${online ? 'ONLINE 🟢' : 'OFFLINE 🔴'}`);
 
       if (online) {
-        console.log('🔄 [DataManager] Signal steht auf ONLINE! Starte Server-Synchronisation...');
+        console.log('🔄 [TeamDataManager] ONLINE! Starte Queue-Verarbeitung...');
         untracked(() => {
-        // Globale Liste frisch vom Server holen und Cache erneuern
-        this.loadGlobalMembers();
-
-        // Die 2-3 Projekte des Benutzers im Hintergrund jagen und wegsichern
-        this.preloadUserProjectsIntoCache();
-        })
+          this.syncOfflineQueueToServer();
+        });
       }
     });
+  }
+
+  /** 📥 Lädt die Queue aus dem Cache beim App-Start */
+  private loadQueueFromCache(): void {
+    const cached = localStorage.getItem(this.STORAGE_KEY_QUEUE);
+    if (cached) {
+      this.offlineQueueSignal.set(JSON.parse(cached));
+    }
+  }
+
+  /** 💾 Schreibt einen neuen Eintrag in die Queue */
+  private pushToQueue(action: OfflineTeamAction): void {
+    const updated = [...this.offlineQueueSignal(), action];
+    this.offlineQueueSignal.set(updated);
+    localStorage.setItem(this.STORAGE_KEY_QUEUE, JSON.stringify(updated));
   }
 
   /** 📥 Holt die Mitglieder für ein Projekt – mit intelligentem Offline-Schutzschild */
@@ -110,6 +131,53 @@ export class TeamDataManager extends BaseDataManager {
     });
   }
 
+  /** 🔄 Verarbeitet alle gesammelten Offline-Aktionen sequentiell am Server */
+  private syncOfflineQueueToServer(): void {
+    const queue = this.offlineQueueSignal();
+    if (queue.length === 0) {
+      // Wenn keine Queue da ist, einfach direkt frisch laden
+      this.loadGlobalMembers();
+      this.preloadUserProjectsIntoCache();
+      return;
+    }
+
+    console.log(`🚀 Sende ${queue.length} aufgestaute Offline-Aktionen zum Server...`);
+
+    // Wir mappen die Aktionen in ein Array von Observables
+    const requests = queue.map(action => {
+      switch (action.type) {
+        case 'ADD_MEMBER':
+          return this.teamRepository.assignToProject$(action.payload.projectId, action.payload.memberId, action.payload.role);
+        case 'REMOVE_MEMBER':
+          return this.teamRepository.deleteFromProject$(action.payload.projectId, action.payload.memberId);
+        case 'UPDATE_COFFEE':
+          return this.teamRepository.updateCoffeeAccount$(action.payload.userId, action.payload.balance, action.payload.role, action.payload.emoji);
+        case 'UPDATE_PROFILE':
+          return this.userRepository.updateProfile$(action.payload.id, action.payload.username, action.payload.firstName, action.payload.lastName);
+      }
+    });
+
+    // Mit concat arbeiten wir die HTTP-Requests nacheinander ab, damit die Reihenfolge stimmt
+    concat(...requests).pipe(toArray()).subscribe({
+      next: () => {
+        console.log('✅ Alle Offline-Änderungen erfolgreich mit dem Server synchronisiert!');
+        this.notificationService.showNotification('Alle Offline-Änderungen wurden synchronisiert. 🔄', 'success');
+
+        // Queue leeren
+        this.offlineQueueSignal.set([]);
+        localStorage.removeItem(this.STORAGE_KEY_QUEUE);
+
+        // Erst JETZT die frischen Daten vom Server holen
+        this.loadGlobalMembers();
+        this.preloadUserProjectsIntoCache();
+      },
+      error: (err) => {
+        console.error('❌ Fehler bei der Synchronisation der Offline-Queue:', err);
+        this.notificationService.showNotification('Fehler beim Synchronisieren der Team-Daten.', 'error');
+      }
+    });
+  }
+
   /** 🧠 PREMIUM-FUNKTION: Sucht alle Projekt-IDs des Users zusammen und saugt sie ab */
   private preloadUserProjectsIntoCache(): void {
     // Da UserService asynchron oder über Signals laufen kann, holen wir die ID
@@ -142,7 +210,6 @@ export class TeamDataManager extends BaseDataManager {
   public addMemberToProject(projectId: string, member: UserModel, projectRole: ProjectRole): void {
     const newMemberBinding = new ProjectMember(member, projectRole);
     const cacheKey = this.STORAGE_KEY_PROJECT_PREFIX + projectId;
-
     const updatedList = [...this.currentProjectMembersSignal(), newMemberBinding];
     this.currentProjectMembersSignal.set(updatedList);
     localStorage.setItem(cacheKey, JSON.stringify(updatedList));
@@ -151,14 +218,15 @@ export class TeamDataManager extends BaseDataManager {
       this.teamRepository.assignToProject$(projectId, member.id, projectRole).subscribe({
         next: () => this.loadProjectMembers(projectId)
       });
+    } else {
+      // In Queue einreihen
+      this.pushToQueue({ type: 'ADD_MEMBER', payload: { projectId, memberId: member.id, role: projectRole } });
     }
   }
 
-  /** ➖ Mitglied entfernen (Optimistic UI) */
   public removeMemberFromProject(projectId: string, memberId: string): void {
     const cacheKey = this.STORAGE_KEY_PROJECT_PREFIX + projectId;
     const updatedList = this.currentProjectMembersSignal().filter(m => m.user.id !== memberId);
-
     this.currentProjectMembersSignal.set(updatedList);
     localStorage.setItem(cacheKey, JSON.stringify(updatedList));
 
@@ -166,6 +234,8 @@ export class TeamDataManager extends BaseDataManager {
       this.teamRepository.deleteFromProject$(projectId, memberId).subscribe({
         next: () => this.loadProjectMembers(projectId)
       });
+    } else {
+      this.pushToQueue({ type: 'REMOVE_MEMBER', payload: { projectId, memberId } });
     }
   }
 
@@ -186,6 +256,8 @@ export class TeamDataManager extends BaseDataManager {
       this.teamRepository.updateCoffeeAccount$(userId, newBalance, role, emoji).subscribe({
         next: () => this.loadGlobalMembers()
       });
+    } else {
+      this.pushToQueue({ type: 'UPDATE_COFFEE', payload: { userId, balance: newBalance, role, emoji } });
     }
   }
 
@@ -201,41 +273,43 @@ export class TeamDataManager extends BaseDataManager {
       this.userRepository.updateProfile$(updatedMember.id, updatedMember.username, updatedMember.firstName, updatedMember.lastName).subscribe({
         next: () => this.loadGlobalMembers()
       });
+    } else {
+      this.pushToQueue({ type: 'UPDATE_PROFILE', payload: updatedMember });
     }
   }
 
-public deleteGlobalMember(memberId: string): void {
-  // Wir suchen uns kurz den Namen raus, bevor er aus dem lokalen Signal fliegt
-  const user = this.globalMembersSignal().map(m => m.user).find(u => u.id === memberId);
-  const userName = user ? `${user.firstName} ${user.lastName}` : 'Mitarbeiter';
+  public deleteGlobalMember(memberId: string): void {
+    // Wir suchen uns kurz den Namen raus, bevor er aus dem lokalen Signal fliegt
+    const user = this.globalMembersSignal().map(m => m.user).find(u => u.id === memberId);
+    const userName = user ? `${user.firstName} ${user.lastName}` : 'Mitarbeiter';
 
-  const updatedList = this.globalMembersSignal().filter(m => m.user.id !== memberId);
-  this.globalMembersSignal.set(updatedList);
-  localStorage.setItem(this.STORAGE_KEY_GLOBAL, JSON.stringify(updatedList));
+    const updatedList = this.globalMembersSignal().filter(m => m.user.id !== memberId);
+    this.globalMembersSignal.set(updatedList);
+    localStorage.setItem(this.STORAGE_KEY_GLOBAL, JSON.stringify(updatedList));
 
-  if (this.connectionService.isOnline()) {
-    this.userRepository.deleteGlobalUser$(memberId).subscribe({
-      next: () => {
-        console.log(`✨ [DataManager] User ${memberId} erfolgreich gelöscht.`);
-        this.loadGlobalMembers();
-        
-        // 🟢 Erst JETZT, wo der Server "OK" gesagt hat, feuern wir den Toast!
-        this.notificationService.showNotification(
-          `🗑️ ${userName} wurde erfolgreich aus der Datenbank gelöscht.`, 
-          'success'
-        );
-      },
-      error: (err) => {
-        console.error("❌ Fehler beim Löschen des Users:", err);
-        // 🔴 Falls das Backend meckert, kriegt der Admin sofort die Wahrheit gesagt!
-        this.notificationService.showNotification(
-          `🛑 Fehler beim Löschen von ${userName}: ${err.message || 'Server-Fehler'}`, 
-          'error'
-        );
-      }
-    });
+    if (this.connectionService.isOnline()) {
+      this.userRepository.deleteGlobalUser$(memberId).subscribe({
+        next: () => {
+          console.log(`✨ [DataManager] User ${memberId} erfolgreich gelöscht.`);
+          this.loadGlobalMembers();
+
+          // 🟢 Erst JETZT, wo der Server "OK" gesagt hat, feuern wir den Toast!
+          this.notificationService.showNotification(
+            `🗑️ ${userName} wurde erfolgreich aus der Datenbank gelöscht.`,
+            'success'
+          );
+        },
+        error: (err) => {
+          console.error("❌ Fehler beim Löschen des Users:", err);
+          // 🔴 Falls das Backend meckert, kriegt der Admin sofort die Wahrheit gesagt!
+          this.notificationService.showNotification(
+            `🛑 Fehler beim Löschen von ${userName}: ${err.message || 'Server-Fehler'}`,
+            'error'
+          );
+        }
+      });
+    }
   }
-}
   public createMember(member: UserModel, password: string, onError?: (errorMessage: string) => void): void {
     if (!this.connectionService.isOnline()) {
       if (onError) onError("Registrierungen sind im Offline-Modus nicht möglich.");
@@ -261,18 +335,25 @@ public deleteGlobalMember(memberId: string): void {
     }
   }
 
+  public override checkUnsavedData(): string | null {
+    if (this.offlineQueueSignal().length > 0) {
+      return `Es gibt ${this.offlineQueueSignal().length} ungespeicherte Team-Änderungen (z.B. Kaffeekasse oder Mitglieder), die noch nicht an den Server übertragen wurden.`;
+    }
+    return null;
+  }
+
   public override resetData(): void {
     this.globalMembersSignal.set([]);
     this.currentProjectMembersSignal.set([]);
-    this.isProjectOfflineAvailable.set(false); 
+    this.isProjectOfflineAvailable.set(false);
+    this.offlineQueueSignal.set([]); // Queue im RAM leeren
 
-    this.localStorageService.removeItem(this.STORAGE_KEY_GLOBAL)
+    // Caches sicher löschen
+    localStorage.removeItem(this.STORAGE_KEY_GLOBAL);
+    localStorage.removeItem(this.STORAGE_KEY_QUEUE);
 
     Object.keys(localStorage)
       .filter(key => key.startsWith(this.STORAGE_KEY_PROJECT_PREFIX))
-      .forEach(key => this.localStorageService.removeItem(key));
-
-    console.log('✨ [TeamDataManager] Filter-Reinigung abgeschlossen.');
+      .forEach(key => localStorage.removeItem(key));
   }
-
 }

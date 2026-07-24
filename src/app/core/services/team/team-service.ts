@@ -5,11 +5,12 @@ import { ProjectRole, UserModel } from '../../models/user-model';
 import { ProjectAction } from '../../enums/project-action-enum';
 import { UserService } from '../user/user-service';
 import { ProjectMember } from '../../models/project-member';
+import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 
 @Injectable({
     providedIn: 'root',
 })
-export class TeamService {
+export class TeamService extends BaseDataManager {
 
     private readonly ROLE_PERMISSIONS: Record<ProjectRole, ProjectAction[]> = {
         OWNER: [
@@ -48,10 +49,10 @@ export class TeamService {
      */
     public setCurrentProject(projectId: string | null): void {
         console.log(`🎯 [TeamService] Projekt gewechselt auf: ${projectId}`);
-        
+
         // ID setzen
         this._currentProjectId.set(projectId);
-        
+
         // Automatisch den Sync im DataManager anstoßen!
         if (projectId) {
             this.dataManager.loadProjectMembers(projectId);
@@ -76,11 +77,11 @@ export class TeamService {
     public hasPermission(projectId: string | null, action: ProjectAction): boolean {
         const currentUserId = this.userService.getCurrentUserId();
         if (!currentUserId || !projectId) return false;
-        
+
         // Wir lesen ganz entspannt das synchrone Projekt-Signal aus!
         const members = this.currentProjectMembersSignal();
         const myBinding = members.find(m => m.user.id === currentUserId);
-        
+
         if (!myBinding) return false;
 
         const currentRole = myBinding.projectRole as ProjectRole;
@@ -143,8 +144,12 @@ export class TeamService {
     /** 🚀 Registriert einen brandneuen Benutzer im System (Mit Kaffeekonto-Rolle!) */
     public createMember(member: UserModel, password: string, onError?: (errorMessage: string) => void): void {
         console.log(`📡 [TeamService] Erstelle neuen Benutzer: ${member.username}`);
-        
+
         // 🎯 Hier reichen wir das 'onError' 1:1 an den DataManager weiter!
         this.dataManager.createMember(member, password, onError);
+    }
+
+    public override resetData(): void {
+        this._currentProjectId.set(null);
     }
 }

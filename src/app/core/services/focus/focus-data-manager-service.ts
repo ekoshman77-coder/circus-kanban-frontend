@@ -6,6 +6,7 @@ import { GamificationRepository } from '../../repositories/gamification-repsoito
 import { UserService } from '../user/user-service';
 import { LoggerService } from '../logger/logger-service';
 import { GamificationResult } from '../../models/gamification';
+import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 
 /**
  * Service für das Offline-sichere Tracken und Synchronisieren von Fokus-Zeiten (Pomodoro).
@@ -18,21 +19,23 @@ import { GamificationResult } from '../../models/gamification';
 @Injectable({
   providedIn: 'root'
 })
-export class FocusDataManagerService {
+export class FocusDataManagerService extends BaseDataManager {
+
   private gamificationRepository = inject(GamificationRepository);
   private connectionService = inject(ConnectionService);
   private userService = inject(UserService);
   private loggerService = inject(LoggerService);
 
   /** Schlüssel für die Offline-Warteschlange im LocalStorage */
-  private readonly OFFLINE_POMODORO_KEY = 'offline_pomodoro_queue';
+  private readonly OFFLINE_POMODORO_PREFIX = 'offline_pomodoro_queue_';
 
   constructor() {
+    super()
     // 🛰️ Der automatische Sync-Wächter:
     // Lauscht reaktiv auf Statusänderungen des ConnectionService.
     // Sobald wir ONLINE gehen, triggern wir die Nachsynchronisation.
     effect(() => {
-      if (this.connectionService.status() === 'ONLINE') {
+      if ((this.connectionService.status() === 'ONLINE') && (this.userService.currentUser())) {
         this.syncOfflinePomodoros();
       }
     });
@@ -99,9 +102,13 @@ export class FocusDataManagerService {
 
   // --- Lokale Hilfsfunktionen für den LocalStorage ---
 
+  private getPomodoroKey(): string {
+    const userId = this.userService.getCurrentUserId()?? "anonymous"
+    return(`${this.OFFLINE_POMODORO_PREFIX}${userId}`)
+  }
   /** Holt die aktuelle Offline-Warteschlange aus dem Speicher[cite: 7]. */
   private getOfflineQueue(): any[] {
-    const data = localStorage.getItem(this.OFFLINE_POMODORO_KEY);
+    const data = localStorage.getItem(this.getPomodoroKey());
     return data ? JSON.parse(data) : [];
   }
 
@@ -109,11 +116,15 @@ export class FocusDataManagerService {
   private pushToOfflineQueue(item: any): void {
     const queue = this.getOfflineQueue();
     queue.push(item);
-    localStorage.setItem(this.OFFLINE_POMODORO_KEY, JSON.stringify(queue));
+    localStorage.setItem(this.getPomodoroKey(), JSON.stringify(queue));
   }
 
   /** Löscht die Offline-Warteschlange vollständig[cite: 7]. */
   private clearOfflineQueue(): void {
-    localStorage.removeItem(this.OFFLINE_POMODORO_KEY);
+    localStorage.removeItem(this.getPomodoroKey());
+  }
+
+  public override resetData(): void {
+    
   }
 }

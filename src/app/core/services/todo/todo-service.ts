@@ -9,6 +9,7 @@ import { TodoDataManagerService } from './todo-data-manager-service';
 import { TodoRepository } from '../../repositories/todo-repository';
 import { TodoQueryService } from './todo-query-service'; // 💡 NEU: Der Kreis-Sprenger importiert!
 import { NotificationService } from '../notification/notification-service';
+import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 
 export enum Filter {
   ALL = 'all',
@@ -38,7 +39,7 @@ export class Statistics {
 @Injectable({
   providedIn: 'root',
 })
-export class TodoService {
+export class TodoService extends BaseDataManager {
   private dataManager = inject(TodoDataManagerService);
   private userService = inject(UserService);
   private loggerService = inject(LoggerService);
@@ -200,6 +201,7 @@ const todo = this.lastDeletedTodo();
   });
 
   constructor() {
+    super()
     this.fibonacciSequence = this.initFibonacciSequence(40);
 
     effect(() => {
@@ -613,5 +615,20 @@ const todo = this.lastDeletedTodo();
 
   public getServerCategories(userId: string): Observable<string[]> {
     return this.todoRepository.getServerCategories(userId);
+  }
+
+  public resetData(): void {
+  this.filterSignal.set(Filter.ALL);
+  this.searchQuerySignal.set('');
+  this.gamificationState.set(null);
+  this.latestGamificationResult.set(null);
+
+  if (this.deleteTimeout) {
+      clearTimeout(this.deleteTimeout);
+    }
+    if (this.progressInterval) {
+      clearInterval(this.progressInterval);
+    }
+    this.lastDeletedTodo.set(null);
   }
 }

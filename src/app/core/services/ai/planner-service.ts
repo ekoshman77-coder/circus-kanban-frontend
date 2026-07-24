@@ -3,6 +3,7 @@ import { UserService } from '../user/user-service';
 import { AiRepository } from '../../repositories/ai-repository'; 
 import { Todo } from '../../models/todo';
 import { delay, Observable, tap } from 'rxjs';
+import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 
 /**
  * Interface für die Antwort des KI-Planer-Services.
@@ -27,7 +28,7 @@ export interface RecommendedTodoServiceResponse {
 @Injectable({
   providedIn: 'root'
 })
-export class PlannerService {
+export class PlannerService extends BaseDataManager {
   private userService = inject(UserService);
   private aiRepository = inject(AiRepository);
 
@@ -138,5 +139,11 @@ export class PlannerService {
         error: (err) => console.error("Fehler bei Snoozing", err)
       })
     )
+  }
+
+  public override resetData(): void {
+      this.recommendedTodo.set(null);
+      this.aiResponseCode.set(null);
+      this.isLoading.set(false);
   }
 }

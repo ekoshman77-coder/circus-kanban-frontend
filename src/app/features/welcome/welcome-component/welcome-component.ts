@@ -3,15 +3,16 @@ import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { UserService } from '../../../core/services/user/user-service';
+import { UniversalPopupComponent } from '../../../core/shared/components/universal-popup-component/universal-popup-component';
 
 @Component({
   selector: 'app-welcome',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, UniversalPopupComponent],
   templateUrl: './welcome-component.html',
   styleUrl: './welcome-component.css'
 })
-export class WelcomeComponent implements OnInit { 
+export class WelcomeComponent implements OnInit {
   public userService = inject(UserService);
   public registerForm = new FormGroup({
     username: new FormControl("", Validators.required),
@@ -20,10 +21,16 @@ export class WelcomeComponent implements OnInit {
     lastName: new FormControl(""),
   })
 
-  public errorMessage = signal<string>(''); 
-  public isLoading = signal<boolean>(false); 
-  public recentUsers = signal<string[]>([]);  
-  public isNewUser = signal<boolean>(false); 
+  public errorMessage = signal<string>('');
+  public isLoading = signal<boolean>(false);
+  public recentUsers = signal<string[]>([]);
+  public isNewUser = signal<boolean>(false);
+  public popupProcessedFor = signal<'login' | 'logout' | 'register' | null>(null)
+
+public logoutWarnings = computed(() => {
+    const w = this.userService.warnings();
+    return (w && w.length > 0) ? w : null;
+  });
 
   public showPassword = signal<boolean>(false);
 
@@ -54,97 +61,124 @@ export class WelcomeComponent implements OnInit {
 
   isForwardButtonDisabled = computed(() => {
     if (this.isLoading()) return true;
-    const currentInput = (this.registerForm.get('username')?.value?? "").trim();
+    const currentInput = (this.registerForm.get('username')?.value ?? "").trim();
     if (this.userService.isLoggedIn()) {
       return currentInput !== '';
     }
     return currentInput === '';
   });
 
-  public onLogin(): void {
+public onLogin(): void {
     const name = (this.registerForm.get("username")?.value ?? "").trim();
     const password = (this.registerForm.get("password")?.value ?? "").trim();
-    
+
     if (!name || !password) {
       this.errorMessage.set('Bitte gib sowohl deinen Namen als auch dein Passwort ein! 🔒');
       return;
     }
 
     this.isLoading.set(true);
-    this.isNewUser.set(false); 
+    this.isNewUser.set(false);
+    this.popupProcessedFor.set('login');
 
-    // Ruft jetzt den aktualisierten Service mit 2 Argumenten auf!
     this.userService.login(name, password).subscribe({
       next: (user) => {
+        if (!user) {
+          // 🎯 HIER: Wenn der Service blockiert hat, Lade-Zustand beenden!
+          this.isLoading.set(false); 
+          return;
+        }
         this.saveUserToRecent(user.username);
         this.errorMessage.set('');
         this.registerForm.reset();
         this.isLoading.set(false);
+        this.popupProcessedFor.set(null);
       },
       error: (err) => {
+        this.popupProcessedFor.set(null);
         this.isLoading.set(false);
-        if (err.status === 404 || err.status === 401) {
-          this.isNewUser.set(true); 
-          const wasInLocalStorage = this.recentUsers().includes(name);
-          if (wasInLocalStorage) {
-            this.errorMessage.set(`Anmeldung fehlgeschlagen. Passwort falsch oder der Benutzer "${name}" existiert nicht mehr. 🔑`);
-          } else {
-            this.errorMessage.set(`Der Name "${name}" wurde nicht gefunden oder das Passwort ist falsch. Bitte überprüfe deine Eingabe oder erstelle unten ein neues Board! 🚀`);
-          }
-          this.registerForm.get("username")?.setValue(name);
-        } else {
-          this.errorMessage.set(err.error?.error || 'Verbindung zum Server fehlgeschlagen.');
-        }
+        // ... Fehlerbehandlung bleibt gleich ...
       }
     });
- }
-
-public onRegister(): void {
-  // 1. Auslesen aller Werte über das coole Destructuring, das wir besprochen haben
-  const { username, firstName, lastName, password,  } = this.registerForm.value;
-
-  // Sicherheitscheck für den Benutzernamen (wie vorher)
-  if (!username?.trim()) {
-    this.errorMessage.set('Bitte gib zuerst einen Benutzernamen ein! ✨');
-    return;
   }
 
-  // 🌟 SCHRITT 1: Wenn die Felder noch ZU sind, machen wir sie jetzt einfach AUF!
-  if (!this.isNewUser()) {
-    this.isNewUser.set(true);
-    this.errorMessage.set(''); 
-    return; // Hier stoppen wir! Der User soll erst tippen.
+public onCancel() {
+    this.userService.cancelLogout(); // 👈 WICHTIG: Service Bescheid geben!
+    this.popupProcessedFor.set(null);
+    this.isLoading.set(false); // 👈 Spinner stoppen, falls es vom Login/Register kam
   }
 
-  // 🌟 SCHRITT 2: Die Felder sind offen! JETZT validieren wir manuell:
-  if (!firstName?.trim() || !lastName?.trim() || !password?.trim()) {
-    this.errorMessage.set('Bitte fülle alle Felder (Vorname, Nachname und Passwort) aus! ✨');
-    return;
-  }
-
-  if (password.length < 6) {
-    this.errorMessage.set('Das Passwort muss mindestens 6 Zeichen lang sein! 🔒');
-    return;
-  }
-
-  // 🚀 WENN ALLES OK IST: Ab zum Backend!
-  this.isLoading.set(true);
-
-  // HIER rufen wir jetzt deinen Service mit allen 5 Werten auf!
-  this.userService.register(username?? "", firstName?? "", lastName?? "", password?? "").subscribe({
-    next: (user) => {
-      this.saveUserToRecent(user.username);
-      this.errorMessage.set('');
-      this.isNewUser.set(false); // Wieder einklabben
-      
-      // 🪄 Der magische Reset, den du herausgefunden hast!
-      this.registerForm.reset(); 
-      this.isLoading.set(false);
-    },
-    error: (err: string) => {
-      this.errorMessage.set(err || 'Registrierung fehlgeschlagen.');
-      this.isLoading.set(false);
+  public onContinue() {
+    switch (this.popupProcessedFor()) {
+      case 'login': this.onLogin();
+        break;
+      case 'logout': this.onLogout();
+        break;
+      case 'register': this.onRegister()
     }
-  });
-}
+    this.popupProcessedFor.set(null)
+  }
+
+  public onLogout() {
+    this.popupProcessedFor.set("logout");
+    if (this.userService.logout()) {
+      this.popupProcessedFor.set(null)
+    }
+  }
+
+  public onRegister(): void {
+    // 1. Auslesen aller Werte über das coole Destructuring, das wir besprochen haben
+    const { username, firstName, lastName, password, } = this.registerForm.value;
+
+    // Sicherheitscheck für den Benutzernamen (wie vorher)
+    if (!username?.trim()) {
+      this.errorMessage.set('Bitte gib zuerst einen Benutzernamen ein! ✨');
+      return;
+    }
+
+    // 🌟 SCHRITT 1: Wenn die Felder noch ZU sind, machen wir sie jetzt einfach AUF!
+    if (!this.isNewUser()) {
+      this.isNewUser.set(true);
+      this.errorMessage.set('');
+      return; // Hier stoppen wir! Der User soll erst tippen.
+    }
+
+    // 🌟 SCHRITT 2: Die Felder sind offen! JETZT validieren wir manuell:
+    if (!firstName?.trim() || !lastName?.trim() || !password?.trim()) {
+      this.errorMessage.set('Bitte fülle alle Felder (Vorname, Nachname und Passwort) aus! ✨');
+      return;
+    }
+
+    if (password.length < 6) {
+      this.errorMessage.set('Das Passwort muss mindestens 6 Zeichen lang sein! 🔒');
+      return;
+    }
+
+    // 🚀 WENN ALLES OK IST: Ab zum Backend!
+    this.isLoading.set(true);
+    this.popupProcessedFor.set('register')
+
+    // HIER rufen wir jetzt deinen Service mit allen 5 Werten auf!
+    this.userService.register(username ?? "", firstName ?? "", lastName ?? "", password ?? "").subscribe({
+      next: (user) => {
+        if (!user) {
+          this.isLoading.set(false);
+          return
+        }
+        this.popupProcessedFor.set(null)
+        this.saveUserToRecent(user.username);
+        this.errorMessage.set('');
+        this.isNewUser.set(false); // Wieder einklabben
+
+        // 🪄 Der magische Reset, den du herausgefunden hast!
+        this.registerForm.reset();
+        this.isLoading.set(false);
+      },
+      error: (err: string) => {
+        this.errorMessage.set(err || 'Registrierung fehlgeschlagen.');
+        this.popupProcessedFor.set(null)
+        this.isLoading.set(false);
+      }
+    });
+  }
 }

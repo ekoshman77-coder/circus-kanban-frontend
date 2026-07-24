@@ -2,6 +2,7 @@ import { inject, Injectable, signal, computed, effect } from '@angular/core';
 import { Note } from '../../models/note';
 import { NoteDataManagerService } from './note-data-manager-service';
 import { UserService } from '../user/user-service';
+import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 
 /**
  * Zentraler State-Service zur Verwaltung und Bereitstellung aller Benutzer-Notizen.
@@ -14,7 +15,7 @@ import { UserService } from '../user/user-service';
 @Injectable({
   providedIn: 'root'
 })
-export class NoteService {
+export class NoteService extends BaseDataManager {
   private dataManager = inject(NoteDataManagerService);
   private userService = inject(UserService);
 
@@ -27,6 +28,8 @@ export class NoteService {
   private readonly DRAFT_KEY = 'draft_note';
 
   constructor() {
+    super()
+
     // REAKTIVER EFFEKT: Lädt Notizen automatisch bei Login oder leert sie bei Logout
     effect(() => {
       if (this.userService.currentUser()) {
@@ -34,7 +37,7 @@ export class NoteService {
       } else {
         this.notesSignal.set([]);
       }
-    }); 
+    });
   }
 
   /** Speichert einen Zettel-Entwurf im LocalStorage. */
@@ -84,7 +87,7 @@ export class NoteService {
     colorType: string,
     tag?: string | null,
     temperature?: number | null,
-    weatherCode?: number | null 
+    weatherCode?: number | null
   }): void {
     const activeUser = this.userService.currentUser();
     if (!activeUser) return;
@@ -139,10 +142,10 @@ export class NoteService {
     if (!userId) return;
 
     const alteListe = this.notesSignal();
-       
+
     // Optimistisches UI-Update: Sofort im Signal weglöschen
     this.notesSignal.update(notes => notes.filter(n => n.id !== id));
- 
+
     this.dataManager.deleteNote(id, userId, alteListe).subscribe({
       error: (err) => {
         console.error('Fehler beim Löschen, stelle Liste wieder her:', err);
@@ -175,5 +178,16 @@ export class NoteService {
     });
 
     this.updateNote(updatedNote);
+  }
+
+  public override checkUnsavedData(): string | null {
+    const pendingQueue = localStorage.getItem(this.DRAFT_KEY);
+    if (pendingQueue) {
+      return `Es gibt noch ungespeicherte Idee-Änderungen .`;
+    }
+    return null;
+  }
+  public override resetData(): void {
+    this.clearDraft()
   }
 }

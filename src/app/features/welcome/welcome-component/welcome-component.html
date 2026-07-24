@@ -66,7 +66,7 @@
       Gehe zu meinen To-Dos →
     </button>
 
-    <button class="logout-btn" (click)="userService.logout()">
+    <button class="logout-btn" (click)="onLogout()">
       Anderen Namen eingeben
     </button>
     } @else {
@@ -95,3 +95,16 @@
     }
   </div>
 </div>
+@if(logoutWarnings()) {
+  <app-universal-popup-component
+    [title]="popupProcessedFor()?? ''"
+    [message]="'Nicht alle Daten sind gespeichert'"
+    [animationIcon]="'🔥'"
+    [confirmText]="'löschen und weiter'"
+    [cancelText]="'abbrechen'"
+    [showLoadingBar]="false"
+    [timerMs]="0"
+    (confirm)="onContinue()"
+    (cancel)="onCancel()">
+   </app-universal-popup-component>
+}
