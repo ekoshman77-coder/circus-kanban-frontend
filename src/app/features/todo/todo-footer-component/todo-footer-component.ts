@@ -27,8 +27,4 @@ export class TodoFooterComponent {
   public isListEmpty = computed(() => {
     return this.currentTodos().length === 0;
   });
-
-  public disableDeleteButtons = computed(() => {
-     return this.connectionService.status() === "OFFLINE";
-  });
 }

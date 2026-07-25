@@ -1,10 +1,8 @@
 @if (!isListEmpty()) {
   <div class="actions">
     <span 
-      [class.delete-completed-btn]="!disableDeleteButtons()"
-      [class.disable-btn]="disableDeleteButtons()" 
-      [attr.title]="disableDeleteButtons() ? 'Diese Funktion ist offline nicht verfügbar 🔌' : null"
-      (click)="disableDeleteButtons() ? null : requestClearCompleted.emit()">
+      [class.delete-completed-btn]="true"
+      (click)="requestClearCompleted.emit()">
       🗑️ Erledigte private Aufgaben löschen
     </span>
     
@@ -13,10 +11,8 @@
     </span>
     
     <span 
-      [class.delete-all-btn]="!disableDeleteButtons()"
-      [class.disable-btn]="disableDeleteButtons()" 
-      [attr.title]="disableDeleteButtons() ? 'Diese Funktion ist offline nicht verfügbar 🔌' : null"
-      (click)="disableDeleteButtons() ? null : requestClearAll.emit()">
+      [class.delete-all-btn]="true"
+       (click)="requestClearAll.emit()">
       🔥 Alle privaten Aufgaben löschen
     </span>
   </div>

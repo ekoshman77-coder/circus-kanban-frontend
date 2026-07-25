@@ -17,6 +17,11 @@ describe('FocusDataManagerService', () => {
   let mockUserService: any;
   let mockLoggerService: any;
   let connectionStatusSignal: any;
+  let currentUserSignal: any;
+
+  // Dynamischer Key passend zur Implementierung
+  const TEST_USER_ID = 'user-777';
+  const TARGET_STORAGE_KEY = `offline_pomodoro_queue_${TEST_USER_ID}`;
 
   // In-Memory LocalStorage Mock
   let store: Record<string, string> = {};
@@ -30,7 +35,7 @@ describe('FocusDataManagerService', () => {
       clear: () => { store = {}; }
     });
 
-    // Wir starten im OFFLINE-Zustand, um automatische Sync-Effekte bei der Instanziierung zu kontrollieren
+    // Wir starten im OFFLINE-Zustand
     connectionStatusSignal = signal<'ONLINE' | 'OFFLINE'>('OFFLINE');
     mockConnectionService = {
       status: connectionStatusSignal
@@ -41,8 +46,12 @@ describe('FocusDataManagerService', () => {
       sendPomodoroBulk: vi.fn().mockReturnValue(of({ xp: 250, level: 3 }))
     };
 
+    // 🛡️ REPARATUR: currentUser-Signal hinzufügen, damit der Wächter-Effekt nicht crasht!
+    currentUserSignal = signal<{ id: string; username: string } | null>({ id: TEST_USER_ID, username: 'TestUser' });
+    
     mockUserService = {
-      getCurrentUserId: vi.fn().mockReturnValue('user-777'),
+      currentUser: currentUserSignal,
+      getCurrentUserId: vi.fn().mockReturnValue(TEST_USER_ID),
       updateGamification: vi.fn()
     };
 
@@ -77,8 +86,8 @@ describe('FocusDataManagerService', () => {
         expect(result).toBeNull();
       });
         
-      // Queue im LocalStorage überprüfen
-      const queueRaw = localStorage.getItem('offline_pomodoro_queue');
+      // 🛡️ REPARATUR: TARGET_STORAGE_KEY statt hartcodiertem String nutzen
+      const queueRaw = localStorage.getItem(TARGET_STORAGE_KEY);
       expect(queueRaw).toBeTruthy();
       
       const queue = JSON.parse(queueRaw!);
@@ -96,7 +105,7 @@ describe('FocusDataManagerService', () => {
         expect(result).toEqual({ xp: 100, level: 2 });
       });
 
-      expect(mockGamificationRepository.sendPomodoroSession).toHaveBeenCalledWith('user-777', { todoId: 'todo-xyz', count: 1 });
+      expect(mockGamificationRepository.sendPomodoroSession).toHaveBeenCalledWith(TEST_USER_ID, { todoId: 'todo-xyz', count: 1 });
       expect(mockUserService.updateGamification).toHaveBeenCalledWith({ xp: 100, level: 2 });
     });
 
@@ -110,8 +119,8 @@ describe('FocusDataManagerService', () => {
         }
       });
           
-      // Queue prüfen – trotz Fehler muss es lokal gesichert sein!
-      const queueRaw = localStorage.getItem('offline_pomodoro_queue');
+      // 🛡️ REPARATUR: TARGET_STORAGE_KEY nutzen
+      const queueRaw = localStorage.getItem(TARGET_STORAGE_KEY);
       const queue = JSON.parse(queueRaw!);
       expect(queue.length).toBe(1);
       expect(queue[0].todoId).toBe('todo-error');
@@ -120,25 +129,25 @@ describe('FocusDataManagerService', () => {
     });
   });
 
-describe('Automatischer Sync über ConnectionService Signal-Wechsel', () => {
+  describe('Automatischer Sync über ConnectionService Signal-Wechsel', () => {
     it('sollte die Offline-Warteschlange synchronisieren, sobald wir ONLINE gehen', () => {
-      // 1. Wir starten offline und befüllen die Warteschlange künstlich vorab
+      // 1. Wir starten offline und befüllen die Warteschlange vorab mit dem korrekten Key
       const localQueue = [
         { todoId: 'todo-1', timestamp: 12345 },
         { todoId: 'todo-2', timestamp: 67890 }
       ];
-      localStorage.setItem('offline_pomodoro_queue', JSON.stringify(localQueue));
+      localStorage.setItem(TARGET_STORAGE_KEY, JSON.stringify(localQueue));
 
-      // 2. Verbindung reaktiv auf ONLINE schalten (triggert den effect im Service!)[cite: 7]
+      // 2. Verbindung reaktiv auf ONLINE schalten
       connectionStatusSignal.set('ONLINE');
 
-      // ⚡ HIER IST DER RETTER: Alle ausstehenden Signals-Effekte sofort abarbeiten!
+      // ⚡ Alle ausstehenden Signals-Effekte abarbeiten!
       TestBed.flushEffects();
 
       // 3. Verifizieren, dass der Bulk-Sync jetzt erfolgreich gelaufen ist
-      expect(mockGamificationRepository.sendPomodoroBulk).toHaveBeenCalledWith('user-777', localQueue);
+      expect(mockGamificationRepository.sendPomodoroBulk).toHaveBeenCalledWith(TEST_USER_ID, localQueue);
       expect(mockUserService.updateGamification).toHaveBeenCalledWith({ xp: 250, level: 3 });
-      expect(localStorage.getItem('offline_pomodoro_queue')).toBeNull(); // Die Queue muss geleert worden sein![cite: 7]
+      expect(localStorage.getItem(TARGET_STORAGE_KEY)).toBeNull(); 
     });
   });
 });

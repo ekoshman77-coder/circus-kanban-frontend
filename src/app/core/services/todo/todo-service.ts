@@ -1,6 +1,6 @@
 import { Injectable, signal, computed, inject, effect, untracked } from '@angular/core';
 import { Todo } from '../../models/todo';
-import { catchError, map, Observable, of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { UserService } from '../user/user-service';
 import { LoggerService } from '../logger/logger-service';
 import { ErrorCode } from '../../enums/error-enum';
@@ -225,18 +225,20 @@ const todo = this.lastDeletedTodo();
   }
 
   private handleSyncCompleted(syncResult: any): void {
-    // 1. Daten ohne reaktive Schleifen setzen
-    this.allTodosPool.set(syncResult.liste);
+    // 🛑 DIESE ZEILE ENTFERNEN: this.allTodosPool.set(syncResult.liste);
+    // Denn der DataManager hat das Signal bereits perfekt aktualisiert!
+
+    // 1. Nur noch den Gamification-State für die UI setzen
     this.gamificationState.set(syncResult.gamificationResult);
 
-    // 2. Das blockierende alert() durch den NotificationService ersetzen
-    if (syncResult.gamificationResult.levelUp) {
+    // 2. Benachrichtigung bei Level Up anzeigen
+    if (syncResult.gamificationResult?.levelUp) {
       this.notificationService.showNotification(
         `🎉 LEVEL UP! Du bist jetzt Level ${syncResult.gamificationResult.currentLevel}!`, 'success'
       );
     }
 
-    // 3. Den Sync-Zustand aufräumen
+    // 3. Den Sync-Zustand im DataManager wieder freigeben
     this.dataManager.clearSyncResult();
   }
 
