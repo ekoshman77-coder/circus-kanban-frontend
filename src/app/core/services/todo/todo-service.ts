@@ -65,6 +65,7 @@ export class TodoService extends BaseDataManager {
   public filterSignal = signal<Filter>(Filter.ALL);
   public searchQuerySignal = signal<string>('');
   public gamificationState = signal<GamificationResult | null>(null);
+  public streakState = computed(() => this.dataManager.streakSignal());
 
   public fibonacciSequence: number[];
 

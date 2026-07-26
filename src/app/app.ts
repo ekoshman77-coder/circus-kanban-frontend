@@ -14,10 +14,11 @@ import { TodoService } from './core/services/todo/todo-service';
 import { GamificationResult } from './core/models/gamification';
 import confetti from 'canvas-confetti';
 import { NotificationService } from './core/services/notification/notification-service';
+import { StreakPanelComponent } from './features/streak-panel/streak-panel';
 
 @Component({
   selector: 'app-root',
-  imports: [Apptitle, RouterLink, RouterOutlet, RouterLinkActive, NotificationComponent, SearchCenterComponent], // 'Home' und 'TodoPageComponent' fliegen hier raus, da sie über den Router geladen werden!
+  imports: [Apptitle, RouterLink, RouterOutlet, RouterLinkActive, NotificationComponent, SearchCenterComponent, StreakPanelComponent], // 'Home' und 'TodoPageComponent' fliegen hier raus, da sie über den Router geladen werden!
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

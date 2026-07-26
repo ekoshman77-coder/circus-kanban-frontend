@@ -2,8 +2,8 @@ import { Inject, Injectable, effect, inject, signal } from '@angular/core';
 import { Todo } from '../../models/todo';
 import { TodoRepository } from '../../repositories/todo-repository';
 import { ConnectionService } from '../connection/connection-service';
-import { Observable, of, throwError } from 'rxjs';
-import { map, catchError, tap, switchMap } from 'rxjs/operators'; // 💡 tap importiert!
+import { combineLatest, Observable, of, throwError } from 'rxjs';
+import { map, catchError, tap, switchMap, filter } from 'rxjs/operators'; // 💡 tap importiert!
 import { GamificationResult } from '../../models/gamification';
 import { SyncResult } from '../../repositories/dto/sync-result';
 import { UserService } from '../user/user-service';
@@ -11,6 +11,9 @@ import { LoggerService } from '../logger/logger-service';
 import { TodoUpdateResponse } from '../../repositories/dto/dto-interface';
 import { TodoBulkDto } from '../../models/todo-bulk';
 import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
+import { StreakInfoDto } from '../../models/streak.info-dto';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { StreakRepository } from '../../repositories/streak-repository';
 
 @Injectable({
   providedIn: 'root'
@@ -19,6 +22,7 @@ export class TodoDataManagerService extends BaseDataManager {
   private todoRepository = inject(TodoRepository);
   private connectionService = inject(ConnectionService);
   private userService = inject(UserService)
+  private streakRepository = inject(StreakRepository)
 
   private readonly CACHE_KEY = 'global_todos_pool';
   private readonly OFFLINE_CHANGES_KEY = 'offline_todos_queue';
@@ -32,6 +36,7 @@ export class TodoDataManagerService extends BaseDataManager {
   public allTodosPool = signal<Todo[]>([]);
 
   public gamificationSignal = signal<GamificationResult | null>(null);
+  public streakSignal = signal<StreakInfoDto | null>(null);
   public syncCompleted = signal<SyncResult | null>(null);
 
   constructor() {
@@ -46,6 +51,30 @@ export class TodoDataManagerService extends BaseDataManager {
         this.triggerBulkSync(currentUser.id);
       }
     });
+
+    combineLatest([
+      toObservable(this.userService.currentUser),     // Lauscht auf Logins / Session-Wiederherstellungen[cite: 2, 6]
+      toObservable(this.connectionService.status)     // Lauscht auf den Netzwerk-Status[cite: 3, 6]
+    ]).pipe(
+      // Nur triggern, wenn wir einen gültigen User HABEN und das Internet definitiv ONLINE ist
+      filter(([user, status]) => user !== null && status === 'ONLINE'),
+      
+      // switchMap bricht bei Internet-Flackern alle alten HTTP-Anfragen automatisch ab!
+      switchMap(([user, _]) => {
+        console.log(`🔋 [DataManager-Streak] Starte sicheren Initial-Sync für User ${user!.id}...`);
+        return this.streakRepository.syncAndGetStreakInfo(user!.id);
+      })
+    ).subscribe({
+      next: (streakInfo) => {
+        console.log('🔋 [DataManager-Streak] Batterie erfolgreich initialisiert:', streakInfo);
+        
+        // 🔥 Hier befüllen wir das Signal direkt an der Quelle!
+        this.streakSignal.set(streakInfo); 
+      },
+      error: (err) => {
+        console.error('🔋 [DataManager-Streak] Fehler beim Laden der Batterie:', err);
+      }
+    });
   }
 
   private triggerBulkSync(userId: string): void {
@@ -58,8 +87,11 @@ export class TodoDataManagerService extends BaseDataManager {
       next: (result) => {
         // Pool mit der vom Server korrigierten (und um Projekt-Todos ergänzten) Liste befüllen
         this.allTodosPool.set(result.liste.map(t => new Todo(t)));
-       this.syncCompleted.set(result);
- 
+        this.syncCompleted.set(result);
+        if (result.streakInfo) {
+          this.streakSignal.set(result.streakInfo); // 🔥 NEU: Setzen bei Bulk-Sync
+        }
+
         // Wenn alles erfolgreich war: Die Offline-Warteschlange leeren!
         return this.clearLocalOfflineStorage();
       },
@@ -221,6 +253,10 @@ export class TodoDataManagerService extends BaseDataManager {
           this.userService.updateGamification(response.gamificationResult);
         }
 
+        if (response.streakInfo) {
+           this.streakSignal.set(response.streakInfo); 
+        }
+
         this.applyLocalStateUpdate(finalUpdatedList);
         return finalUpdatedList;
       }),
@@ -234,12 +270,12 @@ export class TodoDataManagerService extends BaseDataManager {
     this.allTodosPool.set(updatedList);
   }
 
-// Erledigte private Aufgaben löschen (Footer links)
+  // Erledigte private Aufgaben löschen (Footer links)
   public deleteCompleted(userId: string): Observable<void> {
     const currentTodos = this.allTodosPool();
     // Lokale UI-Filterung: Entferne erledigte Aufgaben ohne Meilenstein
     const gefilterteListe = currentTodos.filter(t => !(t.done && !t.milestoneId));
-    
+
     this.saveToLocalStorage(gefilterteListe);
     this.allTodosPool.set(gefilterteListe);
 
@@ -264,7 +300,7 @@ export class TodoDataManagerService extends BaseDataManager {
     );
   }
 
-// 🗑️ Alle privaten Aufgaben löschen (Footer rechts)
+  // 🗑️ Alle privaten Aufgaben löschen (Footer rechts)
   public deleteAll(userId: string): Observable<void> {
     const currentTodos = this.allTodosPool();
     // Lokale UI-Filterung: Behalte nur Aufgaben mit Meilenstein
@@ -298,12 +334,12 @@ export class TodoDataManagerService extends BaseDataManager {
    */
   private pushActionToBulkQueue(actionItem: TodoBulkDto): void {
     let queue = this.getBulkQueueFromStorage();
-    
+
     // Für normale CRUD-Operationen optimieren wir die Queue weiterhin,
     // aber wir behalten die strikte Append-Reihenfolge für Massenoperationen bei.
     if (actionItem.id) {
       const existingIndex = queue.findIndex(q => q.id === actionItem.id && !q.syncAction.startsWith('BULK_'));
-      
+
       if (existingIndex > -1) {
         const previousAction = queue[existingIndex].syncAction;
         if (actionItem.syncAction === 'DELETED') {
@@ -388,10 +424,10 @@ export class TodoDataManagerService extends BaseDataManager {
     localStorage.setItem(this.OFFLINE_CHANGES_KEY, JSON.stringify(queue));
   }
 
-// Diese Hilfsmethode leitet bestehende CRUD-Aufrufe an unseren neuen Safeguard weiter
+  // Diese Hilfsmethode leitet bestehende CRUD-Aufrufe an unseren neuen Safeguard weiter
   private updateBulkQueue(todo: Todo, action: 'CREATED' | 'UPDATED' | 'DELETED'): void {
     this.pushActionToBulkQueue({
-      ...todo,               
+      ...todo,
       id: todo.id,
       syncAction: action,
       timestamp: Date.now()
@@ -403,6 +439,7 @@ export class TodoDataManagerService extends BaseDataManager {
     this.clearLocalStorage();
     this.localStorageService.removeItem(this.PREDICTIONS_ACTIVE_KEY)
     this.localStorageService.removeItem(this.PREDICTIONS_PAUSE_KEY)
+    this.streakSignal.set(null);
   }
 
   public override checkUnsavedData(): string | null {
