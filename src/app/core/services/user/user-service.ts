@@ -2,7 +2,7 @@ import { Injectable, inject, signal, computed, effect } from '@angular/core';
 import { UserRepository, IUser, PlannerSettingsDto } from '../../repositories/user-repository';
 import { LocalStorageService } from './local-storage-service';
 import { GamificationResult } from '../../models/gamification';
-import { Observable, Subject, tap } from 'rxjs';
+import { Observable, of, Subject, tap } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -15,6 +15,7 @@ export class UserService {
 
   public currentUser = computed(() => this.currentUserSignal());
   public isLoggedIn = computed(() => this.currentUserSignal() !== null);
+  public warnings = signal<string[] | null>(null)
 
   // 📻 Der Event-Kanal für den Logout-Funkspruch
   public readonly onLogout$ = new Subject<void>();
@@ -144,8 +145,10 @@ export class UserService {
     });
   }
 
-  public login(username: string, password: string): Observable<IUser> {
-    this.logout();
+  public login(username: string, password: string): Observable<IUser | null> {
+    if (!this.logout()) {
+       return of(null) 
+    }
 
     return this.userRepository.login(username, password).pipe(
       tap((user) => {
@@ -169,8 +172,10 @@ export class UserService {
     });
   }
 
-  public register(username: string, firstName: string, lastName: string, password: string): Observable<IUser> {
-    this.logout();
+  public register(username: string, firstName: string, lastName: string, password: string): Observable<IUser | null> {
+    if (!this.logout()) {
+      return of(null)
+    }
 
     return this.userRepository.register(username, firstName, lastName, password).pipe(
       tap((user) => {
@@ -181,14 +186,26 @@ export class UserService {
     );
   }
 
-  public logout(): void {
-    console.log('=== 🧹 LOGOUT: Bereinige alle Session-Daten ===');
+  public cancelLogout(): void {
+    this.warnings.set(null); // Setzt die State Machine sauber zurück
+  }
 
+  public logout(): boolean {
+    console.log('=== 🧹 LOGOUT: Bereinige alle Session-Daten ===');
+    if (this.warnings() === null) {
+       this.warnings.set(this.storageService.collectUnsavedDataWarnings());
+       // Falls das Array existiert und Warnungen enthält -> stoppen!
+       if (this.warnings() && this.warnings()!.length > 0) {
+        return false;
+       }
+    } 
+
+    this.warnings.set(null);
     this.storageService.clearAllSessionData();
     this.onLogout$.next();
     this.currentUserSignal.set(null);
+    return true;
   }
-
   private saveSession(user: IUser): void {
     this.storageService.setItem(LocalStorageService.KEYS.USER_SESSION, user);
     this.currentUserSignal.set(user);

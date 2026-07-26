@@ -1,5 +1,6 @@
 import { computed, Injectable, signal } from "@angular/core";
 import { generateLocalId } from "../../shared/constants/id-const";
+import { BaseDataManager } from "../abstract-base-data-manager/base-data-manager";
 
 /** Struktur einer systemweiten Toast-Benachrichtigung. */
 export interface AppNotification {
@@ -16,7 +17,7 @@ export interface AppNotification {
 @Injectable({
     providedIn: 'root'
 })
-export class NotificationService {
+export class NotificationService extends BaseDataManager {
 
     /** Internes, beschreibbares Signal für das Array aktiver Benachrichtigungen. */
     private notificationSignal = signal<AppNotification[]>([]);
@@ -74,5 +75,9 @@ export class NotificationService {
      */
     public clearAllNotifications(): void {
         this.notificationSignal.set([]);
+    }
+
+    public override resetData(): void {
+        this.clearAllNotifications()
     }
 }

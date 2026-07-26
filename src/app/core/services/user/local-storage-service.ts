@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { ResettableDataService } from '../abstract-base-data-manager/ressettable-data-service';
 
 @Injectable({
@@ -16,7 +16,11 @@ export class LocalStorageService {
 
   // 👥 Hier drin landen alle Services, die von BaseDataManager erben
   private registeredServices: ResettableDataService[] = [];
+  public notSavedDataMessages = signal<string[]>([]) 
 
+  public addDataNotSaved(message: string) {
+     this.notSavedDataMessages.update((value) => [...value, message])
+  }
 
   public register(service: ResettableDataService): void {
     if (!this.registeredServices.includes(service)) {
@@ -56,7 +60,7 @@ export class LocalStorageService {
       localStorage.removeItem(key);
     });
 
-console.log(`🧼 STORAGE-SERVICE: Rufe resetData() für ${this.registeredServices.length} Services auf...`);
+    console.log(`🧼 STORAGE-SERVICE: Rufe resetData() für ${this.registeredServices.length} Services auf...`);
     this.registeredServices.forEach(service => {
       try {
         service.resetData();
@@ -64,5 +68,21 @@ console.log(`🧼 STORAGE-SERVICE: Rufe resetData() für ${this.registeredServic
         console.error('Fehler beim Reset eines Services:', error);
       }
     });
+  }
+
+  public collectUnsavedDataWarnings(): string[] {
+    const warnings: string[] = [];
+
+    for (const service of this.registeredServices) {
+      // Wenn der Service die Methode hat (über BaseDataManager geerbt), rufen wir sie auf
+      if (service.checkUnsavedData) {
+        const warning = service.checkUnsavedData();
+        if (warning) {
+          warnings.push(warning);
+        }
+      }
+    }
+
+    return warnings;
   }
 }

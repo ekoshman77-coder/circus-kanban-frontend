@@ -10,6 +10,13 @@ export abstract class BaseDataManager implements ResettableDataService { // 👈
     this.localStorageService.register(this);
   }
 
+  /**
+   * Standard-Implementierung: Alles schick, keine ungespeicherten Daten.
+   */
+  public checkUnsavedData(): string | null {
+    return null;
+  }
+
   // Zwingt die Kinder weiterhin dazu, die Methode zu schreiben
   public abstract resetData(): void;
 }

@@ -8,16 +8,32 @@ import { of } from 'rxjs';
 describe('UserService', () => {
   let service: UserService;
   
-  // Wir erstellen Mock-Objekte für unsere injizierten Services
   let mockStorageService: any;
   let mockUserRepository: any;
 
   beforeEach(() => {
     // 1. Definition des Mock-Verhaltens für den LocalStorage
     mockStorageService = {
-      getItem: vi.fn().mockReturnValue(null), // Standardmäßig liefert der Speicher "nichts" zurück
+      getItem: vi.fn().mockReturnValue(null), 
       setItem: vi.fn(),
-      clearAllSessionData: vi.fn()
+      clearAllSessionData: vi.fn(),
+      collectUnsavedDataWarnings: vi.fn().mockReturnValue(null) // 🌟 NEU: Verhindert Crash beim Logout
+    };
+
+    // 🛡️ REPARATUR: Die statischen KEYS an den Mock heften, damit der Constructor nicht crasht!
+    (mockStorageService as any).KEYS = {
+      USER_SESSION: 'user_session',
+      GAMIFICATION: 'gamification',
+      USER_ENERGY: 'user_energy',
+      WORKING_TIME_LEFT: 'working_time_left'
+    };
+
+    // Wir patchen auch die originale Klasse (falls Angular den Typ prüft)
+    (LocalStorageService as any).KEYS = {
+      USER_SESSION: 'user_session',
+      GAMIFICATION: 'gamification',
+      USER_ENERGY: 'user_energy',
+      WORKING_TIME_LEFT: 'working_time_left'
     };
 
     // 2. Definition des Mock-Verhaltens für das Repository
@@ -41,6 +57,9 @@ describe('UserService', () => {
     });
 
     service = TestBed.inject(UserService);
+    
+    // 🌟 WICHTIG FÜR SIGNALS: Den initialen Constructor-Effekt ausführen lassen
+    TestBed.flushEffects();
   });
 
   it('sollte den Service erfolgreich instanziieren', () => {
@@ -58,6 +77,9 @@ describe('UserService', () => {
   });
 
   it('sollte beim Logout alle Session-Daten löschen', () => {
+    // Sicherstellen, dass keine ungespeicherten Daten-Warnungen vorliegen
+    mockStorageService.collectUnsavedDataWarnings.mockReturnValue(null);
+
     service.logout();
     
     // Prüfen, ob der StorageService angewiesen wurde, alles zu leeren

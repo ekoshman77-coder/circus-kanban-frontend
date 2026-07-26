@@ -13,6 +13,8 @@ import { TodoViewModel } from '../../../core/viewmodel/todo-view-model'; // 🌟
 import { TodoFooterComponent } from '../todo-footer-component/todo-footer-component';
 import { FilterService } from '../../../core/services/filter/filter-service';
 import { Todo } from '../../../core/models/todo';
+import { BaseTodoBoardComponent } from '../base-todo-board-component';
+import { UniversalPopupComponent } from '../../../core/shared/components/universal-popup-component/universal-popup-component';
 
 @Component({
   selector: 'app-todo-kanban',
@@ -23,13 +25,14 @@ import { Todo } from '../../../core/models/todo';
     TodoItemComponent, 
     DragDropModule,
     StatisticComponent,
-    TodoFooterComponent
+    TodoFooterComponent,
+    UniversalPopupComponent
   ],
   templateUrl: './todo-kanban-component.html',
   styleUrl: './todo-kanban-component.css'
 })
-export class TodoKanbanComponent implements OnInit {
-  private todoService = inject(TodoService);
+export class TodoKanbanComponent extends BaseTodoBoardComponent implements OnInit {
+  
   private filterService = inject(FilterService)
 
   ngOnInit(): void {

@@ -1,0 +1,68 @@
+<div class="streak-drawer" [class.open]="isOpen">
+  <!-- Der kleine Reiter (Trigger) am Bildschirmrand -->
+  <div class="drawer-trigger" (click)="toggleDrawer()">
+    <span class="flame-icon" [style.filter]="getFlameSaturation()">🔥</span>
+    @if (!isOpen && streakData && streakData.streakDays > 0) {
+      <span class="trigger-text">{{ streakData.streakDays }}</span>
+    }
+  </div>
+
+  <!-- HAUPTINHALT -->
+  @if (isOpen) {
+    <div class="drawer-content">
+      <h3>Team-Rhythmus</h3>
+      
+      @if (streakData) {
+        <!-- FALL A: Daten sind vorhanden -->
+        <div class="streak-display">
+          <span class="large-flame" [style.filter]="getFlameSaturation()">🔥</span>
+          <div class="streak-count">
+            <span class="number">{{ streakData.streakDays }}</span>
+            <span class="label">Tage Puffer-Streak</span>
+          </div>
+        </div>
+
+        <div class="battery-container">
+          <div class="battery-label">
+            <span>Team-Batterie</span>
+            <span>{{ streakData.batteryPercentage }}%</span>
+          </div>
+          <div class="battery-rail">
+            <div class="battery-bar" 
+                 [style.width.%]="streakData.batteryPercentage"
+                 [class.shield-active]="streakData.isShieldActive">
+            </div>
+          </div>
+        </div>
+
+        <p class="info-text">{{ streakData.infoText }}</p>
+
+      } @else {
+        <!-- FALL B: Vernünftiger Standard-Zustand bei NULL -->
+        <div class="streak-display">
+          <span class="large-flame" style="filter: saturate(0) brightness(0.5);">🔥</span>
+          <div class="streak-count">
+            <span class="number" style="color: #8e8e93;">0</span>
+            <span class="label">Kein Puffer active</span>
+          </div>
+        </div>
+
+        <div class="battery-container">
+          <div class="battery-label">
+            <span>Team-Batterie</span>
+            <span>0%</span>
+          </div>
+          <div class="battery-rail">
+            <div class="battery-bar" style="width: 0%; background: #ff453a;"></div>
+          </div>
+        </div>
+
+        <p class="info-text" style="border-left: 3px solid #ff453a;">
+          <strong>Akku komplett leer!</strong> Schließe deine erste Projektaufgabe ab, um die Team-Batterie aufzuladen und deine Flamme zu entzünden.
+        </p>
+      }
+
+      <button class="close-btn" (click)="toggleDrawer()">Schließen</button>
+    </div>
+  }
+</div>

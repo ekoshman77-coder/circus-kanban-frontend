@@ -13,11 +13,13 @@ import { MilestoneSuggestionsModel } from '../../models/milestone-suggestions-mo
 import { NotificationService } from '../notification/notification-service';
 import { ProjectDashboardStatsDTO } from '../../repositories/dto/project-dashboard-stats-dto';
 import { ProjectDraftService } from './project-draft-service'; // <-- Neu importiert!
+import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 
 @Injectable({
   providedIn: 'root'
 })
-export class ProjectService {
+export class ProjectService extends BaseDataManager {
+
   private dataManager = inject(ProjectDataManagerService);
   private userService = inject(UserService);
   private noteService = inject(NoteService);
@@ -73,6 +75,7 @@ export class ProjectService {
   }
 
   constructor() {
+    super()
     effect(() => {
       const user = this.userService.currentUser();
       if (user) {
@@ -294,5 +297,13 @@ export class ProjectService {
 
   public cleanSuggestions(): void {
     this._aiSuggestionsSignal.set({ recommended: [], degraded: [] });
+  }
+
+public override resetData(): void {
+    this.allProjectsPool.set([]);
+    this.dashboardStatsSignal.set(null);
+    this.degradedMilestones.set([]);
+    this.activeMilestoneIdSignal.set(null);
+    this.cleanSuggestions();
   }
 }

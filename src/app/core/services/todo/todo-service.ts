@@ -1,6 +1,6 @@
 import { Injectable, signal, computed, inject, effect, untracked } from '@angular/core';
 import { Todo } from '../../models/todo';
-import { catchError, map, Observable, of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { UserService } from '../user/user-service';
 import { LoggerService } from '../logger/logger-service';
 import { ErrorCode } from '../../enums/error-enum';
@@ -9,6 +9,7 @@ import { TodoDataManagerService } from './todo-data-manager-service';
 import { TodoRepository } from '../../repositories/todo-repository';
 import { TodoQueryService } from './todo-query-service'; // 💡 NEU: Der Kreis-Sprenger importiert!
 import { NotificationService } from '../notification/notification-service';
+import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 
 export enum Filter {
   ALL = 'all',
@@ -38,7 +39,7 @@ export class Statistics {
 @Injectable({
   providedIn: 'root',
 })
-export class TodoService {
+export class TodoService extends BaseDataManager {
   private dataManager = inject(TodoDataManagerService);
   private userService = inject(UserService);
   private loggerService = inject(LoggerService);
@@ -64,6 +65,7 @@ export class TodoService {
   public filterSignal = signal<Filter>(Filter.ALL);
   public searchQuerySignal = signal<string>('');
   public gamificationState = signal<GamificationResult | null>(null);
+  public streakState = computed(() => this.dataManager.streakSignal());
 
   public fibonacciSequence: number[];
 
@@ -200,6 +202,7 @@ const todo = this.lastDeletedTodo();
   });
 
   constructor() {
+    super()
     this.fibonacciSequence = this.initFibonacciSequence(40);
 
     effect(() => {
@@ -223,18 +226,20 @@ const todo = this.lastDeletedTodo();
   }
 
   private handleSyncCompleted(syncResult: any): void {
-    // 1. Daten ohne reaktive Schleifen setzen
-    this.allTodosPool.set(syncResult.liste);
+    // 🛑 DIESE ZEILE ENTFERNEN: this.allTodosPool.set(syncResult.liste);
+    // Denn der DataManager hat das Signal bereits perfekt aktualisiert!
+
+    // 1. Nur noch den Gamification-State für die UI setzen
     this.gamificationState.set(syncResult.gamificationResult);
 
-    // 2. Das blockierende alert() durch den NotificationService ersetzen
-    if (syncResult.gamificationResult.levelUp) {
+    // 2. Benachrichtigung bei Level Up anzeigen
+    if (syncResult.gamificationResult?.levelUp) {
       this.notificationService.showNotification(
         `🎉 LEVEL UP! Du bist jetzt Level ${syncResult.gamificationResult.currentLevel}!`, 'success'
       );
     }
 
-    // 3. Den Sync-Zustand aufräumen
+    // 3. Den Sync-Zustand im DataManager wieder freigeben
     this.dataManager.clearSyncResult();
   }
 
@@ -613,5 +618,20 @@ const todo = this.lastDeletedTodo();
 
   public getServerCategories(userId: string): Observable<string[]> {
     return this.todoRepository.getServerCategories(userId);
+  }
+
+  public resetData(): void {
+  this.filterSignal.set(Filter.ALL);
+  this.searchQuerySignal.set('');
+  this.gamificationState.set(null);
+  this.latestGamificationResult.set(null);
+
+  if (this.deleteTimeout) {
+      clearTimeout(this.deleteTimeout);
+    }
+    if (this.progressInterval) {
+      clearInterval(this.progressInterval);
+    }
+    this.lastDeletedTodo.set(null);
   }
 }

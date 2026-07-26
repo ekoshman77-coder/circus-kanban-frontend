@@ -2,6 +2,7 @@ import { Injectable, signal, effect, inject } from '@angular/core';
 import { Project } from '../../models/project';
 import { UserService } from '../user/user-service';
 import { Note } from '../../models/note';
+import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 
 /**
  * Service zur Verwaltung ungespeicherter Projektentwürfe im lokalen Speicher (LocalStorage).
@@ -10,7 +11,7 @@ import { Note } from '../../models/note';
 @Injectable({
     providedIn: 'root'
 })
-export class ProjectDraftService {
+export class ProjectDraftService extends BaseDataManager {
     private userService = inject(UserService);
 
     /**
@@ -30,6 +31,7 @@ export class ProjectDraftService {
     public readonly degradedMilestones = this.degradedMilestonesSignal.asReadonly();
 
     constructor() {
+        super()
         /**
          * Reagiert automatisch auf Änderungen an den Draft-Signalen 
          * und synchronisiert den Zustand mit dem LocalStorage.
@@ -135,5 +137,10 @@ export class ProjectDraftService {
             const storageKey = `local_project_draft_${userId}`;
             localStorage.removeItem(storageKey);
         }
+    }
+
+    public override resetData(): void {
+        this.currentDraft.set(null);
+        this.degradedMilestonesSignal.set([]);
     }
 }

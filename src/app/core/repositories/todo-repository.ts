@@ -52,7 +52,8 @@ export class TodoRepository {
         // Wir geben das Paket sauber strukturiert und voll typisiert an die nächste Schicht weiter
         const result = {
           todo: mappedTodo as any, // Cast, da mapToTodoClass die voll funktionsfähige Klasse zurückgibt
-          gamificationResult: responseBody.gamificationResult
+          gamificationResult: responseBody.gamificationResult,
+          streakInfo: responseBody.streakInfo
         };
         console.log("TodoRepository::update Todo result: ", result)
         return result
@@ -115,7 +116,8 @@ export class TodoRepository {
         const mappedList = result.liste.map((json: any) => this.mapToTodoClass(json))
         return {
           gamificationResult: result.gamificationResult,
-          liste: mappedList
+          liste: mappedList,
+          streakInfo: result.streakInfo
         }
       })
     )

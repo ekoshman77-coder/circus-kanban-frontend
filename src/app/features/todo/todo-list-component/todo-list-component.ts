@@ -11,6 +11,8 @@ import { TodoQueryService } from '../../../core/services/todo/todo-query-service
 import { Todo, VisualStatus } from '../../../core/models/todo';
 import { TodoFooterComponent } from '../todo-footer-component/todo-footer-component';
 import { FilterService } from '../../../core/services/filter/filter-service';
+import { UniversalPopupComponent } from '../../../core/shared/components/universal-popup-component/universal-popup-component';
+import { BaseTodoBoardComponent } from '../base-todo-board-component';
 
 @Component({
   selector: 'app-todo-list',
@@ -21,14 +23,14 @@ import { FilterService } from '../../../core/services/filter/filter-service';
     TodoItemComponent,
     FilterComponent,
     StatisticComponent,
-    TodoFooterComponent
+    TodoFooterComponent,
+    UniversalPopupComponent
   ],
   templateUrl: './todo-list-component.html',
   styleUrl: './todo-list-component.css',
   animations: [FILTER_ANIMATION]
 })
-export class TodoListComponent implements OnInit {
-  private todoService = inject(TodoService);
+export class TodoListComponent extends BaseTodoBoardComponent implements OnInit {
   private todoQueryService = inject(TodoQueryService);
   private filterService = inject(FilterService)
 
@@ -131,17 +133,6 @@ export class TodoListComponent implements OnInit {
     console.warn("Todo nicht im gefilterten Stream gefunden!");
   }
 }
-
-//   onClearCompleted(): void {
-//     const completedTodos = this.uiTodos().filter(todoViewModel => todoViewModel.done);
-//     const allowed = completedTodos.filter(todoViewModel =>
-//       this.todoQueryService.hasPermissionForMilestone(todoViewModel.todo.milestoneId, 'TODO_DELETE')
-//     );
-
-//     allowed.forEach(todoViewModel => {
-// //      this.todoService.deleteTodo(todoViewModel.id);
-//     });
-//   }
 
   toggleDescription(id: string): void {
     const currentSet = new Set(this.openedDescrIds());

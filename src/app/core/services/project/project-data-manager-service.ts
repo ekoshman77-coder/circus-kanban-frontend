@@ -10,6 +10,7 @@ import { MILESTONE_TEMPLATES } from '../../shared/constants/milestone-template';
 import { UnifiedSuggestion } from '../../models/unified-suggestion';
 import { MilestoneSuggestionsModel } from '../../models/milestone-suggestions-model';
 import { ProjectDashboardStatsDTO } from '../../repositories/dto/project-dashboard-stats-dto';
+import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 
 /**
  * Service zur Verwaltung von Projektdaten mit integriertem Offline-Modus.
@@ -18,14 +19,14 @@ import { ProjectDashboardStatsDTO } from '../../repositories/dto/project-dashboa
 @Injectable({
   providedIn: 'root'
 })
-export class ProjectDataManagerService {
+export class ProjectDataManagerService extends BaseDataManager {
   private projectRepository = inject(ProjectRepository);
   private connectionService = inject(ConnectionService);
   private aiRepository = inject(AiRepository);
 
   // 📂 Die zwei einzigen, festen Schubladen auf dem Gerät:
-  private readonly GLOBAL_POOL_KEY = 'local_projects_global_pool'; // Schneller Lese-Cache für die UI[cite: 2]
-  private readonly SYNC_QUEUE_KEY = 'local_projects_pending_sync';  // Schreib-Briefkasten für Offline-Änderungen[cite: 2]
+  private readonly GLOBAL_POOL_KEY = 'local_projects_global_pool'; // Schneller Lese-Cache für die UI
+  private readonly SYNC_QUEUE_KEY = 'local_projects_pending_sync';  // Schreib-Briefkasten für Offline-Änderungen
 
   /**
    * Hilfsmethode: Holt die Warteschlange der offline geänderten Projekte aus dem LocalStorage.
@@ -330,5 +331,17 @@ export class ProjectDataManagerService {
       return throwError(() => new Error('OFFLINE_MODE'));
     }
     return this.projectRepository.getDashboardStatistics(userId);
+  }
+
+  public override checkUnsavedData(): string | null {
+  const pendingQueue = this.getSyncQueue();
+  if (pendingQueue.length > 0) {
+    return `Es gibt noch ${pendingQueue.length} ungespeicherte Projekt-Änderungen.`;
+  }
+  return null;
+}
+
+  public override resetData(): void {
+    this.localStorageService.removeItem(this.SYNC_QUEUE_KEY)
   }
 }

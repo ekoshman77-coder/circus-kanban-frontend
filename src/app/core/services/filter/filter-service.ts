@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 
 /** Die verfügbaren Filterkategorien für die systemweite Suche. */
 export type SearchCategory = 'all' | 'team' | 'projects' | 'ideas' | 'milestones' | 'todos';
@@ -13,7 +14,7 @@ export type SearchCategory = 'all' | 'team' | 'projects' | 'ideas' | 'milestones
 @Injectable({
   providedIn: 'root'
 })
-export class FilterService {
+export class FilterService extends BaseDataManager {
   
   /** Der aktuelle globale Suchbegriff, den der Benutzer eingegeben hat. */
   public searchTerm = signal<string>('');
@@ -23,8 +24,6 @@ export class FilterService {
   
   /** Spezial-Filter für dringende Alarme (z. B. Kaffeekassen-Schulden oder gesperrte Instanzen). */
   public showOnlyAlerts = signal<boolean>(false);
-
-  constructor() {}
 
   /**
    * Setzt die Standard-Kategorie beim Navigieren auf eine neue Seite.
@@ -42,6 +41,12 @@ export class FilterService {
    * Setzt alle Filter und Suchbegriffe sofort auf ihre Standardwerte zurück[cite: 6].
    */
   public resetAll(): void {
+    this.searchTerm.set('');
+    this.currentCategory.set('all');
+    this.showOnlyAlerts.set(false);
+  }
+
+  public override resetData(): void {
     this.searchTerm.set('');
     this.currentCategory.set('all');
     this.showOnlyAlerts.set(false);

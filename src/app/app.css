@@ -18,8 +18,8 @@ html, body {
   margin-left: -24px;       
   
   /* 🎨 HIER IST DER BACKGROUND: Er liegt auf dem GANZEN Element und deckt alles ab! */
-   background-color: #4a5568;                           /* background-color: #164356; */
-     border-bottom: 3px solid #2d3748;                 /*border-bottom: 3px solid #205973;*/ 
+   background-color: #164356;                           /* background-color: #164356; */
+     border-bottom: 3px solid #205973;                 /*border-bottom: 3px solid #205973;*/ 
   
   /* Ein gleichmäßiges Padding oben/unten (12px) und links/rechts (24px) */
   padding: 12px 24px; 

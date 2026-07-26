@@ -40,7 +40,7 @@ export class UniversalPredictorService {
       }
     }
 
-    // 🔌 Offline-Pfad: Holt sich die Daten autonom aus dem LocalStorage
+    // Offline-Pfad: Holt sich die Daten autonom aus dem LocalStorage
     return this.predictOffline(text, userId, contextType);
   }
 
