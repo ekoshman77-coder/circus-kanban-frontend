@@ -1,0 +1,60 @@
+<div class="department-tab">
+  
+  <!-- 1. NEUE ABTEILUNG ERSTELLEN -->
+  <div class="create-section">
+    <h3>🏢 Neue Abteilung gründen</h3>
+    <div class="input-group">
+      <input 
+        type="text" 
+        [(ngModel)]="newDepartmentName" 
+        placeholder="Name der Abteilung (z.B. Marketing)"
+        class="form-input"
+        (keyup.enter)="onCreateDepartment()"
+      />
+      <button (click)="onCreateDepartment()" class="btn-primary">
+        ➕ Erstellen
+      </button>
+    </div>
+  </div>
+
+  <!-- 2. LISTE DER ABTEILUNGEN -->
+<div class="departments-list">
+  @for(department of departments(); track department.id) {
+    <div class="department-row" [class.is-admin-dept]="department.name === ADMIN_DEPT">
+        
+        @if (idEditing(department)) {
+          <!-- EDITIER-MODUS -->
+          <input 
+            class="editing-name"
+            type="text"
+            [(ngModel)]="editingName"
+            (keyup.enter)="onSaveEdit()"
+            (keyup.escape)="cancelEdit()"
+          />
+          <!-- 💡 HIER: Buttons in eine Gruppe gepackt -->
+          <div class="action-buttons">
+            <button class="save-edit" (click)="onSaveEdit()">💾 Speichern</button>
+            <button class="cancel-edit" (click)="cancelEdit()">❌ Abbrechen</button>
+          </div>
+        } @else {
+          <!-- ANZEIGE-MODUS -->
+          <span class="department-name">
+            {{department.name}} 
+            @if(department.name === ADMIN_DEPT) { <small class="badge">(System)</small> }
+          </span>
+          
+          <!-- 💡 HIER: Buttons in eine Gruppe gepackt -->
+          <div class="action-buttons">
+            @if (department.name !== ADMIN_DEPT) {
+              <button class="edit" (click)="startEdit(department)">✏️ Bearbeiten</button>
+              <button class="delete" (click)="onDeleteDepartment(department)">🗑️ Löschen</button>
+            } @else {
+              <span class="system-protected">🔒 Systemgeschützt</span>
+            }
+          </div>
+        }
+
+      </div>
+    }
+  </div>
+</div>

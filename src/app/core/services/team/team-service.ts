@@ -152,4 +152,10 @@ export class TeamService extends BaseDataManager {
     public override resetData(): void {
         this._currentProjectId.set(null);
     }
+
+    /** 🔓 Schaltet ein Mitglied frei und weist eine Abteilung zu (inkl. Offline-Schutz) */
+    public approveMember(userId: string, departmentId: string): void {
+        console.log(`📡 [TeamService] Approve Mitglied mit ID: ${userId} für Abteilung: ${departmentId}`);
+        this.dataManager.approveGlobalMember(userId, departmentId);
+    }
 }

@@ -15,6 +15,7 @@ import { GamificationResult } from './core/models/gamification';
 import confetti from 'canvas-confetti';
 import { NotificationService } from './core/services/notification/notification-service';
 import { StreakPanelComponent } from './features/streak-panel/streak-panel';
+import { DepartmentService } from './core/services/admin/department-service';
 
 @Component({
   selector: 'app-root',
@@ -28,6 +29,8 @@ export class App implements OnInit {
   public connectionService = inject(ConnectionService)
   public todoService = inject(TodoService);
   public notificationService = inject(NotificationService)
+  public departmentService = inject(DepartmentService)
+
   // 🎯 Das globale Signal, das unser HTML mit den frischen Level-Daten füttert
   protected globalLevelUpResult = signal<GamificationResult | null>(null);
   private filterService = inject(FilterService);
@@ -42,6 +45,8 @@ export class App implements OnInit {
 
   private router = inject(Router);
   private lastKnownLevel: number | null = null;
+
+  public isAdmin = computed(() =>this.departmentService.isAdmin())
 
 constructor() {
     // 🌟 EIN EINZIGER, KONTROLLIERTER EFFEKT FÜR DEN GESAMTEN USER-STATUS

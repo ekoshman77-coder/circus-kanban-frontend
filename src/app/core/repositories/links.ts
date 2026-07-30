@@ -22,5 +22,6 @@
   export const aiNoteCategoriesUrl = `${baseUrl}/ai/notes/categories`;
   export const streakUrl = `${baseUrl}/streaks/sync`;
   export const aiTodoSnoozingUrl = `${baseUrl}/ai/planner/snooze`;
+  export const departmentApiUrl = `${baseUrl}/departments`
 
   

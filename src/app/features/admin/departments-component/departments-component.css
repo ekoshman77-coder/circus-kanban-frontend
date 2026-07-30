@@ -1,0 +1,159 @@
+.department-tab {
+  max-width: 600px;         /* 1 */
+  margin: 2rem auto;        /* 2 */
+  padding: 1.5rem;          /* 3 */
+  background-color: #ffffff;/* 4 */
+  border-radius: 8px;       /* 5 */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); /* 6 */
+}
+
+create-section {
+  margin-bottom: 2rem;      /* 1 */
+  padding-bottom: 1.5rem;   /* 2 */
+  border-bottom: 2px solid #f0f0f0; /* 3 */
+}
+
+.create-section h3 {
+  margin-top: 0;            /* 4 */
+  margin-bottom: 1rem;      /* 5 */
+  color: #333333;           /* 6 */
+  font-size: 1.2rem;        /* 7 */
+}
+
+.input-group {
+  display: flex;       /* 1 */
+  gap: 10px;           /* 2 */
+  align-items: center; /* 3 */
+  width: 100%;         /* 4 */
+}
+
+.form-input {
+  flex: 1;                  /* 1 */
+  padding: 0.6rem 1rem;     /* 2 */
+  border: 1px solid #ccc;   /* 3 */
+  border-radius: 4px;       /* 4 */
+  font-size: 1rem;          /* 5 */
+}
+
+.btn-primary {
+  /* ... alle Eigenschaften von Schritt 5 ... */
+  
+  flex-shrink: 0;  /* 💡 DAS FEHLTE NOCH! */
+}
+
+.departments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px; /* 💡 Das hier steuert den Abstand zwischen den Abteilungen! */
+
+  max-height: 400px;        /* 1 */
+  overflow-y: auto;         /* 2 */
+  padding-right: 8px;       /* 3 */
+}
+
+.department-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+  /* Vorher: 0.8rem 1rem */
+  padding: 1.2rem 1.5rem; /* 💡 Erhöht! Jetzt ist nach oben/unten und links/rechts spürbar mehr Platz */
+  
+  background-color: #f8f9fa;
+  border-radius: 8px; /* Leicht runder, passend zum großen Kasten */
+  border: 1px solid #e9ecef;
+}
+
+.action-buttons {
+  display: flex;         /* 1 */
+  gap: 8px;              /* 2 */
+  align-items: center;   /* 3 */
+  justify-content: flex-end; /* 4 */
+}
+
+.editing-name {
+  flex: 1;
+  
+  /* Vorher: 10px */
+  margin-right: 20px; /* 💡 Verdoppelt! Schiebt die Buttons weiter nach rechts weg */
+  
+  padding: 0.6rem 1rem; /* Macht das Feld so hoch wie das normale Textfeld oben, damit es nicht schrumpft */
+  border: 1px solid #007bff;
+  border-radius: 4px;
+  font-size: 0.95rem;
+}
+
+/* Das haben ALLE Buttons in den Zeilen gemeinsam */
+.department-row button {
+  padding: 0.4rem 0.8rem;   /* 1 */
+  border: none;             /* 2 */
+  border-radius: 4px;       /* 3 */
+  font-size: 0.85rem;       /* 4 */
+  cursor: pointer;          /* 5 */
+  margin-left: 6px;         /* 6 */
+  font-weight: 500;         /* 7 */
+}
+
+/* Jetzt kommen die spezifischen Farben: */
+.department-row button.edit {
+  background-color: #e2e8f0;/* 8 */
+  color: #334155;
+}
+
+.department-row button.edit:hover {
+  background-color: #cbd5e1;
+}
+
+.department-row button.delete {
+  background-color: #fee2e2;/* 9 */
+  color: #ef4444;
+}
+
+.department-row button.delete:hover {
+  background-color: #fca5a5;
+}
+
+.department-row button.save-edit {
+  background-color: #22c55e;/* 10 */
+  color: #ffffff;
+}
+
+.department-row button.cancel-edit {
+  background-color: #64748b;/* 11 */
+  color: #ffffff;
+}
+
+.system-protected {
+  color: #64748b;           /* 1 */
+  font-size: 0.85rem;       /* 2 */
+  font-style: italic;       /* 3 */
+  font-weight: 500;         /* 4 */
+}
+
+.badge {
+  background-color: #e0f2fe;/* 5 */
+  color: #0369a1;           /* 6 */
+  padding: 2px 6px;         /* 7 */
+  border-radius: 4px;       /* 8 */
+  margin-left: 6px;         /* 9 */
+  font-size: 0.75rem;       /* 10 */
+}
+
+/* Styling für den Scrollbalken in modernen Browsern (Chrome, Safari, Edge) */
+.departments-list::-webkit-scrollbar {
+  width: 6px;               /* Macht den Scrollbalken schön schmal */
+}
+
+.departments-list::-webkit-scrollbar-track {
+  background: #f1f1f1;      /* Die Hintergrund-Schiene, auf der der Balken läuft */
+  border-radius: 4px;
+}
+
+.departments-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;      /* Der eigentliche Balken, den man mit der Maus zieht */
+  border-radius: 4px;
+}
+
+.departments-list::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;      /* Wird etwas dunkler, wenn man mit der Maus drüberfährt */
+}

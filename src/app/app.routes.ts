@@ -10,6 +10,8 @@ import { onlineGuard } from './core/guards/online-guard';
 import { IdeaPageComponent } from './features/idea-board/idea-page-component/idea-page-component';
 import { ProjectCalculatorComponent } from './features/idea-board/project-calculator-component/project-calculator-component';
 import { TeamManagementComponent } from './features/team-management/team-management-component/team-management-component';
+import { AdminBoardComponent } from './features/admin/admin-board-component/admin-board-component';
+import { adminGuard } from './core/guards/admin-guard';
 
 export const routes: Routes = [
     { 
@@ -60,6 +62,10 @@ export const routes: Routes = [
       path: "team", 
       component: TeamManagementComponent,
       canActivate: [authGuard]
+    },
+    { 
+      path: "admin", 
+      component: AdminBoardComponent,
+      canActivate: [authGuard, adminGuard]
     }
-
 ];

@@ -50,7 +50,12 @@
         <span class="tab-icon">👥</span>
         <span class="tab-text">Team-Verwaltung</span>
       </button>
-      
+      @if (isAdmin()) {
+        <button routerLink="/admin" routerLinkActive="active-route" class="nav-tab icon-tab">
+          <span class="tab-icon">🛡️</span>
+          <span class="tab-text">Admin-Board</span>
+        </button>
+      }
     </div>
 
   </header>

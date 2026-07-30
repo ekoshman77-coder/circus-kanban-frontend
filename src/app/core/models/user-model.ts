@@ -7,6 +7,8 @@ import { generateLocalId, isLocalId } from "../shared/constants/id-const";
   username: string;
   firstName: string;
   lastName: string;
+  departmentId: string | null;
+  isApproved: boolean | null,
   projectIds: string[],
   coffeeBalance?: number,
   role?: string,
@@ -24,6 +26,8 @@ export class UserModel {
   lastName: string;
   username: string;
   coffeeBalance: number;
+  departmentId: string | null;
+  isApproved: boolean | null;
   projectIds: string[];
   role: string;
   emoji: string;
@@ -33,6 +37,8 @@ export class UserModel {
     this.firstName = data.firstName || '';
     this.lastName = data.lastName || '';
     this.username = data.username || '';
+    this.departmentId = data.departmentId?? null;
+    this.isApproved = data.isApproved?? null;
     this.projectIds = data.projectIds || [];
     this.coffeeBalance = data.coffeeBalance?? 0;
     this.role = data.role?? ''
@@ -89,6 +95,8 @@ public static fromJson(json: any): UserModel {
       username: json.username,
       // 🟢 HIER IST DIE MAGIE: Exakt matchen mit dem Namen aus deinem Kotlin UserResponseDTO!
       coffeeBalance: json.coffeeBalance !== undefined ? json.coffeeBalance : 0,
+      isApproved: json.isApproved,
+      departmentId: json.departmentId,
       projectIds: json.projectIds || [],
       // Falls das Backend diese Felder irgendwann mitschickt, liest er sie aus, sonst greift der Konstruktor-Fallback
       emoji: json.emoji?? "🦊",
@@ -104,6 +112,8 @@ public toJson(): any {
       username: this.username,
       // 🟢 HIER ERGÄNZEN: Damit der Server die Balance beim Senden auch versteht
       coffeeBalance: this.coffeeBalance,
+      departmentId: this.departmentId,
+      isApproved: this.isApproved,
       projectIds: this.projectIds,
       // Falls die Rolle und das Emoji auch wieder zurückgespeichert werden sollen:
       emoji: this.emoji,
