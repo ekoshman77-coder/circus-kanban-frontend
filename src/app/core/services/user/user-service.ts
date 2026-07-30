@@ -19,7 +19,7 @@ export class UserService {
 
   // 📻 Der Event-Kanal für den Logout-Funkspruch
   public readonly onLogout$ = new Subject<void>();
-  
+
   // Zustand für den Browser-Speicher (LocalStorage)
   userEnergy = signal<'low' | 'normal' | 'high'>('normal');
   workingTimeLeft = signal<number>(8);
@@ -38,6 +38,16 @@ export class UserService {
     currentLevelXpStart: 0,
     nextLevelXpRequired: 100
   });
+
+  // public isAdmin = computed(() => {
+  //   const currentDeptId = this.currentUser()?.departmentId;
+  //   if (!currentDeptId) return false;
+
+  //   const userDepartment = this.departmentService.departments()
+  //     .find(dep => dep.id === currentDeptId);
+
+  //   return userDepartment?.name.toLowerCase() === ADMIN_DEPARTMENT_NAME.toLowerCase();
+  // });
 
   constructor() {
     console.log('=== 🚀 APP-START: UserService Constructor läuft an ===');
@@ -145,13 +155,30 @@ export class UserService {
     });
   }
 
+  public fetchCurrentStatus(): Observable<IUser | null> {
+  const currentId = this.currentUser()?.id;
+  
+  // Wenn gar kein User eingeloggt ist, direkt abbrechen
+  if (!currentId) return of(null); 
+
+  // Wir rufen das Repository auf (das bauen wir gleich)
+  return this.userRepository.getUserStatus(currentId).pipe(
+    tap((updatedUser) => {
+      if (updatedUser) {
+        this.saveSession(updatedUser) 
+      }
+    })
+  );
+}
+
   public login(username: string, password: string): Observable<IUser | null> {
     if (!this.logout()) {
-       return of(null) 
+      return of(null)
     }
 
     return this.userRepository.login(username, password).pipe(
       tap((user) => {
+        console.log("userRepository:: login: user = ", user)
         this.saveSession(user);
         this.loadSettingsFromBackend(user.id);
         this.loadGamificationFromBackend(user.id);
@@ -179,6 +206,7 @@ export class UserService {
 
     return this.userRepository.register(username, firstName, lastName, password).pipe(
       tap((user) => {
+        console.log("userRepository:: register: user = ", user)
         this.saveSession(user);
         this.loadSettingsFromBackend(user.id);
         this.loadGamificationFromBackend(user.id);
@@ -193,19 +221,35 @@ export class UserService {
   public logout(): boolean {
     console.log('=== 🧹 LOGOUT: Bereinige alle Session-Daten ===');
     if (this.warnings() === null) {
-       this.warnings.set(this.storageService.collectUnsavedDataWarnings());
-       // Falls das Array existiert und Warnungen enthält -> stoppen!
-       if (this.warnings() && this.warnings()!.length > 0) {
+      this.warnings.set(this.storageService.collectUnsavedDataWarnings());
+      // Falls das Array existiert und Warnungen enthält -> stoppen!
+      if (this.warnings() && this.warnings()!.length > 0) {
         return false;
-       }
-    } 
+      }
+    }
 
     this.warnings.set(null);
     this.storageService.clearAllSessionData();
     this.onLogout$.next();
     this.currentUserSignal.set(null);
+
+    this.userEnergy.set('normal');
+    this.workingTimeLeft.set(8);
+    this.primeTimeStartHour.set(10);
+    this.primeTimeEndHour.set(18);
+    this.workingHours.set(8);
+    this.gamificationSignal.set({
+      currentXp: 0,
+      currentLevel: 0,
+      levelUp: false,
+      levelTitle: 'To-Do-Lehrling',
+      levelIcon: '👶',
+      currentLevelXpStart: 0,
+      nextLevelXpRequired: 100
+    });
     return true;
   }
+
   private saveSession(user: IUser): void {
     this.storageService.setItem(LocalStorageService.KEYS.USER_SESSION, user);
     this.currentUserSignal.set(user);

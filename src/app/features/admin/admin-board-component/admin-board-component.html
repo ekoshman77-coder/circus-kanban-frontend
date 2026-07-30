@@ -1,0 +1,27 @@
+<div class="admin-board-container">
+  <h1>👑 Administrator-Zentrale</h1>
+
+  <!-- Die Reiter-Leiste -->
+  <div class="tab-navigation">
+    <button 
+      [class.active]="activeTab() === 'departments'" 
+      (click)="changeTab('departments')">
+      🏢 Abteilungen verwalten
+    </button>
+    <button 
+      [class.active]="activeTab() === 'users'" 
+      (click)="changeTab('users')">
+      👥 Benutzer & Warteraum
+    </button>
+  </div>
+
+  <!-- Der dynamische Content-Bereich -->
+  <div class="tab-content">
+    @if (activeTab() === 'departments') {
+      <app-departments-component></app-departments-component>
+    }
+    @if (activeTab() === 'users') {
+      <app-admin-users-component></app-admin-users-component>
+    }
+  </div>
+</div>

@@ -109,6 +109,8 @@ export class TeamPoolComponent implements OnInit, OnDestroy { // 🎯 OnDestroy 
       role: 'Teammitglied',
       emoji: '👤',
       coffeeBalance: 0,
+      isApproved: null,
+      departmentId: null,
       projectIds: []
     });
 
@@ -158,6 +160,8 @@ export class TeamPoolComponent implements OnInit, OnDestroy { // 🎯 OnDestroy 
       role: currentUser?.role || '',
       emoji: currentUser?.emoji || '',
       coffeeBalance: currentUser?.coffeeBalance || 0,
+      isApproved: currentUser?.isApproved?? null,
+      departmentId: currentUser?.departmentId?? null,
       projectIds: currentUser?.projectIds || []
     });
 

@@ -1,9 +1,11 @@
-import { Component, computed, inject, signal, OnInit } from '@angular/core'; // 👈 1. HIER OnInit importiert
+import { Component, computed, inject, signal, OnInit, effect, OnDestroy } from '@angular/core'; // 👈 1. HIER OnInit importiert
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { UserService } from '../../../core/services/user/user-service';
 import { UniversalPopupComponent } from '../../../core/shared/components/universal-popup-component/universal-popup-component';
+import { NotificationService } from '../../../core/services/notification/notification-service';
+import { ApprovalPollingService } from '../../../core/services/admin/approval-polling-service';
 
 @Component({
   selector: 'app-welcome',
@@ -14,6 +16,10 @@ import { UniversalPopupComponent } from '../../../core/shared/components/univers
 })
 export class WelcomeComponent implements OnInit {
   public userService = inject(UserService);
+  private notificationService = inject(NotificationService); 
+  private approvalService = inject(ApprovalPollingService)
+  private router = inject(Router);
+
   public registerForm = new FormGroup({
     username: new FormControl("", Validators.required),
     password: new FormControl("", Validators.required),
@@ -27,7 +33,7 @@ export class WelcomeComponent implements OnInit {
   public isNewUser = signal<boolean>(false);
   public popupProcessedFor = signal<'login' | 'logout' | 'register' | null>(null)
 
-public logoutWarnings = computed(() => {
+  public logoutWarnings = computed(() => {
     const w = this.userService.warnings();
     return (w && w.length > 0) ? w : null;
   });
@@ -36,6 +42,22 @@ public logoutWarnings = computed(() => {
 
   public togglePasswordVisibility(): void {
     this.showPassword.update(value => !value);
+  }
+
+ constructor() {
+    // 🎯 REAKTIVER EFFEKT: Lauscht NUR auf das flüchtige Freischaltungs-Signal!
+    effect(() => {
+      if (this.approvalService.justApproved()) {
+        const user = this.userService.currentUser();
+        console.log('🎉 Warteraum-Erfolg! Komponente leitet weiter...');
+        
+        this.router.navigate(['/todopage']);
+        this.notificationService.showNotification(
+          `Willkommen an Bord, ${user?.firstName}! Dein Account wurde freigeschaltet. 🎉`, 
+          'success'
+        );
+      }
+    });
   }
 
   ngOnInit(): void {
@@ -84,7 +106,6 @@ public onLogin(): void {
     this.userService.login(name, password).subscribe({
       next: (user) => {
         if (!user) {
-          // 🎯 HIER: Wenn der Service blockiert hat, Lade-Zustand beenden!
           this.isLoading.set(false); 
           return;
         }
@@ -93,16 +114,22 @@ public onLogin(): void {
         this.registerForm.reset();
         this.isLoading.set(false);
         this.popupProcessedFor.set(null);
+
+        // 🚀 WEITERLEITUNG WEGEN LOGIN: 
+        // Wenn der User sich einloggt UND bereits approved ist, leiten wir IHN HIER DIREKT WEITER!
+        if (user.isApproved) {
+          this.router.navigate(['/todopage']);
+          this.notificationService.showNotification(`Willkommen zurück, ${user.firstName}! 👋`, 'success');
+        }
       },
       error: (err) => {
         this.popupProcessedFor.set(null);
         this.isLoading.set(false);
-        // ... Fehlerbehandlung bleibt gleich ...
       }
     });
   }
 
-public onCancel() {
+  public onCancel() {
     this.userService.cancelLogout(); // 👈 WICHTIG: Service Bescheid geben!
     this.popupProcessedFor.set(null);
     this.isLoading.set(false); // 👈 Spinner stoppen, falls es vom Login/Register kam
