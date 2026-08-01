@@ -99,4 +99,9 @@ export class UserRepository {
       tap(response => console.log('📥 [UserRepo] GET Status-Antwort vom Server:', response))
     );
   }
+
+  public logout(): Observable<void> {
+    console.log(' [UserRepo] Logout');
+    return this.http.post<void>('http://localhost:8080/api/users/signout', {})
+  }
 }

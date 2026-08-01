@@ -123,7 +123,7 @@ export class ProjectService extends BaseDataManager {
 
   public loadProjects(): void {
     try {
-      this.dataManager.getProjects().subscribe({
+      this.dataManager.getProjects(this.userService.getCurrentUserId()?? "").subscribe({
         next: (projects) => this.allProjectsPool.set(projects),
         error: (err) => console.error('Fehler beim Laden der Projekte:', err)
       });

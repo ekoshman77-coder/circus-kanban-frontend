@@ -85,6 +85,7 @@ export class ProjectDraftService extends BaseDataManager {
             title: idea.title,
             area: idea.tag ?? '', 
             ideaId: idea.id ?? '',
+            departmentId: this.userService.currentUser()?.departmentId?? "",
             userId: this.userService.getCurrentUserId() ?? '',
             content: idea.content || '',
             status: 'Calculation',

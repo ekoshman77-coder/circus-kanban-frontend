@@ -146,13 +146,29 @@ public onLogin(): void {
     this.popupProcessedFor.set(null)
   }
 
-  public onLogout() {
-    this.popupProcessedFor.set("logout");
-    if (this.userService.logout()) {
-      this.popupProcessedFor.set(null)
-    }
-  }
+public onLogout(): void {
+  this.popupProcessedFor.set("logout");
 
+  this.userService.logout().subscribe({
+    next: (canProceed) => {
+      // Wenn das Logout erfolgreich war (true) – egal ob direkt oder beim 2. Mal –
+      // setzen wir den Zustand der Komponente wieder zurück.
+      if (canProceed) {
+        this.popupProcessedFor.set(null);
+      } else {
+        // Falls canProceed 'false' ist, bedeutet das: 
+        // Der Service hat ungespeicherte Daten gefunden und blockiert.
+        // Das Popup öffnet sich automatisch über das HTML (@if(logoutWarnings())).
+        // popupProcessedFor bleibt auf 'logout', damit onContinue() weiß, was zu tun ist.
+      }
+    },
+    error: (err) => {
+      // Da der Service im catchError ohnehin ein 'of(true)' zurückgibt,
+      // landen wir hier fast nie. Aber falls doch was Unvorhergesehenes passiert:
+      this.popupProcessedFor.set(null);
+    }
+  });
+}
   public onRegister(): void {
     // 1. Auslesen aller Werte über das coole Destructuring, das wir besprochen haben
     const { username, firstName, lastName, password, } = this.registerForm.value;

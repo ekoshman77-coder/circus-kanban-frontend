@@ -4,6 +4,7 @@ import { Observable, of } from 'rxjs';
 import { projectApiUrl } from './links';
 import { N } from '@angular/cdk/keycodes';
 import { ProjectDashboardStatsDTO } from './dto/project-dashboard-stats-dto';
+import { Project } from '../models/project';
 
 @Injectable({
   providedIn: 'root'
@@ -12,11 +13,10 @@ export class ProjectRepository {
   private http = inject(HttpClient);
 
   // 🔍 Alle Projekte eines Users holen: GET /api/projects?userId=...
-  public getProjectsByUserId(userId: string | null): Observable<any[]> {
+  public getProjectsByUserId(userId: string): Observable<any[]> {
     let params = new HttpParams()
-    if (userId) {
-      params = new HttpParams().set('userId', userId);
-    }
+    params = new HttpParams().set('userId', userId);
+
     return this.http.get<any[]>(projectApiUrl, { params });
   }
 
@@ -26,7 +26,7 @@ export class ProjectRepository {
   }
 
   // ➕ Projekt erstellen: POST /api/projects
-  public createProject(projectDto: any): Observable<any> {
+  public createProject(projectDto: Project): Observable<any> {
     console.log("ProjectRepository createProject", projectDto)
     return this.http.post<any>(projectApiUrl, projectDto);
   }

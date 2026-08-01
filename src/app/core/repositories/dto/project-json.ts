@@ -1,5 +1,5 @@
+import { IUser } from "../user-repository";
 import { IMilestoneJSON } from "./milestone-json";
-import { IUserJson } from "./user-json";
 
 export interface IProjectJSON {
   id: string;
@@ -8,6 +8,7 @@ export interface IProjectJSON {
   area: string;
   content?: string;
   status: 'Calculation' | 'Active' | 'Zip';
+  departmentId: string;
   milestones: IMilestoneJSON[]; // ❌ Kein Fragezeichen! Das Backend liefert IMMER mindestens []
-  teamMembers: IUserJson[];     // ❌ Kein Fragezeichen!
+  teamMembers: IUser[];     // ❌ Kein Fragezeichen!
 }

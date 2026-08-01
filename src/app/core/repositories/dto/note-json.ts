@@ -8,4 +8,5 @@ export interface INoteJson {
   isInCalculation?: boolean;
   temperature?: number;
   weatherCode?: number;
+  departmentId?: string;
 }

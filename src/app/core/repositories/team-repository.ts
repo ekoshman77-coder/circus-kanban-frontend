@@ -13,13 +13,14 @@ export class TeamRepository {
   private http = inject(HttpClient);
 
   /** 📥 Holt alle Projektmitglieder inklusive ihrer Rollen */
-  public getMembersForProject$(projectId?: string | null): Observable<ProjectMember[]> {
+  public getMembersForProject$(userId: string, projectId?: string | null ): Observable<ProjectMember[]> {
     console.log('📡 [TeamRepo] GET getMembersForProject$ für Projekt:', projectId);
     let params = new HttpParams();
+    params = params.append("userId", userId)
     if (projectId) {
-      params = params.set('projectId', projectId);
+      params = params.append('projectId', projectId);
     }
-
+    console.log('📡 [TeamRepo] GET getMembersForProject$ params:', params);
     return this.http.get<any[]>(teamApiUrl, { params }).pipe(
       map(jsonArray => jsonArray.map(json => {
         return new ProjectMember(
@@ -84,16 +85,16 @@ export class TeamRepository {
   }
 
   /** 🌍 Holt alle registrierten Benutzer weltweit verpackt als ProjectMember (Standard-Rolle NONE) */
-  public getAllGlobalUsers$(): Observable<ProjectMember[]> {
-    console.log('📡 [TeamRepo] GET getAllGlobalUsers$ (globaler Pool) über:', teamApiUrl);
+public getAllDepartmentUsers$(userId: string): Observable<ProjectMember[]> {
+    console.log('📡 [TeamRepo] GET getAllGlobalUsers$ für User:', userId);
 
-    // 🎯 Fix: Wir gehen über teamApiUrl (/api/teams) statt userApiUrl
-    return this.http.get<any[]>(teamApiUrl).pipe(
+    const params = new HttpParams().set('userId', userId);
+
+    return this.http.get<any[]>(teamApiUrl, { params }).pipe(
       map(jsonArray => jsonArray.map(json => {
-        // 🎯 Fix: Wir mappen das Ergebnis sauber in das ProjectMember-Modell
         return new ProjectMember(
           UserModel.fromJson(json.user || json),
-          (json.projectRole as ProjectRole) || 'NONE' // Backend liefert hier 'NONE'
+          (json.projectRole as ProjectRole) || 'NONE'
         );
       }))
     );

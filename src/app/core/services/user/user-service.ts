@@ -2,7 +2,7 @@ import { Injectable, inject, signal, computed, effect } from '@angular/core';
 import { UserRepository, IUser, PlannerSettingsDto } from '../../repositories/user-repository';
 import { LocalStorageService } from './local-storage-service';
 import { GamificationResult } from '../../models/gamification';
-import { Observable, of, Subject, tap } from 'rxjs';
+import { catchError, map, Observable, of, Subject, switchMap, tap } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -156,32 +156,37 @@ export class UserService {
   }
 
   public fetchCurrentStatus(): Observable<IUser | null> {
-  const currentId = this.currentUser()?.id;
-  
-  // Wenn gar kein User eingeloggt ist, direkt abbrechen
-  if (!currentId) return of(null); 
+    const currentId = this.currentUser()?.id;
 
-  // Wir rufen das Repository auf (das bauen wir gleich)
-  return this.userRepository.getUserStatus(currentId).pipe(
-    tap((updatedUser) => {
-      if (updatedUser) {
-        this.saveSession(updatedUser) 
-      }
-    })
-  );
-}
+    // Wenn gar kein User eingeloggt ist, direkt abbrechen
+    if (!currentId) return of(null);
+
+    // Wir rufen das Repository auf (das bauen wir gleich)
+    return this.userRepository.getUserStatus(currentId).pipe(
+      tap((updatedUser) => {
+        if (updatedUser) {
+          this.saveSession(updatedUser)
+        }
+      })
+    );
+  }
 
   public login(username: string, password: string): Observable<IUser | null> {
-    if (!this.logout()) {
-      return of(null)
-    }
+    // 🔗 Wir ketten das asynchrone Logout vor den Login
+    return this.logout().pipe(
+      switchMap((canProceed) => {
+        if (!canProceed) {
+          return of(null); // 🛑 Schranke 1. Mal: Login bricht sauber ab
+        }
 
-    return this.userRepository.login(username, password).pipe(
-      tap((user) => {
-        console.log("userRepository:: login: user = ", user)
-        this.saveSession(user);
-        this.loadSettingsFromBackend(user.id);
-        this.loadGamificationFromBackend(user.id);
+        // 🚀 2. Mal (oder wenn sauber): Der echte Login-Request startet
+        return this.userRepository.login(username, password).pipe(
+          tap((user) => {
+            this.saveSession(user);
+            this.loadSettingsFromBackend(user.id);
+            this.loadGamificationFromBackend(user.id);
+          })
+        );
       })
     );
   }
@@ -200,16 +205,21 @@ export class UserService {
   }
 
   public register(username: string, firstName: string, lastName: string, password: string): Observable<IUser | null> {
-    if (!this.logout()) {
-      return of(null)
-    }
+    // 🔗 Exakt dieselbe reaktive Kette für die Registrierung
+    return this.logout().pipe(
+      switchMap((canProceed) => {
+        if (!canProceed) {
+          return of(null); // 🛑 Schranke 1. Mal
+        }
 
-    return this.userRepository.register(username, firstName, lastName, password).pipe(
-      tap((user) => {
-        console.log("userRepository:: register: user = ", user)
-        this.saveSession(user);
-        this.loadSettingsFromBackend(user.id);
-        this.loadGamificationFromBackend(user.id);
+        // 🚀 2. Mal (oder wenn sauber): Der echte Register-Request startet
+        return this.userRepository.register(username, firstName, lastName, password).pipe(
+          tap((user) => {
+            this.saveSession(user);
+            this.loadSettingsFromBackend(user.id);
+            this.loadGamificationFromBackend(user.id);
+          })
+        );
       })
     );
   }
@@ -218,13 +228,13 @@ export class UserService {
     this.warnings.set(null); // Setzt die State Machine sauber zurück
   }
 
-  public logout(): boolean {
+  public logout(): Observable<boolean> {
     console.log('=== 🧹 LOGOUT: Bereinige alle Session-Daten ===');
     if (this.warnings() === null) {
       this.warnings.set(this.storageService.collectUnsavedDataWarnings());
       // Falls das Array existiert und Warnungen enthält -> stoppen!
       if (this.warnings() && this.warnings()!.length > 0) {
-        return false;
+        return of(false);
       }
     }
 
@@ -247,7 +257,13 @@ export class UserService {
       currentLevelXpStart: 0,
       nextLevelXpRequired: 100
     });
-    return true;
+    return this.userRepository.logout().pipe(
+      map(() => true),
+      catchError((err) => {
+        console.warn('⚠️ Server-Logout fehlgeschlagen, wir machen trotzdem optimistisch weiter:', err);
+        return of(true); // 🔥 DER TRICK: Selbst bei Fehler sagen wir "true", damit der Login nicht blockiert!
+      })
+    );
   }
 
   private saveSession(user: IUser): void {

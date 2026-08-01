@@ -12,6 +12,7 @@ export class Project {
   public title: string;
   public area: string;
   public content: string;
+  public departmentId: string;
   public status: 'Calculation' | 'Active' | 'Zip';
   public milestones: Milestone[];
   public teamMembers: ProjectMember[];
@@ -24,6 +25,7 @@ export class Project {
     area: string;
     id?: string;
     content?: string;
+    departmentId: string;
     status?: 'Calculation' | 'Active' | 'Zip';
     milestones?: Milestone[];
     teamMembers?: ProjectMember[];
@@ -37,6 +39,7 @@ export class Project {
     this.id = init.id ?? generateLocalId();
     this.status = init.status ?? 'Calculation';
     this.content = init.content ?? "";
+    this.departmentId = init.departmentId
     this.milestones = init.milestones ?? [];
     this.teamMembers = init.teamMembers ?? [];
   }
