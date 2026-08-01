@@ -1,16 +1,60 @@
+/* ==========================================
+   🌐 1. GLOBALER HINTERGRUND & INTERFACE-STRUKTUR
+   ========================================== */
+:host {
+  display: block;
+  min-height: 100vh;
+  /* Wir behalten deinen wunderschönen, warmen Kaffeeverlauf bei! */
+  background: linear-gradient(135deg, #f8fafc 0%, #f7f3ed 100%); 
+  /* var(--spacing-page) sorgt für das perfekte, systemweite Padding ohne Überlauf! */
+  padding: var(--spacing-page, 24px); 
+  font-family: var(--font-main, sans-serif);
+  /* FIX für den Scrollbar: padding wird in die Breite eingerechnet */
+  box-sizing: border-box; 
+  width: 100%;
+}
+
+/* Der Container sorgt jetzt für die perfekte Zentrierung (max 1200px) */
 .tab-container {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
+  box-sizing: border-box;
 }
 
+/* 🏷️ DER NEUE, KONSISTENTE HEADER (Analog zu den anderen Seiten) */
+.page-header {
+  margin-bottom: var(--spacing-card, 24px);
+  padding-bottom: var(--spacing-gap, 16px);
+  border-bottom: 1px solid #e6dcd0; /* Passend zum Kaffeethema */
+}
+
+.page-header h1 {
+  font-size: var(--font-size-h1, 28px);
+  color: #432818; /* Tiefes Espressobraun statt Schwarz */
+  margin: 0 0 6px 0;
+  font-weight: 700;
+}
+
+.page-header p {
+  color: #856147; /* Weiches Kaffeebraun */
+  margin: 0;
+  font-size: var(--font-size-body, 14px);
+}
+
+.divider {
+  border: 0;
+  border-top: 1px solid #e6dcd0;
+  margin: var(--spacing-gap, 16px) 0;
+}
+
+/* Die Tabs drunter bekommen ein leichtes Update, damit sie fluchten */
 .tab-buttons {
   display: flex;
   gap: 10px;
-  border-bottom: 2px solid #e2e8f0;
-  padding-bottom: 15px;
-  margin-bottom: 20px;
+  border-bottom: 2px solid #e6dcd0;
+  padding-bottom: 12px;
+  margin-bottom: 24px;
 }
 
 .tab-buttons button {
@@ -21,78 +65,46 @@
   color: #64748b;
   transition: all 0.2s ease;
   border-radius: 6px;
-
-  /* 🎯 DIE ANKER-ZEILEN: */
-  font-size: 16px;     /* Feste Textgröße für immer */
-  font-weight: 500;    /* Feste Schriftdicke für immer (kein bold!) */
+  font-size: 16px;
+  font-weight: 500;
 }
 
-/* Hover-Effekt für die inaktiven Buttons */
 .tab-buttons button:hover {
   background-color: #f1f5f9;
   color: #0f172a;
 }
 
-/* 🌟 DEINE GELIEBTEN FARBIGEN BUTTONS (Jetzt absolut zappelfrei!) */
 .tab-buttons button.active {
-  background-color: #3b82f6; /* Schönes, sattes Blau */
-  color: white;              /* Weißer Text auf blauem Grund */
-  
-  /* 🛑 Kein font-weight: bold mehr hier! 
-     Der Button bleibt exakt gleich breit wie vorher. */
+  background-color: #3b82f6; /* Modernes Hub-Blau */
+  color: white;
 }
 
-/* Styling für den neuen, festen Kopfbereich */
-.management-header h2 {
-  font-size: 26px;
-  font-weight: 600;
-  color: #0f172a;
-  margin: 0 0 5px 0; /* Eigenen Browser-Margin killen */
-}
-
-.management-header p {
-  color: #64748b;
-  font-size: 14px;
-  margin: 0 0 20px 0;
-}
-
-/* Der Inhaltscontainer unter den Buttons */
 .tab-content {
-  background: #ffffff;
+  background: transparent;
   border-radius: 8px;
-  
-  /* ⚡ DER SPRING-SCHUTZ: Wir geben dem Content ein festes oberes Padding.
-     Egal ob da eine Suche oder ein Dropdown kommt – der Startpunkt ist pixelgenau gleich! */
   padding-top: 15px; 
+  animation: fadeInFly 0.25s ease-out forwards;
 }
 
 @keyframes fadeInFly {
   from {
     opacity: 0;
-    transform: translateY(8px); /* Der Inhalt kommt von leicht weiter unten geflogen */
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);    /* Landung auf der exakten Position */
+    transform: translateY(0);
   }
-}
-
-/* 🎯 Wir wenden die Animation auf den Inhalt des aktiven Tabs an */
-.tab-content {
-  background: transparent;
-  border-radius: 8px;
-  padding-top: 15px; 
-
-  /* Hier zündet die Animation jedes Mal, wenn Angular die Komponente neu ins @if rendert! */
-  animation: fadeInFly 0.25s ease-out forwards;
 }
 
 :host {
   display: block;
   padding: 10px 20px 40px 20px;
-  box-sizing: border-box; /* 👈 DER RETTER: Zwingt den Abstand, sich nach innen zu setzen! */
+  box-sizing: border-box;
   width: 100%;
-  background: radial-gradient(circle at top left, hwb(189 42% 9% / 0.368) 0%, #e0feee65 100%); 
+  /* WEG MIT DEM GIFTGRÜN: Subtiler, professioneller Graublau-Verlauf */
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); 
   border-radius: 12px;
-  border: 3px solid hsl(150, 100%, 50%); /* Zeigt uns exakt, wo die Box aufhört! */
+  /* CLEANUP: Kein greller Neonrahmen mehr */
+  border: 1px solid #e2e8f0; 
 }

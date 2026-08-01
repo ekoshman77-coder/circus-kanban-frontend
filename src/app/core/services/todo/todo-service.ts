@@ -1,14 +1,15 @@
 import { Injectable, signal, computed, inject, effect, untracked } from '@angular/core';
 import { Todo } from '../../models/todo';
-import { catchError, map, Observable, of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { UserService } from '../user/user-service';
-import { LoggerService } from '../logger-service';
+import { LoggerService } from '../logger/logger-service';
 import { ErrorCode } from '../../enums/error-enum';
 import { GamificationResult } from '../../models/gamification';
-import { TodoDataManagerService } from '../todo-data-manager-service';
+import { TodoDataManagerService } from './todo-data-manager-service';
 import { TodoRepository } from '../../repositories/todo-repository';
-import { TodoQueryService } from '../todo-query-service'; // 💡 NEU: Der Kreis-Sprenger importiert!
-import { NotificationService } from '../notification-service';
+import { TodoQueryService } from './todo-query-service'; // 💡 NEU: Der Kreis-Sprenger importiert!
+import { NotificationService } from '../notification/notification-service';
+import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 
 export enum Filter {
   ALL = 'all',
@@ -38,13 +39,17 @@ export class Statistics {
 @Injectable({
   providedIn: 'root',
 })
-export class TodoService {
+export class TodoService extends BaseDataManager {
   private dataManager = inject(TodoDataManagerService);
   private userService = inject(UserService);
   private loggerService = inject(LoggerService);
   private todoRepository = inject(TodoRepository);
-  private todoQueryService = inject(TodoQueryService); 
+  private todoQueryService = inject(TodoQueryService);
   private notificationService = inject(NotificationService)
+
+  // ⏱️ NEU: Die exakten Prozente für unseren Balken
+  public toastProgress = signal<number>(100);
+  private progressInterval: any = null;
 
   // --- REAKTIVER STATE (SIGNALS & GLOBAL POOL) ---
   // 🌍 DER TRICK: Verweist jetzt direkt auf das Signal im DataManager unten!
@@ -60,16 +65,14 @@ export class TodoService {
   public filterSignal = signal<Filter>(Filter.ALL);
   public searchQuerySignal = signal<string>('');
   public gamificationState = signal<GamificationResult | null>(null);
+  public streakState = computed(() => this.dataManager.streakSignal());
 
   public fibonacciSequence: number[];
 
-  // --- UNDO CONTROLS ---
+// --- UNDO CONTROLS ---
   private isUndoActive = signal<boolean>(false);
   private undoTimeoutRef: any = null;
   private deletedTodosBackup: Todo[] = [];
-
-  public showUndoToast = signal<boolean>(false);
-  public lastDeletedTaskName = signal<string>('');
 
   public globalError = signal<string | null>(null);
   public latestGamificationResult = signal<GamificationResult | null>(null);
@@ -79,8 +82,87 @@ export class TodoService {
     return this.todosSignal().filter(t => !t.done);
   });
 
-// 0. Die absolute Rohquelle vom Server/Datenbank
-  private allTodos = computed(() => this.dataManager.allTodosPool());
+  // 0. Die absolute Rohquelle vom Server/Datenbank
+  private todosFromServer = computed(() => this.dataManager.allTodosPool());
+
+  public lastDeletedTodo = signal<Todo | null>(null);
+  private deleteTimeout: any = null;
+
+  public allTodos = computed(() => {
+    const deleted = this.lastDeletedTodo();
+    if (!deleted) return this.todosFromServer();
+    return this.todosFromServer().filter(t => t.id !== deleted.id);
+  });
+
+  // Ein öffentliches Signal, damit die UI weiß, wann sie das Undo-Banner zeigen muss
+  public showUndoToast = computed(() => this.lastDeletedTodo() !== null);
+
+// 2. Die optimistische Lösch-Methode für die UI-Komponente
+  public deleteTodoWithUndo(newTodo: Todo): void {
+    const oldTodo = this.lastDeletedTodo();
+
+    if (oldTodo) {
+      if (this.deleteTimeout) clearTimeout(this.deleteTimeout);
+      this.dataManager.deleteTodo(oldTodo.id).subscribe();
+    }
+
+    this.lastDeletedTodo.set(newTodo);
+
+    // --- NEU: Balken-Logik ---
+    if (this.progressInterval) clearInterval(this.progressInterval);
+    this.toastProgress.set(100); // 🚀 Balken springt hart auf 100%
+
+    const durationMs = 10000; // ⏱️ Deine 60 Sekunden (später wieder auf 5000)
+    const intervalMs = 50;    // Alle 50ms aktualisieren (sorgt für flüssiges Bild)
+    const step = 100 / (durationMs / intervalMs); // Wie viel % pro Tick abgezogen werden
+
+    this.progressInterval = setInterval(() => {
+      this.toastProgress.update(val => {
+        const newVal = val - step;
+        if (newVal <= 0) {
+          clearInterval(this.progressInterval);
+          return 0;
+        }
+        return newVal;
+      });
+    }, intervalMs);
+
+    // 5-Sekunden-Uhr (aktuell 60s) für das neue Todo starten
+    this.deleteTimeout = setTimeout(() => {
+      this.triggerFinalDelete();
+    }, durationMs);
+  }
+
+  // 3. Der Rettungsanker, wenn der User auf "Rückgängig" klickt
+  public restoreTodo(): void {
+    if (this.deleteTimeout) clearTimeout(this.deleteTimeout);
+    if (this.progressInterval) clearInterval(this.progressInterval); // 🛑 Animation stoppen
+    
+    this.lastDeletedTodo.set(null);
+  }
+
+  // 4. Das endgültige Löschen nach Ablauf des Timers
+  private triggerFinalDelete(): void {
+const todo = this.lastDeletedTodo();
+    if (!todo) return;
+    
+    if (this.progressInterval) clearInterval(this.progressInterval); // 🛑 Zur Sicherheit stoppen
+
+    this.dataManager.deleteTodo(todo.id).subscribe({
+      next: () => {
+        // Erst bei Erfolg aus dem Frontend-Filter entlassen
+        if (this.lastDeletedTodo()?.id === todo.id) {
+          this.lastDeletedTodo.set(null);
+          this.deleteTimeout = null;
+        }
+      },
+      error: (err) => {
+        console.error('Fehler beim endgültigen Löschen:', err);
+        // Falls der Server-Request fehlschlägt, blenden wir es zur Sicherheit wieder ein
+        this.lastDeletedTodo.set(null);
+      }
+    });
+  }
 
   // ==========================================
   // 🌍 BOARD 1: Die persönliche To-Do-Liste (TodoListComponent)
@@ -120,6 +202,7 @@ export class TodoService {
   });
 
   constructor() {
+    super()
     this.fibonacciSequence = this.initFibonacciSequence(40);
 
     effect(() => {
@@ -137,16 +220,27 @@ export class TodoService {
     effect(() => {
       const syncResult = this.dataManager.syncCompleted();
       if (syncResult !== null) {
-        this.allTodosPool.set(syncResult.liste);
-        this.gamificationState.set(syncResult.gamificationResult);
-        if (syncResult.gamificationResult.levelUp) {
-          alert(`🎉 LEVEL UP! Du bist jetzt Level ${syncResult.gamificationResult.currentLevel}!`);
-        }
-        untracked(() => {
-          this.dataManager.clearSyncResult();
-        });
+        this.handleSyncCompleted(syncResult);
       }
     });
+  }
+
+  private handleSyncCompleted(syncResult: any): void {
+    // 🛑 DIESE ZEILE ENTFERNEN: this.allTodosPool.set(syncResult.liste);
+    // Denn der DataManager hat das Signal bereits perfekt aktualisiert!
+
+    // 1. Nur noch den Gamification-State für die UI setzen
+    this.gamificationState.set(syncResult.gamificationResult);
+
+    // 2. Benachrichtigung bei Level Up anzeigen
+    if (syncResult.gamificationResult?.levelUp) {
+      this.notificationService.showNotification(
+        `🎉 LEVEL UP! Du bist jetzt Level ${syncResult.gamificationResult.currentLevel}!`, 'success'
+      );
+    }
+
+    // 3. Den Sync-Zustand im DataManager wieder freigeben
+    this.dataManager.clearSyncResult();
   }
 
   private loadTodosFromBackend(userId: string) {
@@ -336,28 +430,12 @@ export class TodoService {
   }
 
   // 🗑️ Einzelnes To-Do über die UI löschen
-  public deleteTodo(id: string): void {
-    this.dataManager.deleteTodo(id).subscribe({
-      next: () => this.loggerService.info("TodoService", `Todo ${id} erfolgreich archiviert.`),
-      error: (err) => this.loggerService.error("TodoService", "Fehler beim Löschen des Todos", err)
-    });
-  }
-
-
-  public undoDelete() {
-    this.isUndoActive.set(true);
-    this.showUndoToast.set(false);
-
-    if (this.undoTimeoutRef !== null) {
-      clearTimeout(this.undoTimeoutRef);
-      this.undoTimeoutRef = null;
-    }
-
-    if (this.deletedTodosBackup.length > 0) {
-      this.allTodosPool.set([...this.deletedTodosBackup, ...this.allTodosPool()]);
-      this.deletedTodosBackup = [];
-    }
-  }
+  // public deleteTodo(id: string): void {
+  //   this.dataManager.deleteTodo(id).subscribe({
+  //     next: () => this.loggerService.info("TodoService", `Todo ${id} erfolgreich gelöscht.`),
+  //     error: (err) => this.loggerService.error("TodoService", "Fehler beim Löschen des Todos", err)
+  //   });
+  // }
 
   public getTodosForMilestone(id: string | null): Todo[] {
     if (!id) {
@@ -366,7 +444,7 @@ export class TodoService {
     return this.filteredFocusedTodos().filter(t => t.milestoneId === id)
   }
 
-// 🗑️ Footer-Aktion Links: Erledigte private Aufgaben löschen
+  // 🗑️ Footer-Aktion Links: Erledigte private Aufgaben löschen
   public clearCompletedTodos(): void {
     const userId = this.userService.getCurrentUserId();
     if (!userId) return;
@@ -540,5 +618,20 @@ export class TodoService {
 
   public getServerCategories(userId: string): Observable<string[]> {
     return this.todoRepository.getServerCategories(userId);
+  }
+
+  public resetData(): void {
+  this.filterSignal.set(Filter.ALL);
+  this.searchQuerySignal.set('');
+  this.gamificationState.set(null);
+  this.latestGamificationResult.set(null);
+
+  if (this.deleteTimeout) {
+      clearTimeout(this.deleteTimeout);
+    }
+    if (this.progressInterval) {
+      clearInterval(this.progressInterval);
+    }
+    this.lastDeletedTodo.set(null);
   }
 }

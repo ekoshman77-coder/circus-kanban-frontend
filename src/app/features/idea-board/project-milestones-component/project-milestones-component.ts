@@ -1,6 +1,6 @@
 import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ProjectService } from '../../../core/services/project-service';
+import { ProjectService } from '../../../core/services/project/project-service';
 import { BoardTab, TabNavigationService } from '../tab-navigation-service';
 import { MilestoneSelectorComponent } from '../../../core/shared/components/milestone-selector-component/milestone-selector-component';
 import { TodoService } from '../../../core/services/todo/todo-service';
@@ -10,18 +10,24 @@ import { TodoFormComponent } from '../../../core/shared/components/todo-form/tod
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { TodoViewModel } from '../../../core/viewmodel/todo-view-model';
 import { TodoItemComponent } from '../../../core/shared/components/todo-item-component/todo-item-component';
-import { FilterService } from '../../../core/services/filter-service';
-import { TeamService } from '../../../core/services/team-service';
-import { TodoQueryService } from '../../../core/services/todo-query-service';
+import { FilterService } from '../../../core/services/filter/filter-service';
+import { TeamService } from '../../../core/services/team/team-service';
+import { TodoQueryService } from '../../../core/services/todo/todo-query-service';
 import { TodoPlanningModalComponent } from '../../../core/shared/components/todo-planning-modal-component/todo-planning-modal-component';
 
+/**
+ * @component ProjectMilestonesComponent
+ * @description
+ * Eine interaktive Splitscreen-Oberfläche zur strategischen Meilenstein-Planung.
+ * Erlaubt die Zuweisung von globalen Aufgaben an spezifische Projektphasen (Meilensteine)
+ * per Drag & Drop (Angular CDK) sowie die reaktive Risikobewertung von Aufgaben.
+ */
 @Component({
   selector: 'app-project-milestones-component',
   standalone: true,
   imports: [
     CommonModule, 
     MilestoneSelectorComponent, 
-    TodoFormComponent, 
     DragDropModule, 
     TodoItemComponent,
     TodoPlanningModalComponent
@@ -30,70 +36,76 @@ import { TodoPlanningModalComponent } from '../../../core/shared/components/todo
   styleUrl: './project-milestones-component.css',
 })
 export class ProjectMilestonesComponent implements OnInit {
-  private projectService = inject(ProjectService);
-  private tabService = inject(TabNavigationService);
-  private todoService = inject(TodoService);
-  private filterService = inject(FilterService);
-  private teamService = inject(TeamService)
-  private todoQueryService = inject(TodoQueryService)
+  // --- Injektion der zentralen Core-Services ---
+  private readonly projectService = inject(ProjectService);
+  private readonly tabService = inject(TabNavigationService);
+  private readonly todoService = inject(TodoService);
+  private readonly filterService = inject(FilterService);
+  private readonly teamService = inject(TeamService);
+  private readonly todoQueryService = inject(TodoQueryService);
 
-  // 🎯 UNSER SAUBERER BOARDFILTER
-  public boardFilter = signal<{ projectId: string; milestoneId: string } | null>(null);
-  public showCreateModal = signal<boolean>(false)
+  /** 🎯 Der aktive Filter-Zustand des Boards (Projekt-ID und Meilenstein-ID) */
+  public readonly boardFilter = signal<{ projectId: string; milestoneId: string } | null>(null);
+  
+  /** 🧼 Steuerungs-Signal für das Aufgaben-Erstellungs-Modal */
+  public readonly showCreateModal = signal<boolean>(false);
   
   constructor() {
+    /**
+     * @effect NavigationSync
+     * Reagiert auf eingehende Navigationsdaten aus anderen Boards (z. B. Projektdetails)
+     * und synchronisiert den aktiven Filter-Zustand der Meilenstein-Ansicht.
+     */
     effect(() => {
       const navState = this.tabService.currentNavigationState();
       if (!navState) return;
 
       if (this.projectService.projectsList().length === 0) return;
-      // Falls die Projektdaten noch nicht geladen sind, warten wir reaktiv auf den nächsten Cycle!
+      
       let success = false;
 
-      // Fall A: Es kommt direkt eine Meilenstein-ID
+      // Fall A: Es kommt direkt eine Meilenstein-ID über die Navigation
       if (navState.type === 'milestone') {
         console.log('📥 [Milestones] Reaktiv Meilenstein empfangen! ID:', navState.id);
         success = this.setFilterByMilestoneId(navState.id);
       } 
-      // Fall B: Es kommt eine Projekt-ID -> 1. Meilenstein aktivieren
+      // Fall B: Es kommt eine Projekt-ID -> Ersten Meilenstein dieses Projekts aktivieren
       else if (navState.type === 'project') {
         console.log('📥 [Milestones] Reaktiv Projekt empfangen! ID:', navState.id);
         success = this.setFilterByProject(navState.id);
       }
 
-      // WICHTIG: Nur löschen, wenn wir die Zuordnung erfolgreich verarbeitet haben!
+      // Zustand erst leeren, wenn die Zuweisung erfolgreich geklappt hat
       if (success) {
-        console.log('📥 [Milestones] set navigation state to null');
+        console.log('📥 [Milestones] Setze Navigationszustand zurück auf null');
         this.tabService.currentNavigationState.set(null);
       }
     });
   }
 
-  ngOnInit(): void {
-    this.filterService.setInitialCategory('milestones')
+  public ngOnInit(): void {
+    this.filterService.setInitialCategory('milestones');
   }
 
+  /** Setzt den aktiven Board-Filter basierend auf dem ersten Meilenstein eines Projekts */
   private setFilterByProject(projectId: string): boolean {
-      const allProjects = this.projectService.projectsList();
-        const foundProject = allProjects.find((p) => p.id === projectId);
-        console.log('📥 [Milestones] Reaktiv Projekt gefunden:', foundProject);
-        
-        if (foundProject && foundProject.milestones && foundProject.milestones.length > 0) {
-          this.boardFilter.set({
-            projectId: projectId,
-            milestoneId: foundProject.milestones[0].id
-          });
-          console.log('📥 [Milestones] filter gesetzt', this.boardFilter());
-          this.teamService.setCurrentProject(projectId)
-          return true;
-        }
-        return false
+    const allProjects = this.projectService.projectsList();
+    const foundProject = allProjects.find((p) => p.id === projectId);
+    console.log('📥 [Milestones] Reaktiv Projekt gefunden:', foundProject);
+    
+    if (foundProject && foundProject.milestones && foundProject.milestones.length > 0) {
+      this.boardFilter.set({
+        projectId: projectId,
+        milestoneId: foundProject.milestones[0].id
+      });
+      console.log('📥 [Milestones] Filter erfolgreich gesetzt:', this.boardFilter());
+      this.teamService.setCurrentProject(projectId);
+      return true;
+    }
+    return false;
   }
 
-  /**
-   * Sucht das passende Projekt zu einer Meilenstein-ID und setzt den Board-Filter.
-   * Gibt true zurück, wenn die Zuordnung erfolgreich war.
-   */
+  /** Setzt den Filter basierend auf einer Meilenstein-ID und verknüpft sie mit dem übergeordneten Projekt */
   private setFilterByMilestoneId(milestoneId: string): boolean {
     const allProjects = this.projectService.projectsList();
     const foundProject = allProjects.find((p) => 
@@ -105,33 +117,32 @@ export class ProjectMilestonesComponent implements OnInit {
         projectId: foundProject.id,
         milestoneId: milestoneId
       });
-      this.teamService.setCurrentProject(foundProject.id)
+      this.teamService.setCurrentProject(foundProject.id);
       return true;
     }
     return false;
   }
 
-  /**
-   * 🔄 DROPDOWN-WECHSEL: Nutzt jetzt exakt die gleiche private Funktion!
-   */
+  /** Wird vom Dropdown-Auswahlelement gefeuert, um die aktive Phase manuell zu wechseln */
   public onMilestoneChanged(newMilestoneId: string): void {
     console.log('🔍 Dropdown hat Phase gewechselt auf Meilenstein-ID:', newMilestoneId);
     this.setFilterByMilestoneId(newMilestoneId);
   }
 
-  /**
-   * 🌟 DIE HILFS-ID FÜR FORMULARE UND SELECTOREN
-   */
-  public activeMilestoneId = computed(() => {
+  /** Gibt die aktive Meilenstein-ID für Dropdowns und Formular-Komponenten im Template aus */
+  public readonly activeMilestoneId = computed(() => {
     const filter = this.boardFilter();
     return filter ? filter.milestoneId : null;
   });
 
   /**
-   * 🗺️ DAS REAKTIVE ZENTRAL-GEHIRN
+   * @property currentMatch
+   * @description Reaktiver Kern des Meilenstein-Planers.
+   * Holt das aktive Projekt, die aktive Phase (Meilenstein) und alle dieser Phase 
+   * zugewiesenen Aufgaben aus den globalen Stores und fasst sie in einem einheitlichen Objekt zusammen.
    */
-  public currentMatch = computed(() => {
-    console.log('📥 [Milestones] currentMatch start. boardFilter = ', this.boardFilter());
+  public readonly currentMatch = computed(() => {
+    console.log('📥 [Milestones] currentMatch gestartet. boardFilter = ', this.boardFilter());
 
     const filter = this.boardFilter();
     if (!filter) return null;
@@ -144,14 +155,11 @@ export class ProjectMilestonesComponent implements OnInit {
 
     if (!foundProject || !foundMilestone) return null;
 
-    console.log('📥 [Milestones] currentMatch project und milestone sind gefunden');
+    console.log('📥 [Milestones] currentMatch: Projekt und Meilenstein erfolgreich zugeordnet.');
 
     const milestoneTodos = allTodos
       .filter((t) => t.milestoneId === filter.milestoneId)
       .map((t) => new TodoViewModel(t, false));
-
-    console.log('📥 [Milestones] alle todos', allTodos);
-    console.log('📥 [Milestones] holt todos for milestone', milestoneTodos);
 
     return {
       project: foundProject,
@@ -160,29 +168,28 @@ export class ProjectMilestonesComponent implements OnInit {
     };
   });
 
-public assignedTodos = computed(() => {
+  /**
+   * @property assignedTodos
+   * @description Sortiert alle zugewiesenen Aufgaben reaktiv nach einer Risikomatrix:
+   * 1. Offene Aufgaben stehen grundlegend über abgeschlossenen Aufgaben.
+   * 2. Offene Aufgaben werden nach Risiko-Dringlichkeit sortiert: (Pufferzeit in Tagen minus geschätzter Aufwand).
+   */
+  public readonly assignedTodos = computed(() => {
     const match = this.currentMatch();
     if (!match || !match.milestoneTodos) return [];
 
     const now = new Date().getTime();
 
-    // Wir kopieren das Array (.slice()), um das originale Signal nicht direkt zu mutieren
     return match.milestoneTodos.slice().sort((a, b) => {
-      // 🥇 SCHRITT 1: Erledigte Tickets nach ganz unten filtern
-      // (a.checked ? 1 : 0) konvertiert false zu 0 und true zu 1
-      const checkedDiff = (a.todo.done ? 1 : 0) - (b.done ? 1 : 0);
-      if (checkedDiff !== 0) return checkedDiff; // Wenn eins erledigt ist und das andere nicht, wandert das erledigte nach unten.
+      const checkedDiff = (a.todo.done ? 1 : 0) - (b.todo.done ? 1 : 0);
+      if (checkedDiff !== 0) return checkedDiff;
 
-      // 🥈 SCHRITT 2: Wenn beide offen (oder beide erledigt) sind, greift die Risiko-Formel
-      // Pufferzeit in Tagen berechnen. Falls kein Datum gesetzt ist, gilt es als unkritisch (100 Tage).
       const daysLeftA = a.todo.dueDate ? (a.todo.dueDate - now) / (1000 * 60 * 60 * 24) : 100;
       const daysLeftB = b.todo.dueDate ? (b.todo.dueDate - now) / (1000 * 60 * 60 * 24) : 100;
 
-      // Aufwand holen (Story Points). Wenn ungeschätzt, gilt 1 SP als Standard.
       const effortA = a.effort || 1;
       const effortB = b.effort || 1;
 
-      // Risiko-Score: Je kleiner/negativer, desto dringender (Resttage minus Aufwandstage)
       const riskScoreA = daysLeftA - effortA;
       const riskScoreB = daysLeftB - effortB;
 
@@ -190,33 +197,40 @@ public assignedTodos = computed(() => {
     });
   });
 
-  // public unassignedTodos = computed(() => {
-  //   return this.todoService
-  //     .allTodos()
-  //     .filter((t) => t.milestoneId === null)
-  //     .map((t) => new TodoViewModel(t, false));
-  // });
-
-  public unassignedTodos = computed(() => {
-    const freeTodos = this.todoService.milestoneBoardTodos()
-      .filter((t) => t.milestoneId === null)
-      .map((t) => new TodoViewModel(t, false));
-    if (!freeTodos) return [];
-
-    return freeTodos.slice().sort((a, b) => {
-      // 🥇 SCHRITT 1: Erledigte Tickets nach ganz unten filtern
-      const checkedDiff = (a.todo.done ? 1 : 0) - (b.todo.done ? 1 : 0);
-      if (checkedDiff !== 0) return checkedDiff;
-
-      // 🥈 SCHRITT 2: Wenn beide offen (oder beide erledigt) sind, gilt LIFO (Neueste ganz oben)
-      const timeA = a.todo.createdAt ? new Date(a.todo.createdAt).getTime() : 0;
-      const timeB = b.todo.createdAt ? new Date(b.todo.createdAt).getTime() : 0;
-
-      return timeB - timeA; // Höchster Zeitstempel (Neueste) zuerst
-    });
-  });
+  /**
+   * @property unassignedTodos
+   * @description Holt alle im System registrierten "freien" Aufgaben (milestoneId === null)
+   * und sortiert sie reaktiv nach LIFO (Zuletzt erstellt steht ganz oben).
+   */
+public readonly unassignedTodos = computed(() => {
+  const allTodosFromService = this.todoService.milestoneBoardTodos();
   
-  public milestoneProgress = computed(() => {
+  // 🔍 Detektiv-Log: Zeigt uns im Browser genau, wie viele Todos überhaupt ankommen!
+  console.log('🕵️‍♂️ Pool im Milestone-Board:', allTodosFromService.length, 'Todos gesamt.');
+
+  const freeTodos = allTodosFromService
+ //   .filter((t) => t.milestoneId === null || t.milestoneId === undefined || t.milestoneId === '')
+    .filter((t) => !t.milestoneId)
+    .map((t) => new TodoViewModel(t, false));
+
+  if (!freeTodos) return [];
+
+  // Logge die IDs der freien Todos, um zu sehen, wer es geschafft hat
+  console.log('🎯 Davon als "frei" erkannt:', freeTodos.length);
+
+  return freeTodos.slice().sort((a, b) => {
+    const checkedDiff = (a.todo.done ? 1 : 0) - (b.todo.done ? 1 : 0);
+    if (checkedDiff !== 0) return checkedDiff;
+
+    const timeA = a.todo.createdAt ? new Date(a.todo.createdAt).getTime() : 0;
+    const timeB = b.todo.createdAt ? new Date(b.todo.createdAt).getTime() : 0;
+
+    return timeB - timeA;
+  });
+});
+  
+  /** Berechnet den aktuellen Fortschritt der aktiven Phase in Prozent */
+  public readonly milestoneProgress = computed(() => {
     const match = this.currentMatch();
     if (!match || match.milestoneTodos.length === 0) return 0;
 
@@ -224,7 +238,8 @@ public assignedTodos = computed(() => {
     return Math.round((completed / match.milestoneTodos.length) * 100);
   });
 
-  public liveMilestoneStatus = computed(() => {
+  /** Übersetzt den aktuellen Meilenstein-Status in nutzerfreundliche Badge-Texte */
+  public readonly liveMilestoneStatus = computed(() => {
     const match = this.currentMatch();
     if (!match) return 'Unbekannt';
 
@@ -238,6 +253,7 @@ public assignedTodos = computed(() => {
     return '📅 Geplant';
   });
 
+  /** Entkoppelt ein To-Do vom Meilenstein (setzt milestoneId zurück auf null) */
   public removeTodoFromMilestone(todoId: string): void {
     const todo = this.todoService.milestoneBoardTodos().find((t) => t.id === todoId);
     if (todo) {
@@ -247,6 +263,7 @@ public assignedTodos = computed(() => {
     }
   }
 
+  /** Weist eine freie Aufgabe dem aktuell ausgewählten Meilenstein zu */
   public assignTodoToCurrentMilestone(todo: Todo): void {
     const currentMsId = this.activeMilestoneId();
     if (!todo || !currentMsId) return;
@@ -256,6 +273,7 @@ public assignedTodos = computed(() => {
     this.todoService.updateTodo(updatedTodo, true);
   }
 
+  /** Drag & Drop Handler aus dem Angular CDK DragDropModule */
   public onTodoDropped(event: CdkDragDrop<TodoViewModel[]>): void {
     if (event.previousContainer === event.container) {
       return;
@@ -277,6 +295,7 @@ public assignedTodos = computed(() => {
     this.todoService.updateTodo(updatedTodo, true);
   }
 
+  /** Führt eine direkte Tab-Navigation zum Team-Board der ausgewählten Phase aus */
   public openTeamBoardForMilestone(milestoneId: string): void {
     this.tabService.changeTab(BoardTab.team, {
       type: 'milestone',
@@ -284,20 +303,21 @@ public assignedTodos = computed(() => {
     });
   }
 
-  // 4. 🔒 UNSERE ZENTRALE RECHTE-METHODE FÜR DIESE SEITE:
+  /** 🔒 ZENTRALE SICHERHEITSPRÜFUNG FÜR DIE INTERAKTION MIT AUFGABEN */
   public canInteractWithTodos(): boolean {
     const allProjects = this.projectService.projectsList();
     const foundProject = allProjects.find((p) => 
       p.milestones.some((m) => m.id === this.activeMilestoneId())
     );
     if (!foundProject) {
-      return false
+      return false;
     }
-    const hasPermission = this.teamService.hasPermission(foundProject!.id, 'MILESTONE_EDIT')
-    console.log("canInteractWithTodos :: permission result ", hasPermission)
+    const hasPermission = this.teamService.hasPermission(foundProject.id, 'MILESTONE_EDIT');
+    console.log("canInteractWithTodos :: Berechtigungsergebnis: ", hasPermission);
     return hasPermission; 
   }
 
+  /** Öffnet das Erstellungsformular für neue To-Dos nach erfolgreicher Rechteprüfung */
   public openModalForm(): void {
     if (this.canInteractWithTodos()) {
       console.log('✨ [Modal] Öffne Formular für neue Aufgabe...');
@@ -305,7 +325,7 @@ public assignedTodos = computed(() => {
     }
   }
 
-  // 🔒 Schließt das Formular-Modal wieder safely
+  /** Schließt das Erstellungsformular für neue To-Dos im UI */
   public closeModalForm(): void {
     console.log('🧼 [Modal] Schließe Formular.');
     this.showCreateModal.set(false);

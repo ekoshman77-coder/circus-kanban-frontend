@@ -1,0 +1,155 @@
+.admin-users-container {
+  display: flex;
+  gap: 24px;         /* 💡 Schöner, großer Abstand zwischen Warteschleife und Kanban */
+  align-items: flex-start; /* Sorgt dafür, dass sich die Spalten nicht unschön in die Länge ziehen */
+  width: 100%;
+  padding: 10px;
+}
+
+.approval-board {
+  width: 320px;          /* 💡 Feste Breite für die Warteschleife */
+  flex-shrink: 0;        /* 💡 Weißt du noch von vorhin? Verhindert, dass die Spalte zusammengestaucht wird! */
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #e9ecef;
+}
+
+.approval-board h2 {
+  font-size: 1.15rem;
+  color: #1e293b;
+  margin-bottom: 16px;
+}
+
+.kanban-board {
+  display: flex;         /* Reihen-Anordnung für die Spalten */
+  gap: 20px;             /* Abstand zwischen den Abteilungs-Spalten */
+  flex: 1;               /* Nimm dir den gesamten restlichen Platz rechts ein */
+  overflow-x: auto;      /* 💡 Das ist das Geheimnis! Wenn es zu voll wird, scrolle horizontal nach rechts/links */
+  padding-bottom: 15px;  /* Platz für den horizontalen Scrollbalken, damit er nichts verdeckt */
+}
+
+.kanban-column {
+  width: 280px;          /* Jede Abteilungs-Spalte ist genau 280px breit */
+  flex-shrink: 0;        /* 💡 Ganz wichtig! Verhindert, dass die Spalten schmaler gequetscht werden */
+  background-color: #f1f5f9; /* Ein dezentes blaugrau für den Kanban-Hintergrund */
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  max-height: 70vh;      /* Die Spalten wachsen nach unten, stoppen aber vor dem Bildschirmrand */
+}
+
+.column-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.column-header h3 {
+  font-size: 1.1rem;
+  color: #0f172a;
+  margin: 0;
+}
+
+/* Der kleine Zähler-Badge neben dem Abteilungsnamen */
+.user-count-badge {
+  background-color: #cbd5e1;
+  color: #334155;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.kanban-user-card {
+    background-color: white;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.user-card-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.username {
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+.transfer-box {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.transfer-box select {
+    width: 100%;
+    padding: 6px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+}
+
+.btn-card-delete {
+    border: none;
+    background: transparent;
+    color: #ef4444;
+    font-size: 0.8rem;
+    margin-top: 12px;
+    cursor: pointer;
+}
+
+/* 🗑️ DEIN STYLISCHER MÜLLEIMER */
+/* 🗑️ KOMPAKTER MÜLLEIMER OBEN LINKS */
+.trash-zone {
+  width: 100%;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+
+.trash-bin {
+  height: 80px; /* Schön kompakt, da er oben sitzt */
+  border: 2px dashed #ef4444;
+  background-color: rgba(239, 68, 68, 0.02);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #ef4444;
+  padding: 10px;
+  transition: all 0.2s ease-in-out;
+}
+
+.trash-icon {
+  font-size: 1.8rem;
+}
+
+.trash-text {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* 🔥 Visuelles Feedback: Leuchtet rot auf, wenn man zieht */
+.trash-zone.cdk-drop-list-receiving .trash-bin {
+  background-color: rgba(239, 68, 68, 0.1);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.2);
+  border-color: #dc2626;
+  color: #dc2626;
+  transform: scale(1.02);
+}
+
+.zone-divider {
+  border: 0;
+  height: 1px;
+  background: #e2e8f0;
+  margin: 16px 0;
+}

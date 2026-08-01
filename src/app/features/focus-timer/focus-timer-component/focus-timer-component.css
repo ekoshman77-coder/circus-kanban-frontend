@@ -39,13 +39,34 @@
   margin: 0;
 }
 
-/* Selector Zone - Schön weich und harmonisch */
-.task-selector-zone {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
+/* ==========================================================================
+   💥 DROP-DOWN OPTIMIERUNG: Größer, harmonischer & ohne starren Haken
+   ========================================================================== */
+
+.task-selector-zone select {
+  width: 100%;
+  max-width: 400px;
+  padding: 14px 44px 14px 20px; /* Rechts mehr Platz für das neue Icon */
+  border-radius: 16px;          /* Weichere Ecken passend zum Rest */
+  border: 2px solid #cbd5e1;    /* Angenehmes Slate-Silber */
+  background-color: #f8fafc;    /* Softes Off-White */
+  font-size: 15px;              /* Etwas größere, lesbarere Schrift */
+  color: #0f172a;
+  font-weight: 600;
+  transition: all 0.3s ease;
+
+  /* 🔥 Das eliminiert den hässlichen Standard-Browser-Haken! */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  /* ✨ Unser eigener, eleganter SVG-Pfeil (passend eingefärbt im Natur-Look) */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23059669' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 18px;
+  cursor: pointer;
+}                                                                                                                                                                                                                                                                                                                                                                          
 
 /* Das Label für die To-Do-Auswahl */
 .task-selector-zone label {
@@ -69,8 +90,17 @@
 
 .task-selector-zone select:focus {
   outline: none;
-  border-color: #10b981;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+  border-color: #10b981; /* Fokus-Farbe */
+  background-color: #ffffff;
+  box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.15);
+}
+
+/* Deaktiviert, wenn der Timer läuft: Schön dezent */
+.task-selector-zone select:disabled {
+  background-color: #e2e8f0;
+  color: #94a3b8;
+  cursor: not-allowed;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
 }
 
 /* 🎯 Roter Rahmen dezent gehalten, falls kein Todo gewählt wurde */
@@ -81,25 +111,28 @@
 
 /* 🌲 Die Uhr-Karte: Tiefes, beruhigendes Waldgrün statt finsterem Schwarz */
 .timer-display-card {
-  background: #022c22; /* Extrem tiefes, edles Tannengrün */
+  /* Helles, freundliches Natur-Minzgrün statt finsterem Waldgrün */
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); 
   border-radius: 28px;
   padding: 48px;
-  box-shadow: 0 20px 40px -15px rgba(2, 44, 34, 0.3);
-  border: 2px solid #065f46;
+  /* Weicherer, passenderer Schatten */
+  box-shadow: 0 20px 40px -15px rgba(4, 120, 87, 0.15);
+  border: 2px solid #86efac;
   transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Pulsieren im Flow-Zustand: Sanftes, atmendes Grün */
+/* Pulsieren im Flow-Zustand: Wechselt zu einem energetischeren, hellen Strahl */
 .timer-display-card.pulse {
   border-color: #10b981;
-  box-shadow: 0 20px 40px -10px rgba(16, 185, 129, 0.25);
+  box-shadow: 0 25px 50px -12px rgba(16, 185, 129, 0.3);
+  background: linear-gradient(135deg, #ecfdf5 0%, #ccfbf1 100%);
 }
 
 .time-string {
   font-size: 84px;
   font-weight: 800;
-  font-family: 'Courier New', monospace; /* Etwas wärmerer Monospace-Vibe */
-  color: #ecfdf5; /* Ganz sanftes Minz-Weiß */
+  font-family: 'Courier New', monospace;
+  color: #064e3b; /* Dunkelgrün für perfekten Kontrast auf hellem Grund! */
   line-height: 1;
   letter-spacing: -1px;
 }
@@ -107,8 +140,8 @@
 .timer-status-text {
   margin-top: 16px;
   font-size: 14px;
-  color: #a7f3d0; /* Softes Mint */
-  font-weight: 500;
+  color: #065f46; /* Dunkleres Smaragdgrün für gute Lesbarkeit */
+  font-weight: 600;
   letter-spacing: 0.8px;
 }
 

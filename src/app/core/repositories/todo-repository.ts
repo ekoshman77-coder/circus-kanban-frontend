@@ -5,9 +5,10 @@ import { Observable, map } from 'rxjs';
 import { GamificationResult, TodoStatusUpdatePayload } from '../models/gamification';
 import { aiCategoriesApiUrl, bulkApiUrl, gamificationApiUrl, todoApiUrl } from './links';
 import { SyncResult } from './dto/sync-result';
-import { LoggerService } from '../services/logger-service';
+import { LoggerService } from '../services/logger/logger-service';
 import { TodoUpdateResponse } from './dto/dto-interface';
 import { ITodoJSON } from './dto/todo-json';
+import { TodoBulkDto } from '../models/todo-bulk';
 
 
 @Injectable({
@@ -51,7 +52,8 @@ export class TodoRepository {
         // Wir geben das Paket sauber strukturiert und voll typisiert an die nächste Schicht weiter
         const result = {
           todo: mappedTodo as any, // Cast, da mapToTodoClass die voll funktionsfähige Klasse zurückgibt
-          gamificationResult: responseBody.gamificationResult
+          gamificationResult: responseBody.gamificationResult,
+          streakInfo: responseBody.streakInfo
         };
         console.log("TodoRepository::update Todo result: ", result)
         return result
@@ -107,14 +109,15 @@ export class TodoRepository {
   /**
    * 🔄 Schickt alle Offline-Änderungen gesammelt ans Kotlin-Backend
    */
-  public syncBulkTodos(userId: string, offlineTodos: Todo[]): Observable<SyncResult> {
+  public syncBulkTodos(userId: string, offlineTodos: TodoBulkDto[]): Observable<SyncResult> {
     // Wichtig: userId wird als Query-Param (?userId=...) übergeben, die Liste als JSON-Body
     return this.http.post<SyncResult>(`${bulkApiUrl}?userId=${userId}`, offlineTodos).pipe(
       map((result) => {
         const mappedList = result.liste.map((json: any) => this.mapToTodoClass(json))
         return {
           gamificationResult: result.gamificationResult,
-          liste: mappedList
+          liste: mappedList,
+          streakInfo: result.streakInfo
         }
       })
     )

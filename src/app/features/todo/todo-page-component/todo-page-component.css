@@ -1,58 +1,80 @@
 /* Styling für das Navigations-Menü */
+.todo-page-layout {
+  /* 🌊 Ein sehr softer, moderner Graublau-Verlauf statt sterilem Weiß */
+  background: #ffffff !important;
+
+  /* Dehnt die Seite auf die volle Höhe aus, damit der Verlauf zieht */
+  min-height: 100vh; 
+  padding: 30px;
+  box-sizing: border-box;
+  
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
 .nav-menu { 
   display: flex; 
   justify-content: center; 
   gap: 15px; 
-  margin: 20px 0; 
+  margin: 10px 0 20px 0; 
   width: 100%; 
 }
 
 .nav-btn { 
-  padding: 8px 20px; 
-  font-weight: bold; 
+  padding: 10px 24px; 
+  font-weight: 600; 
+  font-size: 14px;
   cursor: pointer; 
-  border: 1px solid #ccc; 
-  background: #fff; 
-  border-radius: 4px; 
+  border: 1px solid #cbd5e1; 
+  background: #ffffff; 
+  color: #475569;
+  border-radius: 8px; /* Runder wirkt moderner */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
   transition: all 0.2s ease-in-out;
 }
 
-/* Aktiver Zustand bekommt dein schickes App-Blau */
+/* Aktiver Zustand bekommt dein App-Blau */
 .nav-btn.active { 
-  background: #007bff; 
+  background: #3b82f6; 
   color: white; 
-  border-color: #0056b3; 
+  border-color: #2563eb; 
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
 }
 
 .nav-btn:hover:not(.active) {
-  background: #f0f0f0;
+  background: #f8fafc;
+  color: #1e293b;
+  border-color: #94a3b8;
 }
 
 .undo-toast-wrapper {
   position: fixed;
   bottom: 30px;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: center;
-  z-index: 9999;       /* Immer ganz oben über allen Karten schweben! */
+  right: 30px;          /* 🧭 Exakt 30px Abstand vom rechten Rand! */
+  z-index: 9999;        /* Immer ganz oben über allen Karten schweben! */
   pointer-events: none; /* Klicks gehen durch den leeren Raum des Wrappers hindurch */
 }
 
-/* 🧰 Die eigentliche Toast-Kachel */
+/* 🧰 Die harmonisierte Toast-Kachel */
 .undo-toast {
-  pointer-events: auto; /* Die Kachel selbst fängt Klicks (wie den Button) natürlich ab */
-  background-color: #1e293b; /* Edles, dunkles Anthrazit/Slate */
+  pointer-events: auto;
+  /* 🌊 Ein edles, tiefes Nachtblau statt hartem Schwarz */
+  background-color: hsl(228, 91%, 21%); 
   color: #f8fafc;
-  padding: 12px 22px;
-  border-radius: 12px;
+  padding: 14px 24px;
+  /* Etwas runder für den modernen Pastell-Look */
+  border-radius: 16px; 
   display: flex;
   align-items: center;
   gap: 24px;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  min-width: 340px;
-  overflow: hidden; /* Schneidet die Progressbar unten sauber ab */
+  /* Ein viel weicherer, diffuserer Schatten mit einem Hauch von Blau-Anteil */
+  box-shadow: 0 10px 40px rgba(15, 23, 42, 0.15), 
+              0 0 20px rgba(59, 130, 246, 0.1); 
+  /* Ein feiner bläulicher Rahmen, der den Übergang sanfter macht */
+  border: 1px solid rgba(59, 130, 246, 0.2); 
+  min-width: 360px;
+  overflow: hidden;
   position: relative;
 }
 
@@ -62,6 +84,12 @@
   gap: 10px;
   font-size: 14px;
   font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* ⚡ Der Text im Toast bekommt etwas mehr Eleganz */
+.toast-info span {
+  font-weight: 500;
+  color: #e2e8f0; /* Leicht abgemildertes Weiß, schont das Auge */
 }
 
 /* ⚡ Der interaktive Undo-Button */
@@ -105,15 +133,14 @@
   }
 }
 
-/* ⏱️ Der schrumpfende Zeitbalken (läuft exakt synchron zu deinen 5000ms im Service!) */
+/* ⏱️ Der Signal-gesteuerte Zeitbalken */
 .progress-bar {
   position: absolute;
   bottom: 0;
   left: 0;
-  height: 3px;
+  height: 4px; /* Minimal dicker für bessere Sichtbarkeit bei 10s */
   background-color: #3b82f6;
-  width: 100%;
-  animation: shrinkBar 5s linear forwards;
+  transition: width 0.05s linear; 
 }
 
 @keyframes shrinkBar {
@@ -387,3 +414,4 @@
 .animated.pop-in {
   animation: popIn 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
+

@@ -1,7 +1,7 @@
 import { Component, Output, EventEmitter, input, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { FilterService } from '../../../core/services/filter-service';
+import { FilterService } from '../../../core/services/filter/filter-service';
 
 export interface FilterState {
   query: string;

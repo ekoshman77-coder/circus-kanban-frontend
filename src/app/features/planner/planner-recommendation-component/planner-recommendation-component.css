@@ -22,12 +22,59 @@
 }
 .card-subtitle { display: none; } /* ⚡ Text weglassen, spart massig Platz! */
 
-.content-state {
+.ai-status-bar {
   display: flex;
   align-items: center;
+  gap: 8px;
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.status-lamp {
+  width: 8px;
+  height: 8px;
+  background-color: #10b981; /* Angenehmes Grün */
+  border-radius: 50%;
+  box-shadow: 0 0 8px #10b981;
+  transition: all 0.3s ease;
+}
+
+/* Wenn die KI rechnet, wird die Lampe lila/blau und pulsiert */
+.status-lamp.lamp-pulsing {
+  background-color: #8b5cf6; 
+  box-shadow: 0 0 12px #8b5cf6;
+  animation: pulse-glow 1s infinite alternate;
+}
+
+@keyframes pulse-glow {
+  0% { transform: scale(0.9); opacity: 0.4; }
+  100% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 16px #8b5cf6; }
+}
+
+/* Die ganze Karte pulsiert leicht im Hintergrund mit */
+.card-loading-pulse {
+  animation: card-pulse 1.5s infinite ease-in-out;
+  pointer-events: none; /* Verhindert Doppel-Klicks während des Ladens! */
+}
+
+@keyframes card-pulse {
+  0% { opacity: 0.95; }
+  50% { opacity: 0.8; }
+  100% { opacity: 0.95; }
+}
+
+/* 🛠️ FIX: Basiert auf einer sauberen Links-Rechts-Aufteilung */
+.content-state {
+  display: flex;
+  align-items: flex-start; /* ⚡ Richtet Text und Buttons oben bündig aus, kein vertikales Verrutschen mehr! */
   justify-content: space-between;
-  flex: 1;
-  gap: 16px;
+  flex-index: 1;
+  gap: 20px;
+  width: 100%;
 }
 
 /* Das vorgeschlagene To-Do als flache Zeile */
@@ -38,8 +85,9 @@
   margin: 0;
   box-shadow: none;
   display: flex;
-  align-items: center;
-  gap: 10px;
+  align-items: flex-start; /* ⚡ Richtet das Stunden-Badge und den Text sauber oben aus */
+  gap: 12px;
+  flex: 1; /* ⚡ Nimmt sich den restlichen Platz links, drückt aber die Buttons nicht weg */
 }
 
 .todo-effort {
@@ -80,6 +128,25 @@
 }
 .btn-accept:hover { background: #059669; }
 
+.btn-snooze {
+  padding: 6px 12px;
+  background: #ffffff;
+  color: #64748b; /* Ein schickes Schiefer-Grau */
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.btn-snooze:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #334155;
+}
+
 .btn-reject { 
   padding: 6px 12px; 
   background: #f1f5f9; /* ⚡ Dezentes Grau statt aggressivem Rot! */
@@ -93,19 +160,101 @@
 }
 .btn-reject:hover { background: #e2e8f0; }
 
-/* Kleines Overlay für die Feedback-Gründe, falls abgelehnt wird */
+/* 📋 Das Feedback-Overlay – sitzt als kompakter Block ganz RECHTS */
 .feedback-overlay { 
   display: flex;
-  align-items: center;
-  gap: 8px;
-  background: #f8fafc; 
-  padding: 4px;
+  flex-direction: column;    /* Frage OBEN, Buttons DARUNTER */
+  align-items: flex-end;     /* Alles akkurat am rechten Rand ausrichten */
+  gap: 8px;                  /* Fester Abstand zwischen Frage und Buttons */
+  background: transparent; 
+  padding: 0;
+  margin: 0;
+  flex-shrink: 0;            /* Verhindert, dass der Block zusammengedrückt wird */
 }
-.feedback-prompt { font-weight: 600; color: #475569; font-size: 13px; margin: 0; white-space: nowrap; }
-.reason-grid { display: flex; gap: 6px; }
-.reason-btn { padding: 4px 10px; background: white; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px; cursor: pointer; }
-.reason-btn:hover { background: #f1f5f9; }
-.reason-btn.cancel { background: #e2e8f0; border: none; font-weight: bold; }
+
+/* Die Frage steht sauber über den Buttons */
+.feedback-prompt { 
+  font-weight: 600; 
+  color: #475569; 
+  font-size: 13px; 
+  margin: 0; 
+  text-align: right;         /* Text schmiegt sich bündig nach rechts an */
+  white-space: nowrap; 
+}
+
+/* Die Button-Gruppe sitzt direkt unter dem Text */
+.reason-grid { 
+  display: flex; 
+  gap: 6px;                  /* Knackiger Abstand zwischen den Pillen */
+  justify-content: flex-end; /* Richtet die Buttons nach rechts aus */
+}
+
+/* 🎨 REASON-BUTTON STYLE (Die schicken Pillen-Buttons) */
+/* 🎨 DER NEUE COLOR-BORDER PILLEN-STYLE */
+.reason-btn { 
+  padding: 6px 14px; 
+  background-color: white;
+  border: 1px solid #cbd5e1; /* Fallback-Rahmen */
+  border-radius: 20px; 
+  font-size: 13px; 
+  font-weight: 600; /* Text etwas knackiger für bessere Lesbarkeit */
+  cursor: pointer; 
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  white-space: nowrap;
+}
+
+/* 🥱 1. Button: Keine Lust (Sanftes Blau) */
+.reason-btn:nth-child(1) {
+  border-color: #bfdbfe;
+  color: #2563eb;
+}
+.reason-btn:nth-child(1):hover { 
+  background-color: #eff6ff; 
+  border-color: #3b82f6;
+  color: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+/* 🧠 2. Button: Zu schwer (Sanftes Lila) */
+.reason-btn:nth-child(2) {
+  border-color: #ddd6fe;
+  color: #7c3aed;
+}
+.reason-btn:nth-child(2):hover { 
+  background-color: #f5f3ff; 
+  border-color: #8b5cf6;
+  color: #6d28d9;
+  transform: translateY(-1px);
+}
+
+/* ⏱️ 3. Button: Zu lange (Sanftes Orange) */
+.reason-btn:nth-child(3) {
+  border-color: #fed7aa;
+  color: #ea580c;
+}
+.reason-btn:nth-child(3):hover { 
+  background-color: #fff7ed; 
+  border-color: #f97316;
+  color: #c2410c;
+  transform: translateY(-1px);
+}
+
+/* ↩️ Der Zurück-Button bleibt edel-neutral */
+.reason-btn.cancel { 
+  background: #f1f5f9; 
+  border: 1px solid #cbd5e1; 
+  color: #475569;
+}
+.reason-btn.cancel:hover {
+  background: #e2e8f0;
+  border-color: #94a3b8;
+  color: #1e293b;
+  transform: translateY(-1px);
+}
 
 /* Ladezustand & Fehler ebenfalls kompakt */
 .loading-state, .empty-state { display: flex; align-items: center; gap: 8px; padding: 0; margin: 0; font-size: 14px; }
@@ -114,3 +263,147 @@
 .spinner { border: 2px solid #f3f3f3; border-top: 2px solid #10b981; border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite; margin: 0; }
 
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* 🪐 Die Ladezone für den Planer */
+.ai-loading-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 20px;
+  background: linear-gradient(90deg, #fffbeb 25%, #fef08a 50%, #fffbeb 75%);
+  background-size: 200% 100%;
+  animation: loading-pulse 1.5s infinite ease-in-out;
+  border: 1px dashed #ca8a04; /* Gold-Rahmen von dir */
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(234, 179, 8, 0.2);
+}
+
+/* Kapsel für Lampe und drehende Sterne */
+/* 🪐 Die Ladezone – jetzt als kompakter, zentrierter Badge mitten in der Karte */
+.ai-loading-zone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 5px 5px;
+  background-color: #fffbeb; /* Das warme Creme-Gelb von dir, aber nur für den kleinen Kasten! */
+  border: 1px dashed #ca8a04; /* Der schicke Gold-Rahmen */
+  border-radius: 8px;
+  margin: 4px auto; /* Zentriert es elegant in der Karte */
+  box-shadow: 0 4px 12px rgba(234, 179, 8, 0.15);
+  animation: loading-pulse 1.5s infinite ease-in-out;
+}
+
+/* Kapsel für Lampe und Stern */
+.ai-lamp-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+/* 🟢 DAS PERFEKTE KI-LÄMPCHEN (10px – gut sichtbar und kräftig pulsierend!) */
+.ai-glowing-lamp {
+  width: 10px;
+  height: 10px;
+  background-color: #eab308; /* Strahlendes Gold-Gelb */
+  border-radius: 50%;
+  box-shadow: 0 0 8px #fef08a, 0 0 16px #eab308;
+  animation: lamp-blink 0.6s infinite alternate ease-in-out; /* Schnelles, lebendiges Blinken */
+}
+
+/* Der Mini-Stern rotiert im Hintergrund */
+.skeleton-sparkle {
+  position: absolute;
+  font-size: 14px;
+  left: -2px;
+  top: -2px;
+  animation: spin-slow 2s infinite linear;
+}
+
+.ai-loading-text {
+  color: #854d0e; /* Dein edles Honig-Braun */
+  font-weight: 600;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* --- ANIMATIONEN --- */
+@keyframes loading-pulse {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes spin-slow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ⚡ HIER WAR DER FEHLER: Jetzt pulsiert der Schatten richtig stark! */
+@keyframes lamp-blink {
+  0% {
+    transform: scale(0.8);
+    box-shadow: 0 0 4px #fef08a, 0 0 8px #eab308;
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.2);
+    box-shadow: 0 0 16px #fef08a, 0 0 24px #eab308, 0 0 32px #eab308;
+    opacity: 1;
+  }
+}
+
+/* 🛠️ FIX: Wenn das Feedback-Overlay aktiv ist, bricht der Inhalt sauber nach unten um */
+.content-state {
+  flex-wrap: wrap; /* Erlaubt Elementen, untereinander zu rutschen */
+  gap: 12px;
+}
+
+/* 🧠 KI-Stimmungs-Barometer Style */
+.ai-mood-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px; /* Schöner Abstand unter dem Aufgabentitel */
+  padding: 6px 12px;
+  background: rgba(14, 165, 233, 0.06); /* Ein ganz feiner Hauch von edlem KI-Blau */
+  border-left: 3px solid #0ea5e9; /* Stylische blaue Akzentlinie links */
+  border-radius: 0 6px 6px 0;
+  width: fit-content; /* Passt sich kompakt der Textlänge an */
+}
+
+.mood-icon {
+  font-size: 14px;
+}
+
+.mood-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: #0369a1; /* Dunkleres Info-Blau für beste Lesbarkeit */
+  font-style: italic; /* Macht es als "Gedankengang" der KI erkennbar */
+}
+
+/* Stellt sicher, dass Titel und Barometer eine saubere, vertikale Spalte bilden */
+.todo-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px; /* Abstand zwischen To-Do-Text und Barometer */
+  flex: 1;
+}
+
+/* 🧠 KI-Stimmungs-Barometer Style */
+.ai-mood-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(14, 165, 233, 0.06); 
+  border-left: 3px solid #0ea5e9; 
+  border-radius: 0 6px 6px 0;
+  width: fit-content;
+  margin: 0 !important; /* ⚡ Verhindert unerwartete Abstände */
+}

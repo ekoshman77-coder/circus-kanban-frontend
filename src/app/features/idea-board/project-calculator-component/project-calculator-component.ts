@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal, effect, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ProjectService } from '../../../core/services/project-service';
-import { NoteService } from '../../../core/services/note-service';
+import { ProjectService } from '../../../core/services/project/project-service';
+import { NoteService } from '../../../core/services/note/note-service';
 import { Project } from '../../../core/models/project';
 import { Milestone } from '../../../core/models/milestone';
 import { BoardTab, NavigationState, TabNavigationService } from '../tab-navigation-service';
@@ -11,13 +11,19 @@ import { TodoService } from '../../../core/services/todo/todo-service';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { MilestoneSuggestionsComponent } from '../milestone-suggestions-component/milestone-suggestions-component';
 import { UserService } from '../../../core/services/user/user-service';
-import { ProjectDraftService } from '../../../core/services/project-draft-service';
+import { ProjectDraftService } from '../../../core/services/project/project-draft-service';
 import { MilestoneSelectorComponent } from '../../../core/shared/components/milestone-selector-component/milestone-selector-component';
 import { Note } from '../../../core/models/note';
-import { NotificationService } from '../../../core/services/notification-service';
+import { NotificationService } from '../../../core/services/notification/notification-service';
 import { HttpErrorResponse } from '@angular/common/http';
-import { TeamService } from '../../../core/services/team-service';
+import { TeamService } from '../../../core/services/team/team-service';
 
+/**
+ * @component ProjectCalculatorComponent
+ * @description Kern-Komponente des Project-Calculators. Sie dient als Laborumgebung, 
+ * um Meilensteine für neue Projekt-Entwürfe (Drafts) zu kalkulieren oder bestehende 
+ * Projekte aus der Datenbank reaktiv zu bearbeiten.
+ */
 @Component({
   selector: 'app-project-calculator-component',
   standalone: true,
@@ -33,120 +39,163 @@ import { TeamService } from '../../../core/services/team-service';
   styleUrl: './project-calculator-component.css'
 })
 export class ProjectCalculatorComponent implements OnInit {
-  // Services
+  // -------------------------------------------------------------------------
+  // 🛠️ INJIZIERTE SERVICES
+  // -------------------------------------------------------------------------
   protected projectService = inject(ProjectService);
   protected noteService = inject(NoteService);
   protected navigationService = inject(TabNavigationService);
   protected todoService = inject(TodoService);
   protected userService = inject(UserService);
   public projectDraftService = inject(ProjectDraftService);
-  private notificationService = inject(NotificationService)
-  private teamService = inject(TeamService)
+  private notificationService = inject(NotificationService);
+  private teamService = inject(TeamService);
 
-  // States
+  // -------------------------------------------------------------------------
+  // 🚦 REAKTIVE ZUSTÄNDE (SIGNALS)
+  // -------------------------------------------------------------------------
+  
+  /** Die zugrundeliegende Idee (Notiz), aus welcher der Entwurf gestartet wurde */
   public currentIdea = signal<Note | null>(null);
+  
+  /** Flag, ob wir ein brandneues Projekt kalkulieren (true) oder ein existierendes bearbeiten (false) */
   protected isBrandNewDraft = signal<boolean>(true);
+  
+  /** Zustand der KI-Vorschläge-Sidebar (offen/geschlossen) */
   protected isSidebarOpen = signal<boolean>(false);
 
-  // Banner
+  /** Steuert die Anzeige des Wiederherstellungs-Banners für ungespeicherte Entwürfe */
   protected showRestoreBanner = signal<boolean>(false);
+  
+  /** Der aus dem LocalStorage ausgelesene Titel des ungespeicherten Entwurfs */
   protected draftTitleFromStorage = signal<string>('');
 
-  // Form
+  /** Formular-Zustand für den Titel eines manuell hinzuzufügenden Meilensteins */
   protected newMilestoneTitle = signal<string>('');
+  
+  /** Formular-Zustand für die Dauer eines manuell hinzuzufügenden Meilensteins */
   protected newMilestoneDuration = signal<number>(1);
 
-  // Labormodus
+  /** Zwischenspeicher (Labor-RAM) für die Bearbeitung eines bereits existierenden DB-Projekts */
   protected localEditProject = signal<Project | null>(null);
 
-  // AI-Templates
+  /** Der Fachbereich (Tag) des Projekts zur gezielten Abfrage passender KI-Templates */
   protected suggestedArea = signal<string>('Allgemein');
+  
+  /** Steuert die Lade-Animation während KI-Vorschläge abgerufen werden */
   protected isMagicLoading = signal<boolean>(false);
 
-  // Popups
+  /** Steuert die Anzeige des Erfolgs-Popups nach Abschluss der Kalkulation */
   protected showSuccessPopup = signal<boolean>(false);
+  
+  /** Hält den finalen Projekttitel für die Anzeige im Erfolgs-Popup bereit */
   protected finalProjectTitle = signal<string>('');
 
-  // Inline Edit
+  /** Die ID des Meilensteins, der sich aktuell im Inline-Edit-Modus befindet (null falls keiner) */
   protected editingMilestoneId: string | null = null;
+  
+  /** Temporärer Titel während des Inline-Edits */
   protected editTitle: string = '';
+  
+  /** Temporäre Dauer während des Inline-Edits */
   protected editTime: number = 1;
+  
+  /** Array von 1 bis 30 für die Dropdown-Auswahl der Meilenstein-Tage */
   public availableDays: number[] = Array.from({ length: 30 }, (_, i) => i + 1);
 
-  // 🗺️ 1. UNSER NEUES SICHERHEITS-SIGNAL FÜR DEN URSPRUNG
+  /** Merkt sich den Ursprungs-Tab, um den User beim Abbrechen wieder dorthin zurückzuschicken */
   protected originTab = signal<BoardTab | null>(null);
 
-  // --- DIE MAGISCHE BRILLE ---
-  public localProjectDraft = computed<Project | null>(() => {
-    if (this.isBrandNewDraft()) {
-      return this.projectDraftService.currentDraft();
-    } else {
-      return this.localEditProject();
-    }
+  // -------------------------------------------------------------------------
+  // 🧮 COMPUTED SIGNALS (REAKTIVE ABLEITUNGEN)
+  // -------------------------------------------------------------------------
+
+  /** 
+   * 🌟 DIE EINZIGE LESE-BRILLE FÜR DAS HTML
+   * Schaltet je nach Modus automatisch zwischen dem globalen Draft-Signal und dem lokalen Labor-Projekt um.
+   */
+  public activeProject = computed<Project | null>(() => {
+    return this.isBrandNewDraft() ? this.projectDraftService.currentDraft() : this.localEditProject();
   });
 
-  // 🌟 FIX FÜR DEIN HTML: Das HTML verlangt nach activeProject(), hier ist die Brücke!
-  public activeProject = computed<Project | null>(() => this.localProjectDraft());
-
-  // Calculation
+  /** 
+   * Berechnet vollautomatisch die summierten Gesamttage aller Meilensteine des aktiven Projekts.
+   */
   public finalDays = computed(() => {
-    const proj = this.localProjectDraft();
+    const proj = this.activeProject();
     if (!proj || !proj.milestones) return 0;
-    return proj.milestones.reduce((sum, ms) => sum + (ms.duration || 0), 0);
+    return proj.milestones.reduce((sum, ms) => sum + (+ms.duration || 0), 0);
   });
 
-  constructor() {
-    console.log('🏗️ [Kalkulator] Constructor geladen.');
+  /**
+   * 🎯 DIE REAKTIVE WEICHE FÜR SCHREIBZUGRIFFE
+   * Gibt das aktuell beschreibbare Signal zurück, auf dem Änderungen angewendet werden müssen.
+   */
+  private getActiveSignal() {
+    return this.isBrandNewDraft() ? this.projectDraftService.currentDraft : this.localEditProject;
+  }
 
+  // -------------------------------------------------------------------------
+  // 🏗️ CONSTRUCTOR & LIFECYCLE HOOKS
+  // -------------------------------------------------------------------------
+  
+  constructor() {
+    /**
+     * Reagiert autark auf Änderungen des Navigation-States und steuert den internen State
+     * der Komponente (ob eine Idee, ein Projekt geladen oder der nackte Tab geklickt wurde).
+     */
     effect(() => {
       const navState = this.navigationService.currentNavigationState();
       const userId = this.userService.getCurrentUserId();
 
       if (!userId || navState === null) return;
-      
-      if (navState.type === 'idea') {
+
+      if (navState.type === 'tab-click') {
+        this.originTab.set(BoardTab.Calculator);
+        this.isBrandNewDraft.set(true);
+      } else if (navState.type === 'idea') {
         this.originTab.set(BoardTab.Pinboard);
       } else if (navState.type === 'project') {
         this.originTab.set(BoardTab.Projects);
       }
-      console.log('🎯 [Effect] Eine Aktion wurde auf der Pinnwand/Menü getriggert:', navState);
+
       this.handleNavigationStateChange(navState, userId);
     });
   }
 
   ngOnInit(): void {
-    console.log('⛺ [ngOnInit] Kalkulator betreten.');
-    const userId = this.userService.getCurrentUserId();
-    if (userId) {
-      this.handleNavigationStateChange(null, userId);
-    }
+    this.projectService.loadProjects();
   }
 
-  private handleNavigationStateChange(navState: NavigationState | null, userId: string): void {
-    if (navState === null) {
-      console.log('⛺ [Zustand 3] Normaler Tab-Klick. Prüfe Storage auf ungespeicherte Arbeit...');
-      const hatEntwurf = this.projectDraftService.hasExistingDraftInStorage(userId);
+  /**
+   * Verarbeitet die Navigations-Daten und entscheidet, ob Daten geladen, überschrieben 
+   * oder ein Wiederherstellungsbanner eingeblendet werden muss.
+   */
+  private handleNavigationStateChange(navState: NavigationState, userId: string): void {
+    if (navState.type === 'tab-click') {
+      const hasDraft = this.projectDraftService.hasExistingDraftInStorage(userId);
+      const isSignalEmpty = !this.projectDraftService.currentDraft();
 
-      if (hatEntwurf && !this.localEditProject() && !this.projectDraftService.currentDraft()) {
+      if (hasDraft && isSignalEmpty && !this.localEditProject()) {
         const cachedTitle = this.projectDraftService.getDraftTitleFromStorage(userId);
-        this.draftTitleFromStorage.set(cachedTitle || 'Unbenanntes Projekt');
+        this.draftTitleFromStorage.set(cachedTitle || 'Untitled Project');
         this.showRestoreBanner.set(true);
       } else {
         this.showRestoreBanner.set(false);
       }
-      return;
     }
-
-    if (navState.type === 'idea') {
+    else if (navState.type === 'idea') {
       this.isBrandNewDraft.set(true);
       this.localEditProject.set(null);
+      this.showRestoreBanner.set(false);
 
       const foundIdea = this.noteService.notesList().find((n) => n.id === navState.id);
       if (foundIdea) {
         this.currentIdea.set(foundIdea);
-        const laufendesDraft = this.projectDraftService.currentDraft();
-        if (laufendesDraft && (laufendesDraft as any).ideaId === foundIdea.id) {
-          console.log('♻️ Exakt diese Idee liegt schon im Draft.');
+        const cachedTitle = this.projectDraftService.getDraftTitleFromStorage(userId);
+
+        if (cachedTitle && cachedTitle.trim().toLowerCase() === foundIdea.title.trim().toLowerCase()) {
+          this.projectDraftService.loadDraftFromStorageIntoSignal();
         } else {
           this.projectDraftService.initDraftFromIdea(foundIdea);
         }
@@ -158,32 +207,37 @@ export class ProjectCalculatorComponent implements OnInit {
       this.currentIdea.set(null);
       this.showRestoreBanner.set(false);
 
-      const passendesProjekt = this.projectService.projectsList().find((p) => p.id === navState.id);
-      if (passendesProjekt) {
+      const matchingProject = this.projectService.projectsList().find((p) => p.id === navState.id);
+      if (matchingProject) {
         this.localEditProject.set(new Project({
-          ...passendesProjekt,
-          milestones: [...(passendesProjekt.milestones || [])]
+          ...matchingProject,
+          milestones: [...(matchingProject.milestones || [])]
         }));
-        this.suggestedArea.set(passendesProjekt.area || 'Allgemein');
+        this.suggestedArea.set(matchingProject.area || 'Allgemein');
       }
     }
 
     this.navigationService.currentNavigationState.set(null);
   }
 
+  // -------------------------------------------------------------------------
+  // 🔥 WEICHENLOSE MUTATIONS-METHODEN (BUSINESS-LOGIK)
+  // -------------------------------------------------------------------------
+
+  /**
+   * Fügt dem aktiven Projekt einen neuen Meilenstein hinzu, fängt Duplikate ab 
+   * und triggert den Akzeptanz-Lerneffekt für das KI-Modell.
+   */
   public onMilestoneAdded(milestoneTitle: string, customDuration?: number): void {
-    const currentProject = this.localProjectDraft();
+    const targetSignal = this.getActiveSignal();
+    const currentProject = targetSignal();
     if (!currentProject) return;
 
     const trimmedTitle = milestoneTitle.trim();
     if (!trimmedTitle) return;
 
     const currentMilestones = currentProject.milestones ? [...currentProject.milestones] : [];
-    const loweredTitle = trimmedTitle.toLowerCase();
-
-    if (currentMilestones.some(ms => ms.title.toLowerCase().trim() === loweredTitle)) {
-      return;
-    }
+    if (currentMilestones.some(ms => ms.title.toLowerCase().trim() === trimmedTitle.toLowerCase())) return;
 
     let nextIndex = 0;
     if (currentMilestones.length > 0) {
@@ -202,19 +256,17 @@ export class ProjectCalculatorComponent implements OnInit {
       isNew: true
     });
 
-    if (this.isBrandNewDraft()) {
-      this.projectDraftService.addMilestoneToDraft(newMilestone, customDuration);
-    } else {
-      const updatedMilestones = [...currentMilestones, newMilestone];
-      this.localEditProject.set(new Project({
-        ...currentProject,
-        milestones: updatedMilestones
-      }));
-    }
+    targetSignal.set(new Project({
+      ...currentProject,
+      milestones: [...currentMilestones, newMilestone]
+    }));
 
     this.projectService.acceptSuggestion(currentProject.title, trimmedTitle);
   }
 
+  /**
+   * Liest das manuelle Meilenstein-Formular aus und leitet die Daten an die Kern-Add-Methode weiter.
+   */
   public addNewMilestoneFromForm(): void {
     const titel = this.newMilestoneTitle().trim();
     const tage = this.newMilestoneDuration();
@@ -225,108 +277,151 @@ export class ProjectCalculatorComponent implements OnInit {
     this.newMilestoneDuration.set(1);
   }
 
+  /**
+   * Entfernt einen Meilenstein anhand seines Index aus dem aktiven Projekt 
+   * und meldet den "Abwertungs-Lerneffekt" (Degradation) an das KI-Backend.
+   */
   public onMilestoneRemoved(index: number): void {
-    const currentProject = this.localProjectDraft();
+    const targetSignal = this.getActiveSignal();
+    const currentProject = targetSignal();
     if (!currentProject || !currentProject.milestones) return;
 
     const milestoneToDegrade = currentProject.milestones[index];
     if (!milestoneToDegrade) return;
 
-    if (this.isBrandNewDraft()) {
-      this.projectDraftService.removeMilestone(index);
-    } else {
-      const updatedMilestones = [...currentProject.milestones];
-      updatedMilestones.splice(index, 1);
-      this.localEditProject.set(new Project({
-        ...currentProject,
-        milestones: updatedMilestones
-      }));
-    }
+    const updatedMilestones = [...currentProject.milestones];
+    updatedMilestones.splice(index, 1);
+
+    targetSignal.set(new Project({
+      ...currentProject,
+      milestones: updatedMilestones
+    }));
 
     this.projectService.degradeSuggestion(currentProject.title, milestoneToDegrade.title);
   }
 
+  /**
+   * Verarbeitet das Drag&Drop Event von Angular CDK, ordnet die Meilensteine im Array 
+   * neu an und berechnet alle 'orderIndex'-Eigenschaften frisch.
+   */
   public onMilestoneDropped(event: CdkDragDrop<Milestone[]>): void {
-    const currentProject = this.localProjectDraft();
+    const targetSignal = this.getActiveSignal();
+    const currentProject = targetSignal();
     if (!currentProject || !currentProject.milestones) return;
     if (event.previousIndex === event.currentIndex) return;
 
-    if (this.isBrandNewDraft()) {
-      this.projectDraftService.reorderMilestones(event.previousIndex, event.currentIndex, moveItemInArray);
-    } else {
-      const updatedMilestones = [...currentProject.milestones];
-      moveItemInArray(updatedMilestones, event.previousIndex, event.currentIndex);
-      updatedMilestones.forEach((ms, idx) => ms.orderIndex = idx);
-      this.localEditProject.set(new Project({
-        ...currentProject,
-        milestones: updatedMilestones
-      }));
-    }
+    const updatedMilestones = [...currentProject.milestones];
+    moveItemInArray(updatedMilestones, event.previousIndex, event.currentIndex);
+    updatedMilestones.forEach((ms, idx) => ms.orderIndex = idx);
+
+    targetSignal.set(new Project({
+      ...currentProject,
+      milestones: updatedMilestones
+    }));
   }
 
+  /**
+   * Ändert die geplante Dauer eines spezifischen Meilensteins im aktiven Signal.
+   */
   public onMilestoneDurationChanged(index: number, newDuration: number): void {
-    const currentProject = this.localProjectDraft();
+    const targetSignal = this.getActiveSignal();
+    const currentProject = targetSignal();
     if (!currentProject || !currentProject.milestones || !currentProject.milestones[index]) return;
 
     const finalDuration = newDuration > 0 ? newDuration : 1;
 
-    if (this.isBrandNewDraft()) {
-      this.projectDraftService.updateMilestoneInDraft(index, { duration: finalDuration });
-    } else {
-      const updatedMilestones = currentProject.milestones.map((ms, i) => {
-        if (i === index) return new Milestone({ ...ms, duration: finalDuration });
-        return ms;
-      });
-      this.localEditProject.set(new Project({
-        ...currentProject,
-        milestones: updatedMilestones
-      }));
-    }
+    const updatedMilestones = currentProject.milestones.map((ms, i) => {
+      if (i === index) return new Milestone({ ...ms, duration: finalDuration });
+      return ms;
+    });
+
+    targetSignal.set(new Project({
+      ...currentProject,
+      milestones: updatedMilestones
+    }));
   }
 
+  /**
+   * Ändert den Titel eines spezifischen Meilensteins im aktiven Signal.
+   */
   public onMilestoneTitleChanged(index: number, newTitle: string): void {
-    const currentProject = this.localProjectDraft();
+    const targetSignal = this.getActiveSignal();
+    const currentProject = targetSignal();
     if (!currentProject || !currentProject.milestones || !currentProject.milestones[index]) return;
 
     const trimmedTitle = newTitle.trim();
     if (!trimmedTitle) return;
 
-    if (this.isBrandNewDraft()) {
-      this.projectDraftService.updateMilestoneInDraft(index, { title: trimmedTitle });
-    } else {
-      const updatedMilestones = currentProject.milestones.map((ms, i) => {
-        if (i === index) return new Milestone({ ...ms, title: trimmedTitle });
-        return ms;
-      });
-      this.localEditProject.set(new Project({
-        ...currentProject,
-        milestones: updatedMilestones
-      }));
-    }
+    const updatedMilestones = currentProject.milestones.map((ms, i) => {
+      if (i === index) return new Milestone({ ...ms, title: trimmedTitle });
+      return ms;
+    });
+
+    targetSignal.set(new Project({
+      ...currentProject,
+      milestones: updatedMilestones
+    }));
   }
 
-  // Fallback-Methoden für ältere HTML Bindings
-  public removeMilestone(index: number): void { this.onMilestoneRemoved(index); }
-  public onDrop(event: any): void { this.onMilestoneDropped(event); }
+  /**
+   * Speichert den veränderten Titel und die geänderte Dauer eines Meilensteins 
+   * nach dem Inline-Editing gleichzeitig ab und schließt den Bearbeitungsmodus.
+   */
+  public saveInlineEdit(index: number): void {
+    const targetSignal = this.getActiveSignal();
+    const currentProject = targetSignal();
+    if (!currentProject || !currentProject.milestones || !currentProject.milestones[index]) {
+      this.editingMilestoneId = null;
+      return;
+    }
 
+    const trimmedTitle = this.editTitle.trim();
+    if (!trimmedTitle) {
+      this.editingMilestoneId = null;
+      return;
+    }
+
+    const validatedMilestoneDuration = this.editTime > 0 ? this.editTime : 1;
+
+    const updatedMilestones = currentProject.milestones.map((ms, i) =>
+      i === index ? new Milestone({ ...ms, title: trimmedTitle, duration: validatedMilestoneDuration }) : ms
+    );
+
+    targetSignal.set(new Project({
+      ...currentProject,
+      milestones: updatedMilestones
+    }));
+
+    this.editingMilestoneId = null;
+    this.editTitle = '';
+  }
+
+  // -------------------------------------------------------------------------
+  // 🖼️ UI EVENT HANDLER (BANNER, SIDEBAR & INTERAKTIONEN)
+  // -------------------------------------------------------------------------
+
+  /** Stellt den ungespeicherten Entwurf aktiv aus dem Storage wieder her */
   public restoreDraftFromBanner(): void {
+    this.isBrandNewDraft.set(true);
     this.projectDraftService.loadDraftFromStorageIntoSignal();
     const geladenerDraft = this.projectDraftService.currentDraft();
     if (geladenerDraft) {
       this.suggestedArea.set(geladenerDraft.area || 'Allgemein');
-      if ((geladenerDraft as any).ideaId) {
-        const passendeIdee = this.noteService.notesList().find(n => n.id === (geladenerDraft as any).ideaId);
+      if (geladenerDraft.ideaId) {
+        const passendeIdee = this.noteService.notesList().find(n => n.id === geladenerDraft.ideaId);
         if (passendeIdee) this.currentIdea.set(passendeIdee);
       }
     }
     this.showRestoreBanner.set(false);
   }
 
+  /** Verwürft den Entwurf im Speicher dauerhaft und schließt das Banner */
   public rejectDraftFromBanner(): void {
     this.projectDraftService.clearDraft();
     this.showRestoreBanner.set(false);
   }
 
+  /** Aktiviert den Bearbeitungsmodus (Labor-Modus) für ein existierendes Projekt */
   public onProjectSelectedFromWelcome(id: string): void {
     this.isBrandNewDraft.set(false);
     this.currentIdea.set(null);
@@ -341,182 +436,98 @@ export class ProjectCalculatorComponent implements OnInit {
     }
   }
 
+  /** Öffnet oder schließt die KI-Vorschläge-Sidebar */
   public toggleSidebar(): void {
     this.isSidebarOpen.set(!this.isSidebarOpen());
   }
 
-  public handleStartProjectCalculation(): void {
-    const project = this.localProjectDraft();
-    if (!project || !project.milestones || project.milestones.length === 0) return;
-
-    this.projectService.saveCalculatedProject(project);
-
+  /**
+   * Bricht die aktuelle Kalkulation komplett ab, putzt bei Bedarf den LocalStorage 
+   * und leitet den Anwender sicher auf seinen Ursprungstab zurück.
+   */
+  public cancelAndDiscardDraft(): void {
     if (this.isBrandNewDraft()) {
       this.projectDraftService.clearDraft();
-    }
-    console.log('🚀 Projekt erfolgreich kalkuliert!');
-  }
-
-  public startEditMilestone(task: Milestone): void {
-    this.editingMilestoneId = task.id ?? null;
-    this.editTitle = task.title;
-    this.editTime = task.duration || 1;
-  }
-
-  public cancelEditMilestone(): void {
-    this.editingMilestoneId = null;
-    this.editTitle = '';
-    this.editTime = 1;
-  }
-
-public saveInlineEdit(index: number): void {
-    const currentProject = this.localProjectDraft();
-    if (!currentProject || !currentProject.milestones || !currentProject.milestones[index]) {
-      this.editingMilestoneId = null;
-      return;
-    }
-
-    const trimmedTitle = this.editTitle.trim();
-    if (!trimmedTitle) {
-      this.editingMilestoneId = null;
-      return;
-    }
-
-    if (this.isBrandNewDraft()) {
-      // Wenn es ein neuer Entwurf ist, über den DraftService aktualisieren
-      this.projectDraftService.updateMilestoneInDraft(index, { 
-        title: trimmedTitle 
-      });
+      this.currentIdea.set(null);
     } else {
-      // Wenn es ein existierendes Projekt ist, das lokale Signal aktualisieren
-      const updatedMilestones = currentProject.milestones.map((ms, i) => 
-        i === index ? new Milestone({ ...ms, title: trimmedTitle }) : ms
-      );
-      this.localEditProject.set(new Project({ 
-        ...currentProject, 
-        milestones: updatedMilestones 
-      }));
+      this.localEditProject.set(null);
     }
 
-    // Editier-Modus beenden
-    this.editingMilestoneId = null;
-    this.editTitle = '';
-    console.log(`📝 [InlineEdit] Meilenstein an Index ${index} erfolgreich umbenannt zu: "${trimmedTitle}"`);
+    this.isBrandNewDraft.set(true);
+
+    if (this.originTab() === BoardTab.Pinboard) {
+      this.navigationService.changeTab(BoardTab.Pinboard, { type: 'idea', id: "" });
+    } else {
+      this.navigationService.changeTab(BoardTab.Projects, { type: 'project', id: "" });
+    }
+    this.originTab.set(null);
   }
 
-public cancelAndDiscardDraft(): void {
-  console.log('❌ Kalkulation abgebrochen. Räume Speicher auf...');
-  
-  // 1. Wir lesen den sicher gespeicherten Ursprung aus
- // const woherWirKamen = this.originTab();
-
-  // 2. Lokale Signale und Caches sauber leeren[cite: 5, 7]
-  this.localEditProject.set(null);
-  this.projectDraftService.clearDraft();
-  this.currentIdea.set(null);
-  this.isBrandNewDraft.set(true);
-
-  // 3. Dynamische und richtige Navigation je nach Ausgangslage
-  if (this.originTab() === BoardTab.Pinboard) {
-    // Wenn wir von einer Idee kamen, zurück zur Pinnwand
-    this.navigationService.changeTab(BoardTab.Pinboard, { 
-      type: 'idea', 
-      id: "" 
-    });
-    console.log('✈️ [Navigation] Sicher zurück zur Pinnwand geleitet.');
-  } else {
-    // Andernfalls (oder als sicherer Fallback) zurück zur Projektübersicht
-    this.navigationService.changeTab(BoardTab.Projects, { 
-      type: 'project', 
-      id: "" 
-    });
-    console.log('✈️ [Navigation] Sicher zurück zur Projektliste geleitet.');
-  }
-
-  // 4. Zum Schluss das Signal für die nächste Runde wieder resetten
-  this.originTab.set(null);
-}
-
-  public abortCalculation(): void { this.cancelAndDiscardDraft(); }
-
+  /** Öffnet das finale Bestätigungs-Popup zur Speicherung auf dem Server */
   public finishCalculation(): void {
-    const project = this.localProjectDraft();
+    const project = this.activeProject();
     if (!project) return;
     this.finalProjectTitle.set(project.title);
     this.showSuccessPopup.set(true);
   }
 
+  /** Validiert, ob das Projekt Meilensteine besitzt und ob der User Schreibrechte besitzt */
   public canSaveCalculation(): boolean {
-    const project = this.localProjectDraft();
-    // Basis-Check: Es muss ein Projekt da sein und mindestens 1 Meilenstein existieren
+    const project = this.activeProject();
     if (!project || !project.milestones || project.milestones.length === 0) return false;
-
-    // Wenn es ein existierendes Projekt im Edit-Mode ist, prüfen wir den Besitzer
     if (!this.isBrandNewDraft()) {
-
-      return this.teamService.hasPermission(project.id, 'PROJECT_EDIT'); // true = darf speichern, false = gesperrt
+      return this.teamService.hasPermission(project.id, 'PROJECT_EDIT');
     }
-
-    // Ein brandneues Projekt darf JEDER erzeugen
     return true;
   }
 
+  /** Schickt den Projekttitel an das Bayes-Backend ab, um passende Template-Vorschläge zu generieren */
   public applySmartTemplates(): void {
-    const proj = this.localProjectDraft();
+    const proj = this.activeProject();
     if (!proj || !proj.title) return;
     this.isMagicLoading.set(true);
     this.projectService.loadMilestoneSuggestions(proj.title, this.suggestedArea());
     setTimeout(() => this.isMagicLoading.set(false), 800);
   }
 
+  /** Logger für Sichtbarkeitsänderungen abgelehnter Meilensteine */
   public degradedAreShown(event: any): void {
     console.log('Sichtbarkeit geändert:', event);
   }
 
-  // ==========================================
-  // SCHRITT 2: Benutzer klickt im Popup auf "Ja, final speichern 💾"
-  // ==========================================
-  // ==========================================
-  // SCHRITT 2: Benutzer klickt im Popup auf "Ja, final speichern 💾"
-  // ==========================================
+  /**
+   * Schickt das fertige Rechenergebnis per HTTP-Request an das Backend. 
+   * Löscht bei Erfolg lokale Entwurfsdaten und wechselt reaktiv in die Projektübersicht.
+   */
   public handleAutoSaveConfirm(): void {
-    // 1. Validierung: Haben wir überhaupt Daten und Meilensteine?
-    const project = this.localProjectDraft();
+    const project = this.activeProject();
     if (!project || !project.milestones || project.milestones.length === 0) {
-      this.notificationService.showNotification('Keine Daten oder Meilensteine zum Speichern vorhanden! 🛑', 'error');
+      this.notificationService.showNotification('Keine Daten vorhanden! 🛑', 'error');
       this.showSuccessPopup.set(false);
       return;
     }
 
-    // 2. Rechte-Check NUR für existierende Projekte (Editier-Modus)
     if (!this.isBrandNewDraft()) {
       const currentUserId = this.userService.getCurrentUserId();
       if (project.userId !== currentUserId) {
-        this.notificationService.showNotification('Du hast keine Berechtigung, dieses bestehende Projekt zu verändern! 🛑', 'error');
+        this.notificationService.showNotification('Keine Berechtigung! 🛑', 'error');
         this.showSuccessPopup.set(false);
         return;
       }
     }
 
-    console.log('💾 [Popup Bestätigt] Starte Speichervorgang für:', project.title);
-
-    // 3. Weiche stellen: Neues Projekt (create) oder Altes Projekt (update)?
-    // Hinweis: Wenn deine Update-Methode im ProjectService anders heißt (z.B. updateExistingProject), passe den Namen hier kurz an!
     const saveObservable = this.isBrandNewDraft()
       ? this.projectService.saveCalculatedProject(project)
       : (this.projectService as any).updateProject?.(project) || this.projectService.saveCalculatedProject(project);
 
-    // 4. HTTP-Anfrage über das Netzwerk jagen mittels .subscribe()
     saveObservable.subscribe({
-      next: (response: Project) => {
-        // Passenden Text für die Notification wählen
+      next: () => {
         const erfolgsNachricht = this.isBrandNewDraft()
           ? `Projekt "${project.title}" wurde erfolgreich gestartet! 🚀`
-          : `Änderungen am Projekt "${project.title}" wurden erfolgreich gespeichert! 💾`;
+          : `Änderungen am Projekt "${project.title}" wurden gespeichert! 💾`;
 
         this.notificationService.showNotification(erfolgsNachricht, 'success');
 
-        // 5. Lokalen Cache sauber aufräumen
         if (this.isBrandNewDraft()) {
           this.projectDraftService.clearDraft();
           this.currentIdea.set(null);
@@ -524,29 +535,54 @@ public cancelAndDiscardDraft(): void {
           this.localEditProject.set(null);
         }
 
-        // Zustand zurücksetzen & Popup schließen
         this.isBrandNewDraft.set(true);
         this.showSuccessPopup.set(false);
-
-        // ✈️ 6. Automatische Weiterleitung zur Projektseite
         this.navigationService.changeTab(BoardTab.Projects, { type: 'project', id: "" });
-
-        console.log('🏁 [Kalkulator] Speichern und Weiterleitung erfolgreich abgeschlossen.');
       },
       error: (err: HttpErrorResponse) => {
-        // 🔴 err ist ein echtes Angular HttpErrorResponse-Objekt!
-        console.error(`❌ HTTP-Fehler ${err.status}: ${err.message}`, err);
-
-        // Wenn der Server eine Fehlermeldung im Body mitschickt, zeigen wir diese an, sonst Fallback
-        const serverMessage = err.error?.message || 'Fehler beim Speichern auf dem Server!';
-
+        const serverMessage = err.error?.message || 'Fehler beim Speichern!';
         this.notificationService.showNotification(serverMessage, 'error');
         this.showSuccessPopup.set(false);
       }
     });
   }
 
+  /** Schließt das Bestätigungs-Popup ohne zu speichern */
   public cancelPopupCountdown(): void {
     this.showSuccessPopup.set(false);
+  }
+
+  /** Aktiviert den Inline-Edit-Modus für eine bestimmte Meilenstein-Zeile */
+  public startEditMilestone(task: Milestone): void {
+    this.editingMilestoneId = task.id;
+    this.editTitle = task.title;
+    this.editTime = task.duration || 1;
+  }
+
+  /** Bricht das Inline-Editing ab und bereinigt die Formular-Buffer */
+  public cancelEditMilestone(): void {
+    this.editingMilestoneId = null;
+    this.editTitle = '';
+    this.editTime = 1;
+  }
+
+  // -------------------------------------------------------------------------
+  // 🔄 HTML-ALIAS METHODEN (VOM TEMPLATE BENÖTIGT)
+  // -------------------------------------------------------------------------
+
+  /**
+   * @deprecated Nutze stattdessen bevorzugt cancelAndDiscardDraft() direkt.
+   * Alias-Methode fürs HTML, um die aktuelle Kalkulation abzubrechen.
+   */
+  public abortCalculation(): void {
+    this.cancelAndDiscardDraft();
+  }
+
+  /**
+   * @deprecated Nutze stattdessen bevorzugt onMilestoneDropped($event) direkt.
+   * Alias-Methode fürs HTML, um das Drag&Drop-Event der Meilensteine zu verarbeiten.
+   */
+  public onDrop(event: any): void {
+    this.onMilestoneDropped(event);
   }
 }

@@ -2,11 +2,11 @@ import { Component, Input, Output, EventEmitter, signal, inject, computed, input
 import { CommonModule } from '@angular/common';
 import { TodoService } from '../../../services/todo/todo-service';
 import { Router } from '@angular/router';
-import { ConnectionService } from '../../../services/connection-service';
+import { ConnectionService } from '../../../services/connection/connection-service';
 import { TodoViewModel } from '../../../viewmodel/todo-view-model';
 import { FormsModule } from '@angular/forms';
 import { animate, style, transition, trigger } from '@angular/animations';
-import { TeamService } from '../../../services/team-service';
+import { TeamService } from '../../../services/team/team-service';
 import { UserModel } from '../../../models/user-model';
 import { Todo } from '../../../models/todo';
 
@@ -39,7 +39,7 @@ export class TodoItemComponent {
   item = input.required<TodoViewModel>();
 
   @Input() isDescriptionOpen: boolean = false;
-  @Input() isKanbanMode: boolean = false;
+  @Input() isKanbanMode: boolean = true;
   public isTeamsPopupEnabled = input<boolean>(false);
   public assignableUsers = input<UserModel[]>([]);
 
@@ -119,6 +119,17 @@ export class TodoItemComponent {
     // Lokales Popup wieder schließen
     //    this.isPopupOpen.set(false);
   }
+
+  public onDropdownChange(event: Event): void {
+  const selectElement = event.target as HTMLSelectElement;
+  const newValue = Number(selectElement.value);
+  
+  if (!isNaN(newValue)) {
+    this.selectPoints(newValue);
+  } else {
+    this.isEditingPoints.set(false);
+  }
+}
 
   public cancelEffortPopup() {
     this.item().cancelEffortPopup()

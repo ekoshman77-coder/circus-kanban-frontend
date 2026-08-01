@@ -1,7 +1,7 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms'; 
 import { UserModel } from '../../../core/models/user-model';
-import { TeamService } from '../../../core/services/team-service';
+import { TeamService } from '../../../core/services/team/team-service';
 import { CommonModule } from '@angular/common';
 import { UserService } from '../../../core/services/user/user-service';
 

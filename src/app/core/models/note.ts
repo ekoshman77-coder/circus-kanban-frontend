@@ -10,6 +10,7 @@ export class Note {
     content: string;
     colorType: string;
     tag?: string;
+    departmentId?: string;
     isInCalculation?: boolean;
     temperature?: number;
     weatherCode?: number;
@@ -22,6 +23,7 @@ export class Note {
         tag?: string | null, 
         id?: string | null,
         isInCalculation?: boolean,
+        departmentId?: string,
         temperature?: number | null;
         weatherCode?: number | null;
     }) {
@@ -31,6 +33,7 @@ export class Note {
         this.id = init.id?? generateLocalId()
         this.colorType = init.colorType
         this.tag = init.tag?? "" 
+        this.departmentId = init.departmentId
         this.isInCalculation = init.isInCalculation?? false
         this.temperature = init.temperature?? undefined
         this.weatherCode = init.weatherCode?? undefined

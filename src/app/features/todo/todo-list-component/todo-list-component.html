@@ -26,15 +26,35 @@
           <app-todo-item 
             [item]="item" 
             [isDescriptionOpen]="item.isDescriptionOpen"
+            [isKanbanMode]="false"
             [ngClass]="'status-' + item.visualStatus" 
             (toggleDescription)="toggleDescription(item.id)"
-            (toggleComplete)="onToggleComplete(item.id)" 
             (delete)="onDeleteTodo(item.id)">
           </app-todo-item>
         </div>
       }
     </div>
   }
-  <app-todo-footer [currentTodos]="todosForStats()"></app-todo-footer>
+<app-todo-footer 
+  [currentTodos]="todosForStats()"
+  (requestClearCompleted)="onOpenClearCompletedPopup()"
+  (requestClearAll)="onOpenClearAllPopup()">
+</app-todo-footer>
 </div>
+
+<!-- 🔮 POPUP-PORTAL: Sitzt jetzt perfekt auf Root-Ebene der TodoPage! -->
+@if (activePopupConfig(); as config) {
+  <app-universal-popup-component
+    [title]="config.title"
+    [message]="config.message"
+    [mode]="config.mode"
+    [animationIcon]="config.animationIcon"
+    [confirmText]="config.confirmText || null"
+    [cancelText]="config.cancelText"
+    [showLoadingBar]="config.showLoadingBar"
+    [timerMs]="config.timerMs"
+    (confirm)="config.action(); closePopup()"
+    (cancel)="closePopup()">
+  </app-universal-popup-component>
+}
 

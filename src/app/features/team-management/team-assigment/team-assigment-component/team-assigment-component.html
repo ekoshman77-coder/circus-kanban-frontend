@@ -1,13 +1,10 @@
 <div class="assignment-container">
-  
+
   <div class="assignment-header">
     <h2 class="page-title">👥 Team-Zuweisung</h2>
     <div class="header-action-zone">
-      <app-milestone-selector-component
-        [onlyProjects]="true"
-        [canChooseProject]="true"
-        [initialProjectId]="selectedProjectId()"
-        (projectSelected)="onProjectChange($event)"> 
+      <app-milestone-selector-component [onlyProjects]="true" [canChooseProject]="true"
+        [initialProjectId]="selectedProjectId()" (projectSelected)="onProjectChange($event)">
       </app-milestone-selector-component>
     </div>
   </div>
@@ -16,56 +13,51 @@
 
   <div class="assignment-content">
     @if (selectedProjectId()) {
-      <h3 class="section-title">Projektmitglieder verwalten</h3>
-      <div class="assignment-split-view">
-        
-        <app-project-members-list 
-          [members]="activeMembers()" 
-          (removeUser)="onRemoveUserFromProject($event)"
-          (addUser)="onAddUserToProject($event)">
-        </app-project-members-list>
+    <h3 class="section-title">Projektmitglieder verwalten</h3>
+    <div class="assignment-split-view">
 
-        <app-available-pool-list 
-          [pool]="availablePool()" 
-          (addUser)="onAddUserToProject($event)">
-        </app-available-pool-list>
+      <app-project-members-list [members]="activeMembers()" (removeUser)="onRemoveUserFromProject($event)"
+        (addUser)="onAddUserToProject($event)">
+      </app-project-members-list>
 
-      </div>
+      <app-available-pool-list [pool]="availablePool()" (addUser)="onAddUserToProject($event)"
+        (removeUser)="onRemoveUserFromProject($event)"> <!-- 🎯 HIER NEU HINZUFÜGEN! -->
+      </app-available-pool-list>
+    </div>
     } @else {
-      <div class="empty-state-card">
-        <div class="empty-state-icon">📂</div>
-        <h4>Bereit für die Team-Zuweisung!</h4>
-        <p>Wähle oben rechts dein Projekt aus, um Entwickler, Designer und Manager zuzuweisen oder zu verschieben.</p>
-      </div>
+    <div class="empty-state-card">
+      <div class="empty-state-icon">📂</div>
+      <h4>Bereit für die Team-Zuweisung!</h4>
+      <p>Wähle oben rechts dein Projekt aus, um Entwickler, Designer und Manager zuzuweisen oder zu verschieben.</p>
+    </div>
     }
   </div>
 
   @if (showRoleModal()) {
-    <div class="modal-backdrop" (click)="onCloseRoleModal()">
-      <div class="modal-card" (click)="$event.stopPropagation()">
-        <h3>✨ Projekt-Rolle zuweisen</h3>
-        <p class="modal-hint">Welche Rolle soll der Mitarbeiter in diesem Projekt einnehmen?</p>
+  <div class="modal-backdrop" (click)="onCloseRoleModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <h3>✨ Projekt-Rolle zuweisen</h3>
+      <p class="modal-hint">Welche Rolle soll der Mitarbeiter in diesem Projekt einnehmen?</p>
 
-        <div class="form-group">
-          <label for="roleSelect">Projekt-Rolle:</label>
-          <div class="select-wrapper">
-            <select id="roleSelect" 
-                    [value]="selectedRoleForAssignment()" 
-                    (change)="selectedRoleForAssignment.set($any($event.target).value)">
-              <option value="DEVELOPER">👨‍💻 DEVELOPER</option>
-              <option value="PROJECT_MANAGER">👑 PROJECT_MANAGER</option>
-              <option value="DESIGNER">🎨 DESIGNER</option>
-              <option value="VIEWER">👁️ VIEWER</option>
-              <option value="OWNER">🔑 OWNER</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="modal-actions">
-          <button type="button" class="btn-cancel" (click)="onCloseRoleModal()">Abbrechen</button>
-          <button type="button" class="btn-confirm" (click)="onConfirmRoleAssignment()">Hinzufügen ✨</button>
+      <div class="form-group">
+        <label for="roleSelect">Projekt-Rolle:</label>
+        <div class="select-wrapper">
+          <select id="roleSelect" [value]="selectedRoleForAssignment()"
+            (change)="selectedRoleForAssignment.set($any($event.target).value)">
+            <option value="DEVELOPER">👨‍💻 DEVELOPER</option>
+            <option value="PROJECT_MANAGER">👑 PROJECT_MANAGER</option>
+            <option value="DESIGNER">🎨 DESIGNER</option>
+            <option value="VIEWER">👁️ VIEWER</option>
+            <option value="OWNER">🔑 OWNER</option>
+          </select>
         </div>
       </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" (click)="onCloseRoleModal()">Abbrechen</button>
+        <button type="button" class="btn-confirm" (click)="onConfirmRoleAssignment()">Hinzufügen ✨</button>
+      </div>
     </div>
+  </div>
   }
 </div>

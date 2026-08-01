@@ -8,39 +8,62 @@
 
 .column { 
   flex: 1;
-  background: #f9f9f9; 
-  border-radius: 8px; 
-  padding: 15px; 
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
-  border: 1px solid #eee;
-  
+  border-radius: 16px;
+  padding: 20px; 
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02); 
   display: flex;
   flex-direction: column;
-  /* Verhindert, dass die ganze Spalte unendlich lang wird */
   max-height: 600px; 
+  transition: all 0.3s ease;
+}
+
+/* 🟥 DEINE LINKSE SPALTE: "To Do" – Fokus, Energie, Bereitmachen */
+/* Wir nehmen ein ganz softes, energetisches Eisblau, das zu warmem Sand fließt. 
+   Das beruhigt das Rot der dringenden Karten, gibt aber Fokus. */
+.column:first-child {
+  background: linear-gradient(
+    135deg, 
+    hsla(200, 40%, 96%, 0.45) 0%, 
+    hsla(35, 30%, 96%, 0.35) 100%
+  ) !important;
+  border: 1px solid rgba(186, 230, 253, 0.4);
+}
+
+/* 🟩 DEINE RECHTE SPALTE: "Fertig" – Die pure Belohnung! */
+/* Hier fließen dein geliebtes Minzgrün und ein sanftes Salbeigrün zusammen. 
+   Die Spalte fühlt sich wie ein sicherer Hafen an, in den man die Karten hineinfallen lassen will. */
+.column:nth-child(2) {
+  background: linear-gradient(
+    135deg, 
+    hsla(165, 36%, 96%, 0.5) 0%,   /* Dein Minzton */
+    hsla(140, 30%, 95%, 0.4) 100%   /* Sanftes Entspannungs-Grün */
+  ) !important;
+  border: 1px solid rgba(167, 243, 208, 0.4); /* Ganz feiner grüner Rahmen */
 }
 
 .column h2 { 
   text-align: center; 
-  color: #333; 
-  font-size: 16px;
+  font-size: 15px;
+  font-weight: 700;
   margin-top: 0;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
 }
 
-.list { 
-  /* 📜 SCROLLBAR-AKTIVIERUNG: */
-  height: 480px;             /* Eine feste Höhe für die Liste innerhalb der Spalte */
-  overflow-y: auto;          /* Aktiviert den vertikalen Scrollbar */
-  overflow-x: hidden;        /* Verhindert horizontales Wackeln */
+/* Farbliche Nuance für die Überschriften */
+.column:first-child h2 { color: #475569; } /* Neutral-fokussiert */
+.column:nth-child(2) h2 { color: #065f46; } /* Stolzes Erfolgs-Dunkelgrün */
 
+.list { 
+  height: 480px;             
+  overflow-y: auto;          
+  overflow-x: hidden;        
   display: flex; 
   flex-direction: column; 
-  gap: 10px; 
-  background: #fff; 
-  padding: 10px; 
-  border-radius: 4px; 
-  border: 1px dashed #e2eaf0;
+  gap: 12px; 
+  background: transparent; 
+  padding: 5px; 
+  border-radius: 0; 
+  border: none; 
 }
 
 /* 🚫 VERHINDERT DAS QUETSCHEN DER KARTEN: */

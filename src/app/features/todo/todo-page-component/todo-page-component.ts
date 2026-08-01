@@ -16,7 +16,6 @@ import { GamificationResult } from '../../../core/models/gamification';
   imports: [CommonModule, 
     TodoFormComponent, 
     TodoListComponent, 
-    TodoFooterComponent, 
     TodoKanbanComponent,
     ArchivExpressComponent
   ], 
@@ -24,12 +23,13 @@ import { GamificationResult } from '../../../core/models/gamification';
   styleUrl: './todo-page-component.css'
 })
 export class TodoPageComponent {
-  public todoService = inject(TodoService);
+  private todoService = inject(TodoService);
   
   // Signal hält den Zustand: Entweder 'list' oder 'kanban'
   public currentView = signal<'list' | 'kanban' | 'express'>('list');
   public pageError = computed(() => this.todoService.globalError());
 
+  protected activeDeletedTodo = computed(() => this.todoService.lastDeletedTodo());
   protected localShowLevelUpBanner = signal<GamificationResult | null>(null);
 
   constructor() {
@@ -45,6 +45,11 @@ export class TodoPageComponent {
         }, 800);
       }
     });
+  }
+
+  public deleteToastProgress = computed(() => this.todoService.toastProgress())
+  public restoreTodo() {
+    this.todoService.restoreTodo()
   }
 
   protected closeBanner() {

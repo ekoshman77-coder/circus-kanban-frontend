@@ -1,8 +1,8 @@
 import { Injectable, inject, signal, computed, effect } from '@angular/core';
 import { UserRepository, IUser, PlannerSettingsDto } from '../../repositories/user-repository';
-import { LocalStorageService } from '../local-storage-service';
+import { LocalStorageService } from './local-storage-service';
 import { GamificationResult } from '../../models/gamification';
-import { Observable, tap } from 'rxjs';
+import { catchError, map, Observable, of, Subject, switchMap, tap } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -15,6 +15,10 @@ export class UserService {
 
   public currentUser = computed(() => this.currentUserSignal());
   public isLoggedIn = computed(() => this.currentUserSignal() !== null);
+  public warnings = signal<string[] | null>(null)
+
+  // 📻 Der Event-Kanal für den Logout-Funkspruch
+  public readonly onLogout$ = new Subject<void>();
 
   // Zustand für den Browser-Speicher (LocalStorage)
   userEnergy = signal<'low' | 'normal' | 'high'>('normal');
@@ -27,12 +31,23 @@ export class UserService {
 
   public gamificationSignal = signal<GamificationResult>({
     currentXp: 0,
-    currentLevel: 1,
+    currentLevel: 0,
     levelUp: false,
-    levelTitle: 'To-Do-Lehrling 👶',
+    levelTitle: 'To-Do-Lehrling',
+    levelIcon: '👶',
     currentLevelXpStart: 0,
     nextLevelXpRequired: 100
   });
+
+  // public isAdmin = computed(() => {
+  //   const currentDeptId = this.currentUser()?.departmentId;
+  //   if (!currentDeptId) return false;
+
+  //   const userDepartment = this.departmentService.departments()
+  //     .find(dep => dep.id === currentDeptId);
+
+  //   return userDepartment?.name.toLowerCase() === ADMIN_DEPARTMENT_NAME.toLowerCase();
+  // });
 
   constructor() {
     console.log('=== 🚀 APP-START: UserService Constructor läuft an ===');
@@ -140,12 +155,38 @@ export class UserService {
     });
   }
 
-  public login(username: string, password: string): Observable<IUser> {
-    return this.userRepository.login(username, password).pipe(
-      tap((user) => {
-        this.saveSession(user);
-        this.loadSettingsFromBackend(user.id);
-        this.loadGamificationFromBackend(user.id);
+  public fetchCurrentStatus(): Observable<IUser | null> {
+    const currentId = this.currentUser()?.id;
+
+    // Wenn gar kein User eingeloggt ist, direkt abbrechen
+    if (!currentId) return of(null);
+
+    // Wir rufen das Repository auf (das bauen wir gleich)
+    return this.userRepository.getUserStatus(currentId).pipe(
+      tap((updatedUser) => {
+        if (updatedUser) {
+          this.saveSession(updatedUser)
+        }
+      })
+    );
+  }
+
+  public login(username: string, password: string): Observable<IUser | null> {
+    // 🔗 Wir ketten das asynchrone Logout vor den Login
+    return this.logout().pipe(
+      switchMap((canProceed) => {
+        if (!canProceed) {
+          return of(null); // 🛑 Schranke 1. Mal: Login bricht sauber ab
+        }
+
+        // 🚀 2. Mal (oder wenn sauber): Der echte Login-Request startet
+        return this.userRepository.login(username, password).pipe(
+          tap((user) => {
+            this.saveSession(user);
+            this.loadSettingsFromBackend(user.id);
+            this.loadGamificationFromBackend(user.id);
+          })
+        );
       })
     );
   }
@@ -163,24 +204,66 @@ export class UserService {
     });
   }
 
-  public register(username: string, firstName: string, lastName: string, password: string): Observable<IUser> {
-    return this.userRepository.register(username, firstName, lastName, password).pipe(
-      tap((user) => {
-        this.saveSession(user);
-        this.loadSettingsFromBackend(user.id);
-        this.loadGamificationFromBackend(user.id);
+  public register(username: string, firstName: string, lastName: string, password: string): Observable<IUser | null> {
+    // 🔗 Exakt dieselbe reaktive Kette für die Registrierung
+    return this.logout().pipe(
+      switchMap((canProceed) => {
+        if (!canProceed) {
+          return of(null); // 🛑 Schranke 1. Mal
+        }
+
+        // 🚀 2. Mal (oder wenn sauber): Der echte Register-Request startet
+        return this.userRepository.register(username, firstName, lastName, password).pipe(
+          tap((user) => {
+            this.saveSession(user);
+            this.loadSettingsFromBackend(user.id);
+            this.loadGamificationFromBackend(user.id);
+          })
+        );
       })
     );
   }
 
-  public logout(): void {
+  public cancelLogout(): void {
+    this.warnings.set(null); // Setzt die State Machine sauber zurück
+  }
+
+  public logout(): Observable<boolean> {
     console.log('=== 🧹 LOGOUT: Bereinige alle Session-Daten ===');
+    if (this.warnings() === null) {
+      this.warnings.set(this.storageService.collectUnsavedDataWarnings());
+      // Falls das Array existiert und Warnungen enthält -> stoppen!
+      if (this.warnings() && this.warnings()!.length > 0) {
+        return of(false);
+      }
+    }
 
-    // 🌟 Ein einziger Aufruf löscht jetzt alle definierten Keys im StorageService!
+    this.warnings.set(null);
     this.storageService.clearAllSessionData();
-
-    // Signale zurücksetzen
+    this.onLogout$.next();
     this.currentUserSignal.set(null);
+
+    this.userEnergy.set('normal');
+    this.workingTimeLeft.set(8);
+    this.primeTimeStartHour.set(10);
+    this.primeTimeEndHour.set(18);
+    this.workingHours.set(8);
+    this.gamificationSignal.set({
+      currentXp: 0,
+      currentLevel: 0,
+      levelUp: false,
+      levelTitle: 'To-Do-Lehrling',
+      levelIcon: '👶',
+      currentLevelXpStart: 0,
+      nextLevelXpRequired: 100
+    });
+    return this.userRepository.logout().pipe(
+      map(() => true),
+      catchError((err) => {
+        console.warn('⚠️ Server-Logout fehlgeschlagen, wir machen trotzdem optimistisch weiter:', err);
+        return of(true); // 🔥 DER TRICK: Selbst bei Fehler sagen wir "true", damit der Login nicht blockiert!
+      })
+    );
   }
 
   private saveSession(user: IUser): void {

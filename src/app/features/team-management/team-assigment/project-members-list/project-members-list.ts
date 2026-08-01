@@ -26,6 +26,14 @@ export class ProjectMembersListComponent {
     }
   }
 
+  // 📦 HIER NEU: Packt die ID beim Ziehen der Karte ein
+  public onDragStart(event: DragEvent, userId: string): void {
+    if (event.dataTransfer) {
+      event.dataTransfer.setData('text/plain', userId);
+      event.dataTransfer.effectAllowed = 'move';
+    }
+  }
+
   public onDrop(event: DragEvent): void {
     event.preventDefault();
     if (event.dataTransfer) {

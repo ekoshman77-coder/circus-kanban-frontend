@@ -478,3 +478,35 @@ button:disabled {
  60% { transform: rotate( 0.0deg) }
 100% { transform: rotate( 0.0deg) }
 }
+
+/* Styling-Ergänzungen für die Welcome-Component und Popups */
+
+/* Das Popup-Overlay sanft abdunkeln */
+app-universal-popup-component {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.6); /* Edles, dunkles Slate-Blau */
+  backdrop-filter: blur(4px); /* Moderner Blur-Effekt */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+/* Wenn du der Komponente einen destruktiven/danger Touch geben willst */
+:host ::ng-deep .popup-card {
+  border: 2px solid #ef4444; /* Knalliges Rot */
+  box-shadow: 0 20px 25px -5px rgba(239, 68, 68, 0.2);
+}
+
+:host ::ng-deep .popup-confirm-btn {
+  background-color: #ef4444 !important; /* Roter Bestätigungsbutton */
+  color: white !important;
+}
+
+:host ::ng-deep .popup-confirm-btn:hover {
+  background-color: #dc2626 !important;
+}

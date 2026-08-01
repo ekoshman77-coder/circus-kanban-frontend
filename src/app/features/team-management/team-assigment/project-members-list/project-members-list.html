@@ -1,20 +1,17 @@
 <div class="members-list-container"
-      (dragover)="onDragOver($event)"
-      (drop)="onDrop($event)"
-    >
-  <h3>🔴 Projektmitglieder ({{ members().length }})</h3>
+     (dragover)="onDragOver($event)"
+     (drop)="onDrop($event)">
+  
+  <h3>🔹 Projektmitglieder ({{ members().length }})</h3>
   
   @for (member of members(); track member.user.id) {
-    <div class="member-row-wrapper" style="margin-bottom: 8px;">
+    <div class="member-row-wrapper">
       <app-member-card-component
         [user]="member.user"
+        [projectRole]="member.projectRole" 
         actionType="remove"
-        (actionClicked)="onRemove(member.user.id)"
-      >
+        (actionClicked)="onRemove(member.user.id)">
       </app-member-card-component>
-      <span class="role-badge" style="font-size: 0.8rem; color: #64748b; padding-left: 55px; display: block; margin-top: -5px;">
-        🛠️ Rolle: <strong>{{ member.projectRole }}</strong>
-      </span>
     </div>
   } @empty {
     <p class="empty-hint">Dieses Projekt hat aktuell noch keine Mitglieder.</p>

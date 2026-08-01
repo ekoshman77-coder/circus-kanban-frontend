@@ -7,12 +7,12 @@ export const authGuard: CanActivateFn = () => {
   const router = inject(Router);
 
   // Wenn der User eingeloggt ist, darf er passieren!
-  if (userService.isLoggedIn()) {
+  if (userService.isLoggedIn() && userService.currentUser()?.isApproved) {
     return true;
   }
 
   // Wenn nicht, leiten wir ihn knallhart zur Startseite (Login) um
   console.warn('Zugriff verweigert: Du musst dich zuerst einloggen!');
-  router.navigate(['/']);
+  router.navigate(['']);
   return false;
 };

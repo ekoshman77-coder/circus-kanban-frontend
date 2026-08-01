@@ -4,7 +4,7 @@ import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop'; // 🟢 NE
 import { TodoService } from '../../../core/services/todo/todo-service';
 import { Todo } from '../../../core/models/todo';
 import { UserService } from '../../../core/services/user/user-service';
-import { PlannerService } from '../../../core/services/planner-service';
+import { PlannerService } from '../../../core/services/ai/planner-service';
 import { PlannerRecommendationComponent } from '../planner-recommendation-component/planner-recommendation-component';
 import { PlannerSettingsComponent } from '../planner-settings-component/planner-settings-component';
 import { TodoItemComponent } from '../../../core/shared/components/todo-item-component/todo-item-component';

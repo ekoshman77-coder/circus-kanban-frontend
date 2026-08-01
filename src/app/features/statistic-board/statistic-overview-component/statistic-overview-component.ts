@@ -2,9 +2,9 @@ import { Component, inject, computed, signal, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TodoService } from '../../../core/services/todo/todo-service'; 
 import { Todo } from '../../../core/models/todo';
-import { NoteService } from '../../../core/services/note-service';
-import { ProjectService } from '../../../core/services/project-service';
-import { TodoQueryService } from '../../../core/services/todo-query-service'; 
+import { NoteService } from '../../../core/services/note/note-service';
+import { ProjectService } from '../../../core/services/project/project-service';
+import { TodoQueryService } from '../../../core/services/todo/todo-query-service'; 
 import { MilestoneSelectorComponent } from '../../../core/shared/components/milestone-selector-component/milestone-selector-component';
 
 @Component({

@@ -5,9 +5,9 @@ import { TodoService } from '../../../services/todo/todo-service';
 import { futureDateValidator } from '../../../validators/future-date-validator';
 import { UniversalTagInputComponent } from '../universal-tag-input-component/universal-tag-input-component';
 import { MilestoneSelectorComponent } from '../milestone-selector-component/milestone-selector-component';
-import { UniversalPredictorService } from '../../../services/universal-predictor-service';
+import { UniversalPredictorService } from '../../../services/ai/universal-predictor-service';
 import { debounceTime, distinctUntilChanged, timeout } from 'rxjs';
-import { NotificationService } from '../../../services/notification-service';
+import { NotificationService } from '../../../services/notification/notification-service';
 
 @Component({
   selector: 'app-todo-form',

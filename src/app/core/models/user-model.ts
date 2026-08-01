@@ -7,18 +7,27 @@ import { generateLocalId, isLocalId } from "../shared/constants/id-const";
   username: string;
   firstName: string;
   lastName: string;
+  departmentId: string | null;
+  isApproved: boolean | null,
   projectIds: string[],
   coffeeBalance?: number,
   role?: string,
   emoji?: string
 }
 
+/**
+ * Repräsentiert das User-Objekt innerhalb der Anwendung.
+ * Verantwortlich für Datenmodellierung, Formatierung der Benutzerdaten 
+ * und geschäftsspezifische Logik (wie Farb-Hashes oder Initialen).
+ */
 export class UserModel {
   id: string;
   firstName: string;
   lastName: string;
   username: string;
   coffeeBalance: number;
+  departmentId: string | null;
+  isApproved: boolean | null;
   projectIds: string[];
   role: string;
   emoji: string;
@@ -28,19 +37,26 @@ export class UserModel {
     this.firstName = data.firstName || '';
     this.lastName = data.lastName || '';
     this.username = data.username || '';
+    this.departmentId = data.departmentId?? null;
+    this.isApproved = data.isApproved?? null;
     this.projectIds = data.projectIds || [];
     this.coffeeBalance = data.coffeeBalance?? 0;
     this.role = data.role?? ''
     this.emoji = data.emoji?? "🦊"
   }
 
-  
+  /**
+   * Gibt den vollständigen Namen des Benutzers zurück.
+   * @returns Der kombinierte Vor- und Nachname, bereinigt von Leerzeichen.
+   */  
   get fullName(): string {
     return `${this.firstName} ${this.lastName}`.trim();
   }
 
   /**
-   * Generiert die Initialen aus Vor- und Nachname
+   * Erzeugt die Benutzer-Initialen basierend auf den Namen.
+   * @returns Die ersten Buchstaben von Vor- und Nachname in Großbuchstaben, 
+   * oder '?' falls keine Daten vorhanden sind.
    */
   getInitials(): string {
     const first = this.firstName.charAt(0) || '';
@@ -49,25 +65,19 @@ export class UserModel {
   }
 
   /**
-   * Generiert einen festen, wunderschönen Pastell-Farbton basierend auf dem Usernamen!
+   * Generiert eine konsistente, ästhetische Pastell-Farbe basierend auf dem Usernamen.
+   * Ideal für Avatare oder UI-Elemente, um Nutzern visuell identifizierbar zu machen.
+   * @returns Eine HSL-Farbzeichenkette (z.B. 'hsl(210, 70%, 75%)').
    */
   getColorHash(): string {
     if (!this.username) return '#cbd5e1'; // Fallback-Grau
 
     let hash = 0;
     for (let i = 0; i < this.username.length; i++) {
-      // 1. KNISS: Wir multiplizieren den alten Hash mit einer großen Primzahl (31) 
-      // und erhöhen den Einfluss des aktuellen Buchstabens massiv!
       hash = (hash * 31) + this.username.charCodeAt(i);
-
-      // 2. KNIFF: Bitweise Verschiebung kombiniert mit einer wilden Multiplikation,
-      // um die Bits bei jedem Schritt komplett durchzumischen.
       hash = (hash << 5) - hash + (this.username.charCodeAt(i) * 12345);
     }
 
-    // 3. KNIFF: Den Farbkreis (0-360) "aufspreizen"
-    // Statt einfach nur Modulo (%) zu rechnen, multiplizieren wir den Wert mit einer 
-    // großen ungeraden Zahl, damit benachbarte Hashes weit auseinanderfliegen!
     const spreadValue = Math.abs(hash * 777);
     const h = spreadValue % 360;
 
@@ -85,6 +95,8 @@ public static fromJson(json: any): UserModel {
       username: json.username,
       // 🟢 HIER IST DIE MAGIE: Exakt matchen mit dem Namen aus deinem Kotlin UserResponseDTO!
       coffeeBalance: json.coffeeBalance !== undefined ? json.coffeeBalance : 0,
+      isApproved: json.isApproved,
+      departmentId: json.departmentId,
       projectIds: json.projectIds || [],
       // Falls das Backend diese Felder irgendwann mitschickt, liest er sie aus, sonst greift der Konstruktor-Fallback
       emoji: json.emoji?? "🦊",
@@ -100,6 +112,8 @@ public toJson(): any {
       username: this.username,
       // 🟢 HIER ERGÄNZEN: Damit der Server die Balance beim Senden auch versteht
       coffeeBalance: this.coffeeBalance,
+      departmentId: this.departmentId,
+      isApproved: this.isApproved,
       projectIds: this.projectIds,
       // Falls die Rolle und das Emoji auch wieder zurückgespeichert werden sollen:
       emoji: this.emoji,

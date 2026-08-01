@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TeamService } from '../../../core/services/team-service';
+import { TeamService } from '../../../core/services/team/team-service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { UserModel } from '../../../core/models/user-model';
 import { TeamPoolComponent } from '../team-pool-component/team-pool-component';

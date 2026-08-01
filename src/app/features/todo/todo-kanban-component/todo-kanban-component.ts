@@ -1,4 +1,4 @@
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, OnInit } from '@angular/core';
 import { CommonModule, NgClass } from '@angular/common';
 import { TodoService } from '../../../core/services/todo/todo-service'; 
 import { 
@@ -11,6 +11,10 @@ import { TodoItemComponent } from '../../../core/shared/components/todo-item-com
 import { StatisticComponent } from '../statistic-component/statistic-component';
 import { TodoViewModel } from '../../../core/viewmodel/todo-view-model'; // 🌟 ViewModel importiert!
 import { TodoFooterComponent } from '../todo-footer-component/todo-footer-component';
+import { FilterService } from '../../../core/services/filter/filter-service';
+import { Todo } from '../../../core/models/todo';
+import { BaseTodoBoardComponent } from '../base-todo-board-component';
+import { UniversalPopupComponent } from '../../../core/shared/components/universal-popup-component/universal-popup-component';
 
 @Component({
   selector: 'app-todo-kanban',
@@ -21,28 +25,58 @@ import { TodoFooterComponent } from '../todo-footer-component/todo-footer-compon
     TodoItemComponent, 
     DragDropModule,
     StatisticComponent,
-    TodoFooterComponent
+    TodoFooterComponent,
+    UniversalPopupComponent
   ],
   templateUrl: './todo-kanban-component.html',
   styleUrl: './todo-kanban-component.css'
 })
-export class TodoKanbanComponent {
-  private todoService = inject(TodoService);
+export class TodoKanbanComponent extends BaseTodoBoardComponent implements OnInit {
+  
+  private filterService = inject(FilterService)
+
+  ngOnInit(): void {
+    this.filterService.setInitialCategory('todos');
+  }
 
   // 1. Die privaten Todos direkt aus dem Service
   public privateTodos = computed(() => {
     return this.todoService.privateTodos();
   });
 
-  // 2. 🌟 DIE RETTUNG: Wir verpacken jedes private Todo in ein ViewModel!
-  // Da es private Todos sind, darf der User sie immer bearbeiten und löschen (true, true)
+public filteredPrivateTodos = computed(() => {
+    const rawTodos = this.todoService.privateTodos();
+    const term = this.filterService.searchTerm().toLowerCase().trim();
+    const category = this.filterService.currentCategory();
+
+    // Wenn kein Suchbegriff da ist, gib alles ungefiltert weiter
+    if (!term) {
+      return rawTodos;
+    }
+
+    // Das Board reagiert, wenn 'Alles' oder 'To-Dos' im Header ausgewählt ist
+    if (category !== 'all' && category !== 'todos') {
+      return rawTodos;
+    }
+
+    // Nutzt dieselbe saubere Filter-Logik wie die Liste
+    return rawTodos.filter(todo => this.todoTermFilter(todo, term));
+  });
+
+  private todoTermFilter(todo: Todo, term: string): boolean {
+    return todo.task.toLowerCase().includes(term)
+           || (todo.description ?? "").toLowerCase().includes(term)
+           || (todo.category ?? "").toLowerCase().includes(term);
+  }
+
+  // 3. Reaktiv die gefilterten Todos in ViewModels umwandeln
   public kanbanViewModels = computed(() => {
-    return this.privateTodos().map(todo => {
+    return this.filteredPrivateTodos().map(todo => { // 💡 Nutzt jetzt filteredPrivateTodos
       return new TodoViewModel(todo, false, true, true);
     });
   });
 
-  // 3. Deine Spalten filtern jetzt reaktiv aus den ViewModels:
+  // 4. Die Spalten greifen wie gewohnt reaktiv zu (bleibt unverändert!)
   public todoList = computed(() => {
     return this.kanbanViewModels().filter(vm => !vm.todo.done);
   });
@@ -51,6 +85,11 @@ export class TodoKanbanComponent {
     return this.kanbanViewModels().filter(vm => vm.todo.done);
   });
 
+  // 5. Statistik-Todos: Auch hier filtern wir die Rohdaten für korrekte Zähler!
+  protected todosForStats = computed(() => {
+    return this.filteredPrivateTodos();
+  });
+  
   // Drag & Drop Methode arbeitet nun sicher mit TodoViewModel[]
   public onDrop(event: CdkDragDrop<TodoViewModel[]>): void {
     if (event.previousContainer === event.container) {

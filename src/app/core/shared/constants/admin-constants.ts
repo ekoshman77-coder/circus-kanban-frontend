@@ -1,0 +1,1 @@
+export const ADMIN_DEPARTMENT_NAME = "Administration"

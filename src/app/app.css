@@ -18,8 +18,8 @@ html, body {
   margin-left: -24px;       
   
   /* 🎨 HIER IST DER BACKGROUND: Er liegt auf dem GANZEN Element und deckt alles ab! */
-   background-color: #4a5568;                           /* background-color: #164356; */
-     border-bottom: 3px solid #2d3748;                 /*border-bottom: 3px solid #205973;*/ 
+   background-color: #164356;                           /* background-color: #164356; */
+     border-bottom: 3px solid #205973;                 /*border-bottom: 3px solid #205973;*/ 
   
   /* Ein gleichmäßiges Padding oben/unten (12px) und links/rechts (24px) */
   padding: 12px 24px; 
@@ -250,4 +250,122 @@ html, body {
 .header-search-wrapper input:focus {
   background-color: rgba(255, 255, 255, 0.12);
   border-color: rgba(255, 255, 255, 0.35);
+}
+
+/* ==========================================================================
+   GLOBALES EPISCHES LEVEL-UP OVERLAY (CYBER-LILA-GOLD)
+   ========================================================================== */
+.level-up-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(10, 6, 24, 0.85); /* Sehr dunkles Lila-Schwarz */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999; /* Über absolut allem! */
+  backdrop-filter: blur(10px);
+}
+
+.level-up-card {
+  background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%); /* 💜 Edles Cyber-Lila-Blau-Gradient */
+  color: white;
+  padding: 50px 40px;
+  border-radius: 32px;
+  text-align: center;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), 
+              0 0 40px rgba(143, 148, 251, 0.5); /* Magischer lila Leuchteffekt */
+  max-width: 480px;
+  width: 90%;
+  border: 4px solid #ffd700; /* Echtes Gold (Gold-Gelb) */
+}
+
+.stars {
+  font-size: 2.2rem;
+  margin-bottom: 5px;
+  animation: pulse 1.5s infinite alternate;
+}
+
+.level-up-card h1 {
+  font-size: 3.8rem;
+  margin: 0;
+  font-weight: 900;
+  color: #ffd700; /* 🌟 Schriftzug in Gold */
+  text-shadow: 2px 4px 10px rgba(0, 0, 0, 0.4);
+  letter-spacing: 4px;
+}
+
+.level-title-name {
+  font-size: 1.6rem;
+  color: #00ffff; /* Neon-Türkis */
+  margin: 10px 0 20px 0;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  text-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
+}
+
+.level-badge {
+  background: linear-gradient(135deg, #ffd700 0%, #ffa500 100%);
+  color: #1a0b36;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 4.5rem;
+  font-weight: 900;
+  margin: 20px auto;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+  border: 4px solid white;
+}
+
+.congrats-text {
+  font-size: 1.15rem;
+  line-height: 1.6;
+  margin-bottom: 35px;
+  color: #f3f0ff;
+}
+
+.close-btn {
+  background: #ffd700;
+  color: #1a0b36;
+  border: none;
+  padding: 16px 45px;
+  font-size: 1.25rem;
+  font-weight: 800;
+  border-radius: 50px;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  transition: all 0.25s ease;
+}
+
+.close-btn:hover {
+  transform: scale(1.08) translateY(-2px);
+  background: white;
+  box-shadow: 0 15px 30px rgba(143, 148, 251, 0.4);
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.4); opacity: 0; }
+  70% { transform: scale(1.03); }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes pulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.1); }
+}
+.animated.pop-in {
+  animation: popIn 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.animated.pop-in {
+  /* 0.45s Animationsdauer, aber wir warten 0.6s, bis sie startet! */
+  animation: popIn 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.6s forwards;
+  
+  /* WICHTIG: Die Karte muss unsichtbar starten, bis die Animation loslegt! */
+  opacity: 0; 
 }

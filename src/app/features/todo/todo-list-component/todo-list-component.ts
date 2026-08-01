@@ -1,16 +1,18 @@
-import { Component, inject, computed, signal } from '@angular/core';
+import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { CommonModule, NgClass } from '@angular/common';
 import { TodoService, Filter } from '../../../core/services/todo/todo-service';
 import { TodoItemComponent } from '../../../core/shared/components/todo-item-component/todo-item-component';
 import { FilterComponent } from '../filter-component/filter-component';
-import { StatisticComponent, calculateTodoStats } from '../statistic-component/statistic-component'; // 💡 Utility geladen!
-import { trigger, transition, style, animate } from '@angular/animations';
+import { StatisticComponent } from '../statistic-component/statistic-component'; // 💡 Utility geladen!
 import confetti from 'canvas-confetti';
-import { FILTER_ANIMATION, TO_DO_ANIMATION } from './todo-list-animation';
+import { FILTER_ANIMATION } from './todo-list-animation';
 import { TodoViewModel } from '../../../core/viewmodel/todo-view-model';
-import { TodoQueryService } from '../../../core/services/todo-query-service'; // 💡 Unser Kreis-Sprenger!
-import { VisualStatus } from '../../../core/models/todo';
+import { TodoQueryService } from '../../../core/services/todo/todo-query-service'; // 💡 Unser Kreis-Sprenger!
+import { Todo, VisualStatus } from '../../../core/models/todo';
 import { TodoFooterComponent } from '../todo-footer-component/todo-footer-component';
+import { FilterService } from '../../../core/services/filter/filter-service';
+import { UniversalPopupComponent } from '../../../core/shared/components/universal-popup-component/universal-popup-component';
+import { BaseTodoBoardComponent } from '../base-todo-board-component';
 
 @Component({
   selector: 'app-todo-list',
@@ -21,15 +23,16 @@ import { TodoFooterComponent } from '../todo-footer-component/todo-footer-compon
     TodoItemComponent,
     FilterComponent,
     StatisticComponent,
-    TodoFooterComponent
+    TodoFooterComponent,
+    UniversalPopupComponent
   ],
   templateUrl: './todo-list-component.html',
   styleUrl: './todo-list-component.css',
   animations: [FILTER_ANIMATION]
 })
-export class TodoListComponent {
-  private todoService = inject(TodoService);
-  private todoQueryService = inject(TodoQueryService); // Injizieren für Rechte-Prüfung!
+export class TodoListComponent extends BaseTodoBoardComponent implements OnInit {
+  private todoQueryService = inject(TodoQueryService);
+  private filterService = inject(FilterService)
 
   // Zustand für aufgeklappte Beschreibungen
   openedDescrIds = signal<Set<string>>(new Set());
@@ -48,41 +51,51 @@ export class TodoListComponent {
     return this.todoService.filterSignal();
   }
 
-  // 🌍 DIE REAKTIVE BRÜCKE: Mapped Todos zu ViewModels samt Permissions!
-  uiTodos = computed(() => {
+  ngOnInit(): void {
+    this.filterService.setInitialCategory("todos")
+  }
+
+  filteredTodos = computed(() => {
     const rawTodos = this.todoService.filteredFocusedTodos();
-    const now = Date.now();
-    const todayEnd = new Date().setHours(23, 59, 59, 999);
-    const openIds = this.openedDescrIds(); // 💡 Holt das reaktive Set der geöffneten IDs
+    const term = this.filterService.searchTerm().toLowerCase().trim();
 
-    return rawTodos.map(todo => {
-      let status = VisualStatus.ON_TIME;
-      if (todo.done) {
-        status = VisualStatus.COMPLETED;
-      } else if (todo.dueDate < now) {
-        status = VisualStatus.OVERDUE;
-      } else if (todo.dueDate <= todayEnd) {
-        status = VisualStatus.DUE_TODAY;
-      }
+    if (!term) {
+      return rawTodos;
+    }
 
-      // 💡 1. Prüfen, ob die ID dieses Todos im Set der geöffneten Beschreibungen existiert
-      const isDescriptionOpen = openIds.has(todo.id);
-      
-      const canEdit = this.todoQueryService.hasPermissionForMilestone(todo.milestoneId, 'TODO_EDIT');
-      const canDelete = this.todoQueryService.hasPermissionForMilestone(todo.milestoneId, 'TODO_DELETE');
+    const category = this.filterService.currentCategory();
+    if (category !== 'all' && category !== 'todos') {
+      return rawTodos;
+    }
 
-      // 💡 2. Die Argumente exakt in der Reihenfolge des Konstruktors übergeben!
-      return new TodoViewModel(
-        todo,
-        isDescriptionOpen, // <-- Als 2. Argument (wichtig!)
-        canEdit,
-        canDelete
-      );
-    });
+    return rawTodos.filter(todo => this.todoTermFilter(todo, term));
   });
 
+  private todoTermFilter(todo: Todo, term: string): boolean {
+    return todo.task.toLowerCase().includes(term)
+      || (todo.description ?? "").toLowerCase().includes(term)
+      || (todo.category ?? "").toLowerCase().includes(term);
+  }
+
+  // 🌍 DIE REAKTIVE BRÜCKE: Mapped Todos zu ViewModels samt Permissions!
+  uiTodos = computed(() => {
+    const rawTodos = this.filteredTodos();
+    const openIds = this.openedDescrIds(); // 🛡️ Reaktive Spur gesichert!
+
+    return rawTodos.map(todo => this.mapToViewModel(todo, openIds));
+  });
+
+  private mapToViewModel(todo: Todo, openIds: Set<string>): TodoViewModel {
+    return new TodoViewModel(
+      todo,
+      openIds.has(todo.id),
+      this.todoQueryService.hasPermissionForMilestone(todo.milestoneId, 'TODO_EDIT'),
+      this.todoQueryService.hasPermissionForMilestone(todo.milestoneId, 'TODO_DELETE')
+    );
+  }
+
   protected todosForStats = computed(() => {
-    return this.uiTodos().map(vm => vm.todo);
+    return this.filteredTodos();
   });
 
   // Nachricht für leere Filter-Zustände
@@ -107,19 +120,19 @@ export class TodoListComponent {
   }
 
   onDeleteTodo(id: string): void {
-    this.todoService.deleteTodo(id);
-  }
+    console.log("TodoList: onDeleteTodo startet");
 
-  onClearCompleted(): void {
-    const completedTodos = this.uiTodos().filter(todoViewModel => todoViewModel.done);
-    const allowed = completedTodos.filter(todoViewModel =>
-      this.todoQueryService.hasPermissionForMilestone(todoViewModel.todo.milestoneId, 'TODO_DELETE')
-    );
-
-    allowed.forEach(todoViewModel => {
-      this.todoService.deleteTodo(todoViewModel.id);
-    });
+  // 1. Finde das echte To-Do-Objekt aus dem Stream
+  const todo = this.filteredTodos().find(t => t.id === id);
+  
+  if (todo) {
+    // 2. HIER MUSS UNSERE NEUE UNDO-METHODE REIN!
+    this.todoService.deleteTodoWithUndo(todo);
+  } else {
+    // Nur zur Sicherheit, falls es im ViewModel-Mapping verschluckt wurde:
+    console.warn("Todo nicht im gefilterten Stream gefunden!");
   }
+}
 
   toggleDescription(id: string): void {
     const currentSet = new Set(this.openedDescrIds());
@@ -129,17 +142,5 @@ export class TodoListComponent {
       currentSet.add(id);
     }
     this.openedDescrIds.set(currentSet);
-  }
-
-  onToggleComplete(id: string): void {
-    const todo = this.uiTodos().find(t => t.id === id);
-    if (todo && !todo.done) {
-      confetti({
-        particleCount: 150,
-        spread: 80,
-        origin: { y: 0.6 }
-      });
-    }
-    this.todoService.toggleComplete(id, 0);
   }
 }

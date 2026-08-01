@@ -1,5 +1,5 @@
 <app-statistic [todos]="privateTodos()"></app-statistic>
-
+<div class="kanban-wrapper">
 <div class="kanban-container" cdkDropListGroup>
 
   <div class="column">
@@ -29,6 +29,26 @@
 
     </div>
   </div>
-  <app-todo-footer [currentTodos]="privateTodos()"></app-todo-footer>
 
 </div>
+<app-todo-footer 
+  [currentTodos]="privateTodos()" 
+  (requestClearCompleted)="onOpenClearCompletedPopup()"
+  (requestClearAll)="onOpenClearAllPopup()">
+</app-todo-footer>
+</div>
+
+@if (activePopupConfig(); as config) {
+  <app-universal-popup-component
+    [title]="config.title"
+    [message]="config.message"
+    [mode]="config.mode"
+    [animationIcon]="config.animationIcon"
+    [confirmText]="config.confirmText || null"
+    [cancelText]="config.cancelText"
+    [showLoadingBar]="config.showLoadingBar"
+    [timerMs]="config.timerMs"
+    (confirm)="config.action(); closePopup()"
+    (cancel)="closePopup()">
+  </app-universal-popup-component>
+}

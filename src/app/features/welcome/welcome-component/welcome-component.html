@@ -56,42 +56,66 @@
 
   <hr />
 
-  <div class="status-zone">
+<div class="status-zone">
     @if (userService.isLoggedIn()) {
-    <p class="success-text">
-      ✔ Bereit! Du bist als <strong>{{ userService.currentUser()?.username }}</strong> unterwegs.
-    </p>
-
-    <button class="start-btn" routerLink="/todopage" [disabled]="isForwardButtonDisabled()">
-      Gehe zu meinen To-Dos →
-    </button>
-
-    <button class="logout-btn" (click)="userService.logout()">
-      Anderen Namen eingeben
-    </button>
-    } @else {
-    <p class="wait-text">
-      🔒 Bitte verrate mir zuerst deinen Namen, um zu deinen To-Dos zu gelangen.
-    </p>
-
-    @if (recentUsers().length > 0) {
-    <div class="recent-users-section" style="margin-top: 14px; text-align: center;">
-      <small style="color: #64748b; display: block; margin-bottom: 8px; font-size: 13px; font-weight: 600;">
-        Zuletzt eingeloggt:
-      </small>
-      <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
-        @for (name of recentUsers(); track name) {
-        <button type="button" class="recent-user-badge" (click)="selectRecentUser(name)" [disabled]="isLoading()">
-          👤 {{ name }}
+      
+      @if (userService.currentUser()?.isApproved) {
+        <p class="success-text">
+          ✔ Bereit! Du bist als <strong>{{ userService.currentUser()?.username }}</strong> unterwegs.
+        </p>
+        <button class="start-btn" routerLink="/todopage">
+          Gehe zu meinen To-Dos →
         </button>
-        }
-      </div>
-    </div>
-    }
+      } @else {
+        <p class="wait-text">
+          ⏳ Dein Account wird noch vom Admin geprüft. Bitte gedulde dich einen Moment...
+        </p>
+        <button class="start-btn" [disabled]="true" style="background-color: #94a3b8; cursor: not-allowed;">
+          Warte auf Admin-Freigabe... ☕
+        </button>
+      }
 
-    <button class="start-btn" [disabled]="true">
-      Gehe zu meinen To-Dos →
-    </button>
+      <button class="logout-btn" (click)="onLogout()">
+        Anderen Namen eingeben
+      </button>
+
+    } @else {
+      <p class="wait-text">
+        🔒 Bitte verrate mir zuerst deinen Namen, um zu deinen To-Dos zu gelangen.
+      </p>
+
+      @if (recentUsers().length > 0) {
+      <div class="recent-users-section" style="margin-top: 14px; text-align: center;">
+        <small style="color: #64748b; display: block; margin-bottom: 8px; font-size: 13px; font-weight: 600;">
+          Zuletzt eingeloggt:
+        </small>
+        <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+          @for (name of recentUsers(); track name) {
+          <button type="button" class="recent-user-badge" (click)="selectRecentUser(name)" [disabled]="isLoading()">
+            👤 {{ name }}
+          </button>
+          }
+        </div>
+      </div>
+      }
+
+      <button class="start-btn" [disabled]="true">
+        Gehe zu meinen To-Dos →
+      </button>
     }
   </div>
 </div>
+
+@if(logoutWarnings()) {
+  <app-universal-popup-component
+    [title]="popupProcessedFor()?? ''"
+    [message]="'Nicht alle Daten sind gespeichert'"
+    [animationIcon]="'🔥'"
+    [confirmText]="'löschen und weiter'"
+    [cancelText]="'abbrechen'"
+    [showLoadingBar]="false"
+    [timerMs]="0"
+    (confirm)="onContinue()"
+    (cancel)="onCancel()">
+   </app-universal-popup-component>
+}

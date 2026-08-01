@@ -6,8 +6,8 @@ import { TodoService } from '../../../core/services/todo/todo-service';
 import { Todo } from '../../../core/models/todo';
 // 🌟 NEU: Der richtige Universal-Input Import
 import { UniversalTagInputComponent } from '../../../core/shared/components/universal-tag-input-component/universal-tag-input-component';
-import { ConnectionService } from '../../../core/services/connection-service';
-import { NavigationHistoryService } from '../../../core/services/navigation-history-service';
+import { ConnectionService } from '../../../core/services/connection/connection-service';
+import { NavigationHistoryService } from '../../../core/services/navigation/navigation-history-service';
 import { MilestoneSelectorComponent } from '../../../core/shared/components/milestone-selector-component/milestone-selector-component';
 
 @Component({

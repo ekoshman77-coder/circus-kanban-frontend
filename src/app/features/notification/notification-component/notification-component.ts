@@ -1,5 +1,5 @@
 import { Component, computed, effect, inject } from '@angular/core';
-import { NotificationService } from '../../../core/services/notification-service';
+import { NotificationService } from '../../../core/services/notification/notification-service';
 import { NgClass } from '@angular/common';
 
 

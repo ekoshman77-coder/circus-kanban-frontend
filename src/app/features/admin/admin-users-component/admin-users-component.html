@@ -1,0 +1,76 @@
+<div class="admin-users-container" cdkDropListGroup>
+
+    <!-- ⏳ LINKER BEREICH: WARTESCHLEIFE + MÜLLEIMER OBEN -->
+    <aside class="approval-board">
+
+        <!-- 🗑️ DER MAGISCHE MÜLLEIMER (Jetzt direkt oben links!) -->
+        <div id="trash-list" cdkDropList class="trash-zone" (cdkDropListDropped)="handleDrop($event)">
+            <div class="trash-bin">
+                <span class="trash-icon">🗑️</span>
+                <span class="trash-text">Hierher ziehen zum Ablehnen</span>
+            </div>
+        </div>
+
+        <hr class="zone-divider" />
+
+        <h2>⏳ Warteschleife (Neue Registrierungen)</h2>
+
+        <div id="warteraum-list" 
+            cdkDropList [cdkDropListData]="unapprovedUsers()"
+            (cdkDropListDropped)="handleDrop($event)"
+            >
+            @for (user of unapprovedUsers(); track user.id) {
+            <div class="kanban-user-card" cdkDrag [cdkDragData]="user">
+                <div class="user-card-details">
+                    <strong>{{ user.firstName }} {{ user.lastName }}</strong>
+                    <span class="username">@{{ user.username }}</span>
+                </div>
+            </div>
+            } @empty {
+            <p class="empty-state">Herrlich! Keine neuen Anträge vorhanden. 🎉</p>
+            }
+        </div>
+    </aside>
+
+    <!-- 🏢 MITTLERER/RECHTER BEREICH: DAS KANBAN-BOARD FÜR DIE ABTEILUNGEN -->
+    <main class="kanban-board">
+        @for (dept of departments(); track dept.id) {
+        <div class="kanban-column">
+            <div class="column-header">
+                <h3>🏢 {{ dept.name }}</h3>
+                <span class="user-count-badge">{{ countUsersInDept(dept.id) }}</span>
+            </div>
+
+            <div [id]="'dept-list-' + dept.id" 
+                cdkDropList 
+                [cdkDropListData]="filteredUsersForDept(dept.id)"
+                (cdkDropListDropped)="handleDrop($event)"
+                >
+
+                @for (user of filteredUsersForDept(dept.id); track user.id) {
+                <div class="kanban-user-card" cdkDrag [cdkDragData]="user">
+                    <div class="user-card-details">
+                        <strong>{{ user.firstName }} {{ user.lastName }}</strong>
+                        <span class="username">@{{ user.username }}</span>
+                    </div>
+
+                    <div class="transfer-box">
+                        <select id="dept-select-{{user.id}}" [ngModel]="user.departmentId"
+                            (ngModelChange)="transferUser(user.id, $event)">
+                            @for (d of departments(); track d.id) {
+                            <option [value]="d.id" [disabled]="d.id === dept.id">
+                                {{ d.name }}
+                            </option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                } @empty {
+                <p class="empty-column-state">Gähnende Leere... 🍃</p>
+                }
+            </div>
+        </div>
+        }
+    </main>
+
+</div>

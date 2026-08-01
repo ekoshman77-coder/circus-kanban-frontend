@@ -114,14 +114,16 @@
 }
 
 .todo-metadata {
-  display: flex;
-  align-items: center;      /* Zentriert Datum, Badge und Punkte perfekt auf einer Linie */
-  flex-wrap: wrap;          /* Falls der Platz mal eng wird, bricht es sauber um */
-  gap: 8px;                 /* 🟢 Das Geheimnis: Ein einheitlicher, sauberer Abstand zwischen ALLEN Elementen! */
-  margin-top: 3px;          /* Schiebt die Metadaten-Zeile einen Hauch nach unten, weg vom Haupttext */
-  line-height: 1.1 !important;
+  display: flex;            /* Zurück zu normalem flex, damit wrap sauber greift */
+  align-items: center;      /* Zentriert alle Elemente vertikal auf ihrer jeweiligen Zeile */
+  flex-wrap: wrap;          /* Erlaubt das bequeme Umbrechen in Kanban-Spalten! */
+  gap: 6px 8px;             /* 6px Abstand nach unten beim Umbrechen, 8px zur Seite */
+  margin-top: 4px;
   font-size: 11px;
   color: #7f8c8d;
+  
+  /* 🎯 DIE FLEXIBLE RETTUNG: Keine starre Höhe! */
+  min-height: 18px; 
 }
 
 .category-badge {
@@ -457,16 +459,18 @@
    DAS INLINE-AUSWAHLMENÜ (FIBONACCI) FÜR OFFENE TODOS
    ========================================================================== */
 
+/* ==========================================================================
+   DAS INLINE-AUSWAHLMENÜ (FIBONACCI)
+   ========================================================================== */
 .points-container {
   position: relative;
   display: inline-flex;
   align-items: center;
-  /* Wir geben ihm eine minimale Breite/Höhe, damit der Ankerpunkt berechenbar ist */
   min-width: 35px; 
   height: 14px;
 }
 
-/* 2. 🛸 JETZT SCHWEBT ES PERFEKT RECHTS DANEBEN */
+/* Standard-Verhalten (Listen-Ansicht): Schwebt absolut neben/über der Pille */
 .points-selector {
   display: inline-flex;
   gap: 3px;
@@ -475,18 +479,22 @@
   border-radius: 6px;
   border: 1.5px solid #4e54c8;
   
-  /* Löst die Box komplett aus dem Platzbedarf der Karte */
   position: absolute;
-  
-  /* 🟢 DIE ANPASSUNG: Orientierung an der Oberkante statt Unterkante! */
-  top: 50%;                   /* Setzt die Box genau auf die vertikale Mitte des Ankers */
-  transform: translateY(-50%); /* Zentriert sie mathematisch exakt */
-  left: 0px;                  /* Startet genau dort, wo sonst die Klammer-Pille saß */
-  
-  white-space: nowrap;        /* Buttons bleiben stur in einer Reihe */
-  z-index: 99;                /* Schiebt sich über absolut jeden Text drüber */
-  
-  box-shadow: 0 3px 10px rgba(78, 84, 200, 0.22); /* Hochwertiger, schwebender Schatten */
+  top: 50%;                   
+  transform: translateY(-50%); 
+  left: 0px;                  
+  white-space: nowrap;        
+  z-index: 99;                
+  box-shadow: 0 3px 10px rgba(78, 84, 200, 0.22); 
+}
+
+/* 🎯 DER RETTER FÜR DIE 5 KANBAN-SPALTEN: Inline-Modus */
+.points-selector.kanban-inline {
+  position: static;          /* Hebt absolute Positionierung auf! */
+  transform: none;           /* Löscht das Verschieben */
+  box-shadow: none;          /* Kann flach sein, da es IN der Karte liegt */
+  border: 1px solid #cbd5e1; /* Etwas dezenterer Rahmen, da direkt im Kärtchen */
+  padding: 0;                /* Maximal kompakt */
 }
 
 /* Die einzelnen Zahlen-Knöpfe (1, 2, 3, 5...) auf strenge Diät setzen */
@@ -587,4 +595,177 @@
   overflow-y: auto !important;
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
+}
+
+.points-dropdown-native {
+  display: inline-flex;
+  align-items: center;
+  font-weight: bold;
+  color: #64748b;
+  padding: 1px 6px !important; /* Minimales Padding für Text-Schutz */
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background-color: #f8fafc;
+  font-size: 11px;
+  height: 18px;               /* Bleibt kompakt */
+  box-sizing: border-box;
+  font-family: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+/* 🟢 ONLINE-MODUS: Wenn klickbar, lila Design wie deine alte Pille! */
+.points-dropdown-native.clickable {
+  cursor: pointer;
+  background-color: #f5f3ff !important;
+  color: #4e54c8 !important;
+  border: 1px dashed #c084fc !important;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Hover-Effekt im Online-Modus */
+.points-dropdown-native.clickable:hover {
+  background-color: #4e54c8 !important;
+  color: #ffffff !important;
+  border-color: #4e54c8 !important;
+  transform: scale(1.05);
+}
+
+/* Styling für die Optionen im geöffneten Zustand */
+.points-dropdown-native option {
+  background-color: #ffffff;
+  color: #1e293b;
+}
+
+/* ==========================================================================
+   STRUKTURELLE ERGÄNZUNGEN & REVIEW-BLOCK-STYLES
+   ========================================================================== */
+.review-status-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.review-free-badge {
+  cursor: pointer;
+  border: 1px dashed #cbd5e1;
+  background: #f8fafc;
+  padding: 2px 6px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.review-free-badge .search-icon {
+  font-size: 11px;
+}
+
+.review-free-text {
+  font-size: 10px;
+  color: #475569;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.dev-info-text {
+  font-size: 9px;
+  color: #94a3b8;
+  cursor: help;
+}
+
+/* ==========================================================================
+   OFFLINE & DISABLED ZUSTÄNDE (REGELWERK-KONFORM)
+   ========================================================================== */
+/* Reine Text-Pille für Offline-Effort */
+.points-badge.offline-text {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 1px 6px !important;
+  box-sizing: border-box;
+  color: #94a3b8;
+  background-color: #f1f5f9;
+  border: 1px dashed #cbd5e1;
+  cursor: not-allowed;
+}
+
+/* Deaktivierter Mülleimer */
+.btn-action-delete:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  filter: grayscale(100%);
+}
+
+/* Deaktivierte Checkbox-Geste */
+.disabled-label {
+  cursor: not-allowed !important;
+  opacity: 0.5;
+}
+.disabled-label input {
+  pointer-events: none;
+}
+
+/* Styles für die Buttons innerhalb der Assignee-Popover-Optionen */
+.btn-assignee-option {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  text-align: left !important;
+}
+
+.assignee-option-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.avatar-circle-small {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: bold;
+}
+
+.user-fullname {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.author-badge {
+  font-size: 9px;
+  color: #ef4444;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding-right: 8px;
+}
+
+.btn-remove-assignee {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: #fff1f2 !important;
+  border: 1px solid #fecdd3 !important;
+  border-radius: 4px !important;
+  color: #be123c !important;
+  font-weight: 600 !important;
+  font-size: 11px !important;
+}
+
+.btn-popover-cancel {
+  margin-top: 4px !important;
+  background: #64748b !important;
+  color: white !important;
+  border: none !important;
+  font-size: 11px !important;
 }

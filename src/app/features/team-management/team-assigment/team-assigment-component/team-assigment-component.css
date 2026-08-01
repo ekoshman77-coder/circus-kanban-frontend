@@ -1,74 +1,66 @@
 :host {
   display: block;
-  min-height: 100vh;
-  padding: 30px;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  padding: 20px;
+  box-sizing: border-box;
+  width: 100%;
+  
+  /* 🍑 DER SAFTIGE KREATIVER-PASTELL-GRADIENT 
+     Hebt sich perfekt vom warmen Kaffee-Hintergrund des Hauptboards ab! */
+  background: linear-gradient(180deg, hsla(240, 61%, 86%, 0.535) 0%, #d5cff15e 50%, hsla(222, 56%, 84%, 0.641) 100%) !important; 
+  border: 1px solid hsl(265, 50%, 78%); 
+  border-radius: 16px;
+  
+  /* Ein dezenter, warmer Schatten, der die Komponente sanft anhebt */
+  box-shadow: 0 10px 25px rgba(109, 40, 217, 0.08); 
+  min-height: 75vh;
 }
 
 .assignment-container {
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
 }
 
-/* 🌟 DER HEADER: Wir fügen position: relative hinzu, damit Kinder sich daran orientieren können */
+/* 🌊 Der Header wird jetzt semitransparent, damit der saftige Hintergrund durchschimmert */
 .assignment-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  padding: 12px 24px;
+/*  background: linear-gradient(135deg, #7c3aed, #4c1d95); /* Leuchtendes Amethyst-Lila */
+/*  color: #ffffff;
+  padding: 28px;
   border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  margin-bottom: 20px;
-  position: relative; /* Wichtig für die korrekte Dropdown-Ausrichtung */
+  box-shadow: 0 10px 25px rgba(124, 58, 237, 0.15);*/
 }
 
 .page-title {
   margin: 0;
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 800;
-  color: #0f172a;
+  color: #2c1d11 !important;/* Perfektes Espressobraun für die Design-Konsistenz */
   letter-spacing: -0.5px;
 }
 
-.header-action-zone {
-  display: flex;
-  align-items: center;
-}
-
-::ng-deep .floating-popup {
-  right: 0 !important;
-  left: auto !important;
-  transform-origin: top right !important;
-}
-
 .divider {
-  border: none;
-  height: 1px;
-  background: linear-gradient(to right, transparent, rgba(203, 213, 225, 0.5) 20%, rgba(203, 213, 225, 0.5) 80%, transparent);
-  margin: 24px 0;
+  border: none; 
+  height: 1px; 
+  background: linear-gradient(to right, transparent, #e2e8f0 20%, #e2e8f0 80%, transparent);
+  margin: 24px 0; 
+  opacity: 0.6; 
 }
 
-/* (Der restliche CSS-Code für die Listen, Empty State und Modals bleibt unverändert!) */
-
-/* 📑 Haupt-Container */
 .assignment-content {
-  background: rgba(255, 255, 255, 0.5);
+  background: transparent;
   border-radius: 20px;
-  padding: 30px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  padding: 0;
 }
 
 .section-title {
   margin: 0 0 20px 0;
-  font-size: 20px;
-  font-weight: 800;
-  color: #0f172a;
-  letter-spacing: -0.5px;
+  font-size: 20px; 
+  font-weight: 700; 
+  color: #1e293b; 
+  letter-spacing: -0.3px;
 }
 
 .assignment-split-view {
@@ -77,177 +69,205 @@
   gap: 24px;
 }
 
-/* ✨ DER NEUE EMPTY STATE */
+/* 🎪 DIE NEUE HELL-PASTELL-WILLKOMMEN-KARTE (Calculator-Stil) */
 .empty-state-card {
-  text-align: center;
-  padding: 60px 40px;
-  background: rgba(255, 255, 255, 0.8);
-  border: 2px dashed #cbd5e1;
-  border-radius: 16px;
-  max-width: 550px;
-  margin: 40px auto;
-  animation: fadeIn 0.4s ease-out;
+  text-align: center; 
+  padding: 50px 40px;
+  
+  /* Cremiges Pastell-Weiß, das den Hintergrund durchscheinen lässt */
+  background: rgba(255, 255, 255, 0.85); 
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  
+  /* Sanfter, kreativer Pastell-Cyan-Rahmen */
+  border: 1px solid rgba(6, 182, 212, 0.25);
+  border-radius: 16px; 
+  max-width: 550px; 
+  margin: 40px auto; 
+  
+  /* Weicher, edler Schatten */
+  box-shadow: 0 10px 30px rgba(148, 163, 184, 0.12); 
+  
+  animation: fadeIn 0.5s ease-out; 
 }
 
 .empty-state-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-  animation: float 3s ease-in-out infinite;
+  font-size: 54px; 
+  margin-bottom: 16px; 
+  display: inline-block; 
+  /* Ein saftiger, hell-pastelliger Glüh-Effekt für das Icon */
+  filter: drop-shadow(0 0 12px rgba(6, 182, 212, 0.35)) 
+          drop-shadow(0 0 2px rgba(6, 182, 212, 0.5));
+  animation: neonFloat 3s infinite ease-in-out; 
 }
 
-.empty-state-card h4 {
-  font-size: 18px;
-  font-weight: 700;
-  color: #0f172a;
-  margin: 0 0 8px 0;
+.empty-state-card h3 {
+  color: #1e293b; 
+  font-size: 22px; 
+  font-weight: 700; 
+  margin-bottom: 8px; 
+  margin-top: 10px; 
+  letter-spacing: -0.5px;
 }
 
 .empty-state-card p {
-  font-size: 14px;
-  color: #64748b;
-  line-height: 1.5;
-  margin: 0;
+  color: #64748b; 
+  font-size: 15px; 
+  line-height: 1.6;
+  margin-bottom: 0; 
 }
 
-/* 🎬 PUNKT 1: DIE ELEGANTE EINGANGS-ANIMATION */
-.empty-state-card {
-  text-align: center;
-  padding: 60px 40px;
-  background: rgba(255, 255, 255, 0.8);
-  border: 2px dashed #cbd5e1;
-  border-radius: 16px;
-  max-width: 550px;
-  margin: 40px auto;
-  
-  /* Hier ist die butterweiche Animation, die die Karte von unten hochgleiten lässt */
-  animation: cardFlyIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.empty-state-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-  animation: float 3s ease-in-out infinite;
-}
-
-/* Der Keyframe für das Hineinfliegen */
-@keyframes cardFlyIn {
-  from {
-    opacity: 0;
-    transform: translateY(30px); /* Startet 30 Pixel weiter unten */
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);    /* Gleitet an seine originale Position */
-  }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
-}
-
-/* 🔮 DAS MODERNE POPUP (Modal) */
+/* 🌫️ DER HINTERGRUND (Verdunkelung der Seite) */
 .modal-backdrop {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(15, 23, 42, 0.3);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* Ganz weiches, elegantes Espresso-Dunkelbraun mit Transparenz */
+  background: rgba(67, 40, 24, 0.3); 
+  /* Super edler Weichzeichner-Effekt für den Hintergrund */
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 2000; /* Damit es wirklich über allem schwebt */
   animation: fadeIn 0.2s ease-out;
 }
 
+/* 🎫 DIE DIALOG-KARTE (Das eigentliche Popup) */
 .modal-card {
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  /* Reines, deckendes Weiß, damit es auf dem weichen Backdrop strahlt */
+  background: #ffffff;
+  /* Ein Hauch von unserem warmen Kaffeeton im Rahmen */
+  border: 1px solid rgba(67, 40, 24, 0.1); 
   border-radius: 20px;
   padding: 32px;
-  max-width: 440px;
-  width: 100%;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
-  animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  max-width: 460px;
+  width: 90%; /* Responsiv auf Handys */
+  
+  /* Ein extrem tiefer, weicher Premium-Schatten */
+  box-shadow: 0 25px 50px -12px rgba(67, 40, 24, 0.25);
+  
+  /* Schickes Einfliegen von unten */
+  animation: modalSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+/* ✍️ TEXTE IM POPUP */
 .modal-card h3 {
   margin: 0 0 8px 0;
   font-size: 22px;
   font-weight: 800;
-  color: #0f172a;
+  color: #432818; /* Edles Espressobraun */
+  letter-spacing: -0.5px;
 }
 
-.modal-hint {
-  font-size: 14px;
-  color: #64748b;
+.modal-card p {
   margin: 0 0 24px 0;
-}
-
-.form-group {
-  margin-bottom: 24px;
-}
-
-.form-group label {
-  display: block;
   font-size: 14px;
-  font-weight: 600;
-  color: #334155;
-  margin-bottom: 8px;
+  color: #856147; /* Weiches Kaffeebraun */
+  line-height: 1.5;
 }
 
+/* 🎛️ DIE BUTTON-ZONE */
 .modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+  margin-top: 8px;
 }
 
-.btn-cancel {
-  padding: 10px 18px;
-  background: #f1f5f9;
-  color: #475569;
-  border: none;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-cancel:hover {
-  background: #e2e8f0;
-  color: #0f172a;
-}
-
+/* 🟢 DER BESTÄTIGEN-BUTTON (Saftiges Mint-Cyan) */
 .btn-confirm {
-  padding: 10px 20px;
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  padding: 12px 24px;
+  /* Unser kreatives Mint-Cyan als satter Verlauf */
+  background: linear-gradient(135deg, #0d9488 0%, #0891b2 100%);
   color: white;
   border: none;
-  border-radius: 10px;
-  font-weight: 600;
+  border-radius: 12px;
   font-size: 14px;
+  font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
-  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(8, 145, 178, 0.2);
+  transition: all 0.2s ease;
 }
 
 .btn-confirm:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 6px 16px rgba(8, 145, 178, 0.35);
+}
+
+.btn-confirm:active {
+  transform: translateY(1px);
+}
+
+/* 🔴 DER ABBRECHEN-BUTTON (Dezent und edel) */
+.btn-cancel {
+  padding: 12px 24px;
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-cancel:hover {
+  background: #f1f5f9;
+  color: #334155;
+  border-color: #cbd5e1;
 }
 
 /* 🎬 ANIMATIONEN */
-@keyframes fadeIn {
-  from { opacity: 0; } to { opacity: 1; }
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
-@keyframes scaleUp {
-  from { transform: scale(0.95); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+/* 🏷️ DER TITEL FÜR DAS DROPDOWN / DIE ROLLE */
+.modal-card label,
+.modal-card .role-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #432818; /* Edles Espressobraun */
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  
+  /* ↕️ Der gewünschte Abstand nach unten zum Dropdown */
+  margin-bottom: 10px; 
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
+/* 🔄 DAS DROPDOWN-ELEMENT (Falls du es auch direkt clean & passend stylen willst) */
+.modal-card select,
+.modal-card .role-dropdown {
+  width: 100%;
+  padding: 12px 16px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 15px;
+  color: #334155;
+  outline: none;
+  transition: all 0.2s ease;
+  
+  /* Abstand unter dem gesamten Dropdown, bevor die Buttons kommen */
+  margin-bottom: 24px; 
+}
+
+/* Fokus-Effekt für das Dropdown, passend zu unserem Mint/Cyan-Vibe */
+.modal-card select:focus,
+.modal-card .role-dropdown:focus {
+  border-color: #0891b2;
+  box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.15);
+  background-color: #ffffff;
 }
