@@ -5,4 +5,5 @@ export interface IUserJson {
   username: string; 
   // 🔑 Das ist der eindeutige LOGIN-Name (z.B. "elena_h")
   projectIds: string[];
+  departmentId?: string;
 }

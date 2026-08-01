@@ -105,7 +105,7 @@ export class TeamDataManager extends BaseDataManager {
     this.isProjectOfflineAvailable.set(true);
     console.log(`🚀 [DataManager] Online! Lade frische Mitglieder für Projekt: ${projectId}`);
 
-    this.teamRepository.getMembersForProject$(projectId).subscribe({
+    this.teamRepository.getMembersForProject$(this.userService.getCurrentUserId()?? "", projectId).subscribe({
       next: (members) => {
         this.currentProjectMembersSignal.set(members);
         localStorage.setItem(cacheKey, JSON.stringify(members)); // Im Cache einfrieren
@@ -122,7 +122,7 @@ export class TeamDataManager extends BaseDataManager {
       return;
     }
 
-    this.teamRepository.getAllGlobalUsers$().subscribe({
+    this.teamRepository.getAllDepartmentUsers$(this.userService.getCurrentUserId()?? "").subscribe({
       next: (members) => {
         console.log("teamRepository:: getAllGlobalUsers bekommt from server", members)
         this.globalMembersSignal.set(members);
@@ -199,7 +199,7 @@ export class TeamDataManager extends BaseDataManager {
       console.log(`🕵️‍♀️ [Premium-Cache] Starte Hintergrund-Sync für deine ${projectIds.length} Projekte...`);
       projectIds.forEach(id => {
         // Wir feuern die Requests unbemerkt im Hintergrund ab und speichern sie direkt im LocalStorage
-        this.teamRepository.getMembersForProject$(id).subscribe({
+        this.teamRepository.getMembersForProject$(this.userService.getCurrentUserId()?? "", id).subscribe({
           next: (members) => {
             localStorage.setItem(this.STORAGE_KEY_PROJECT_PREFIX + id, JSON.stringify(members));
             console.log(`💾 [Premium-Cache] Projekt ${id} im Hintergrund offline-gesichert.`);

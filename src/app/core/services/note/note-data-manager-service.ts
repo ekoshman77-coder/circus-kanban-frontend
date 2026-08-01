@@ -4,6 +4,7 @@ import { map, catchError } from 'rxjs/operators';
 import { Note } from '../../models/note';
 import { ConnectionService } from '../connection/connection-service';
 import { NoteRepository } from '../../repositories/note-repository';
+import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 
 /**
  * Service für das offline-sichere und optimistische Datenmanagement von Notizen/Zetteln.
@@ -16,7 +17,7 @@ import { NoteRepository } from '../../repositories/note-repository';
 @Injectable({
   providedIn: 'root'
 })
-export class NoteDataManagerService {
+export class NoteDataManagerService extends BaseDataManager {
   private noteRepository = inject(NoteRepository);
   private connectionService = inject(ConnectionService);
 
@@ -130,5 +131,14 @@ export class NoteDataManagerService {
     }
 
     return this.noteRepository.deleteNote(id, userId);
+  }
+
+  public override resetData(): void {
+    localStorage.removeItem(this.STORAGE_KEY);
+    console.log('🧼 [NoteDataManager] Globaler Ideen-Pool wurde gelöscht.');
+  }
+
+  public override checkUnsavedData(): string | null {
+    return null; // Hier gibt es nichts zu blockieren
   }
 }

@@ -11,6 +11,7 @@ import { UnifiedSuggestion } from '../../models/unified-suggestion';
 import { MilestoneSuggestionsModel } from '../../models/milestone-suggestions-model';
 import { ProjectDashboardStatsDTO } from '../../repositories/dto/project-dashboard-stats-dto';
 import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
+import { UserService } from '../user/user-service';
 
 /**
  * Service zur Verwaltung von Projektdaten mit integriertem Offline-Modus.
@@ -63,7 +64,7 @@ export class ProjectDataManagerService extends BaseDataManager {
   /**
    * Holt alle Projekte. Im Offline-Modus wird direkt auf den Lese-Cache zurückgegriffen.
    */
-  public getProjects(): Observable<Project[]> {
+  public getProjects(userId: string): Observable<Project[]> {
     // Offline-Weiche: Cache sofort zurückgeben[cite: 2]
     if (this.connectionService.isOffline()) {
       const data = localStorage.getItem(this.GLOBAL_POOL_KEY);
@@ -73,7 +74,7 @@ export class ProjectDataManagerService extends BaseDataManager {
     }
 
     // Online-Fall: Vom Server laden und Cache für den nächsten Offline-Fall befüllen[cite: 2]
-    return this.projectRepository.getProjectsByUserId(null).pipe(
+    return this.projectRepository.getProjectsByUserId(userId).pipe(
       map(backendProjects => {
         const liveProjects = backendProjects.map(bp => this.mapToFrontendProject(bp));
         localStorage.setItem(this.GLOBAL_POOL_KEY, JSON.stringify(liveProjects));
@@ -94,7 +95,6 @@ export class ProjectDataManagerService extends BaseDataManager {
    */
   public createProject(project: Project, actualList: Project[]): Observable<Project> {
     const projectUserId = project.userId || '';
-    const body = this.mapToCreateDto(project, projectUserId);
 
     // Offline-Fall: In UI-Liste und Sync-Queue einreihen[cite: 2]
     if (this.connectionService.isOffline()) {
@@ -104,7 +104,7 @@ export class ProjectDataManagerService extends BaseDataManager {
     }
 
     // Online-Fall: Direkt an die API senden und lokalen Lese-Cache nachführen[cite: 2]
-    return this.projectRepository.createProject(body).pipe(
+    return this.projectRepository.createProject(project).pipe(
       map(backendProject => {
         const saved = this.mapToFrontendProject(backendProject);
         const aktuelleListe = actualList.filter(p => p.id !== project.id);
@@ -206,6 +206,7 @@ export class ProjectDataManagerService extends BaseDataManager {
       area: project.area,
       content: project.content,
       status: project.status,
+      departmentId: project.departmentId,
       milestones: (project.milestones || []).map(m => ({
         id: (m.id && m.id.startsWith('tmp_')) ? null : m.id,
         title: m.title,
@@ -241,6 +242,7 @@ export class ProjectDataManagerService extends BaseDataManager {
       area: bp.area,
       content: bp.content,
       status: bp.status,
+      departmentId: bp.departmentId,
       milestones: frontendMilestones,
       teamMembers: bp.teamMembers || []
     });

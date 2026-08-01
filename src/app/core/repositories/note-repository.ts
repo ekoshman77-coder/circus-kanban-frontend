@@ -13,11 +13,9 @@ export class NoteRepository {
   private http = inject(HttpClient);
 
   // 🔍 GET /api/notes?userId=... (Jetzt mit Klassen-Mapping!)
-  getNotesByUserId(userId: string | null): Observable<Note[]> {
+  getNotesByUserId(userId: string): Observable<Note[]> {
     let params = new HttpParams();
-    if (userId) {
-      params = new HttpParams().set('userId', userId);
-    }
+    params = new HttpParams().set('userId', userId);
     return this.http.get<INoteJson[]>(noteApiUrl, { params }).pipe(
       map(jsonArray => (jsonArray || []).map(json => this.mapToNoteClass(json)))
     );
@@ -55,6 +53,7 @@ deleteNote(id: string, userId: string): Observable<void> {
     return new Note({
       id: json.id,
       userId: json.userId,
+      departmentId: json.departmentId,
       title: json.title,
       content: json.content,
       colorType: json.colorType,

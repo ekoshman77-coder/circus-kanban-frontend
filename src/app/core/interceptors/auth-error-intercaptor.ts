@@ -13,7 +13,7 @@ export const authErrorInterceptor: HttpInterceptorFn = (req, next) => {
     catchError((error: HttpErrorResponse) => {
       
       // 🕵️‍♂️ Wir prüfen, ob im Fehlertext das Wort 'user-not-found' steckt
-      // (Je nachdem, ob dein Backend das im 'error.error' oder 'error.message' mitschickt)
+      // (Je nachdem, ob Backend das im 'error.error' oder 'error.message' mitschickt)
       const isUserDeleted = error.error && (
         JSON.stringify(error.error).includes('user-not-found') || 
         error.status === 401 // Optional: Falls Spring Security doch mal 401 wirft
