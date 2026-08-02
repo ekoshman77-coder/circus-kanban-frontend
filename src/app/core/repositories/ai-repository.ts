@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { aiCategoriesApiUrl, aiNoteCategoriesUrl, aiNotePredictionUrl, aiPredictionApiUrl, aiPredictionEffortUrl, aiTodoSnoozingUrl, getAiMilestonesUrl, smartPlannerFeedbackUrl, smartPlannerUrl, trackAiIgnoredMilestoneUrl, trackAiMilestoneDegradationUrl, trackAiMilestoneSelectionUrl } from './links';
 import { ITodoJSON } from './dto/todo-json';
 import { MilestoneSuggestionsModel } from '../models/milestone-suggestions-model';
-import { IgnoredMilestones } from './dto/ignored-milestones';
+import { IgnoredMilestones, MilestoneInteractionPayload } from './dto/tracked-milestones';
 import { TodoSnoozyPayload } from './dto/todo-snoozy-payload';
 
 /**
@@ -111,27 +111,43 @@ export class AiRepository {
   /**
    * Erfolgs-Tracking: Sagt der KI, dass eine Phase ausgewählt wurde
    */
-  public trackMilestoneSelection(projectTitle: string, milestoneTitle: string, userId: string): Observable<void> {
-    return this.http.post<void>(trackAiMilestoneSelectionUrl, { projectTitle, milestoneTitle, userId });
+  public trackMilestoneSelection(projectTitle: string, projectArea: string, milestoneTitle: string, userId: string): Observable<void> {
+    const payload: MilestoneInteractionPayload = {
+      projectTitle: projectTitle,
+      area: projectArea,
+      milestoneTitle: milestoneTitle,
+      userId: userId
+    }
+    console.log("AiRepository trackMilestoneSelecton payload =", payload)
+    return this.http.post<void>(trackAiMilestoneSelectionUrl, payload);
   }
 
   /**
    * Ignore-Tracking: sagt der KI, dass einige Phasen ignoriert wurden
    */
-  public trackMilestonesIgnore(projectTitle: string, userId: string, milestones: string[]): Observable<void> {
+  public trackMilestonesIgnore(projectTitle: string, projectArea: string, userId: string, milestones: string[]): Observable<void> {
     const payload: IgnoredMilestones = {
       projectTitle: projectTitle,
+      area: projectArea,
       userId: userId,
       milestoneTitles: milestones
     }
+    console.log("AiRepository trackMilestoneIgnore payload =", payload)
     return this.http.post<void>(trackAiIgnoredMilestoneUrl, payload)
   }
   
   /**
    * Strafbank-Tracking: Sagt der KI, dass ein Vorschlag weggeklickt wurde
    */
-  public trackMilestoneDegradation(projectTitle: string, milestoneTitle: string, userId: string): Observable<void> {
-    return this.http.post<void>(trackAiMilestoneDegradationUrl, { projectTitle, milestoneTitle, userId });
+  public trackMilestoneDegradation(projectTitle: string, projectArea: string, milestoneTitle: string, userId: string): Observable<void> {
+    const payload: MilestoneInteractionPayload = {
+      projectTitle: projectTitle,
+      area: projectArea,
+      milestoneTitle: milestoneTitle,
+      userId: userId
+    }
+    console.log("AiRepository trackMilestoneDegregation payload =", payload)
+    return this.http.post<void>(trackAiMilestoneDegradationUrl, payload);
   }
 
   public snoozyTodo(todoId: string, durationInMin: number): Observable<void> {

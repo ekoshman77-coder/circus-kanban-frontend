@@ -73,6 +73,12 @@ export class TeamService extends BaseDataManager {
         this.dataManager.loadGlobalMembers();
     }
 
+    /** 👑 Triggert das Laden des ungefilterten, globalen User-Pools exklusiv für Admins */
+    public loadAdminPool(): void {
+        console.log(`📡 [TeamService] Lade unzensierten Admin-User-Pool`);
+        this.dataManager.loadAdminBoardPool();
+    }
+
     /** 🛡️ Die universelle Rechte-Prüfung basierend auf dem neuen Signal */
     public hasPermission(projectId: string | null, action: ProjectAction): boolean {
         const currentUserId = this.userService.getCurrentUserId();

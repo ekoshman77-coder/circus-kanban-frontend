@@ -309,19 +309,19 @@ export class ProjectDataManagerService extends BaseDataManager {
   // 📊 TRACKING & ANALYTICS (Werden offline stumm übersprungen)
   // ==========================================================================
   
-  public trackMilestoneSelection(projectTitle: string, milestoneTitle: string, userId: string): Observable<void> {
+  public trackMilestoneSelection(projectTitle: string, projectArea: string, milestoneTitle: string, userId: string): Observable<void> {
     if (this.connectionService.isOffline()) return of(undefined);
-    return this.aiRepository.trackMilestoneSelection(projectTitle, milestoneTitle, userId); 
+    return this.aiRepository.trackMilestoneSelection(projectTitle, projectArea, milestoneTitle, userId); 
   }
 
-  public trackMilestoneDegradation(projectTitle: string, milestoneTitle: string, userId: string): Observable<void> {
+  public trackMilestoneDegradation(projectTitle: string, projectArea: string, milestoneTitle: string, userId: string): Observable<void> {
     if (this.connectionService.isOffline()) return of(undefined);
-    return this.aiRepository.trackMilestoneDegradation(projectTitle, milestoneTitle, userId);
+    return this.aiRepository.trackMilestoneDegradation(projectTitle, projectArea, milestoneTitle, userId);
   }
 
-  public trackMilestoneIgnorance(projectTitle: string, userId: string, milestoneTitles: string[]): Observable<void> {
+  public trackMilestoneIgnorance(projectTitle: string, projectArea: string, userId: string, milestoneTitles: string[]): Observable<void> {
      if (this.connectionService.isOffline()) return of(undefined);
-     return this.aiRepository.trackMilestonesIgnore(projectTitle, userId, milestoneTitles);
+     return this.aiRepository.trackMilestonesIgnore(projectTitle, projectArea, userId, milestoneTitles);
   }
 
   /**

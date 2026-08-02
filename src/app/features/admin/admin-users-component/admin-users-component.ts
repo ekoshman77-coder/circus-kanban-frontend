@@ -7,6 +7,7 @@ import { FilterService } from '../../../core/services/filter/filter-service';
 import { TeamService } from '../../../core/services/team/team-service';
 import { IUser } from '../../../core/repositories/user-repository';
 import { UserModel } from '../../../core/models/user-model';
+import { AdminTeamService } from '../../../core/services/admin/admin-team-service';
 
 @Component({
   selector: 'app-admin-users-component',
@@ -18,18 +19,19 @@ import { UserModel } from '../../../core/models/user-model';
 export class AdminUsersComponent implements OnInit {
   protected departmentService = inject(DepartmentService);
   protected filterService = inject(FilterService);
-  protected teamService = inject(TeamService);
+  protected adminTeamService = inject(AdminTeamService);
 
   public departments = this.departmentService.departments;
 
-  public allUsers = computed(() => {
-    const search = this.filterService.searchTerm().toLowerCase().trim()
-    return this.teamService.globalMembersSignal().map(member => member.user)
+public allUsers = computed(() => {
+    const search = this.filterService.searchTerm().toLowerCase().trim();
+    // 👑 Nutzt jetzt das isolierte Admin-Signal!
+    return this.adminTeamService.adminUsersSignal().map(member => member.user)
     .filter((user) => {
         return user.firstName.toLowerCase().includes(search) 
                 || user.lastName.toLowerCase().includes(search)
-                || user.username.toLowerCase().includes(search)
-    })
+                || user.username.toLowerCase().includes(search);
+    });
   });
 
   // 🚀 Helfer-Signal: Filtert blitzschnell alle noch unbestätigten User für die Warteschleife heraus
@@ -38,7 +40,7 @@ export class AdminUsersComponent implements OnInit {
   );
 
   public ngOnInit(): void {
-    this.teamService.loadGlobalPool();
+    this.adminTeamService.loadAdminPool();
   }
 
   // 🔍 REAKTIVE FILTER-METHODEN
@@ -54,25 +56,21 @@ export class AdminUsersComponent implements OnInit {
 
   // 🎛️ DIE NEUE ZENTRALE DRAG-AND-DROP LOGIK
   public handleDrop(event: CdkDragDrop<UserModel[]>) {
-    // Wenn die Karte in derselben Liste liegengelassen wurde
     if (event.previousContainer === event.container) return;
 
     const user = event.item.data;
-    const targetListId = event.container.id; // 🎯 Wo ist die Karte gelandet?
+    const targetListId = event.container.id;
 
-    // FALL 1: Ab in den Mülleimer! 🗑️
     if (targetListId === 'trash-list') {
-      console.log(`🗑️ Lösche User via CDK: ${user.username}`);
-      this.teamService.deleteMember(null, user.id);
+      console.log(`🗑️ Lösche User via Admin-Service: ${user.username}`);
+      // 👑 Aufruf über den neuen Service
+      this.adminTeamService.deleteMember(user.id);
     }
-
-    // FALL 2: In eine der Abteilungs-Spalten gezogen! 🏢
     else if (targetListId.startsWith('dept-list-')) {
-      // Wir schneiden das 'dept-list-' vorne ab, um die reine departmentId zu bekommen
       const targetDepartmentId = targetListId.replace('dept-list-', '');
-
-      console.log(`🏢 Schalte User frei für Abteilung: ${targetDepartmentId}`);
-      this.teamService.approveMember(user.id, targetDepartmentId);
+      console.log(`🏢 Schalte User frei via Admin-Service: ${targetDepartmentId}`);
+      // 👑 Aufruf über den neuen Service
+      this.adminTeamService.approveMember(user.id, targetDepartmentId);
     }
   }
 
@@ -80,7 +78,7 @@ export class AdminUsersComponent implements OnInit {
   public transferUser(userId: string, targetDepartmentId: string) {
     const userToUpdate = this.allUsers().find(u => u.id === userId);
     if (userToUpdate) {
-      this.teamService.approveMember(userId, targetDepartmentId);
+      this.adminTeamService.approveMember(userId, targetDepartmentId);
     }
   }
 }
