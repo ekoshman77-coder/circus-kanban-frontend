@@ -1,83 +1,99 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, OnInit } from '@angular/core';
 import { DepartmentService } from '../../../core/services/admin/department-service';
-import { IDepartment } from '../../../core/repositories/department-repository';
+import { Department } from '../../../core/models/department'; // 👈 Echte Department-Klasse nutzen!
 import { ADMIN_DEPARTMENT_NAME } from '../../../core/shared/constants/admin-constants';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MasterDataService } from '../../../core/services/admin/master-data-service';
+import { uniqueDepartmentNameValidator } from '../../../core/validators/unique-department-name-validator';
 
 @Component({
   selector: 'app-departments-component',
-  imports: [CommonModule, FormsModule],
+  standalone: true,
+  imports: [CommonModule, FormsModule, ReactiveFormsModule], // 👈 ReactiveFormsModule hinzugefügt
   templateUrl: './departments-component.html',
   styleUrl: './departments-component.css',
 })
-export class DepartmentTabComponent {
-  // Wir holen uns den Service
+export class DepartmentTabComponent implements OnInit {
   protected departmentService = inject(DepartmentService);
-  
-  // Den Namen der Admin-Abteilung für das Template bereitstellen
+  protected masterDataService = inject(MasterDataService);
+
   protected readonly ADMIN_DEPT = ADMIN_DEPARTMENT_NAME;
 
-  // Zustand für das Formular "Neue Abteilung"
-  newDepartmentName = '';
-
-  // Zustand für das Editieren einer bestehenden Abteilung
-  editingDepartmentId: string | null = null;
-  editingName = '';
-
-  // 💡 HIER OPTIMIERT: Kein doppeltes computed() mehr nötig. 
-  // Wir nutzen direkt das Signal aus dem Service.
   public departments = computed(() => {
-    return this.departmentService.departments().sort((a,b) => a.name.localeCompare(b.name));
-  }) 
+    return this.departmentService.departments().sort((a, b) => a.name.localeCompare(b.name));
+  });
 
-  public onCreateDepartment() {
-    const newName = this.newDepartmentName.trim();
-    if (!newName) return;
+  public departmentScopes = computed(() => this.masterDataService.departmentScopes());
 
-    // Validierung mit Rückmeldung
-    const exists = this.departments().some(dep => dep.name.toLowerCase() === newName.toLowerCase());
-    if (exists) {
-      alert(`Die Abteilung "${newName}" existiert bereits!`);
-      return;
-    }
+  createForm = new FormGroup({
+    name: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, uniqueDepartmentNameValidator(() => this.departments().map(d => d.name))]
+    }),
+    scope: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required]
+    })
+  });
 
-    this.departmentService.createDepartment(newName);
-    this.newDepartmentName = "";
+  editForm = new FormGroup({
+    name: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, uniqueDepartmentNameValidator(() => 
+        this.departments()
+          .filter(d => d.id !== this.editingDepartmentId)
+          .map(d => d.name))]
+    }),
+    scope: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required]
+    })
+  });
+
+  editingDepartmentId: string | null = null;
+
+  ngOnInit(): void {
+    this.masterDataService.loadMasterData();
   }
 
-  public startEdit(dept: IDepartment) {
-    // Schutz: Admin-Abteilung darf nicht editiert werden!
+  public onCreateDepartment(): void {
+    if (this.createForm.invalid) return;
+
+    const { name, scope } = this.createForm.getRawValue();
+    this.departmentService.createDepartment(name.trim(), scope);
+
+    this.createForm.reset();
+  }
+
+  // 🎯 Geändert: Department-Klasse statt IDepartment!
+  public startEdit(dept: Department): void {
     if (!dept || !dept.id || dept.name === this.ADMIN_DEPT) return;
-    
+
     this.editingDepartmentId = dept.id;
-    this.editingName = dept.name;
+
+    this.editForm.patchValue({
+      name: dept.name,
+      scope: dept.scope
+    });
   }
 
-  public cancelEdit() {
+  public cancelEdit(): void {
     this.editingDepartmentId = null;
-    this.editingName = "";
+    this.editForm.reset();
   }
 
-  public onSaveEdit() {
-    const trimmedName = this.editingName.trim();
-    if (!trimmedName || !this.editingDepartmentId) return;
+  public onSaveEdit(): void {
+    if (this.editForm.invalid || !this.editingDepartmentId) return;
 
-    // Validierung: Gibt es den Namen schon bei einer *anderen* Abteilung?
-    const exists = this.departments().some(
-      dep => dep.name.toLowerCase() === trimmedName.toLowerCase() && dep.id !== this.editingDepartmentId
-    );
-    
-    if (exists) {
-      alert(`Eine andere Abteilung heißt bereits "${trimmedName}"!`);
-      return;
-    }
+    const { name, scope } = this.editForm.getRawValue();
+    this.departmentService.updateDepartment(this.editingDepartmentId, name.trim(), scope);
 
-    this.departmentService.updateDepartment(this.editingDepartmentId, trimmedName);
-    this.cancelEdit(); // Nutzt die bestehende Bereinigungsmethode
+    this.cancelEdit();
   }
 
-  public onDeleteDepartment(dept: IDepartment) {
+  // 🎯 Geändert: Department-Klasse statt IDepartment!
+  public onDeleteDepartment(dept: Department): void {
     if (!dept || !dept.id || dept.name === this.ADMIN_DEPT) return;
 
     if (confirm(`Möchtest du die Abteilung "${dept.name}" wirklich löschen?`)) {
@@ -85,7 +101,8 @@ export class DepartmentTabComponent {
     }
   }
 
-  public idEditing(dept: IDepartment): boolean {
+  // 🎯 Geändert: Department-Klasse statt IDepartment!
+  public isEditing(dept: Department): boolean {
     return this.editingDepartmentId === dept.id;
   }
 }

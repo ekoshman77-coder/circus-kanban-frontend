@@ -4,8 +4,9 @@ import { Observable } from 'rxjs';
 import { departmentApiUrl } from './links';
 
 export interface IDepartment {
-  id: string;
+  id?: string;
   name: string;
+  scope: string;
 }
 
 @Injectable({
@@ -20,13 +21,22 @@ export class DepartmentRepository {
   }
 
   // ✨ Neue Abteilung erstellen
-  public create$(name: string): Observable<IDepartment> {
-    return this.http.post<IDepartment>(departmentApiUrl, { name });
+  public create$(name: string, scope: string): Observable<IDepartment> {
+    const payload: IDepartment = {
+      name: name,
+      scope: scope
+    }
+    return this.http.post<IDepartment>(departmentApiUrl,  payload);
   }
 
   // 📝 Abteilung umbenennen
-  public update$(id: string, name: string): Observable<IDepartment> {
-    return this.http.put<IDepartment>(`${departmentApiUrl}/${id}`, { name });
+  public update$(id: string, name: string, scope: string): Observable<IDepartment> {
+    const payload: IDepartment = {
+      id: id,
+      name: name,
+      scope: scope
+    }
+    return this.http.put<IDepartment>(`${departmentApiUrl}/${id}`, payload );
   }
 
   // 🗑️ Abteilung löschen

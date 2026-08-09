@@ -3,6 +3,7 @@ import { TeamRepository } from '../../repositories/team-repository';
 import { UserRepository } from '../../repositories/user-repository';
 import { ConnectionService } from '../connection/connection-service';
 import { ProjectMember } from '../../models/project-member';
+import { Department } from '../../models/department';
 
 @Injectable({
   providedIn: 'root'
@@ -24,38 +25,44 @@ export class AdminDataManager {
 
   /** 📥 Lädt die unzensierte Gesamtliste für Admins */
   public loadAdminBoardPool(): void {
-    if (!this.connectionService.isOnline()) {
-      console.log(`📡 [AdminDataManager] Offline! Nutze Admin-Cache.`);
-      this.loadAdminPoolFromCache();
-      return;
+    if (!this.connectionService.isOnline()) { //[cite: 7]
+      console.log(`📡 [AdminDataManager] Offline! Nutze Admin-Cache.`); //[cite: 7]
+      this.loadAdminPoolFromCache(); //[cite: 7]
+      return; //[cite: 7]
     }
 
-    console.log(`👑 [AdminDataManager] Online! Lade unzensierten Admin-Pool vom Server...`);
-    this.teamRepository.getAllUsersForAdminBoard$().subscribe({
+    console.log(`👑 [AdminDataManager] Online! Lade unzensierten Admin-Pool vom Server...`); //[cite: 7]
+    this.teamRepository.getAllUsersForAdminBoard$().subscribe({ //[cite: 7]
       next: (members) => {
-        this.adminUsersSignal.set(members);
-        localStorage.setItem(this.STORAGE_KEY_ADMIN_POOL, JSON.stringify(members));
+        console.log('🔍 [DEBUG AdminDataManager] Vom Server empfangene Mitglieder:', members);
+        if (members.length > 0) {
+          console.log('🔍 [DEBUG AdminDataManager] Erstes User-Objekt Detail:', members[0].user);
+        }
+
+        this.adminUsersSignal.set(members); //[cite: 7]
+        localStorage.setItem(this.STORAGE_KEY_ADMIN_POOL, JSON.stringify(members)); //[cite: 7]
       },
-      error: (err) => console.error("❌ Fehler beim Laden des Admin-User-Pools:", err)
+      error: (err) => console.error("❌ Fehler beim Laden des Admin-User-Pools:", err) //[cite: 7]
     });
   }
 
   /** 🔓 Schaltet ein Mitglied frei und weist eine Abteilung zu */
-  public approveAdminMember(userId: string, departmentId: string): void {
+  public approveMember(userId: string, department: Department, role: string): void {
     // 🚀 OPTIMISTIC UI: Direkt im Admin-Signal manipulieren
     const updatedList = this.adminUsersSignal().map(m => {
       if (m.user.id === userId) {
-        m.user.isApproved = true;        
-        m.user.departmentId = departmentId; 
+        m.user.isApproved = true;
+        m.user.department = department;
+        m.user.departmentRole = role
       }
       return m;
     });
-    
+
     this.adminUsersSignal.set(updatedList);
     localStorage.setItem(this.STORAGE_KEY_ADMIN_POOL, JSON.stringify(updatedList));
 
     if (this.connectionService.isOnline()) {
-      this.userRepository.approveUser(userId, departmentId).subscribe({
+      this.userRepository.approveUser(userId, department.id, role).subscribe({
         next: () => this.loadAdminBoardPool() // Lädt exklusiv den Admin-Pool frisch nach!
       });
     } else {

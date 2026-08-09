@@ -1,49 +1,72 @@
 <div class="department-tab">
   
   <!-- 1. NEUE ABTEILUNG ERSTELLEN -->
-  <div class="create-section">
+  <form [formGroup]="createForm" (ngSubmit)="onCreateDepartment()" class="create-section">
     <h3>🏢 Neue Abteilung gründen</h3>
     <div class="input-group">
+      
       <input 
         type="text" 
-        [(ngModel)]="newDepartmentName" 
+        formControlName="name" 
         placeholder="Name der Abteilung (z.B. Marketing)"
         class="form-input"
-        (keyup.enter)="onCreateDepartment()"
+        [class.is-invalid]="createForm.controls.name.invalid && createForm.controls.name.touched"
       />
-      <button (click)="onCreateDepartment()" class="btn-primary">
+
+      <select formControlName="scope" class="form-select">
+        <option value="" disabled selected>Scope wählen...</option>
+        @for (scope of departmentScopes(); track scope) {
+          <option [value]="scope">{{ scope }}</option>
+        }
+      </select>
+
+      <button type="submit" [disabled]="createForm.invalid" class="btn-primary">
         ➕ Erstellen
       </button>
+
     </div>
-  </div>
+    
+    <!-- Fehlermeldung bei doppeltem Namen -->
+    @if (createForm.controls.name.errors?.['nameExists'] && createForm.controls.name.touched) {
+      <span class="error-msg">⚠️ Eine Abteilung mit diesem Namen existiert bereits.</span>
+    }
+  </form>
 
   <!-- 2. LISTE DER ABTEILUNGEN -->
-<div class="departments-list">
-  @for(department of departments(); track department.id) {
-    <div class="department-row" [class.is-admin-dept]="department.name === ADMIN_DEPT">
-        
-        @if (idEditing(department)) {
-          <!-- EDITIER-MODUS -->
-          <input 
-            class="editing-name"
-            type="text"
-            [(ngModel)]="editingName"
-            (keyup.enter)="onSaveEdit()"
-            (keyup.escape)="cancelEdit()"
-          />
-          <!-- 💡 HIER: Buttons in eine Gruppe gepackt -->
-          <div class="action-buttons">
-            <button class="save-edit" (click)="onSaveEdit()">💾 Speichern</button>
-            <button class="cancel-edit" (click)="cancelEdit()">❌ Abbrechen</button>
-          </div>
+  <div class="departments-list">
+    @for(department of departments(); track department.id) {
+      <div class="department-row" [class.is-admin-dept]="department.name === ADMIN_DEPT">
+          
+        @if (isEditing(department)) {
+          <!-- EDITIER-MODUS (verwendet editForm) -->
+          <form [formGroup]="editForm" (ngSubmit)="onSaveEdit()" class="edit-group-form">
+            <div class="edit-group">
+              <input 
+                class="editing-name"
+                type="text"
+                formControlName="name"
+                (keyup.escape)="cancelEdit()"
+              />
+              <select formControlName="scope" class="form-select">
+                @for (scope of departmentScopes(); track scope) {
+                  <option [value]="scope">{{ scope }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="action-buttons">
+              <button type="submit" [disabled]="editForm.invalid" class="save-edit">💾 Speichern</button>
+              <button type="button" class="cancel-edit" (click)="cancelEdit()">❌ Abbrechen</button>
+            </div>
+          </form>
         } @else {
           <!-- ANZEIGE-MODUS -->
           <span class="department-name">
             {{department.name}} 
+            <small class="badge scope-badge">{{department.scope}}</small>
             @if(department.name === ADMIN_DEPT) { <small class="badge">(System)</small> }
           </span>
           
-          <!-- 💡 HIER: Buttons in eine Gruppe gepackt -->
           <div class="action-buttons">
             @if (department.name !== ADMIN_DEPT) {
               <button class="edit" (click)="startEdit(department)">✏️ Bearbeiten</button>

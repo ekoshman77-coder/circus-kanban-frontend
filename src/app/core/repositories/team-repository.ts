@@ -3,7 +3,6 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, Observable, tap } from 'rxjs';
 import { ProjectRole, UserModel } from '../models/user-model';
 import { allUsersAdminApiUrl, teamApiUrl, userApiUrl } from './links';
-import { IUserJson } from './dto/user-json';
 import { ProjectMember } from '../models/project-member';
 
 @Injectable({

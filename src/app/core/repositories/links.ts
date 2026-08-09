@@ -24,5 +24,6 @@
   export const aiTodoSnoozingUrl = `${baseUrl}/ai/planner/snooze`;
   export const departmentApiUrl = `${baseUrl}/departments`
   export const allUsersAdminApiUrl = `${teamApiUrl}/all-users`;
+  export const MasterDataUrl = `${baseUrl}/masterdata`
 
   

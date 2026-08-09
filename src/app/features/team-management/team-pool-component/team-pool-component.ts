@@ -106,11 +106,13 @@ export class TeamPoolComponent implements OnInit, OnDestroy { // 🎯 OnDestroy 
       firstName: values.firstName.trim(),
       lastName: values.lastName.trim(),
       username: values.username.trim().toLowerCase(),
-      role: 'Teammitglied',
-      emoji: '👤',
-      coffeeBalance: 0,
+      coffeeAccount: {
+        role: 'Teammitglied',
+        emoji: '👤',
+        balance: 0,
+      },
       isApproved: null,
-      departmentId: null,
+      department: null,
       projectIds: []
     });
 
@@ -157,11 +159,9 @@ export class TeamPoolComponent implements OnInit, OnDestroy { // 🎯 OnDestroy 
       firstName: formValues.firstName.trim(),
       lastName: formValues.lastName.trim(),
       username: formValues.username.trim(),
-      role: currentUser?.role || '',
-      emoji: currentUser?.emoji || '',
-      coffeeBalance: currentUser?.coffeeBalance || 0,
+      coffeeAccount: currentUser?.coffeeAccount,
       isApproved: currentUser?.isApproved?? null,
-      departmentId: currentUser?.departmentId?? null,
+      department: currentUser?.department?? null,
       projectIds: currentUser?.projectIds || []
     });
 

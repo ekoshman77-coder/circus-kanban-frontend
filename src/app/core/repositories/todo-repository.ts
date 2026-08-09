@@ -112,7 +112,7 @@ export class TodoRepository {
   public syncBulkTodos(userId: string, offlineTodos: TodoBulkDto[]): Observable<SyncResult> {
     // Wichtig: userId wird als Query-Param (?userId=...) übergeben, die Liste als JSON-Body
     return this.http.post<SyncResult>(`${bulkApiUrl}?userId=${userId}`, offlineTodos).pipe(
-      map((result) => {
+      map((result: SyncResult) => {
         const mappedList = result.liste.map((json: any) => this.mapToTodoClass(json))
         return {
           gamificationResult: result.gamificationResult,

@@ -1,18 +1,25 @@
+import { IDepartment } from "../repositories/department-repository";
 import { generateLocalId, isLocalId } from "../shared/constants/id-const";
+import { Department } from "./department";
 
-  export type ProjectRole = 'OWNER' | 'PROJECT_MANAGER' | 'DEVELOPER' | 'DESIGNER' | 'VIEWER' | 'NONE';
+  export type ProjectRole = 'OWNER' | 'PROJECT_MANAGER' | 'DEVELOPER' | 'NONE';
 
-  export interface IUserInit {
+  export interface CoffeeAccount {
+    balance: number;
+    role: string;   // z. B. "Teammitglied", "Barista", "Kaffee-Junkie"
+    emoji: string;  // z. B. "🦊"
+  }
+
+export interface IUserInit {
   id: string;
   username: string;
   firstName: string;
   lastName: string;
-  departmentId: string | null;
-  isApproved: boolean | null,
-  projectIds: string[],
-  coffeeBalance?: number,
-  role?: string,
-  emoji?: string
+  department: Department | IDepartment | null;
+  departmentRole?: string; // 👈 Die Abteilungsrolle (Org-Ebene)
+  isApproved: boolean | null;
+  projectIds: string[];
+  coffeeAccount?: CoffeeAccount; // 👈 Sauber gekapseltes Kaffeekonto!
 }
 
 /**
@@ -25,99 +32,105 @@ export class UserModel {
   firstName: string;
   lastName: string;
   username: string;
-  coffeeBalance: number;
-  departmentId: string | null;
+  department: Department | null;
+  departmentRole: string; // 👈 Eindeutig Abteilungsrolle
   isApproved: boolean | null;
   projectIds: string[];
-  role: string;
-  emoji: string;
+  
+  // ☕ Kaffeekonto sauber in einem Objekt isoliert!
+  coffeeAccount: CoffeeAccount;
 
   constructor(data: IUserInit) {
     this.id = data.id || generateLocalId();
     this.firstName = data.firstName || '';
     this.lastName = data.lastName || '';
     this.username = data.username || '';
-    this.departmentId = data.departmentId?? null;
-    this.isApproved = data.isApproved?? null;
+
+    if (data.department instanceof Department) {
+      this.department = data.department;
+    } else if (data.department) {
+      this.department = Department.fromJson(data.department);
+    } else {
+      this.department = null;
+    }
+
+    this.departmentRole = data.departmentRole || '';
+    this.isApproved = data.isApproved ?? null;
     this.projectIds = data.projectIds || [];
-    this.coffeeBalance = data.coffeeBalance?? 0;
-    this.role = data.role?? ''
-    this.emoji = data.emoji?? "🦊"
+
+    // Init für das Kaffeekonto
+    this.coffeeAccount = {
+      balance: data.coffeeAccount?.balance ?? 0,
+      role: data.coffeeAccount?.role ?? 'Teammitglied',
+      emoji: data.coffeeAccount?.emoji ?? '🦊'
+    };
   }
 
-  /**
-   * Gibt den vollständigen Namen des Benutzers zurück.
-   * @returns Der kombinierte Vor- und Nachname, bereinigt von Leerzeichen.
-   */  
   get fullName(): string {
     return `${this.firstName} ${this.lastName}`.trim();
   }
 
-  /**
-   * Erzeugt die Benutzer-Initialen basierend auf den Namen.
-   * @returns Die ersten Buchstaben von Vor- und Nachname in Großbuchstaben, 
-   * oder '?' falls keine Daten vorhanden sind.
-   */
   getInitials(): string {
     const first = this.firstName.charAt(0) || '';
     const last = this.lastName.charAt(0) || '';
     return (first + last).toUpperCase() || '?';
   }
 
-  /**
-   * Generiert eine konsistente, ästhetische Pastell-Farbe basierend auf dem Usernamen.
-   * Ideal für Avatare oder UI-Elemente, um Nutzern visuell identifizierbar zu machen.
-   * @returns Eine HSL-Farbzeichenkette (z.B. 'hsl(210, 70%, 75%)').
-   */
   getColorHash(): string {
-    if (!this.username) return '#cbd5e1'; // Fallback-Grau
-
+    if (!this.username) return '#cbd5e1';
     let hash = 0;
     for (let i = 0; i < this.username.length; i++) {
       hash = (hash * 31) + this.username.charCodeAt(i);
       hash = (hash << 5) - hash + (this.username.charCodeAt(i) * 12345);
     }
-
     const spreadValue = Math.abs(hash * 777);
     const h = spreadValue % 360;
-
-    const s = 70; // Sättigung (Tick höher für kräftigere Pastelltöne)
-    const l = 75; // Helligkeit (Tick dunkler, damit man die Unterschiede besser sieht)
-
-    return `hsl(${h}, ${s}%, ${l}%)`;
+    return `hsl(${h}, 70%, 75%)`;
   }
 
-public static fromJson(json: any): UserModel {
+  public isAdmin(): boolean {
+    return this.department?.isAdmin() ?? false;
+  }
+
+  public static fromJson(json: any): UserModel {
     return new UserModel({
       id: json.id,
       firstName: json.firstName,
       lastName: json.lastName,
       username: json.username,
-      // 🟢 HIER IST DIE MAGIE: Exakt matchen mit dem Namen aus deinem Kotlin UserResponseDTO!
-      coffeeBalance: json.coffeeBalance !== undefined ? json.coffeeBalance : 0,
       isApproved: json.isApproved,
-      departmentId: json.departmentId,
+      department: json.department ? Department.fromJson(json.department) : null,
+      
+      // 🏷️ Abteilungsrolle aus dem Server-JSON lesen
+      departmentRole: json.departmentRole || json.department_role || '',
+      
       projectIds: json.projectIds || [],
-      // Falls das Backend diese Felder irgendwann mitschickt, liest er sie aus, sonst greift der Konstruktor-Fallback
-      emoji: json.emoji?? "🦊",
-      role: json.role?? "DEVELOPER"
+      
+      // ☕ Kaffeekonto aus dem flachen oder tiefen JSON zusammenbauen:
+      coffeeAccount: {
+        balance: json.coffeeAccount?.balance ?? json.coffeeBalance ?? 0,
+        role: json.coffeeAccount?.role ?? json.role ?? 'Teammitglied',
+        emoji: json.coffeeAccount?.emoji ?? json.emoji ?? '🦊'
+      }
     });
   }
 
-public toJson(): any {
+  public toJson(): any {
     return {
       id: this.id,
       firstName: this.firstName,
       lastName: this.lastName,
       username: this.username,
-      // 🟢 HIER ERGÄNZEN: Damit der Server die Balance beim Senden auch versteht
-      coffeeBalance: this.coffeeBalance,
-      departmentId: this.departmentId,
+      department: this.department ? this.department.toJson() : null,
+      departmentRole: this.departmentRole,
       isApproved: this.isApproved,
       projectIds: this.projectIds,
-      // Falls die Rolle und das Emoji auch wieder zurückgespeichert werden sollen:
-      emoji: this.emoji,
-      role: this.role
+      
+      // Für Rückwärtskompatibilität schicken wir es flach ODER geschachtelt mit
+      coffeeBalance: this.coffeeAccount.balance,
+      role: this.coffeeAccount.role,
+      emoji: this.coffeeAccount.emoji,
+      coffeeAccount: this.coffeeAccount
     };
   }
 }

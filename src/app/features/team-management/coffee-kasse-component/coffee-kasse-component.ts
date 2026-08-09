@@ -42,8 +42,8 @@ export class CoffeeKasseComponent implements OnInit {
   public startEditing(member: UserModel): void {
     this.editingUserId.set(member.id);
     // Falls role oder emoji undefined sind, fangen wir das hier sauber ab:
-    this.tempRole = member.role || 'Kaffee-Junkie ☕';
-    this.tempEmoji = member.emoji || '🦊';
+    this.tempRole = member.coffeeAccount.role || 'Kaffee-Junkie ☕';
+    this.tempEmoji = member.coffeeAccount.emoji || '🦊';
   }
 
   public cancelEditing(): void {
@@ -56,13 +56,13 @@ export class CoffeeKasseComponent implements OnInit {
 
   public saveProfile(member: UserModel): void {
     if (!(this.tempRole.trim())) this.tempRole = 'Kaffee-Junkie ☕';
-    this.teamService.updateCoffeeAccount(member.id, member.coffeeBalance, this.tempRole, this.tempEmoji);
+    this.teamService.updateCoffeeAccount(member.id, member.coffeeAccount.balance, this.tempRole, this.tempEmoji);
     this.editingUserId.set(null);
   }
 
   public isMemberGesperrt(member: UserModel): boolean {
     if (!member || !(member.id)) return false;
-    return member.coffeeBalance <= -5.00;
+    return member.coffeeAccount.balance <= -5.00;
   }
 
   public getMemberStatusText(member: UserModel): string {
@@ -71,12 +71,16 @@ export class CoffeeKasseComponent implements OnInit {
 
   public onDrinkCoffee(member: UserModel): void {
     if (this.isMemberGesperrt(member)) return;
-    const newBalance = member.coffeeBalance - 1.00; 
-    this.teamService.updateCoffeeAccount(member.id, newBalance, member.role || 'Kaffee-Junkie ☕', member.emoji || '🦊');
+    const newBalance = member.coffeeAccount.balance - 1.00; 
+    this.teamService.updateCoffeeAccount(member.id, newBalance, 
+                                          member.coffeeAccount.role || 'Kaffee-Junkie ☕', 
+                                          member.coffeeAccount.emoji || '🦊');
   }
 
   public onAddMoney(member: UserModel): void {
-    const newBalance = member.coffeeBalance + 5.00;
-    this.teamService.updateCoffeeAccount(member.id, newBalance, member.role || 'Kaffee-Junkie ☕', member.emoji || '🦊');
+    const newBalance = member.coffeeAccount.balance + 5.00;
+    this.teamService.updateCoffeeAccount(member.id, newBalance, 
+                                          member.coffeeAccount.role || 'Kaffee-Junkie ☕', 
+                                          member.coffeeAccount.emoji || '🦊');
   }
 }

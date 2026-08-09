@@ -1,159 +1,301 @@
+/* ==========================================================================
+   MAIN CONTAINER & CARD STYLING
+   ========================================================================== */
+
 .department-tab {
-  max-width: 600px;         /* 1 */
-  margin: 2rem auto;        /* 2 */
-  padding: 1.5rem;          /* 3 */
-  background-color: #ffffff;/* 4 */
-  border-radius: 8px;       /* 5 */
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); /* 6 */
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: #1e293b;
 }
 
-create-section {
-  margin-bottom: 2rem;      /* 1 */
-  padding-bottom: 1.5rem;   /* 2 */
-  border-bottom: 2px solid #f0f0f0; /* 3 */
+/* 1. SECTION: CREATION FORM (Card style) */
+.create-section {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
+}
+
+.create-section:focus-within {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 .create-section h3 {
-  margin-top: 0;            /* 4 */
-  margin-bottom: 1rem;      /* 5 */
-  color: #333333;           /* 6 */
-  font-size: 1.2rem;        /* 7 */
+  margin: 0 0 16px 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .input-group {
-  display: flex;       /* 1 */
-  gap: 10px;           /* 2 */
-  align-items: center; /* 3 */
-  width: 100%;         /* 4 */
+  display: grid;
+  grid-template-columns: 2fr 1fr auto;
+  gap: 12px;
+  align-items: center;
 }
 
-.form-input {
-  flex: 1;                  /* 1 */
-  padding: 0.6rem 1rem;     /* 2 */
-  border: 1px solid #ccc;   /* 3 */
-  border-radius: 4px;       /* 4 */
-  font-size: 1rem;          /* 5 */
+/* ==========================================================================
+   INPUTS & SELECTS
+   ========================================================================== */
+
+.form-input,
+.editing-name {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #1e293b;
+  background-color: #f8fafc;
+  transition: all 0.2s ease-in-out;
+  box-sizing: border-box;
+}
+
+.form-select {
+  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #1e293b;
+  background-color: #f8fafc;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  outline: none;
+}
+
+.form-input:focus,
+.form-select:focus,
+.editing-name:focus {
+  background-color: #ffffff;
+  border-color: #3b82f6;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.form-input.is-invalid {
+  border-color: #ef4444;
+  background-color: #fef2f2;
+}
+
+.form-input.is-invalid:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+.error-msg {
+  color: #dc2626;
+  font-size: 0.85rem;
+  margin-top: 8px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ==========================================================================
+   BUTTONS
+   ========================================================================== */
+
+button {
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
 }
 
 .btn-primary {
-  /* ... alle Eigenschaften von Schritt 5 ... */
-  
-  flex-shrink: 0;  /* 💡 DAS FEHLTE NOCH! */
+  background-color: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.save-edit {
+  background-color: #16a34a;
+  color: #ffffff;
+}
+
+.save-edit:hover:not(:disabled) {
+  background-color: #15803d;
+}
+
+.cancel-edit {
+  background-color: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+.cancel-edit:hover {
+  background-color: #e2e8f0;
+  color: #0f172a;
+}
+
+.edit {
+  background-color: #f8fafc;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+
+.edit:hover {
+  background-color: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.delete {
+  background-color: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.delete:hover {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* ==========================================================================
+   2. LIST OF DEPARTMENTS
+   ========================================================================== */
 
 .departments-list {
   display: flex;
   flex-direction: column;
-  gap: 12px; /* 💡 Das hier steuert den Abstand zwischen den Abteilungen! */
-
-  max-height: 400px;        /* 1 */
-  overflow-y: auto;         /* 2 */
-  padding-right: 8px;       /* 3 */
+  gap: 12px;
 }
 
 .department-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  
-  /* Vorher: 0.8rem 1rem */
-  padding: 1.2rem 1.5rem; /* 💡 Erhöht! Jetzt ist nach oben/unten und links/rechts spürbar mehr Platz */
-  
-  background-color: #f8f9fa;
-  border-radius: 8px; /* Leicht runder, passend zum großen Kasten */
-  border: 1px solid #e9ecef;
+  justify-content: space-between;
+  background: #ffffff;
+  padding: 14px 20px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+}
+
+.department-row:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.06);
+}
+
+.department-row.is-admin-dept {
+  background: linear-gradient(to right, #f8fafc, #ffffff);
+  border-left: 4px solid #8b5cf6;
+}
+
+.department-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .action-buttons {
-  display: flex;         /* 1 */
-  gap: 8px;              /* 2 */
-  align-items: center;   /* 3 */
-  justify-content: flex-end; /* 4 */
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.editing-name {
+/* EDIT MODE FORM ROW */
+.edit-group-form {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 16px;
+}
+
+.edit-group {
+  display: flex;
+  gap: 12px;
   flex: 1;
-  
-  /* Vorher: 10px */
-  margin-right: 20px; /* 💡 Verdoppelt! Schiebt die Buttons weiter nach rechts weg */
-  
-  padding: 0.6rem 1rem; /* Macht das Feld so hoch wie das normale Textfeld oben, damit es nicht schrumpft */
-  border: 1px solid #007bff;
-  border-radius: 4px;
-  font-size: 0.95rem;
 }
 
-/* Das haben ALLE Buttons in den Zeilen gemeinsam */
-.department-row button {
-  padding: 0.4rem 0.8rem;   /* 1 */
-  border: none;             /* 2 */
-  border-radius: 4px;       /* 3 */
-  font-size: 0.85rem;       /* 4 */
-  cursor: pointer;          /* 5 */
-  margin-left: 6px;         /* 6 */
-  font-weight: 500;         /* 7 */
+/* ==========================================================================
+   BADGES & SYSTEM INDICATORS
+   ========================================================================== */
+
+.badge {
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
 }
 
-/* Jetzt kommen die spezifischen Farben: */
-.department-row button.edit {
-  background-color: #e2e8f0;/* 8 */
-  color: #334155;
-}
-
-.department-row button.edit:hover {
-  background-color: #cbd5e1;
-}
-
-.department-row button.delete {
-  background-color: #fee2e2;/* 9 */
-  color: #ef4444;
-}
-
-.department-row button.delete:hover {
-  background-color: #fca5a5;
-}
-
-.department-row button.save-edit {
-  background-color: #22c55e;/* 10 */
-  color: #ffffff;
-}
-
-.department-row button.cancel-edit {
-  background-color: #64748b;/* 11 */
-  color: #ffffff;
+.scope-badge {
+  background-color: #f3e8ff;
+  color: #7e22ce;
+  border: 1px solid #e9d5ff;
 }
 
 .system-protected {
-  color: #64748b;           /* 1 */
-  font-size: 0.85rem;       /* 2 */
-  font-style: italic;       /* 3 */
-  font-weight: 500;         /* 4 */
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 500;
+  background-color: #f1f5f9;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.badge {
-  background-color: #e0f2fe;/* 5 */
-  color: #0369a1;           /* 6 */
-  padding: 2px 6px;         /* 7 */
-  border-radius: 4px;       /* 8 */
-  margin-left: 6px;         /* 9 */
-  font-size: 0.75rem;       /* 10 */
-}
-
-/* Styling für den Scrollbalken in modernen Browsern (Chrome, Safari, Edge) */
-.departments-list::-webkit-scrollbar {
-  width: 6px;               /* Macht den Scrollbalken schön schmal */
-}
-
-.departments-list::-webkit-scrollbar-track {
-  background: #f1f1f1;      /* Die Hintergrund-Schiene, auf der der Balken läuft */
-  border-radius: 4px;
-}
-
-.departments-list::-webkit-scrollbar-thumb {
-  background: #cbd5e1;      /* Der eigentliche Balken, den man mit der Maus zieht */
-  border-radius: 4px;
-}
-
-.departments-list::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;      /* Wird etwas dunkler, wenn man mit der Maus drüberfährt */
+/* Responsive Handling für kleinere Bildschirme */
+@media (max-width: 640px) {
+  .input-group {
+    grid-template-columns: 1fr;
+  }
+  
+  .edit-group-form,
+  .edit-group {
+    flex-direction: column;
+  }
+  
+  .department-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .action-buttons {
+    width: 100%;
+    justify-content: flex-end;
+  }
 }

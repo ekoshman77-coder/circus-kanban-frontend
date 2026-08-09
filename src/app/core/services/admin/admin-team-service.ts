@@ -1,6 +1,7 @@
 import { Injectable, inject, Signal } from '@angular/core';
 import { AdminDataManager } from './admin-data-manager';
 import { ProjectMember } from '../../models/project-member';
+import { Department } from '../../models/department';
 
 @Injectable({
   providedIn: 'root'
@@ -15,8 +16,8 @@ export class AdminTeamService {
     this.adminDataManager.loadAdminBoardPool();
   }
 
-  public approveMember(userId: string, departmentId: string): void {
-    this.adminDataManager.approveAdminMember(userId, departmentId);
+  public approveMember(userId: string, department: Department, role: string): void {
+    this.adminDataManager.approveMember(userId, department, role);
   }
 
   public deleteMember(userId: string): void {
