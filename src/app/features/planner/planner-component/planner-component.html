@@ -1,5 +1,10 @@
 @if (showAiRecommendation()) {
-  <app-planner-recommendation (closeRequest)="handleRecommendationResult($event)"></app-planner-recommendation>
+  <div class="panel-overlay-wrapper">
+    <app-planner-recommendation
+      [recommendations]="recommendedTodos()"
+      (sessionCompleted)="handleSessionCompleted($event)">
+    </app-planner-recommendation>
+  </div>
 }
 
 <div id="activeFocusList" 
@@ -7,18 +12,13 @@
      (cdkDropListDropped)="onTodoDropped($event)"
      class="active-todo-dropzone">
      
-<div id="activeFocusList" 
-     cdkDropList 
-     (cdkDropListDropped)="onTodoDropped($event)"
-     class="active-todo-dropzone">
-     
-  @if (recommendedTodo()) {
+  @if (activeFocusTodo()) {
     <div class="active-todo-banner animate-fade-in">
       <div class="active-left">
         <span class="active-badge">⚡ Aktueller Fokus</span>
-        <strong class="active-title">{{ recommendedTodo()?.task }}</strong>
+        <strong class="active-title">{{ activeFocusTodo()?.task }}</strong>
       </div>
-      <button (click)="recommendedTodo.set(null)" class="btn-complete-focus">
+      <button (click)="completeFocusTodo()" class="btn-complete-focus">
        🚀 Fokus abschließen
       </button>
     </div>
@@ -30,25 +30,18 @@
 </div>
 
 <div class="planner-container">
-  <header class="planner-header">
-    <div class="header-main-row">
-      <h2 class="gradient-title">Smart Planner — Deine Prioritäten-Matrix</h2>
-      
-      <div class="header-actions-group">
-        <button class="settings-toggle-btn" [class.active-btn]="showSettings()" (click)="showSettings.update(v => !v)">
-          {{ showSettings() ? '❌ Schließen' : '⚙️ Tagesform einstellen' }}
-        </button>
-        
-        <button class="magic-btn" (click)="calculateRecommendation()">
-          ✨ Welches To-Do jetzt tun?
-        </button>
-      </div>
-    </div>
+  <div class="planner-header">
+    <h2>Smart Planner</h2>
     
-    <p class="planner-subtitle">
-      Strategisch sortiert nach Dringlichkeit und Aufwand, gekoppelt an deine biologische Tagesenergie (aktuell: <strong>{{ userEnergy() | uppercase }}</strong>).
-    </p>
-  </header>
+    <!-- Trigger-Button, wenn kein Panel offen ist & kein Fokus gewählt wurde -->
+    @if (!showAiRecommendation() && !activeFocusTodo()) {
+      <button 
+        class="btn-trigger" 
+        (click)="openRecommendationPanel()">
+        ✨ KI-Empfehlung holen
+      </button>
+    }
+  </div>
 
   @if (showSettings()) {
     <div class="planner-settings-dropdown animate-slide-down">
@@ -63,7 +56,8 @@
          [class.energy-low-dim]="userEnergy() === 'low'"
          [class.is-collapsed]="!collapsedQuadrants()['doFirst']"
          cdkDropList
-         [cdkDropListConnectedTo]="['activeFocusList']"> <div class="q-header" (click)="toggleQuadrant('doFirst')">
+         [cdkDropListConnectedTo]="['activeFocusList']"> 
+      <div class="q-header" (click)="toggleQuadrant('doFirst')">
         <span>🔥 Sofort Erledigen (Dringend & Leicht)</span>
         <span class="toggle-arrow">{{ collapsedQuadrants()['doFirst'] ? '▼' : '►' }}</span>
       </div>
@@ -111,7 +105,8 @@
                 [isKanbanMode]="true"
                 cdkDrag 
                 [cdkDragData]="todo">
-              </app-todo-item>            } @empty {
+              </app-todo-item>            
+            } @empty {
               <p class="empty-text">Keine großen, dringenden Meilensteine offen.</p>
             }
           </div>
@@ -197,7 +192,8 @@
                 [isKanbanMode]="true"
                 cdkDrag 
                 [cdkDragData]="todo">
-              </app-todo-item>            } @empty {
+              </app-todo-item>            
+            } @empty {
               <p class="empty-text" style="color: rgba(255,255,255,0.85); width: 100%; text-align: center;">
                 Aktuell keine reinen Pausen-Aktivitäten (0pt) eingetragen.
               </p>

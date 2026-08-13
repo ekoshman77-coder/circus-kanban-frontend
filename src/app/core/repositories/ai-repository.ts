@@ -10,10 +10,46 @@ import { TodoSnoozyPayload } from './dto/todo-snoozy-payload';
 /**
  *  Die internationalisierungssichere Server-Antwort für die Empfehlung
  */
+/**
+ * Eine einzelne KI-Empfehlung (vom Server)
+ */
 export interface RecommendedTodoResponse {
-  todo: ITodoJSON | null; // 🚀 Perfekt gemappt auf dein bestehendes Interface!
+  todo: ITodoJSON | null;
+  plannerType: 'BAYES' | 'NEURAL' | null;
   modeCode: 'STANDARD' | 'RECHERCHE' | 'CLEAN_SLATE';
-  reasonCode: 'DEFAULT' | 'LOW_ENERGY_SHORT_TIME' | 'NO_TODOS_LEFT';
+  reasonCode: string;
+}
+
+/**
+ * Das Haupt-Antwort-Objekt vom Server mit der Runden-ID und den max. 2 Vorschlägen
+ */
+export interface PlannerRecommendationsResponse {
+  roundId: string;
+  recommendations: RecommendedTodoResponse[];
+}
+
+export interface PlannerRecommendationPayload {
+  userId: string;
+  userEnergy: string;       // "LOW" | "MEDIUM" | "HIGH"
+  workingTimeLeft: number;  // verbleibende Stunden
+}
+
+/**
+ * Einzelner Ablehnungseintrag für ein Todo
+ */
+export interface RejectedTodoFeedback {
+  todoId: string;
+  rejectReason: 'no_motivation' | 'too_heavy' | 'too_long' | null;
+}
+
+/**
+ * Schlanker Feedback-Payload basierend auf der DB-roundId
+ */
+export interface PlannerFeedbackPayload {
+  userId: string;
+  roundId: string;
+  acceptedTodoId: string | null;
+  rejectedTodos: RejectedTodoFeedback[];
 }
 
 export interface MilestoneSuggestion {
@@ -25,26 +61,6 @@ export interface MilestoneSuggestion {
 export interface MilestoneSuggestionsResponse {
   recommended: MilestoneSuggestion[];
   degraded: MilestoneSuggestion[];
-}
-
-/**
- * Die Daten (Payload), die das Frontend zum Server schickt, um eine Empfehlung zu berechnen
- */
-export interface PlannerRecommendationPayload {
-  userId: string;
-  userEnergy: string;       // "low" | "medium" | "high"
-  workingTimeLeft: number;  // Die verbleibenden Stunden
-}
-
-/**
- *  Die Daten (Payload), die das Frontend zum Server schickt, wenn du Feedback gibst
- */
-export interface PlannerFeedbackPayload {
-  userId: string;
-  todoId: string;
-  accepted: boolean;
-  rejectReason: 'no_motivation' | 'too_heavy' | 'too_long' | null;
-  currentEnergy: string;    // "low" | "medium" | "high"
 }
 
 @Injectable({
@@ -85,19 +101,21 @@ export class AiRepository {
   }
 
   /**
-   * Holt die smarte Empfehlung inkl. Reason-Codes vom Server
+   * Holt die 2 Vorschläge inkl. roundId vom Server
    */
-  public getPlannerRecommendation(payload: PlannerRecommendationPayload): Observable<RecommendedTodoResponse> {
-    return this.http.post<RecommendedTodoResponse>(smartPlannerUrl, payload);
+  public getPlannerRecommendation(payload: PlannerRecommendationPayload): Observable<PlannerRecommendationsResponse> {
+    console.log("AiRepository:: Start loading recommendation", payload) 
+    return this.http.post<PlannerRecommendationsResponse>(smartPlannerUrl, payload);
   }
 
   /**
-   * Sendet das Nutzer-Feedback an den Server, damit die KI lernt
+   * Sendet das präzise Runden-Feedback an den Server
    */
   public sendPlannerFeedback(payload: PlannerFeedbackPayload): Observable<void> {
+    console.log("AiRepository:: Start sending feedback", payload) 
     return this.http.post<void>(smartPlannerFeedbackUrl, payload);
   }
-
+  
   /**
    * Holt die Meilenstein-Vorschläge live basierend auf dem Projekttitel
    */
@@ -151,7 +169,7 @@ export class AiRepository {
   }
 
   public snoozyTodo(todoId: string, durationInMin: number): Observable<void> {
-    const payload: TodoSnoozyPayload = {todoId: todoId, durationInMin: durationInMin}
-    return this.http.post<void>(aiTodoSnoozingUrl, payload)
+    const payload: TodoSnoozyPayload = { todoId, durationInMin };
+    return this.http.post<void>(aiTodoSnoozingUrl, payload);
   }
 }
