@@ -1,6 +1,6 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { UserService } from '../user/user-service';
-import { AiRepository, PlannerRecommendationsResponse, RejectedTodoFeedback } from '../../repositories/ai-repository'; 
+import { AiRepository, PlannerRecommendationDetail, PlannerRecommendationPayload, PlannerRecommendationsResponse, RejectedTodoFeedback } from '../../repositories/ai-repository';
 import { Todo } from '../../models/todo';
 import { delay, Observable, tap } from 'rxjs';
 import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
@@ -8,9 +8,8 @@ import { RecommendationResult, RejectReason } from '../../models/recommendation-
 
 export interface RecommendedTodoItem {
   todo: Todo;
-  plannerType: 'BAYES' | 'NEURAL' | null;
-  modeCode: 'STANDARD' | 'RECHERCHE' | 'CLEAN_SLATE';
-  reasonCode: string;
+  plannerDetails: PlannerRecommendationDetail[];
+  modeCode: 'STANDARD' | 'ALL_SNOOZED';
 }
 
 @Injectable({
@@ -25,105 +24,113 @@ export class PlannerService extends BaseDataManager {
 
   /** Signal für die Liste der empfohlenen To-Dos (max. 2) */
   public recommendations = signal<RecommendedTodoItem[]>([]);
-  
+
   /** Signal für den Ladezustand */
   public isLoading = signal<boolean>(false);
 
   /**
    * Lädt die 2 Aufgabenempfehlungen basierend auf Energie und Arbeitszeit
    */
-  public loadSmartRecommendation(energy: string, timeLeft: number): void { 
-    console.log("PlannerService:: Start loading recommendation")
+  public loadSmartRecommendation(energy: string, timeLeft: number): void {
+    console.log("PlannerService:: Start loading recommendation", { energy, timeLeft });
     const currentUserId = this.userService.getCurrentUserId();
     this.isLoading.set(true);
-    this.aiRepository.getPlannerRecommendation({
+
+    const payload: PlannerRecommendationPayload = {
+      userId: currentUserId ?? "default-user",
+      userEnergy: (energy || 'MEDIUM').toUpperCase(), // 👈 Großschreibung erzwingen!
+      workingTimeLeft: Number(timeLeft) || 8          // 👈 Sicherstellen, dass es eine Number ist
+    };
+
+    console.log("Sending Payload to Backend:", payload); this.aiRepository.getPlannerRecommendation({
       userId: currentUserId ?? "",
-      userEnergy: 'MEDIUM', // z. B. 'HIGH'
-      workingTimeLeft: timeLeft 
+      userEnergy: energy,
+      workingTimeLeft: timeLeft
     })
-    .subscribe({
-      next: (response: PlannerRecommendationsResponse) => {
-        console.log("PlannerService:: recommendation response", response)
- 
-        this.activeRoundId.set(response.roundId);
+      .subscribe({
+        next: (response: PlannerRecommendationsResponse) => {
+          console.log("PlannerService:: recommendation response", response);
 
-        // Mappe alle Server-Vorschläge in Domain-Objekte
-        const mappedItems: RecommendedTodoItem[] = response.recommendations
-          .filter(rec => rec.todo !== null)
-          .map(rec => ({
-            todo: new Todo(rec.todo!),
-            plannerType: rec.plannerType,
-            modeCode: rec.modeCode,
-            reasonCode: rec.reasonCode
-          }));
+          this.activeRoundId.set(response.roundId);
 
-        this.recommendations.set(mappedItems);
-        this.isLoading.set(false);
-      },
-      error: (err) => {
-        console.error('Fehler beim Laden der KI-Empfehlungen:', err);
-        this.isLoading.set(false);
-      }
-    });
-  }
+          // Mappe Server-Vorschläge in Domain-Objekte
+          const mappedItems: RecommendedTodoItem[] = response.recommendations
+            .filter(rec => rec.todo !== null)
+            .map(rec => ({
+              todo: new Todo(rec.todo!),
+              plannerDetails: rec.plannerDetails,
+              modeCode: rec.modeCode
+            }));
 
-  /**
-   * Sendet das Runden-Feedback
-   */
-  /**
-   * Sendet das Runden-Feedback
-   */
-  public sendFeedback(feedback: RecommendationResult): Observable<void> {
-    const currentUserId = this.userService.getCurrentUserId();
-    const roundId = this.activeRoundId();
-
-    if (!roundId) {
-      console.warn('Keine aktive roundId vorhanden!');
-    }
-
-    this.isLoading.set(true);
-
-    // 1. Snooze-Aktionen sofort ausführen (mit .subscribe(), damit der HTTP-Call rausgeht!)
-    feedback.rejections
-      .filter(todo => todo.reason === 'snooze')
-      .forEach(it => {
-        this.snoozyrecommendedTodo(it.todoId, 30).subscribe();
-      });
-
-    // 2. Echte Ablehnungen filtern & typsicher für das Backend mappen
-    const rejectedTodos: RejectedTodoFeedback[] = feedback.rejections
-      .filter((todo): todo is { todoId: string; reason: Exclude<RejectReason, 'snooze'> } => todo.reason !== 'snooze')
-      .map(reject => ({
-        todoId: reject.todoId,
-        // TypeScript weiß jetzt durch das Type Guard oben, dass 'snooze' unmöglich ist!
-        rejectReason: reject.reason
-      }));
-
-    // 3. Das KI-Feedback ans Backend senden
-    return this.aiRepository.sendPlannerFeedback({ 
-      userId: currentUserId ?? "",
-      roundId: roundId ?? "",
-      acceptedTodoId: feedback.selectedTodoId ?? null,
-      rejectedTodos: rejectedTodos
-    })
-    .pipe(
-      delay(800),
-      tap({
-        next: () => {
-          console.log('🧠 Runden-Feedback erfolgreich gesendet!');
-          // Ansicht zurücksetzen
-          this.recommendations.set([]);
-          this.activeRoundId.set(null);
+          this.recommendations.set(mappedItems);
           this.isLoading.set(false);
         },
         error: (err) => {
-          console.error('Fehler beim Senden des Runden-Feedbacks:', err);
+          console.error('Fehler beim Laden der KI-Empfehlungen:', err);
           this.isLoading.set(false);
         }
-      })
-    );
+      });
   }
-  
+
+  /**
+   * Sendet das Runden-Feedback
+   */
+  /**
+   * Sendet das Runden-Feedback
+   */
+/**
+ * Sendet das Runden-Feedback direkt ans Backend (void)
+ */
+public sendFeedback(feedback: RecommendationResult): void { // 👈 void statt Observable<void>
+  const currentUserId = this.userService.getCurrentUserId();
+  const roundId = this.activeRoundId();
+
+  if (!roundId) {
+    console.warn('Keine aktive roundId vorhanden!');
+  }
+
+  this.isLoading.set(true);
+
+  // 1. Snooze-Aktionen sofort ausführen
+  feedback.rejections
+    .filter(todo => todo.reason === 'snooze')
+    .forEach(it => {
+      this.snoozyrecommendedTodo(it.todoId, 30).subscribe();
+    });
+
+  // 2. Echte Ablehnungen filtern & typsicher für das Backend mappen
+  const rejectedTodos: RejectedTodoFeedback[] = feedback.rejections
+    .filter((todo): todo is { todoId: string; reason: Exclude<RejectReason, 'snooze'> } => todo.reason !== 'snooze')
+    .map(reject => ({
+      todoId: reject.todoId,
+      rejectReason: reject.reason
+    }));
+
+  // 3. Das KI-Feedback ans Backend senden UND HIER SUBSCRIBEN 🔥
+  this.aiRepository.sendPlannerFeedback({
+    userId: currentUserId ?? "",
+    roundId: roundId ?? "",
+    acceptedTodoId: feedback.selectedTodoId ?? null,
+    rejectedTodos: rejectedTodos
+  })
+    .pipe(
+      delay(800)
+    )
+    .subscribe({ // 👈 Hier schicken wir den HTTP-Call ab!
+      next: () => {
+        console.log('🧠 Runden-Feedback erfolgreich gesendet!');
+        // Ansicht zurücksetzen
+        this.recommendations.set([]);
+        this.activeRoundId.set(null);
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Fehler beim Senden des Runden-Feedbacks:', err);
+        this.isLoading.set(false);
+      }
+    });
+}
+
   /**
    * Ein einzelnes Todo snoozen (entfernt es auch lokal aus den Vorschlägen)
    */

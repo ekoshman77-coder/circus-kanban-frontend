@@ -19,7 +19,7 @@ export interface RecommendationTodo {
   styleUrls: ['./planner-recommendation-component.css']
 })
 export class PlannerRecommendationComponent {
-  // 🟢 Verwendet jetzt das echte Server-Modell
+  // 🟢 Verwendet das echte Server-Modell mit plannerDetails & modeCode
   recommendations = input<RecommendedTodoItem[]>([]);
   
   // 🟢 Ein zentrales Output-Event für das Gesamtergebnis
@@ -54,7 +54,7 @@ export class PlannerRecommendationComponent {
 
   // 🏁 Baut das Paket zusammen und schickt es an die Elternkomponente / den Service
   private finishSession(selectedTodoId?: string) {
-    console.log("PlannerRecomendationComponent: finishSession startet", selectedTodoId)
+    console.log("PlannerRecommendationComponent: finishSession startet", selectedTodoId);
     this.sessionCompleted.emit({
       selectedTodoId: selectedTodoId,
       rejections: this.rejectionsBuffer()

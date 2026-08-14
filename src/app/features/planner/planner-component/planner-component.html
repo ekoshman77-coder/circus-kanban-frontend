@@ -53,7 +53,7 @@
     
     <div id="qDoFirstList"
          class="quadrant q-do-first" 
-         [class.energy-low-dim]="userEnergy() === 'low'"
+         [class.energy-low-dim]="userEnergy() === 'LOW'"
          [class.is-collapsed]="!collapsedQuadrants()['doFirst']"
          cdkDropList
          [cdkDropListConnectedTo]="['activeFocusList']"> 
@@ -82,7 +82,7 @@
 
     <div id="qScheduleList"
          class="quadrant q-schedule" 
-         [class.energy-low-alert]="userEnergy() === 'low'"
+         [class.energy-low-alert]="userEnergy() === 'LOW'"
          [class.is-collapsed]="!collapsedQuadrants()['schedule']"
          cdkDropList
          [cdkDropListConnectedTo]="['activeFocusList']">
@@ -93,7 +93,7 @@
       
       @if (collapsedQuadrants()['schedule']) {
         <div class="q-body animate-fade-in">
-          @if (userEnergy() === 'low') {
+          @if (userEnergy() === 'LOW') {
             <div class="energy-warning-banner">
               ☕ <em>Kopf müde! Große Brocken jetzt lieber meiden oder verschieben.</em>
             </div>
@@ -142,7 +142,7 @@
 
     <div id="qEliminateList"
          class="quadrant q-eliminate" 
-         [class.energy-low-dim]="userEnergy() === 'low'"
+         [class.energy-low-dim]="userEnergy() === 'LOW'"
          [class.is-collapsed]="!collapsedQuadrants()['eliminate']"
          cdkDropList
          [cdkDropListConnectedTo]="['activeFocusList']">
@@ -171,7 +171,7 @@
 
     <div id="qRestZoneList"
          class="quadrant q-rest-zone" 
-         [class.oase-golden-glow]="userEnergy() === 'low'"
+         [class.oase-golden-glow]="userEnergy() === 'LOW'"
          [class.is-collapsed]="!collapsedQuadrants()['restZone']"
          cdkDropList
          [cdkDropListConnectedTo]="['activeFocusList']">
@@ -182,7 +182,7 @@
       
       @if (collapsedQuadrants()['restZone']) {
         <div class="q-body rest-body animate-fade-in">
-          @if (userEnergy() === 'low') {
+          @if (userEnergy() === 'LOW') {
             <div class="oase-bonus-text">✨ Perfekter Zeitpunkt! Ruh dich aus oder tanke hier Energie.</div>
           }
           <div class="todo-flex-grid">

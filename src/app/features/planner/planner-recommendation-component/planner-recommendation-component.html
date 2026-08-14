@@ -22,7 +22,11 @@
         <!-- Drag Handle Header -->
         <div class="card-drag-handle" cdkDragHandle>
           <span class="grip-icon">⋮⋮</span>
-          @if (todo.modeCode) {
+          
+          <!-- Mode-Code Handling (z.B. ALL_SNOOZED) -->
+          @if (todo.modeCode === 'ALL_SNOOZED') {
+            <span class="badge badge-warning">💤 Frühestes Aufwachen</span>
+          } @else if (todo.modeCode) {
             <span class="badge">{{ todo.modeCode }}</span>
           }
         </div>
@@ -30,10 +34,25 @@
         <div class="card-body">
           <h3 class="todo-title">{{ todo.todo.task }}</h3>
           
-          @if (todo.reasonCode) {
-            <div class="ai-reasoning">
-              <span class="brain-icon">🧠</span>
-              <p>{{ todo.reasonCode }}</p>
+          <!-- Hinweistext bei ALL_SNOOZED -->
+          @if (todo.modeCode === 'ALL_SNOOZED') {
+            <div class="snooze-notice">
+              <span class="brain-icon">⏰</span>
+              <p>Alle Aufgaben schlafen aktuell. Dies ist das erste To-Do, das wieder aktiv wird!</p>
+            </div>
+          }
+
+          <!-- 🧠 KI-Gründe & Planner-Details rendern -->
+          @if (todo.plannerDetails && todo.plannerDetails.length > 0) {
+            <div class="ai-reasoning-list">
+              @for (detail of todo.plannerDetails; track detail.plannerType) {
+                <div class="ai-reasoning">
+                  <span class="brain-icon">🧠</span>
+                  <p>
+                    <strong>{{ detail.plannerType }}:</strong> {{ detail.reasonCode }}
+                  </p>
+                </div>
+              }
             </div>
           }
         </div>

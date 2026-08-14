@@ -22,7 +22,7 @@ export class UserService {
   public readonly onLogout$ = new Subject<void>();
 
   // Zustand für den Browser-Speicher (LocalStorage)
-  userEnergy = signal<'low' | 'normal' | 'high'>('normal');
+  userEnergy = signal<'LOW' | 'MEDIUM' | 'HIGH'>('MEDIUM');
   workingTimeLeft = signal<number>(8);
 
   // Zustand aus der Kotlin-Datenbank
@@ -70,7 +70,7 @@ console.log('=== 🚀 UserService Constructor läuft an ===');
     }
 
     // 3. Tagesform über den neuen Service laden (Mit Fallback 'normal')
-    const savedEnergy = this.storageService.getItem<'low' | 'normal' | 'high'>(LocalStorageService.KEYS.USER_ENERGY);
+    const savedEnergy = this.storageService.getItem<'LOW' | 'MEDIUM' | 'HIGH'>(LocalStorageService.KEYS.USER_ENERGY);
     if (savedEnergy) {
       this.userEnergy.set(savedEnergy);
     }
@@ -250,7 +250,7 @@ console.log('=== 🚀 UserService Constructor läuft an ===');
     this.onLogout$.next();
     this.currentUserSignal.set(null);
 
-    this.userEnergy.set('normal');
+    this.userEnergy.set('MEDIUM');
     this.workingTimeLeft.set(8);
     this.primeTimeStartHour.set(10);
     this.primeTimeEndHour.set(18);

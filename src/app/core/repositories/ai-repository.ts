@@ -7,17 +7,16 @@ import { MilestoneSuggestionsModel } from '../models/milestone-suggestions-model
 import { IgnoredMilestones, MilestoneInteractionPayload } from './dto/tracked-milestones';
 import { TodoSnoozyPayload } from './dto/todo-snoozy-payload';
 
-/**
- *  Die internationalisierungssichere Server-Antwort für die Empfehlung
- */
-/**
- * Eine einzelne KI-Empfehlung (vom Server)
- */
+export interface PlannerRecommendationDetail {
+  plannerType: 'BAYES' | 'NEURAL';
+  score: number;
+  reasonCode: string;
+}
+
 export interface RecommendedTodoResponse {
   todo: ITodoJSON | null;
-  plannerType: 'BAYES' | 'NEURAL' | null;
-  modeCode: 'STANDARD' | 'RECHERCHE' | 'CLEAN_SLATE';
-  reasonCode: string;
+  plannerDetails: PlannerRecommendationDetail[];
+  modeCode: 'STANDARD' | 'ALL_SNOOZED';
 }
 
 /**

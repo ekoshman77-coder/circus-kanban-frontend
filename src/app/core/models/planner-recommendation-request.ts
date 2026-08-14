@@ -1,5 +1,5 @@
 export interface PlannerRecommendationRequest {
   userId: string;
-  userEnergy: 'low' | 'normal' | 'high';
+  userEnergy: 'LOW' | 'MEDIUM' | 'HIGH';
   workingTimeLeft: number;
 }
