@@ -14,9 +14,9 @@
       
       @if (editingUserId() !== member.id) {
         <div class="card-header-row">
-          <span class="hero-emoji">{{ member.emoji }}</span>
-          <span class="hero-balance" [ngClass]="member.coffeeBalance >= 0 ? 'positive' : 'negative'">
-            {{ member.coffeeBalance | number:'1.2-2' }} €
+          <span class="hero-emoji">{{ member.coffeeAccount.emoji }}</span>
+          <span class="hero-balance" [ngClass]="member.coffeeAccount.balance >= 0 ? 'positive' : 'negative'">
+            {{ member.coffeeAccount.balance | number:'1.2-2' }} €
           </span>
         </div>
 
@@ -27,7 +27,7 @@
           }
         </h3>
 
-        <p class="hero-role">{{ member.role }}</p>
+        <p class="hero-role">{{ member.coffeeAccount.role }}</p>
 
         <div class="coffee-status">
           <span>Konto-Status</span>

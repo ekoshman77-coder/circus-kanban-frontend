@@ -1,92 +1,122 @@
-<div class="recommendation-card" 
-     [ngClass]="{
-       'research-mode-style': plannerService.aiResponseCode()?.modeCode === 'RECHERCHE',
-       'clean-slate-style': plannerService.aiResponseCode()?.modeCode === 'CLEAN_SLATE',
-       'card-loading-pulse': isComputing()
-     }">
-     
-  <!-- 🟢 DAS BLINKENDE KI-LÄMPCHEN OBEN RECHTS (Bleibt als Indikator) -->
-  <div class="ai-status-bar">
-    <span class="status-lamp" [class.lamp-pulsing]="isComputing()"></span>
-    <span class="status-text">{{ isComputing() ? 'KI arbeitet...' : 'KI Bereit' }}</span>
+<div class="recommendation-panel" cdkDropListGroup>
+
+  <!-- 🟢 TOP DROPZONE: AKZEPTIEREN -->
+  <div 
+    class="dropzone selection-zone"
+    cdkDropList
+    (cdkDropListDropped)="onDrop($event, 'select')">
+    <div class="zone-content">
+      <span class="icon">🚀</span>
+      <p><strong>Ziehe deine Wahl hierher</strong>, um sofort zu starten!</p>
+    </div>
   </div>
 
-  <h3 class="card-title">{{ PLANNER_MESSAGES[currentLanguage][titleKey] }}</h3>
-
-  @if (!PLANNER_MESSAGES[currentLanguage][descKey]) {
-    <p class="card-subtitle">
-      {{ PLANNER_MESSAGES[currentLanguage]['DEFAULT_DESC'] }}
-    </p>
-  }
-
-  <!-- 💡 DER MODERNE KI-GLÜHBIRNEN-LADEZUSTAND (Ersetzt den alten Spinner!) -->
-  @if (isComputing()) {
-    <div class="ai-loading-zone animate-pop">
-      <div class="ai-lamp-container">
-        <span class="skeleton-sparkle">✨</span>
-        <span class="ai-glowing-lamp"></span>
-      </div>
-      <p class="ai-loading-text">KI ordnet die Synapsen neu...</p>
-    </div>
-  }
-
-  <!-- WENN BEREIT UND KEINE AUFGABE GEFUNDEN -->
-  @if (!isComputing() && !plannerService.recommendedTodo()) {
-    <div class="empty-state">
-      <p class="empty-text">
-        {{ PLANNER_MESSAGES[currentLanguage][descKey] || 'Keine passenden Aufgaben mehr da!' }}
-      </p>
-      <button (click)="loadNextRecommendation()" class="refresh-btn">Erneut prüfen</button>
-    </div>
-  }
-
-  <!-- WENN BEREIT UND EINE AUFGABE DA IST -->
-<!-- WENN BEREIT UND EINE AUFGABE DA IST -->
-@if (!isComputing() && plannerService.recommendedTodo(); as todo) {
-  <div class="content-state">
-    
-    <div class="todo-highlight">
-      @if (todo.effort > 0) {
-        <span class="todo-effort">⏳ {{ todo.effort }} Std.</span>
-      }
-      
-      <!-- NEU: Diese Kapsel hält Text und Barometer untereinander! -->
-      <div class="todo-details">
-        <h2 class="todo-task">{{ todo.task }}</h2>
+  <!-- 💡 MITTE: DIE CARDS -->
+  <div class="cards-container">
+    @for (todo of visibleList(); track todo.todo.id) {
+      <div 
+        class="todo-card" 
+        cdkDrag 
+        [cdkDragData]="todo">
         
-        <!-- 🧠 Das KI-Stimmungs-Barometer -->
-        @if (moodExplanation; as mood) {
-          <div class="ai-mood-bar">
-            <span class="mood-icon">{{ mood.icon }}</span>
-            <span class="mood-text">{{ mood.text }}</span>
+        <!-- Drag Handle Header -->
+        <div class="card-drag-handle" cdkDragHandle>
+          <span class="grip-icon">⋮⋮</span>
+          
+          <!-- Mode-Code Handling (z.B. ALL_SNOOZED) -->
+          @if (todo.modeCode === 'ALL_SNOOZED') {
+            <span class="badge badge-warning">💤 Frühestes Aufwachen</span>
+          } @else if (todo.modeCode) {
+            <span class="badge">{{ todo.modeCode }}</span>
+          }
+        </div>
+
+        <div class="card-body">
+          <h3 class="todo-title">{{ todo.todo.task }}</h3>
+          
+          <!-- Hinweistext bei ALL_SNOOZED -->
+          @if (todo.modeCode === 'ALL_SNOOZED') {
+            <div class="snooze-notice">
+              <span class="brain-icon">⏰</span>
+              <p>Alle Aufgaben schlafen aktuell. Dies ist das erste To-Do, das wieder aktiv wird!</p>
+            </div>
+          }
+
+          <!-- 🧠 KI-Gründe & Planner-Details rendern -->
+          @if (todo.plannerDetails && todo.plannerDetails.length > 0) {
+            <div class="ai-reasoning-list">
+              @for (detail of todo.plannerDetails; track detail.plannerType) {
+                <div class="ai-reasoning">
+                  <span class="brain-icon">🧠</span>
+                  <p>
+                    <strong>{{ detail.plannerType }}:</strong> {{ detail.reasonCode }}
+                  </p>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- CLICK FALLBACK BUTTONS -->
+        <div class="card-actions">
+          <button class="btn-accept" (click)="onSelect(todo)">
+            🚀 Anpacken
+          </button>
+          <button class="btn-reject-toggle" (click)="toggleInlineMenu(todo.todo.id)">
+            ❌ Ablehnen
+          </button>
+        </div>
+
+        <!-- INLINE POPOVER BEIM KLICK AUF ABLEHNEN -->
+        @if (activePopoverId() === todo.todo.id) {
+          <div class="inline-reject-menu animate-fade-in">
+            <p class="menu-title">Warum passt es gerade nicht?</p>
+            <div class="reject-options">
+              <button (click)="onReject(todo.todo.id, 'no_motivation')">🥱 Keine Lust</button>
+              <button (click)="onReject(todo.todo.id, 'too_heavy')">🧠 Zu schwer</button>
+              <button (click)="onReject(todo.todo.id, 'too_long')">⏱️ Zu lange</button>
+              <button (click)="onReject(todo.todo.id, 'snooze')">💤 Snooze</button>
+            </div>
           </div>
         }
-      </div>
-      
-      @if (plannerService.aiResponseCode()?.modeCode === 'RECHERCHE') {
-        <p class="research-desc">{{ moodExplanation }}</p>
-      }
-    </div>
 
-    @if (!showFeedbackReasons()) {
-      <div class="action-buttons">
-        <button (click)="acceptTodo(todo)" class="btn-accept">🚀 Starten!</button>
-        <button (click)= "snoozeTodo(todo)" class="btn-snooze">⏱️ Später</button>
-        <button (click)="rejectTodo()" class="btn-reject">👎 Passt gerade nicht</button>
-      </div>
-    }
-
-    @else {
-      <div class="feedback-overlay">
-        <p class="feedback-prompt">Schade! Warum passt es gerade nicht? 🤔</p>
-        <div class="reason-grid">
-          <button (click)="sendDetailedFeedback(todo, 'no_motivation')" class="reason-btn">🥱 Keine Lust darauf</button>
-          <button (click)="sendDetailedFeedback(todo, 'too_heavy')" class="reason-btn">🧠 Zu schwer für jetzt</button>
-          <button (click)="sendDetailedFeedback(todo, 'too_long')" class="reason-btn">⏱️ Dauert mir zu lange</button>
-          <button (click)="cancelReject()" class="reason-btn cancel">Zurück</button>
+        <!-- Drag Preview (Was am Mauszeiger klebt) -->
+        <div *cdkDragPreview class="card-drag-preview">
+          <span>⚡ {{ todo.todo.task }}</span>
         </div>
       </div>
+    } @empty {
+      <p class="empty-text">Keine weiteren Empfehlungen vorhanden.</p>
     }
-
   </div>
-}
+
+  <!-- 🔴 BOTTOM DROPZONES: 4 ABLEHNUNGSGRÜNDE -->
+  <div class="reject-dropzones-wrapper">
+    <span class="section-label">...oder ziehe eine Karte direkt auf ein Feedback-Feld:</span>
+    
+    <div class="dropzones-grid">
+      
+      <div class="dropzone reject-zone" cdkDropList (cdkDropListDropped)="onDrop($event, 'no_motivation')">
+        <span class="icon">🥱</span>
+        <span>Keine Lust</span>
+      </div>
+
+      <div class="dropzone reject-zone" cdkDropList (cdkDropListDropped)="onDrop($event, 'too_heavy')">
+        <span class="icon">🧠</span>
+        <span>Zu schwer</span>
+      </div>
+
+      <div class="dropzone reject-zone" cdkDropList (cdkDropListDropped)="onDrop($event, 'too_long')">
+        <span class="icon">⏱️</span>
+        <span>Zu lange</span>
+      </div>
+
+      <div class="dropzone reject-zone snooze-zone" cdkDropList (cdkDropListDropped)="onDrop($event, 'snooze')">
+        <span class="icon">💤</span>
+        <span>Später (Snooze)</span>
+      </div>
+
+    </div>
+  </div>
+
+</div>

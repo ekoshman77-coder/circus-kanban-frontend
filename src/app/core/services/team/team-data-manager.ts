@@ -8,10 +8,11 @@ import { UserService } from '../user/user-service'; // 🎯 NEU importiert!
 import { NotificationService } from '../notification/notification-service';
 import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 import { concat, toArray } from 'rxjs';
+import { Department } from '../../models/department';
 
 // Typdefinition für unsere Queue-Einträge
 interface OfflineTeamAction {
-  type: 'ADD_MEMBER' | 'REMOVE_MEMBER' | 'UPDATE_COFFEE' | 'UPDATE_PROFILE' | 'APPROVE_MEMBER'; 
+  type: 'ADD_MEMBER' | 'REMOVE_MEMBER' | 'UPDATE_COFFEE' | 'UPDATE_PROFILE' | 'APPROVE_MEMBER';
   payload: any;
 }
 
@@ -105,7 +106,7 @@ export class TeamDataManager extends BaseDataManager {
     this.isProjectOfflineAvailable.set(true);
     console.log(`🚀 [DataManager] Online! Lade frische Mitglieder für Projekt: ${projectId}`);
 
-    this.teamRepository.getMembersForProject$(this.userService.getCurrentUserId()?? "", projectId).subscribe({
+    this.teamRepository.getMembersForProject$(this.userService.getCurrentUserId() ?? "", projectId).subscribe({
       next: (members) => {
         this.currentProjectMembersSignal.set(members);
         localStorage.setItem(cacheKey, JSON.stringify(members)); // Im Cache einfrieren
@@ -122,7 +123,7 @@ export class TeamDataManager extends BaseDataManager {
       return;
     }
 
-    this.teamRepository.getAllDepartmentUsers$(this.userService.getCurrentUserId()?? "").subscribe({
+    this.teamRepository.getAllDepartmentUsers$(this.userService.getCurrentUserId() ?? "").subscribe({
       next: (members) => {
         console.log("teamRepository:: getAllGlobalUsers bekommt from server", members)
         this.globalMembersSignal.set(members);
@@ -156,7 +157,7 @@ export class TeamDataManager extends BaseDataManager {
         case 'UPDATE_PROFILE':
           return this.userRepository.updateProfile$(action.payload.id, action.payload.username, action.payload.firstName, action.payload.lastName);
         case 'APPROVE_MEMBER':
-          return this.userRepository.approveUser(action.payload.userId, action.payload.departmentId);  
+          return this.userRepository.approveUser(action.payload.userId, action.payload.departmentId, action.payload.role);
       }
     });
 
@@ -199,7 +200,7 @@ export class TeamDataManager extends BaseDataManager {
       console.log(`🕵️‍♀️ [Premium-Cache] Starte Hintergrund-Sync für deine ${projectIds.length} Projekte...`);
       projectIds.forEach(id => {
         // Wir feuern die Requests unbemerkt im Hintergrund ab und speichern sie direkt im LocalStorage
-        this.teamRepository.getMembersForProject$(this.userService.getCurrentUserId()?? "", id).subscribe({
+        this.teamRepository.getMembersForProject$(this.userService.getCurrentUserId() ?? "", id).subscribe({
           next: (members) => {
             localStorage.setItem(this.STORAGE_KEY_PROJECT_PREFIX + id, JSON.stringify(members));
             console.log(`💾 [Premium-Cache] Projekt ${id} im Hintergrund offline-gesichert.`);
@@ -207,6 +208,26 @@ export class TeamDataManager extends BaseDataManager {
         });
       });
     }
+  }
+
+  /** 👑 Holt den ungefilterten Pool aller Firmenmitglieder für das Admin-Board */
+  public loadAdminBoardPool(): void {
+    // Wenn wir offline sind, greifen wir auf den bestehenden globalen Cache zurück
+    if (!this.connectionService.isOnline()) {
+      console.log(`📡 [DataManager] Offline! Nutze globalen Cache für Admin-Board.`);
+      this.loadGlobalMembersFromCache();
+      return;
+    }
+
+    // Online: Hol die echte Komplettliste
+    this.teamRepository.getAllUsersForAdminBoard$().subscribe({
+      next: (members) => {
+        console.log("📡 [DataManager] Admin-Pool erfolgreich vom Server geladen:", members);
+        this.globalMembersSignal.set(members);
+        localStorage.setItem(this.STORAGE_KEY_GLOBAL, JSON.stringify(members)); // Cache überschreiben
+      },
+      error: (err) => console.error("❌ Fehler beim Laden des Admin-User-Pools:", err)
+    });
   }
 
   /** ➕ Mitglied hinzufügen (Optimistic UI) */
@@ -246,9 +267,11 @@ export class TeamDataManager extends BaseDataManager {
   public updateCoffeeAccount(userId: string, newBalance: number, role: string, emoji: string): void {
     const updatedList = this.globalMembersSignal().map(m => {
       if (m.user.id === userId) {
-        m.user.coffeeBalance = newBalance;
-        m.user.role = role;
-        m.user.emoji = emoji;
+        m.user.coffeeAccount = {
+          balance: newBalance,
+          role: role,
+          emoji: emoji,
+        }
       }
       return m;
     });
@@ -320,15 +343,15 @@ export class TeamDataManager extends BaseDataManager {
     }
     this.userRepository.register(member.username, member.firstName, member.lastName, password).subscribe({
       next: (user: IUser) => {
-        const newModel = new UserModel({ 
-          id: user.id, 
-          username: user.username, 
-          firstName: user.firstName, 
+        const newModel = new UserModel({
+          id: user.id,
+          username: user.username,
+          firstName: user.firstName,
           lastName: user.lastName,
           isApproved: null,
-          departmentId: null,
-          projectIds: [] 
-         });
+          department: null,
+          projectIds: []
+        });
         this.globalMembersSignal.set([...this.globalMembersSignal(), new ProjectMember(newModel, 'NONE')]);
         localStorage.setItem(this.STORAGE_KEY_GLOBAL, JSON.stringify(this.globalMembersSignal()));
         this.loadGlobalMembers();
@@ -346,32 +369,32 @@ export class TeamDataManager extends BaseDataManager {
     }
   }
 
-  public approveGlobalMember(userId: string, departmentId: string): void {
-  // 1. 🚀 OPTIMISTIC UI: Signal sofort im RAM manipulieren, damit die UI flüssig reagiert
-  const updatedList = this.globalMembersSignal().map(m => {
-    if (m.user.id === userId) {
-      m.user.isApproved = true;        // Status auf approved setzen
-      m.user.departmentId = departmentId; // Abteilung zuweisen
-    }
-    return m;
-  });
-  
-  this.globalMembersSignal.set(updatedList);
-  
-  // 2. 💾 Sofort im lokalen Cache sichern, damit beim Reload im Offline-Modus alles passt!
-  localStorage.setItem(this.STORAGE_KEY_GLOBAL, JSON.stringify(updatedList));
+  // public approveGlobalMember(userId: string, department: Department): void {
+  //   // 1. 🚀 OPTIMISTIC UI: Signal sofort im RAM manipulieren, damit die UI flüssig reagiert
+  //   const updatedList = this.globalMembersSignal().map(m => {
+  //     if (m.user.id === userId) {
+  //       m.user.isApproved = true;        // Status auf approved setzen
+  //       m.user.department = department; // Abteilung zuweisen
+  //     }
+  //     return m;
+  //   });
 
-  // 3. 🌐 Online vs. Offline Prüfung
-  if (this.connectionService.isOnline()) {
-    // Wenn wir online sind: Direkt ans Repository senden
-    this.userRepository.approveUser(userId, departmentId).subscribe({
-      next: () => this.loadGlobalMembers() // Nach erfolgreichem Server-Antwort frisch abgleichen
-    });
-  } else {
-    // Wenn wir offline sind: In die Warteschlange einreihen!
-    this.pushToQueue({ type: 'APPROVE_MEMBER', payload: { userId, departmentId } });
-  }
-}
+  //   this.globalMembersSignal.set(updatedList);
+
+  //   // 2. 💾 Sofort im lokalen Cache sichern, damit beim Reload im Offline-Modus alles passt!
+  //   localStorage.setItem(this.STORAGE_KEY_GLOBAL, JSON.stringify(updatedList));
+
+  //   // 3. 🌐 Online vs. Offline Prüfung
+  //   if (this.connectionService.isOnline()) {
+  //     // Wenn wir online sind: Direkt ans Repository senden
+  //     this.userRepository.approveUser(userId, department.id, "").subscribe({
+  //       next: () => this.loadGlobalMembers() // Nach erfolgreichem Server-Antwort frisch abgleichen
+  //     });
+  //   } else {
+  //     // Wenn wir offline sind: In die Warteschlange einreihen!
+  //     this.pushToQueue({ type: 'APPROVE_MEMBER', payload: { userId, department } });
+  //   }
+  // }
 
   public override checkUnsavedData(): string | null {
     if (this.offlineQueueSignal().length > 0) {

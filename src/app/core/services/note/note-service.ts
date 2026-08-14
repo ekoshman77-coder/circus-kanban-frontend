@@ -94,7 +94,7 @@ export class NoteService extends BaseDataManager {
 
     const newNote = new Note({
       userId: activeUser.id,
-      departmentId: this.userService.currentUser()?.departmentId?? "",
+      departmentId: this.userService.currentUser()?.department?.id?? "",
       title: input.title,
       content: input.content,
       colorType: input.colorType,

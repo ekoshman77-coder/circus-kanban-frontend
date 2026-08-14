@@ -38,7 +38,9 @@
         </div>
 
         <app-milestone-suggestions-component [projectTitle]="activeProject()?.title ?? ''"
-            [existingMilestones]="activeProject()?.milestones ?? []" (milestoneAccepted)="onMilestoneAdded($event)"
+            [existingMilestones]="activeProject()?.milestones ?? []" 
+            [area]="suggestedArea()"
+            (milestoneAccepted)="onMilestoneAdded($event)"
             (degradedAreShown)="degradedAreShown($event)">
         </app-milestone-suggestions-component>
 

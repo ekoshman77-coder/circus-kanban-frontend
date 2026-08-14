@@ -68,6 +68,6 @@ export class Project {
 
   public getUserRole(userId: string): ProjectRole {
     const member = this.teamMembers.find(m => m.user.id === userId);
-    return member ? member.projectRole : 'VIEWER'; // Fallback, falls er kein Mitglied ist
+    return member ? member.projectRole : 'DEVELOPER'; // Fallback, falls er kein Mitglied ist
   }
 }

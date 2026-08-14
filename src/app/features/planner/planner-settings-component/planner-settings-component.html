@@ -6,16 +6,16 @@
     <label class="group-label">Wie ist deine Energie gerade?</label>
     <div class="energy-buttons">
       <button 
-        [class.active]="userService.userEnergy() === 'low'" 
-        (click)="userService.userEnergy.set('low')" 
+        [class.active]="userService.userEnergy() === 'LOW'" 
+        (click)="userService.userEnergy.set('LOW')" 
         class="energy-btn low">🥱 Schläfrig / Müde</button>
       <button 
-        [class.active]="userService.userEnergy() === 'normal'" 
-        (click)="userService.userEnergy.set('normal')" 
+        [class.active]="userService.userEnergy() === 'MEDIUM'" 
+        (click)="userService.userEnergy.set('MEDIUM')" 
         class="energy-btn normal">😐 Normal</button>
       <button 
-        [class.active]="userService.userEnergy() === 'high'" 
-        (click)="userService.userEnergy.set('high')" 
+        [class.active]="userService.userEnergy() === 'HIGH'" 
+        (click)="userService.userEnergy.set('HIGH')" 
         class="energy-btn high">⚡ Klarer Kopf / Fokus</button>
     </div>
   </div>

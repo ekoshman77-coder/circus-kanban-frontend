@@ -27,6 +27,12 @@ export class ProjectService extends BaseDataManager {
   private draftService = inject(ProjectDraftService); // <-- Hier injiziert!
 
   private allProjectsPool = signal<Project[]>([]);
+  // 👁️ Merkt sich, ob die "Strafbank" (der Keller) in dieser Session geöffnet wurde
+  private degradedWereShownSignal = signal<boolean>(false);
+
+  public setDegradedWereShown(): void {
+    this.degradedWereShownSignal.set(true);
+  }
 
   private dashboardStatsSignal = signal<ProjectDashboardStatsDTO | null>(null);
   public readonly dashboardStats = this.dashboardStatsSignal.asReadonly();
@@ -159,6 +165,7 @@ export class ProjectService extends BaseDataManager {
   public saveCalculatedProject(project: Project): Observable<Project> {
     project.userId = this.userService.getCurrentUserId() ?? "";
     this.noteService.updateNoteStatus(project.ideaId, true);
+    this.ignoreSuggestions(project.title, project.area, this.degradedWereShownSignal())
     
     return this.dataManager.createProject(project, this.allProjectsPool()).pipe(
       tap((savedProject) => {
@@ -172,6 +179,8 @@ export class ProjectService extends BaseDataManager {
    * Aktualisiert ein bestehendes Projekt (für den Edit-Mode)
    */
   public updateCalculatedProject(updatedProject: Project): Observable<Project | undefined> {
+   this.ignoreSuggestions(updatedProject.title, updatedProject.area, this.degradedWereShownSignal())
+
     return this.dataManager.updateProject(updatedProject, this.allProjectsPool()).pipe(
       tap(() => {
         this.allProjectsPool.update(projects =>
@@ -191,7 +200,7 @@ export class ProjectService extends BaseDataManager {
   // KI-VORSCHLÄGE & ANALYTICS INTERFACES
   // ==========================================
 
-  public acceptSuggestion(projectTitle: string, milestoneTitle: string): void {
+  public acceptSuggestion(projectTitle: string, projectArea: string, milestoneTitle: string): void {
     const allSuggestions = [
       ...(this._aiSuggestionsSignal()?.recommended || []),
       ...(this._aiSuggestionsSignal()?.degraded || [])
@@ -211,11 +220,11 @@ export class ProjectService extends BaseDataManager {
     if (!userId || !milestone) return;
 
     if (milestone.source === 'KI') {
-      this.dataManager.trackMilestoneSelection(projectTitle, milestoneTitle, userId).subscribe();
+      this.dataManager.trackMilestoneSelection(projectTitle, projectArea, milestoneTitle, userId).subscribe();
     }
   }
 
-  public degradeSuggestion(projectTitle: string, milestoneTitle: string): void {
+  public degradeSuggestion(projectTitle: string, projectArea: string, milestoneTitle: string): void {
     const allSuggestions = [
       ...(this._aiSuggestionsSignal()?.recommended || []),
       ...(this._aiSuggestionsSignal()?.degraded || [])
@@ -236,11 +245,11 @@ export class ProjectService extends BaseDataManager {
     this.degradedMilestones.set([...this.degradedMilestones(), milestoneTitle]);
 
     if (milestone.source === 'KI') {
-      this.dataManager.trackMilestoneDegradation(projectTitle, milestoneTitle, userId).subscribe();
+      this.dataManager.trackMilestoneDegradation(projectTitle, projectArea, milestoneTitle, userId).subscribe();
     }
   }
 
-  public ignoreSuggestions(projectTitle: string, allMilestoneswereShown: boolean) {
+  public ignoreSuggestions(projectTitle: string, projectArea: string, allMilestoneswereShown: boolean) {
     const userId = this.userService.getCurrentUserId();
     if (!userId || !this._aiSuggestionsSignal) return;
 
@@ -252,7 +261,7 @@ export class ProjectService extends BaseDataManager {
       .filter(milestone => milestone.source === 'KI')
       .map(milestone => milestone.title);
 
-    this.dataManager.trackMilestoneIgnorance(projectTitle, userId, titles).subscribe();
+    this.dataManager.trackMilestoneIgnorance(projectTitle, projectArea, userId, titles).subscribe();
   }
 
   public loadMilestoneSuggestions(title: string, area: string): void {
@@ -297,6 +306,8 @@ export class ProjectService extends BaseDataManager {
 
   public cleanSuggestions(): void {
     this._aiSuggestionsSignal.set({ recommended: [], degraded: [] });
+    this.degradedMilestones.set([]);          
+    this.degradedWereShownSignal.set(false);  
   }
 
 public override resetData(): void {

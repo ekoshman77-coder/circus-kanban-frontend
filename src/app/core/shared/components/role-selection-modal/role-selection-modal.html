@@ -1,0 +1,26 @@
+@if (isOpen()) {
+<div class="modal-overlay" (click)="onOverlayClick($event)">
+  <div class="modal-card">
+    
+    <!-- HEADER -->
+    <div class="modal-header">
+      <h3>🏷️ {{ title() }}</h3>
+      <button class="close-btn" (click)="onCancel()" title="Abbrechen">✕</button>
+    </div>
+
+    <!-- BODY -->
+    <div class="modal-body">
+      <p class="modal-message">{{ message() }}</p>
+
+      <div class="role-options-group">
+        @for (role of options(); track role) {
+        <div class="role-option-card" (click)="selectRole(role, $event)">
+          <span class="role-title">{{ role }}</span>
+        </div>
+        }
+      </div>
+    </div>
+
+  </div>
+</div>
+}

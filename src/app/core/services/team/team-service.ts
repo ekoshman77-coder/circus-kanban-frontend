@@ -6,6 +6,7 @@ import { ProjectAction } from '../../enums/project-action-enum';
 import { UserService } from '../user/user-service';
 import { ProjectMember } from '../../models/project-member';
 import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
+import { Department } from '../../models/department';
 
 @Injectable({
     providedIn: 'root',
@@ -27,10 +28,6 @@ export class TeamService extends BaseDataManager {
             'MILESTONE_CREATE', 'MILESTONE_EDIT',
             'TODO_CREATE', 'TODO_EDIT', 'TODO_DELETE', 'TODO_CHECK'
         ],
-        DESIGNER: [
-            'TODO_CREATE', 'TODO_EDIT', 'TODO_CHECK'
-        ],
-        VIEWER: [],
         NONE: []
     };
 
@@ -71,6 +68,12 @@ export class TeamService extends BaseDataManager {
     public loadGlobalPool(): void {
         console.log(`📡 [TeamService] Lade globalen User-Pool`);
         this.dataManager.loadGlobalMembers();
+    }
+
+    /** 👑 Triggert das Laden des ungefilterten, globalen User-Pools exklusiv für Admins */
+    public loadAdminPool(): void {
+        console.log(`📡 [TeamService] Lade unzensierten Admin-User-Pool`);
+        this.dataManager.loadAdminBoardPool();
     }
 
     /** 🛡️ Die universelle Rechte-Prüfung basierend auf dem neuen Signal */
@@ -154,8 +157,8 @@ export class TeamService extends BaseDataManager {
     }
 
     /** 🔓 Schaltet ein Mitglied frei und weist eine Abteilung zu (inkl. Offline-Schutz) */
-    public approveMember(userId: string, departmentId: string): void {
-        console.log(`📡 [TeamService] Approve Mitglied mit ID: ${userId} für Abteilung: ${departmentId}`);
-        this.dataManager.approveGlobalMember(userId, departmentId);
-    }
+    // public approveMember(userId: string, department: Department): void {
+    //     console.log(`📡 [TeamService] Approve Mitglied mit ID: ${userId} für Abteilung: ${department.name}`);
+    //     this.dataManager.approveGlobalMember(userId, department);
+    // }
 }

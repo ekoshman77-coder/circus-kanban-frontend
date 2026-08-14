@@ -1,30 +1,17 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { UserService } from '../user/user-service';
-import { AiRepository } from '../../repositories/ai-repository'; 
+import { AiRepository, PlannerRecommendationDetail, PlannerRecommendationPayload, PlannerRecommendationsResponse, RejectedTodoFeedback } from '../../repositories/ai-repository';
 import { Todo } from '../../models/todo';
 import { delay, Observable, tap } from 'rxjs';
 import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
+import { RecommendationResult, RejectReason } from '../../models/recommendation-result';
 
-/**
- * Interface für die Antwort des KI-Planer-Services.
- * Mappt die rohe Serverantwort in ein strukturiertes Format, das bereits ein 
- * instanziiertes Domänen-Objekt (`Todo`) enthält.
- */
-export interface RecommendedTodoServiceResponse {
-  /** Das transformierte Todo-Domänenobjekt oder null, wenn keine Empfehlungen vorliegen */
-  todo: Todo | null;
-  /** Der Modus, in dem die Empfehlung generiert wurde */
-  modeCode: 'STANDARD' | 'RECHERCHE' | 'CLEAN_SLATE';
-  /** Der logische Grund für die spezifische Empfehlung */
-  reasonCode: 'DEFAULT' | 'LOW_ENERGY_SHORT_TIME' | 'NO_TODOS_LEFT';
+export interface RecommendedTodoItem {
+  todo: Todo;
+  plannerDetails: PlannerRecommendationDetail[];
+  modeCode: 'STANDARD' | 'ALL_SNOOZED';
 }
 
-/**
- * Service für die intelligente Tagesplanung und Aufgabenempfehlung.
- * * Kommuniziert mit dem KI-Modul im Backend über das `AiRepository`,
- * steuert den Ladezustand und transformiert nackte JSON-Daten in vollwertige
- * Domänen-Modelle (`Todo`), damit alle UI-Komponenten auf Methoden wie `getVisualStatus()` zugreifen können.
- */
 @Injectable({
   providedIn: 'root'
 })
@@ -32,118 +19,141 @@ export class PlannerService extends BaseDataManager {
   private userService = inject(UserService);
   private aiRepository = inject(AiRepository);
 
-  /** Signal für das aktuell empfohlene To-Do-Domänenobjekt */
-  public recommendedTodo = signal<Todo | null>(null);
-  
-  /** Signal für die vollständigen Metadaten der aktuellen KI-Empfehlung */
-  public aiResponseCode = signal<RecommendedTodoServiceResponse | null>(null);
-  
-  /** Signal für den aktuellen Ladezustand der KI-Anfrage */
+  /** Signal für die Runden-ID der aktuellen Empfehlungen */
+  public activeRoundId = signal<string | null>(null);
+
+  /** Signal für die Liste der empfohlenen To-Dos (max. 2) */
+  public recommendations = signal<RecommendedTodoItem[]>([]);
+
+  /** Signal für den Ladezustand */
   public isLoading = signal<boolean>(false);
 
   /**
-   * Lädt eine personalisierte, smarte Aufgabenempfehlung basierend auf der aktuellen
-   * Tagesform (Energielevel) und der verbleibenden Arbeitszeit des Benutzers.
-   * * Transformiert das zurückgegebene Datenobjekt automatisch in ein echtes `Todo`-Modell.
-   * * @param energy Das aktuelle Energielevel des Nutzers ('low', 'normal', 'high').
-   * @param timeLeft Die verbleibende Arbeitszeit in Stunden.
+   * Lädt die 2 Aufgabenempfehlungen basierend auf Energie und Arbeitszeit
    */
-  public loadSmartRecommendation(energy: string, timeLeft: number): void { 
-    console.log("service: startet loadSmatRecomendation") 
+  public loadSmartRecommendation(energy: string, timeLeft: number): void {
+    console.log("PlannerService:: Start loading recommendation", { energy, timeLeft });
     const currentUserId = this.userService.getCurrentUserId();
-    
     this.isLoading.set(true);
 
-    this.aiRepository.getPlannerRecommendation({
+    const payload: PlannerRecommendationPayload = {
+      userId: currentUserId ?? "default-user",
+      userEnergy: (energy || 'MEDIUM').toUpperCase(), // 👈 Großschreibung erzwingen!
+      workingTimeLeft: Number(timeLeft) || 8          // 👈 Sicherstellen, dass es eine Number ist
+    };
+
+    console.log("Sending Payload to Backend:", payload); this.aiRepository.getPlannerRecommendation({
       userId: currentUserId ?? "",
-      userEnergy: energy, 
-      workingTimeLeft: timeLeft 
+      userEnergy: energy,
+      workingTimeLeft: timeLeft
     })
-    .subscribe({
-      next: (response) => {
-        // 🧱 Das Domänen-Mapping:
-        // Wir transformieren das JSON-DTO in eine echte Instanz unserer Todo-Klasse
-        const domainTodo = response.todo ? new Todo(response.todo) : null;
+      .subscribe({
+        next: (response: PlannerRecommendationsResponse) => {
+          console.log("PlannerService:: recommendation response", response);
 
-        // Zustandssignale befüllen
-        this.recommendedTodo.set(domainTodo);
-        
-        this.aiResponseCode.set({
-          todo: domainTodo,
-          modeCode: response.modeCode,
-          reasonCode: response.reasonCode
-        });
+          this.activeRoundId.set(response.roundId);
 
-        this.isLoading.set(false);
-      },
-      error: (err) => {
-        console.error('Fehler beim Laden der KI-Empfehlung:', err);
-        this.isLoading.set(false);
-      }
-    });
+          // Mappe Server-Vorschläge in Domain-Objekte
+          const mappedItems: RecommendedTodoItem[] = response.recommendations
+            .filter(rec => rec.todo !== null)
+            .map(rec => ({
+              todo: new Todo(rec.todo!),
+              plannerDetails: rec.plannerDetails,
+              modeCode: rec.modeCode
+            }));
+
+          this.recommendations.set(mappedItems);
+          this.isLoading.set(false);
+        },
+        error: (err) => {
+          console.error('Fehler beim Laden der KI-Empfehlungen:', err);
+          this.isLoading.set(false);
+        }
+      });
   }
 
   /**
-   * Sendet das qualitative Nutzerfeedback zu einer Empfehlung an das Backend zurück,
-   * damit die KI personalisiert dazulernen kann.
-   * * Setzt bei Annahme der Aufgabe die aktuelle Empfehlung zurück, um Platz für Neues zu machen.
-   * * @param todoId Die ID der bewerteten Aufgabe.
-   * @param accepted Gibt an, ob der Nutzer den Vorschlag angenommen hat.
-   * @param reason Der Ablehnungsgrund bei Ablehnung (z. B. 'too_heavy', 'too_long' oder 'no_motivation').
-   * @param energy Das Energielevel zum Zeitpunkt der Bewertung.
+   * Sendet das Runden-Feedback
    */
-  public sendFeedback(
-    todoId: string, 
-    accepted: boolean, 
-    reason: 'no_motivation' | 'too_heavy' | 'too_long' | null, 
-    energy: string
-  ): Observable<void> {
-    const currentUserId = this.userService.getCurrentUserId();
-    this.isLoading.set(true);
+  /**
+   * Sendet das Runden-Feedback
+   */
+/**
+ * Sendet das Runden-Feedback direkt ans Backend (void)
+ */
+public sendFeedback(feedback: RecommendationResult): void { // 👈 void statt Observable<void>
+  const currentUserId = this.userService.getCurrentUserId();
+  const roundId = this.activeRoundId();
 
-    return this.aiRepository.sendPlannerFeedback({ 
-      userId: currentUserId ?? "",
-      todoId: todoId, 
-      accepted: accepted, 
-      rejectReason: reason, 
-      currentEnergy: energy 
-    })
-    .pipe(
-      delay(800),
-      tap({
-      next: () => {
-        console.log('🧠 KI hat das Feedback erfolgreich gelernt!');
-        
-        // Wenn das To-Do akzeptiert wurde, räumen wir die Empfehlung aus dem Viewport
-        if (accepted) {
-          this.recommendedTodo.set(null);
-          this.aiResponseCode.set(null);
-          this.isLoading.set(false)
-        }
-      },
-      error: (err) => {
-        console.error('Fehler beim Senden des KI-Feedbacks:', err);
-        this.isLoading.set(false)
-      }
-    }));
+  if (!roundId) {
+    console.warn('Keine aktive roundId vorhanden!');
   }
 
-  public snoozyrecommendedTodo(todoId: string, durationInMin: number) {
+  this.isLoading.set(true);
+
+  // 1. Snooze-Aktionen sofort ausführen
+  feedback.rejections
+    .filter(todo => todo.reason === 'snooze')
+    .forEach(it => {
+      this.snoozyrecommendedTodo(it.todoId, 30).subscribe();
+    });
+
+  // 2. Echte Ablehnungen filtern & typsicher für das Backend mappen
+  const rejectedTodos: RejectedTodoFeedback[] = feedback.rejections
+    .filter((todo): todo is { todoId: string; reason: Exclude<RejectReason, 'snooze'> } => todo.reason !== 'snooze')
+    .map(reject => ({
+      todoId: reject.todoId,
+      rejectReason: reject.reason
+    }));
+
+  // 3. Das KI-Feedback ans Backend senden UND HIER SUBSCRIBEN 🔥
+  this.aiRepository.sendPlannerFeedback({
+    userId: currentUserId ?? "",
+    roundId: roundId ?? "",
+    acceptedTodoId: feedback.selectedTodoId ?? null,
+    rejectedTodos: rejectedTodos
+  })
+    .pipe(
+      delay(800)
+    )
+    .subscribe({ // 👈 Hier schicken wir den HTTP-Call ab!
+      next: () => {
+        console.log('🧠 Runden-Feedback erfolgreich gesendet!');
+        // Ansicht zurücksetzen
+        this.recommendations.set([]);
+        this.activeRoundId.set(null);
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Fehler beim Senden des Runden-Feedbacks:', err);
+        this.isLoading.set(false);
+      }
+    });
+}
+
+  /**
+   * Ein einzelnes Todo snoozen (entfernt es auch lokal aus den Vorschlägen)
+   */
+  public snoozyrecommendedTodo(todoId: string, durationInMin: number): Observable<void> {
     return this.aiRepository.snoozyTodo(todoId, durationInMin).pipe(
       tap({
-        next: () => 
-          {
-            console.log("todo war snoozed erfolgreich")
-            this.recommendedTodo.set(null)
-          },
-        error: (err) => console.error("Fehler bei Snoozing", err)
+        next: () => {
+          console.log("Todo wurde erfolgreich gesnoozt");
+          // Entferne das gesnoozte Todo direkt aus der lokalen Liste
+          this.recommendations.update(list => list.filter(item => item.todo.id !== todoId));
+        },
+        error: (err) => console.error("Fehler beim Snoozen", err)
       })
-    )
+    );
   }
 
   public override resetData(): void {
-      this.recommendedTodo.set(null);
-      this.aiResponseCode.set(null);
-      this.isLoading.set(false);
+    this.recommendations.set([]);
+    this.activeRoundId.set(null);
+    this.isLoading.set(false);
+  }
+
+  public clearRecommendations() {
+    this.resetData()
   }
 }

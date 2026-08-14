@@ -3,6 +3,7 @@ import { UserRepository, IUser, PlannerSettingsDto } from '../../repositories/us
 import { LocalStorageService } from './local-storage-service';
 import { GamificationResult } from '../../models/gamification';
 import { catchError, map, Observable, of, Subject, switchMap, tap } from 'rxjs';
+import { UserModel } from '../../models/user-model';
 
 @Injectable({
   providedIn: 'root',
@@ -11,7 +12,7 @@ export class UserService {
   private storageService = inject(LocalStorageService);
   private userRepository = inject(UserRepository);
 
-  private currentUserSignal = signal<IUser | null>(null);
+  private currentUserSignal = signal<UserModel | null>(null);
 
   public currentUser = computed(() => this.currentUserSignal());
   public isLoggedIn = computed(() => this.currentUserSignal() !== null);
@@ -21,7 +22,7 @@ export class UserService {
   public readonly onLogout$ = new Subject<void>();
 
   // Zustand für den Browser-Speicher (LocalStorage)
-  userEnergy = signal<'low' | 'normal' | 'high'>('normal');
+  userEnergy = signal<'LOW' | 'MEDIUM' | 'HIGH'>('MEDIUM');
   workingTimeLeft = signal<number>(8);
 
   // Zustand aus der Kotlin-Datenbank
@@ -39,26 +40,29 @@ export class UserService {
     nextLevelXpRequired: 100
   });
 
-  // public isAdmin = computed(() => {
-  //   const currentDeptId = this.currentUser()?.departmentId;
-  //   if (!currentDeptId) return false;
-
-  //   const userDepartment = this.departmentService.departments()
-  //     .find(dep => dep.id === currentDeptId);
-
-  //   return userDepartment?.name.toLowerCase() === ADMIN_DEPARTMENT_NAME.toLowerCase();
-  // });
+  public isAdmin = computed(() => {
+    return this.currentUser()?.isAdmin() ?? false;
+  });
 
   constructor() {
     console.log('=== 🚀 APP-START: UserService Constructor läuft an ===');
 
     // 1. Session über den neuen Service wiederherstellen
-    const savedUser = this.storageService.getItem<IUser>(LocalStorageService.KEYS.USER_SESSION);
-    if (savedUser) {
-      this.currentUserSignal.set(savedUser);
-      this.loadSettingsFromBackend(savedUser.id);
-    }
+console.log('=== 🚀 UserService Constructor läuft an ===');
 
+  const savedJson = this.storageService.getItem<IUser>(LocalStorageService.KEYS.USER_SESSION);
+  if (savedJson) {
+    const savedUser = UserModel.fromJson(savedJson);
+    console.log('📦 [UserService] User aus Cache wiederhergestellt:', savedUser);
+    console.log('🏢 [UserService] Department-Objekt:', savedUser.department);
+    console.log('👑 [UserService] Ist Admin?:', savedUser.isAdmin());
+    
+    this.currentUserSignal.set(savedUser);
+    this.loadSettingsFromBackend(savedUser.id);
+  } else {
+    console.warn('⚠️ [UserService] Kein User im Cache gefunden!');
+  }
+  
     // 2. Gamification laden
     const savedGamification = this.storageService.getItem<GamificationResult>(LocalStorageService.KEYS.GAMIFICATION);
     if (savedGamification) {
@@ -66,7 +70,7 @@ export class UserService {
     }
 
     // 3. Tagesform über den neuen Service laden (Mit Fallback 'normal')
-    const savedEnergy = this.storageService.getItem<'low' | 'normal' | 'high'>(LocalStorageService.KEYS.USER_ENERGY);
+    const savedEnergy = this.storageService.getItem<'LOW' | 'MEDIUM' | 'HIGH'>(LocalStorageService.KEYS.USER_ENERGY);
     if (savedEnergy) {
       this.userEnergy.set(savedEnergy);
     }
@@ -155,7 +159,7 @@ export class UserService {
     });
   }
 
-  public fetchCurrentStatus(): Observable<IUser | null> {
+  public fetchCurrentStatus(): Observable<UserModel| null> {
     const currentId = this.currentUser()?.id;
 
     // Wenn gar kein User eingeloggt ist, direkt abbrechen
@@ -163,6 +167,7 @@ export class UserService {
 
     // Wir rufen das Repository auf (das bauen wir gleich)
     return this.userRepository.getUserStatus(currentId).pipe(
+      map(json => (json)? UserModel.fromJson(json) : null),
       tap((updatedUser) => {
         if (updatedUser) {
           this.saveSession(updatedUser)
@@ -171,7 +176,7 @@ export class UserService {
     );
   }
 
-  public login(username: string, password: string): Observable<IUser | null> {
+  public login(username: string, password: string): Observable<UserModel | null> {
     // 🔗 Wir ketten das asynchrone Logout vor den Login
     return this.logout().pipe(
       switchMap((canProceed) => {
@@ -181,6 +186,7 @@ export class UserService {
 
         // 🚀 2. Mal (oder wenn sauber): Der echte Login-Request startet
         return this.userRepository.login(username, password).pipe(
+          map((json) => UserModel.fromJson(json)),
           tap((user) => {
             this.saveSession(user);
             this.loadSettingsFromBackend(user.id);
@@ -204,7 +210,7 @@ export class UserService {
     });
   }
 
-  public register(username: string, firstName: string, lastName: string, password: string): Observable<IUser | null> {
+  public register(username: string, firstName: string, lastName: string, password: string): Observable<UserModel | null> {
     // 🔗 Exakt dieselbe reaktive Kette für die Registrierung
     return this.logout().pipe(
       switchMap((canProceed) => {
@@ -214,6 +220,7 @@ export class UserService {
 
         // 🚀 2. Mal (oder wenn sauber): Der echte Register-Request startet
         return this.userRepository.register(username, firstName, lastName, password).pipe(
+          map((json) => UserModel.fromJson(json)),
           tap((user) => {
             this.saveSession(user);
             this.loadSettingsFromBackend(user.id);
@@ -243,7 +250,7 @@ export class UserService {
     this.onLogout$.next();
     this.currentUserSignal.set(null);
 
-    this.userEnergy.set('normal');
+    this.userEnergy.set('MEDIUM');
     this.workingTimeLeft.set(8);
     this.primeTimeStartHour.set(10);
     this.primeTimeEndHour.set(18);
@@ -266,8 +273,8 @@ export class UserService {
     );
   }
 
-  private saveSession(user: IUser): void {
-    this.storageService.setItem(LocalStorageService.KEYS.USER_SESSION, user);
+  private saveSession(user: UserModel): void {
+    this.storageService.setItem(LocalStorageService.KEYS.USER_SESSION, user.toJson());
     this.currentUserSignal.set(user);
   }
 }

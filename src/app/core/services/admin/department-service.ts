@@ -4,6 +4,7 @@ import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager
 import { ConnectionService } from '../connection/connection-service';
 import { UserService } from '../user/user-service';
 import { ADMIN_DEPARTMENT_NAME } from '../../shared/constants/admin-constants';
+import { Department } from '../../models/department';
 
 @Injectable({
   providedIn: 'root',
@@ -15,24 +16,23 @@ export class DepartmentService extends BaseDataManager { // 👈 ERBT JETZT VOM 
 
   private static readonly DEPARTMENTS_CACHE_KEY = 'cached_departments';
 
-  private departmentsSignal = signal<IDepartment[]>([]);
+  private departmentsSignal = signal<Department[]>([]);
   public departments = computed(() => this.departmentsSignal());
 
   public isAdmin = computed(() => {
-    const currentDeptId = this.userService.currentUser()?.departmentId;
-    if (!currentDeptId) return false;
+    const currentDept = this.userService.currentUser()?.department;
+    if (!currentDept) return false;
 
-    const userDepartment = this.departments().find((dep) => dep.id === currentDeptId);
-    return userDepartment?.name.toLowerCase() === ADMIN_DEPARTMENT_NAME.toLowerCase();
+    return currentDept.name.toLowerCase() === ADMIN_DEPARTMENT_NAME.toLowerCase();
   });
   
   constructor() {
     super(); // 👈 WICHTIG: Ruft den Konstruktor von BaseDataManager auf, der die Registrierung regelt!
-
+    this.loadDepartments()
     // 📴 Beim Start direkt den Cache laden
     const cached = this.localStorageService.getItem<IDepartment[]>(DepartmentService.DEPARTMENTS_CACHE_KEY);
     if (cached) {
-      this.departmentsSignal.set(cached);
+      this.departmentsSignal.set(cached.map((dept) => Department.fromJson(dept)));
     }
     effect(() => {
       const isLoggedIn = this.userService.isLoggedIn();
@@ -58,26 +58,28 @@ export class DepartmentService extends BaseDataManager { // 👈 ERBT JETZT VOM 
 
   public loadDepartments(): void {
     if (this.connectionService.isOffline()) {
+      this.fetchDataLocal()
       console.log('📴 [DepartmentService] Offline. Nutze Cache.');
       return;
     }
 
     this.departmentRepo.getAll$().subscribe({
       next: (data) => {
-        this.departmentsSignal.set(data);
+        this.departmentsSignal.set(data.map((dept) => Department.fromJson(dept)));
         this.localStorageService.setItem(DepartmentService.DEPARTMENTS_CACHE_KEY, data);
+        console.log("DEPARTMENTSERVICE Departments loaded", this.departmentsSignal())
       },
-      error: (err) => console.error('Fehler beim Laden der Abteilungen:', err)
+      error: (err) => console.error('DEPARTMENTSERVICE Fehler beim Laden der Abteilungen:', err)
     });
   }
 
-  public createDepartment(name: string): void {
+  public createDepartment(name: string, scope: string): void {
     if (this.connectionService.isOffline()) return;
 
-    this.departmentRepo.create$(name).subscribe({
+    this.departmentRepo.create$(name, scope).subscribe({
       next: (newDept) => {
         this.departmentsSignal.update((current) => {
-          const updated = [...current, newDept];
+          const updated = [...current, Department.fromJson(newDept)];
           this.localStorageService.setItem(DepartmentService.DEPARTMENTS_CACHE_KEY, updated);
           return updated;
         });
@@ -86,19 +88,27 @@ export class DepartmentService extends BaseDataManager { // 👈 ERBT JETZT VOM 
     });
   }
 
-  public updateDepartment(id: string, newName: string): void {
+  public updateDepartment(id: string, newName: string, scope: string): void {
     if (this.connectionService.isOffline()) return;
 
-    this.departmentRepo.update$(id, newName).subscribe({
+    this.departmentRepo.update$(id, newName, scope).subscribe({
       next: (updatedDept) => {
         this.departmentsSignal.update((current) => {
-          const updated = current.map((dept) => (dept.id === id ? updatedDept : dept));
+          const updated = current.map((dept) => (dept.id === id ? Department.fromJson(updatedDept) : dept));
           this.localStorageService.setItem(DepartmentService.DEPARTMENTS_CACHE_KEY, updated);
           return updated;
         });
       },
       error: (err) => alert(err.error?.message || 'Fehler beim Aktualisieren')
     });
+  }
+
+  private fetchDataLocal() {
+     const localDep = this.localStorageService.getItem<IDepartment[]>(DepartmentService.DEPARTMENTS_CACHE_KEY)
+     if (!localDep) {
+      return
+     }
+     this.departmentsSignal.set(localDep.map(dept => Department.fromJson(dept))) 
   }
 
   public deleteDepartment(id: string): void {

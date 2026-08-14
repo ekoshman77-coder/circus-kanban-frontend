@@ -197,6 +197,7 @@ export class ProjectCalculatorComponent implements OnInit {
         if (cachedTitle && cachedTitle.trim().toLowerCase() === foundIdea.title.trim().toLowerCase()) {
           this.projectDraftService.loadDraftFromStorageIntoSignal();
         } else {
+          this.projectService.cleanSuggestions();
           this.projectDraftService.initDraftFromIdea(foundIdea);
         }
         this.suggestedArea.set(foundIdea.tag || 'Allgemein');
@@ -261,7 +262,6 @@ export class ProjectCalculatorComponent implements OnInit {
       milestones: [...currentMilestones, newMilestone]
     }));
 
-    this.projectService.acceptSuggestion(currentProject.title, trimmedTitle);
   }
 
   /**
@@ -297,7 +297,7 @@ export class ProjectCalculatorComponent implements OnInit {
       milestones: updatedMilestones
     }));
 
-    this.projectService.degradeSuggestion(currentProject.title, milestoneToDegrade.title);
+    this.projectService.degradeSuggestion(currentProject.title, currentProject.area, milestoneToDegrade.title);
   }
 
   /**

@@ -3,13 +3,14 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { catchError, Observable, tap, throwError } from 'rxjs';
 import { GamificationResult } from '../models/gamification';
 import { gamificationApiUrl, settingsApiUrl, userApiUrl } from './links';
+import { IDepartment } from './department-repository';
 
 export interface IUser {
   id: string;
   username: string;
   firstName: string;
   lastName: string;
-  departmentId: string | null; // Kommt jetzt sauber mit!
+  department?: IDepartment | null;  // Kommt jetzt sauber mit!
   isApproved: boolean;          // Kommt jetzt sauber mit!
 }
 
@@ -84,10 +85,14 @@ export class UserRepository {
     );
   }
 
-  public approveUser(userId: string, departmentId: string): Observable<IUser>{
+  public approveUser(userId: string, departmentId: string, role: string): Observable<IUser>{
    console.log('📡 [UserRepo] approve user abgefeuert für ID:', userId);
 
-   return this.http.post<IUser>(`${userApiUrl}/${userId}/approve`, {departmentId: departmentId}).pipe(
+   const payload = {
+    departmentId: departmentId,
+    departmentRole: role
+   }
+   return this.http.post<IUser>(`${userApiUrl}/${userId}/approve`, payload).pipe(
     tap(() => console.log(`📥 [UserRepo] approving vom Server bestätigt für User-ID: ${userId}`))
    )
   }
