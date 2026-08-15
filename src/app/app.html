@@ -1,11 +1,11 @@
 <div class="app">
   <header class="app-header-bar">
 
+    <!-- LINKS: Startseite + Titel -->
     <div class="nav-group left-group">
       <button routerLink="/" routerLinkActive="active-route" [routerLinkActiveOptions]="{ exact: true }"
-        class="nav-tab icon-tab">
+        class="nav-tab icon-tab" data-tooltip="Startseite">
         <span class="tab-icon">🏠</span>
-        <span class="tab-text">Startseite</span>
       </button>
 
       <div class="title-container">
@@ -13,49 +13,66 @@
       </div>
     </div>
 
+    <!-- RECHTS: Suche + Haupt-Tabs + Tools-Dropdown -->
     <div class="nav-group right-group">
-      <div class=".header-search-wrapper">
+      <div class="header-search-wrapper">
         <app-search-center-component></app-search-center-component>
       </div>
-      <button routerLink="/todopage" routerLinkActive="active-route" class="nav-tab icon-tab">
+
+      <!-- 1. Haupt-Tab: Aufgaben -->
+      <button routerLink="/todopage" routerLinkActive="active-route" class="nav-tab icon-tab" data-tooltip="Aufgaben & Board">
         <span class="tab-icon">📋</span>
-        <span class="tab-text">Aufgaben & Board</span>
       </button>
 
-      <button routerLink="/statistics" routerLinkActive="active-route" class="nav-tab icon-tab">
-        <span class="tab-icon">📈</span>
-        <span class="tab-text">Statistiken</span>
-      </button>
-
-      <button routerLink="/planner" routerLinkActive="active-route" class="nav-tab icon-tab">
-        <span class="tab-icon">🧩</span>
-        <span class="tab-text">Smart Planner</span>
-      </button>
-
-      <button routerLink="/focus" routerLinkActive="active-route" class="nav-tab icon-tab">
-        <span class="tab-icon">⏳</span>
-        <span class="tab-text">Fokus-Timer</span>
-      </button>
-
-      <button routerLink="/quick-center" routerLinkActive="active-route" class="nav-tab icon-tab">
-        <span class="tab-icon">🎛️</span>
-        <span class="tab-text">Quick-Center</span>
-      </button>
-
-      <button routerLink="/ideas" routerLinkActive="active-route" class="nav-tab icon-tab">
+      <!-- 2. Haupt-Tab: Ideen -->
+      <button routerLink="/ideas" routerLinkActive="active-route" class="nav-tab icon-tab" data-tooltip="Ideen">
         <span class="tab-icon">💡</span>
-        <span class="tab-text">Ideas</span>
       </button>
-      <button routerLink="/team" routerLinkActive="active-route" class="nav-tab icon-tab">
+
+      <!-- 3. Haupt-Tab: Team -->
+      <button routerLink="/team" routerLinkActive="active-route" class="nav-tab icon-tab" data-tooltip="Team-Verwaltung">
         <span class="tab-icon">👥</span>
-        <span class="tab-text">Team-Verwaltung</span>
       </button>
-      @if (isAdmin()) {
-        <button routerLink="/admin" routerLinkActive="active-route" class="nav-tab icon-tab">
-          <span class="tab-icon">🛡️</span>
-          <span class="tab-text">Admin-Board</span>
+
+      <!-- 🧰 TOOLS & ADMIN DROPDOWN -->
+      <div class="tools-dropdown-container">
+        <button class="nav-tab icon-tab tools-btn">
+          <span class="tab-icon">🧰</span>
+          <span class="tools-label">Tools</span>
+          <span class="dropdown-arrow">▾</span>
         </button>
-      }
+
+        <div class="tools-dropdown-menu">
+          <a routerLink="/planner" routerLinkActive="active-dropdown-item" class="dropdown-item">
+            <span class="item-icon">🧩</span>
+            <span class="item-text">Smart Planner</span>
+          </a>
+
+          <a routerLink="/focus" routerLinkActive="active-dropdown-item" class="dropdown-item">
+            <span class="item-icon">⏳</span>
+            <span class="item-text">Fokus-Timer</span>
+          </a>
+
+          <a routerLink="/statistics" routerLinkActive="active-dropdown-item" class="dropdown-item">
+            <span class="item-icon">📈</span>
+            <span class="item-text">Statistiken</span>
+          </a>
+
+          <a routerLink="/quick-center" routerLinkActive="active-dropdown-item" class="dropdown-item">
+            <span class="item-icon">🎛️</span>
+            <span class="item-text">Quick-Center</span>
+          </a>
+
+          @if (isAdmin()) {
+            <div class="dropdown-divider"></div>
+            <a routerLink="/admin" routerLinkActive="active-dropdown-item" class="dropdown-item admin-item">
+              <span class="item-icon">🛡️</span>
+              <span class="item-text">Admin-Board</span>
+            </a>
+          }
+        </div>
+      </div>
+
     </div>
 
   </header>

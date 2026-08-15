@@ -53,56 +53,90 @@ html, body {
 
 .right-group { justify-content: flex-end; }
 
-
 /* ==========================================================================
-   DEINE SMARTEN ICON-TABS (Bleiben völlig unverändert)
+   KOMPAKTE ICON-TABS MIT HOVER-TOOLTIP
    ========================================================================== */
+
 .nav-tab.icon-tab {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 0px; 
-  padding: 10px 14px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #e2f0f5; 
-  background-color: rgba(255, 255, 255, 0.06); 
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 20px; 
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
-}
-
-.tab-icon {
+  justify-content: center;
+  
+  /* Perfekte runde/ovale Kompaktform */
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  
   font-size: 16px;
-  display: inline-block;
+  color: #e2f0f5; 
+  background-color: rgba(255, 255, 255, 0.08); 
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50%; /* Schicke runde Buttons */
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.tab-text {
-  max-width: 0;
-  opacity: 0;
-  white-space: nowrap;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* 🛑 WICHTIG: Versteckt die normalen Text-Spans im HTML absolut zuverlässig! */
+.nav-tab.icon-tab .tab-text {
+  display: none !important;
 }
 
-.nav-tab.icon-tab:hover,
-.nav-tab.icon-tab.active-route {
-  gap: 8px; 
-  background-color: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.35);
-}
-
-.nav-tab.icon-tab:hover .tab-text,
-.nav-tab.icon-tab.active-route .tab-text {
-  max-width: 140px; 
-  opacity: 1;
+.nav-tab.icon-tab:hover {
+  background-color: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
 }
 
 .nav-tab.active-route {
   background-color: #00b4d8 !important; 
   color: #ffffff !important;
   border-color: #0096c7 !important;
-  box-shadow: 0 4px 12px rgba(0, 180, 216, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 180, 216, 0.4);
+}
+
+/* 💬 DER EDLE CSS-TOOLTIP (Erscheint unter dem Button) */
+.nav-tab.icon-tab::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+  
+  background-color: #0f2e3c;
+  color: #ffffff;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  pointer-events: none; /* Klicks fliegen durch den Tooltip durch */
+  z-index: 200;
+}
+
+/* Tooltip beim Hover sanft einblenden */
+.nav-tab.icon-tab:hover::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Tools-Button Ausnahmeregel (Soll elliptisch sein & Text behalten) */
+.tools-btn {
+  width: auto !important;
+  padding: 0 14px !important;
+  border-radius: 20px !important;
+  gap: 4px;
+}
+
+.tools-btn .tab-text {
+  display: inline-block !important; /* Beim Tools-Button darf der Text sichtbar bleiben */
 }
 
 /* -------------------------------------------------------------
@@ -368,4 +402,117 @@ html, body {
   
   /* WICHTIG: Die Karte muss unsichtbar starten, bis die Animation loslegt! */
   opacity: 0; 
+}
+
+/* ==========================================================================
+   STYLES FÜR DAS TOOLS-DROPDOWN
+   ========================================================================== */
+
+.tools-dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+/* Der Tools-Hauptbutton im Header */
+.tools-btn {
+  gap: 6px !important;
+  padding: 10px 16px !important;
+}
+
+.tools-btn .tools-label {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.tools-btn .dropdown-arrow {
+  font-size: 11px;
+  margin-left: 2px;
+  transition: transform 0.2s ease;
+  opacity: 0.8;
+}
+
+/* Öffnet das Menü beim Hovern */
+.tools-dropdown-container:hover .tools-dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.tools-dropdown-container:hover .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+/* Das schwebende Dropdown-Menü */
+.tools-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px); /* Der visuelle Abstand */
+  right: 0;
+  min-width: 210px;
+  background-color: #1a4d63;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  
+  /* Sanfte Animation beim Einblenden */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 100;
+}
+
+/* 🪄 DIE UNSICHTBARE HOVER-BRÜCKE (Löst das Ruckeln komplett!) */
+.tools-dropdown-menu::before {
+  content: '';
+  position: absolute;
+  top: -12px; /* Dichtet die 8px Lücke ab und ragt noch 4px in den Button hinein */
+  left: 0;
+  width: 100%;
+  height: 12px; /* Macht den Bereich klick- und hoverbar */
+  background: transparent; /* Bleibt völlig unsichtbar */
+}
+
+/* Einzelner Eintrag im Menü */
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  color: #e2f0f5;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  transform: translateX(3px);
+}
+
+.dropdown-item.active-dropdown-item {
+  background-color: #00b4d8;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 180, 216, 0.4);
+}
+
+.item-icon {
+  font-size: 16px;
+}
+
+/* Trennlinie vor dem Admin-Bereich */
+.dropdown-divider {
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.15);
+  margin: 6px 4px;
+}
+
+/* Hervorhebung für den Admin-Eintrag */
+.dropdown-item.admin-item:hover {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
 }
