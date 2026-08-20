@@ -1,11 +1,20 @@
 import { ProjectRole, UserModel } from "./user-model";
+import { UserSummary } from "./user-summary";
 
 export class ProjectMember {
   public user: UserModel;
   public projectRole: ProjectRole;
+  public isPending: boolean
 
-  constructor(user: UserModel, projectRole: ProjectRole = 'NONE') { // 🌟 Standardwert 'NONE' im Konstruktor!
-    this.user = user;
+  constructor(user: UserModel | UserSummary, projectRole: ProjectRole = 'NONE') { 
+    if (user instanceof UserSummary) {
+      this.user = user.createPendingUser()
+      this.isPending = true
+    } else {
+      this.user = user;
+      this.isPending = false
+    }
+    
     this.projectRole = projectRole;
   }
 

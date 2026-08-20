@@ -3,12 +3,11 @@
      (dragstart)="onDragStart($event)">
   
   <div class="mini-avatar" [style.background-color]="user().getColorHash()">
-    {{ user().firstName[0]?.toUpperCase() }}{{ user().lastName[0]?.toUpperCase() }}
+    {{ user().getInitials() }}
   </div>
   
   <div class="mini-user-info">
-    <h5>{{ user().firstName }} {{ user().lastName }}</h5>
-    <p>&#64;{{ user().username }}</p>
+    <h5>{{ user().fullName}}</h5>
 
     <!-- 🏷️ HIER ZIEHT DIE ROLLE EIN: Nur da, wenn auch übergeben! -->
     @if (projectRole() && projectRole() !== 'NONE') {

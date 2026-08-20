@@ -4,6 +4,7 @@ import { map, Observable, tap } from 'rxjs';
 import { ProjectRole, UserModel } from '../models/user-model';
 import { allUsersAdminApiUrl, teamApiUrl, userApiUrl } from './links';
 import { ProjectMember } from '../models/project-member';
+import { AssignUserToProjekt } from './dto/assign-user-to-project';
 
 @Injectable({
   providedIn: 'root'
@@ -37,18 +38,15 @@ export class TeamRepository {
     // 🎯 WICHTIG: NUR teamApiUrl benutzen, kein extra '/assign' anfügen!
     const url = teamApiUrl;
 
-    // 1. Die Query-Parameter für das Backend
-    const params = new HttpParams()
-      .set('projectId', projectId)
-      .set('role', role);
-
     // 2. Das JSON-Objekt für den @RequestBody
-    const body = {
-      userId: memberId
+    const body: AssignUserToProjekt = {
+      userId: memberId,
+      projectId: projectId,
+      projectRole: role
     };
 
     // 3. Abschicken!
-    return this.http.post<any>(url, body, { params }).pipe(
+    return this.http.post<any>(url, body).pipe(
       map(json => {
         console.log('📬 [TeamRepo] Server-Antwort für Zuweisung erhalten:', json);
         return new ProjectMember(

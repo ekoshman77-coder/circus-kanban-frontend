@@ -65,7 +65,7 @@ export class AdminUsersComponent implements OnInit {
 
   public ngOnInit(): void {
     this.adminTeamService.loadAdminPool();
-    this.masterDataService.loadMasterData(); // 👈 Masterdata laden
+     // 👈 Masterdata laden
   }
 
   public getUsersForDept(departmentId: string): UserModel[] {

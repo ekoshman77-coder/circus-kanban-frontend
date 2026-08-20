@@ -25,5 +25,6 @@
   export const departmentApiUrl = `${baseUrl}/departments`
   export const allUsersAdminApiUrl = `${teamApiUrl}/all-users`;
   export const MasterDataUrl = `${baseUrl}/masterdata`
+  export const InvitationUrl = `${baseUrl}/invitation`
 
   

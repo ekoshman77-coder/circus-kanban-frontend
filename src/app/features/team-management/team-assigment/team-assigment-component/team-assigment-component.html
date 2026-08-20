@@ -3,7 +3,9 @@
   <div class="assignment-header">
     <h2 class="page-title">👥 Team-Zuweisung</h2>
     <div class="header-action-zone">
-      <app-milestone-selector-component [onlyProjects]="true" [canChooseProject]="true"
+      <app-milestone-selector-component 
+        [onlyProjects]="true" 
+        [canChooseProject]="true"
         [initialProjectId]="selectedProjectId()" (projectSelected)="onProjectChange($event)">
       </app-milestone-selector-component>
     </div>
@@ -20,8 +22,11 @@
         (addUser)="onAddUserToProject($event)">
       </app-project-members-list>
 
-      <app-available-pool-list [pool]="availablePool()" (addUser)="onAddUserToProject($event)"
-        (removeUser)="onRemoveUserFromProject($event)"> <!-- 🎯 HIER NEU HINZUFÜGEN! -->
+      <app-available-pool-list 
+      [pool]="availablePool()" 
+      (addUser)="onAddUserToProject($event)"
+      (onNewUsersInvited)="onNewUsersAdded($event)"
+      (removeUser)="onRemoveUserFromProject($event)"> 
       </app-available-pool-list>
     </div>
     } @else {
@@ -44,11 +49,9 @@
         <div class="select-wrapper">
           <select id="roleSelect" [value]="selectedRoleForAssignment()"
             (change)="selectedRoleForAssignment.set($any($event.target).value)">
-            <option value="DEVELOPER">👨‍💻 DEVELOPER</option>
-            <option value="PROJECT_MANAGER">👑 PROJECT_MANAGER</option>
-            <option value="DESIGNER">🎨 DESIGNER</option>
-            <option value="VIEWER">👁️ VIEWER</option>
-            <option value="OWNER">🔑 OWNER</option>
+            @for (role of projectRoles(); track role){
+              <option [value]='role'>{{ getRoleEmoji(role) }} {{ role }}</option>
+            }
           </select>
         </div>
       </div>

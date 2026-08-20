@@ -1,5 +1,6 @@
 import { Component, input, output } from '@angular/core';
-import { UserModel, ProjectRole } from '../../../../models/user-model'; // 🎯 ProjectRole hinzugefügt!
+import { ProjectRole, UserModel } from '../../../../models/user-model'; 
+import { UserSummary } from '../../../../models/user-summary';
 
 @Component({
   selector: 'app-member-card-component',
@@ -10,7 +11,7 @@ import { UserModel, ProjectRole } from '../../../../models/user-model'; // 🎯 
 })
 export class MemberCardComponent {
   // 📥 Inputs vom Typ Signal
-  public user = input.required<UserModel>();
+  public user = input.required<UserModel | UserSummary>();
   public actionType = input<'add' | 'remove'>('add'); 
 
   // 🎭 DAS NEUE HIGHLIGHT: Ein optionales Input für die Projekt-Rolle!

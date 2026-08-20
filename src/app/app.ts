@@ -16,6 +16,7 @@ import confetti from 'canvas-confetti';
 import { NotificationService } from './core/services/notification/notification-service';
 import { StreakPanelComponent } from './features/streak-panel/streak-panel';
 import { DepartmentService } from './core/services/admin/department-service';
+import { MasterDataService } from './core/services/admin/master-data-service';
 
 @Component({
   selector: 'app-root',
@@ -30,6 +31,7 @@ export class App implements OnInit {
   public todoService = inject(TodoService);
   public notificationService = inject(NotificationService)
   public departmentService = inject(DepartmentService)
+  public masterDataService = inject(MasterDataService)
 
   // 🎯 Das globale Signal, das unser HTML mit den frischen Level-Daten füttert
   protected globalLevelUpResult = signal<GamificationResult | null>(null);

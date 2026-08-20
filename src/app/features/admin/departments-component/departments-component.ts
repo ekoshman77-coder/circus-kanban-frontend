@@ -54,7 +54,7 @@ export class DepartmentTabComponent implements OnInit {
   editingDepartmentId: string | null = null;
 
   ngOnInit(): void {
-    this.masterDataService.loadMasterData();
+    
   }
 
   public onCreateDepartment(): void {

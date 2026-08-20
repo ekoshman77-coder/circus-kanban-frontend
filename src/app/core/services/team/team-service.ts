@@ -7,6 +7,7 @@ import { UserService } from '../user/user-service';
 import { ProjectMember } from '../../models/project-member';
 import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 import { Department } from '../../models/department';
+import { UserSummary } from '../../models/user-summary';
 
 @Injectable({
     providedIn: 'root',
@@ -93,7 +94,7 @@ export class TeamService extends BaseDataManager {
     }
 
     /** ➕ Reicht das Hinzufügen an den DataManager weiter */
-    public addMemberToProject(projectId: string | null, member: UserModel, projectRole: ProjectRole): void {
+    public addMemberToProject(projectId: string | null, member: UserModel | UserSummary, projectRole: ProjectRole): void {
         if (projectId) {
             this.dataManager.addMemberToProject(projectId, member, projectRole);
         }

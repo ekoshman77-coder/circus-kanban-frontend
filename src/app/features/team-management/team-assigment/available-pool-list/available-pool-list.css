@@ -56,3 +56,11 @@
 .pool-list-container::-webkit-scrollbar-thumb:active {
   background: rgba(22, 163, 74, 0.8) !important;
 }
+
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  /* Und hier kannst du noch mehr hinzufügen, z.B. Abstände */
+  margin-bottom: 12px;
+}

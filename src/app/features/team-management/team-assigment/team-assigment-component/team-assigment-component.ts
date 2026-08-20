@@ -9,6 +9,9 @@ import { MemberCardComponent } from '../../../../core/shared/components/member-c
 import { ProjectRole } from '../../../../core/models/user-model';
 import { FormsModule } from '@angular/forms'; // 🎯 Wichtig fürs Dropdown-Binding!
 import { MilestoneSelectorComponent } from '../../../../core/shared/components/milestone-selector-component/milestone-selector-component';
+import { MasterDataService } from '../../../../core/services/admin/master-data-service';
+import { UserSummary } from '../../../../core/models/user-summary';
+import { ProjectMember } from '../../../../core/models/project-member';
 
 @Component({
   selector: 'app-team-assignment',
@@ -20,11 +23,28 @@ import { MilestoneSelectorComponent } from '../../../../core/shared/components/m
 export class TeamAssigmentComponent implements OnInit {
   private teamService = inject(TeamService);
   private projectService = inject(ProjectService);
+  private masterDataService = inject(MasterDataService)
+
+  private roleEmojiMap: Record<string, string> = {
+    DEVELOPER: '👨‍💻',
+    PROJECT_MANAGER: '👑',
+    DESIGNER: '🎨',
+    VIEWER: '👁️',
+    OWNER: '🔑',
+    TESTER: '🧪',
+    SCRUM_MASTER: '🔄'
+  };
 
   public selectedProjectId = signal<string | null>(null);
 
   public allProjects = computed(() => this.projectService.projectsList());
-  public allUsers = this.teamService.globalMembersSignal;
+  public pool = this.teamService.globalMembersSignal;
+  public projectRoles = this.masterDataService.projectRoles
+  public newUsers = signal<ProjectMember[]>([])
+
+  public allUsers = computed(() => {
+    return [...this.pool(), ...this.newUsers()]
+  })
 
   public activeMembers = computed(() => {
     return this.teamService.currentProjectMembersSignal();
@@ -54,15 +74,19 @@ export class TeamAssigmentComponent implements OnInit {
     });
   }
 
+  public getRoleEmoji(roleName: string): string {
+     return this.roleEmojiMap[roleName]?? '👤' 
+  }
+
   public availablePool = computed(() => {
     const projId = this.selectedProjectId();
-    if (!projId) return this.allUsers().map(member => member.user);
+    if (!projId) return this.allUsers();
 
     // Die aktiven IDs aus dem ProjectMember[] extrahieren
     const activeIds = this.activeMembers().map(m => m.user.id);
 
     // Nur User anzeigen, die noch NICHT im Projekt sind
-    return this.allUsers().filter(member => !activeIds.includes(member.user.id)).map(member => member.user);
+    return this.allUsers().filter(member => !activeIds.includes(member.user.id));
   });
 
   public onRemoveUserFromProject(userId: string): void {
@@ -101,9 +125,9 @@ export class TeamAssigmentComponent implements OnInit {
 
     if (!projId || !userId) return;
 
-    const user = this.allUsers().find(u => u.user.id === userId);
-    if (user) {
-      this.teamService.addMemberToProject(projId, user.user, role);
+    const member = this.allUsers().find(m => m.user.id === userId);
+    if (member) {
+      this.teamService.addMemberToProject(projId, member.user, role);
     }
 
     this.onCloseRoleModal();
@@ -120,5 +144,12 @@ export class TeamAssigmentComponent implements OnInit {
     if (projectId) {
       this.teamService.setCurrentProject(projectId)
     }
+  }
+
+  public onNewUsersAdded(users: UserSummary[]) {
+     const existingIds = new Set(this.allUsers().map(member => member.user.id))
+     const newAvailableUsers = users.filter(u => !existingIds.has(u.id)) 
+     const members = newAvailableUsers.map(user => new ProjectMember(user))
+     this.newUsers.update(value => [...value, ...members])
   }
 }

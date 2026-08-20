@@ -8,7 +8,7 @@ import { UserService } from '../user/user-service'; // 🎯 NEU importiert!
 import { NotificationService } from '../notification/notification-service';
 import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 import { concat, toArray } from 'rxjs';
-import { Department } from '../../models/department';
+import { UserSummary } from '../../models/user-summary';
 
 // Typdefinition für unsere Queue-Einträge
 interface OfflineTeamAction {
@@ -231,7 +231,7 @@ export class TeamDataManager extends BaseDataManager {
   }
 
   /** ➕ Mitglied hinzufügen (Optimistic UI) */
-  public addMemberToProject(projectId: string, member: UserModel, projectRole: ProjectRole): void {
+  public addMemberToProject(projectId: string, member: UserModel | UserSummary, projectRole: ProjectRole): void {
     const newMemberBinding = new ProjectMember(member, projectRole);
     const cacheKey = this.STORAGE_KEY_PROJECT_PREFIX + projectId;
     const updatedList = [...this.currentProjectMembersSignal(), newMemberBinding];
@@ -265,6 +265,11 @@ export class TeamDataManager extends BaseDataManager {
 
   /** ☕ Kaffeekasse – Perfekt offline-resistent */
   public updateCoffeeAccount(userId: string, newBalance: number, role: string, emoji: string): void {
+    const updatedMember = this.globalMembersSignal().find(user => user.user.id === userId)
+    if (!updatedMember || updatedMember.isPending) {
+      return
+    }
+
     const updatedList = this.globalMembersSignal().map(m => {
       if (m.user.id === userId) {
         m.user.coffeeAccount = {
@@ -275,6 +280,7 @@ export class TeamDataManager extends BaseDataManager {
       }
       return m;
     });
+
     this.globalMembersSignal.set(updatedList);
     localStorage.setItem(this.STORAGE_KEY_GLOBAL, JSON.stringify(updatedList));
 
