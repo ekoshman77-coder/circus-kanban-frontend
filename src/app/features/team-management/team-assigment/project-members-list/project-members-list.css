@@ -1,11 +1,7 @@
 .members-list-container {
-  /* 🩵 Klares, feierliches Pastell-Eisblau mit 70% Deckkraft */
   background: rgba(240, 249, 255, 0.70) !important; 
   backdrop-filter: blur(12px); 
-  
-  /* Hauchdünne, leuchtende Eisblau-Kante */
   border: 1px solid rgba(186, 230, 253, 0.6); 
-  
   border-radius: 12px;
   padding: 20px;
   height: 520px;
@@ -13,23 +9,13 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  
-  /* Ein ganz leichtes, magisches Leuchten für den "Hura"-Effekt */
   box-shadow: 0 8px 32px rgba(14, 165, 233, 0.04); 
   transition: all 0.2s ease;
-}
-
-/* Der Scrollbar im passenden Eisblau */
-.members-list-container::-webkit-scrollbar-thumb {
-  background: rgba(56, 189, 248, 0.25);
-  border-radius: 10px;
-}
-.members-list-container::-webkit-scrollbar-thumb:hover {
-  background: rgba(56, 189, 248, 0.45);
+  box-sizing: border-box;
 }
 
 .members-list-container h3 {
-  margin: 0 0 12px 0;
+  margin: 0 0 4px 0;
   font-size: 15px;
   color: #2c1d11; 
   font-weight: 800;
@@ -37,36 +23,32 @@
   letter-spacing: 0.5px;
 }
 
-/* 🎨 Ultraschlanker, dynamischer Eisblau-Scrollbar */
+/* 🎨 Scrollbar Styling */
 .members-list-container::-webkit-scrollbar {
   width: 6px;
 }
 .members-list-container::-webkit-scrollbar-track {
   background: transparent;
 }
-/* Ruhezustand: Sehr dezent */
 .members-list-container::-webkit-scrollbar-thumb {
-  background: rgba(56, 189, 248, 0.2);
+  background: rgba(56, 189, 248, 0.25);
   border-radius: 10px;
   transition: background 0.2s ease;
 }
-/* Hover: Wird deutlich sichtbar */
 .members-list-container::-webkit-scrollbar-thumb:hover {
-  background: rgba(56, 189, 248, 0.5);
+  background: rgba(56, 189, 248, 0.45);
 }
-/* Aktiv (Gezogen/Geklickt): Klares "Hurra"-Blau statt grau! */
 .members-list-container::-webkit-scrollbar-thumb:active {
   background: rgba(14, 165, 233, 0.8) !important;
 }
 
-/* 📦 Der Wrapper für Karte + Rolle */
+/* 📦 Wrapper für Karte */
 .member-row-wrapper {
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   position: relative;
   transition: all 0.2s ease;
 }
 
-/* 🏷️ Die sauber gestylte Rolle (ohne Inline-Styles!) */
 .role-badge {
   display: block;
   font-size: 0.8rem;
@@ -78,8 +60,6 @@
   transition: opacity 0.15s ease, visibility 0.15s ease;
 }
 
-/* 🪄 DER ZAUBER-TRICK: Rolle ausblenden während des Ziehens! 
-   (Funktioniert für native Drags und Angular CDK Drag) */
 .member-row-wrapper:has(.cdk-drag-placeholder) .role-badge,
 .member-row-wrapper:active .role-badge,
 .member-row-wrapper.dragging .role-badge {
@@ -87,7 +67,6 @@
   visibility: hidden;
 }
 
-/* CSS für die leere Meldung (damit sie auch hübsch ist) */
 .empty-hint {
   text-align: center;
   color: #2c1d11;
@@ -95,4 +74,19 @@
   font-size: 13px;
   margin-top: 40px;
   font-style: italic;
+}
+
+/* 🛠️ CDK Helper Styles */
+.cdk-drag-preview {
+  box-sizing: border-box;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.3;
+}
+
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
 }
