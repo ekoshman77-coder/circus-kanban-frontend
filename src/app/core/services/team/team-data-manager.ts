@@ -232,9 +232,12 @@ export class TeamDataManager extends BaseDataManager {
 
   /** ➕ Mitglied hinzufügen (Optimistic UI) */
   public addMemberToProject(projectId: string, member: UserModel | UserSummary, projectRole: ProjectRole): void {
+    console.log("TEAM_DATAMANAGER: addMemberToProject")
+
     const newMemberBinding = new ProjectMember(member, projectRole);
     const cacheKey = this.STORAGE_KEY_PROJECT_PREFIX + projectId;
-    const updatedList = [...this.currentProjectMembersSignal(), newMemberBinding];
+    const filteredList = this.currentProjectMembersSignal().filter(m => m.user.id !== member.id)
+    const updatedList = [...filteredList, newMemberBinding];
     this.currentProjectMembersSignal.set(updatedList);
     localStorage.setItem(cacheKey, JSON.stringify(updatedList));
 

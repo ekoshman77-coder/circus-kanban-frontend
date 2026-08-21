@@ -6,7 +6,8 @@
       <app-milestone-selector-component 
         [onlyProjects]="true" 
         [canChooseProject]="true"
-        [initialProjectId]="selectedProjectId()" (projectSelected)="onProjectChange($event)">
+        [initialProjectId]="selectedProjectId()" 
+        (projectSelected)="onProjectChange($event)">
       </app-milestone-selector-component>
     </div>
   </div>
@@ -16,18 +17,25 @@
   <div class="assignment-content">
     @if (selectedProjectId()) {
     <h3 class="section-title">Projektmitglieder verwalten</h3>
-    <div class="assignment-split-view">
 
-      <app-project-members-list [members]="activeMembers()" (removeUser)="onRemoveUserFromProject($event)"
+    <!-- 🎯 cdkDropListGroup verbindet automatisch ALLE Unter-Dropzones (Team, Pool & Schlitz) -->
+    <div class="assignment-split-view" cdkDropListGroup>
+
+      <app-project-members-list 
+        [members]="activeMembers()" 
+        (removeUser)="onRemoveUserFromProject($event)"
+        (changeRole)="onBadgeClicked($event)"
         (addUser)="onAddUserToProject($event)">
       </app-project-members-list>
 
       <app-available-pool-list 
-      [pool]="availablePool()" 
-      (addUser)="onAddUserToProject($event)"
-      (onNewUsersInvited)="onNewUsersAdded($event)"
-      (removeUser)="onRemoveUserFromProject($event)"> 
+        [pool]="availablePool()" 
+        (addUser)="onAddUserToProject($event)"
+        (onNewUsersInvited)="onNewUsersAdded($event)"
+        (removeUser)="onRemoveUserFromProject($event)"
+        (removeFromPool)="removeUserFromPool($event)"> 
       </app-available-pool-list>
+
     </div>
     } @else {
     <div class="empty-state-card">
@@ -37,30 +45,14 @@
     </div>
     }
   </div>
-
-  @if (showRoleModal()) {
-  <div class="modal-backdrop" (click)="onCloseRoleModal()">
-    <div class="modal-card" (click)="$event.stopPropagation()">
-      <h3>✨ Projekt-Rolle zuweisen</h3>
-      <p class="modal-hint">Welche Rolle soll der Mitarbeiter in diesem Projekt einnehmen?</p>
-
-      <div class="form-group">
-        <label for="roleSelect">Projekt-Rolle:</label>
-        <div class="select-wrapper">
-          <select id="roleSelect" [value]="selectedRoleForAssignment()"
-            (change)="selectedRoleForAssignment.set($any($event.target).value)">
-            @for (role of projectRoles(); track role){
-              <option [value]='role'>{{ getRoleEmoji(role) }} {{ role }}</option>
-            }
-          </select>
-        </div>
-      </div>
-
-      <div class="modal-actions">
-        <button type="button" class="btn-cancel" (click)="onCloseRoleModal()">Abbrechen</button>
-        <button type="button" class="btn-confirm" (click)="onConfirmRoleAssignment()">Hinzufügen ✨</button>
-      </div>
-    </div>
-  </div>
-  }
+  
+@if (showRoleModal()) {
+  <app-select-role-modal
+    [options]="projectRoles()"
+    [emojiMap]="roleEmojiMap"
+    [(selected)]="selectedRoleForAssignment"
+    (select)="onConfirmRoleAssignment()"
+    (cancel)="onCloseRoleModal()">
+  </app-select-role-modal>
+}
 </div>

@@ -10,24 +10,18 @@ import { UserSummary } from '../../../../models/user-summary';
   styleUrl: './member-card-component.css',
 })
 export class MemberCardComponent {
-  // 📥 Inputs vom Typ Signal
   public user = input.required<UserModel | UserSummary>();
   public actionType = input<'add' | 'remove'>('add'); 
+  public role = input<ProjectRole | string | null>(null);
 
-  // 🎭 DAS NEUE HIGHLIGHT: Ein optionales Input für die Projekt-Rolle!
-  public projectRole = input<ProjectRole | null>(null);
-
-  // 📤 Output-Event nach oben
   public actionClicked = output<void>();
+  public badgeClicked = output<void>();
 
   public onButtonClick(): void {
     this.actionClicked.emit();
   }
 
-  public onDragStart(event: DragEvent): void {
-    if (event.dataTransfer) {
-      event.dataTransfer.setData('text/plain', this.user().id);
-      event.dataTransfer.effectAllowed = 'move';
-    }
+  public onBadgeClicked(): void {
+    this.badgeClicked.emit()
   }
 }

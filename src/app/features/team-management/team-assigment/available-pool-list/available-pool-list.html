@@ -1,25 +1,50 @@
-<div class="pool-list-container"
-    (dragover)="onDragOver($event)"
-     (drop)="onDrop($event)">
-  <div class='list-header'>
-    <h3>🟢 Verfügbare Mitarbeiter (Wartebank)</h3>
-    <button class="btn-add-users" (click)="openDepartmentModal()">➕</button>
+<div class="pool-list-container">
+  
+  <div class="list-main-content">
+    <div class="list-header">
+      <h3>🟢 Verfügbare Mitarbeiter (Wartebank)</h3>
+      <button class="btn-add-users" type="button" (click)="openDepartmentModal()" title="Mitarbeiter aus Abteilungen einladen">
+        <span>➕</span> Mitarbeiter laden
+      </button>
+    </div>
+
+    <!-- 📜 Wartebank: Empfängt Drops aus dem Projekt ('assigned-team-list') -->
+    <div class="pool-members-scroll"
+         cdkDropList
+         id="available-pool-list"
+         [cdkDropListConnectedTo]="['assigned-team-list']"
+         (cdkDropListDropped)="onPoolDrop($event)">
+      
+      @for (user of allUsers(); track user.id) {
+        <app-member-card-component
+          cdkDrag
+          [cdkDragData]="user.id"
+          [user]="user"
+          actionType="add"
+          (actionClicked)="onAdd(user.id)">
+        </app-member-card-component>
+      } @empty {
+        <p class="empty-hint">Keine weiteren Mitarbeiter im globalen Pool verfügbar.</p>
+      }
+    </div>
   </div>
-  @for (user of allUsers(); track user.id) {
-    <app-member-card-component
-      [user]="user"
-      actionType="add"
-      (actionClicked)="onAdd(user.id)"
-    >
-    </app-member-card-component>
-  } @empty {
-    <p class="empty-hint">Keine weiteren Mitarbeiter im globalen Pool verfügbar.</p>
-  }
+
+  <!-- 🎰 Der Schlitz rechts: Empfängt Drops aus der Wartebank ('available-pool-list') -->
+  <div class="pool-slot-zone"
+       cdkDropList
+       id="trash-slot-zone"
+       [cdkDropListConnectedTo]="['available-pool-list']"
+       [class.drag-over]="isTrashHovered()"
+       (cdkDropListDropped)="onTrashDrop($event)"
+       (cdkDropListEntered)="onTrashEntered()"
+       (cdkDropListExited)="onTrashExited()">
+    <span class="slot-icon">➖</span>
+  </div>
+
 </div>
 
 @if (isModalOpen()) {
    <app-departmet-select-modal
-    (selected)="onDepartmentsSeleted($event)"
-   >
+    (selected)="onDepartmentsSeleted($event)">
    </app-departmet-select-modal>
 }

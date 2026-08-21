@@ -1,0 +1,32 @@
+<div class="modal-overlay" (click)="onCancel()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    
+    <!-- HEADER -->
+    <div class="modal-header">
+      <h3>🏷️ Rolle zuweisen</h3>
+      <button class="close-btn" (click)="onCancel()" title="Abbrechen">✕</button>
+    </div>
+
+    <!-- BODY WITH DROPDOWN -->
+    <div class="modal-body">
+      <p class="modal-message">Bitte wähle eine Rolle aus der Liste aus:</p>
+
+      <div class="select-wrapper">
+        <select class="custom-select" [(ngModel)]="selected">
+          @for (role of options(); track role) {
+            <option [value]="role">
+              {{ getRoleEmoji(role) }} {{ role }}
+            </option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="onCancel()">Abbrechen</button>
+      <button type="button" class="btn btn-primary" (click)="onConfirm()">Speichern ✨</button>
+    </div>
+
+  </div>
+</div>
