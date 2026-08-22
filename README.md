@@ -1,32 +1,44 @@
 # SyncFocus & ProjectHub – Frontend 🚀
 > Reaktives Fullstack-Ökosystem für agiles Projekt- und Selbstmanagement
 
-Dieses Repository enthält das **Frontend** der Applikation, eine ganzheitliche Plattform, die klassisches Taskmanagement mit strategischer Projektplanung, Team-Kollaboration und datengestützter Optimierung vereint.
+Dieses Repository enthält das **Frontend** der Applikation, eine ganzheitliche Plattform, die klassisches Taskmanagement mit strategischer Projektplanung, Team-Kollaboration, KI-gestützten Empfehlungen und feingranularer Administration vereint.
 
 ---
 
 ## 🏗️ Technologischer Stack (Frontend)
-* **Framework:** Angular (Moderne Standalone-Architektur)
-* **Reaktivität & Datenfluss:** RxJS-Pipelines, Reactive Forms
-* **Netzwerk:** HTTP-Interceptoren (z. B. für Auth-Tokens/Error-Handling)
-* **Design/UI:** HTML5, CSS3/SCSS (Responsive Design)
+* **Framework:** Angular 21 (Moderne Standalone-Architektur mit Signals & Reactive Control Flow)
+* **Reaktivität & Datenfluss:** RxJS-Pipelines, Angular Signals (`signal`, `computed`), Reactive Forms
+* **Interaktivität:** Angular CDK Drag & Drop (Kanban-Systeme & Quick-Trash)
+* **UI/UX Design:** CSS3/SCSS (Custom Glassmorphism Look, dynamische Farb-Gradients, Responsive Layouts)
+* **Netzwerk & Resilience:** HTTP-Interceptoren (Auth/Error Handling), LocalStorage Queuing & Offline-Sync
 
 ---
 
-## 🧩 Die 5 Kern-Module des Gesamtprojekts
+## 🧩 Kern-Module der Plattform
 
-1. **Agiles Task-Board:** Flexibles Arbeiten über Listenansichten oder ein interaktives Kanban-Board, erweitert um eine Expresserfassung für retrospektive Aufgaben.
-2. **Smarte Projekt- & Meilenstein-Kalkulation (Ideenboard):** Ideenfindung direkt gekoppelt an ein Projektkalkulations-Tool zur Definition von Meilensteinen und Teamzuweisungen.
-3. **KI-gestützter Smartplaner & Fokus-Zentrum:** Pomodoro-Fokustimer und Quickcenter für Workflows (gekoppelt an die Backend-Logik).
-4. **Teamboard & Ressourcenplanung:** Verwaltung von Teammitgliedern, Projektzuweisungen und spielerischen Elementen (digitale Kaffeekasse).
-5. **Analytisches Statistik-Dashboard:** Deep-Dive-Auswertungen (Überblick, Performance & Fokus, visuelle Tagesauslastung).
+1. **👑 Administrator-Zentrale (Admin Board):**
+   * **Abteilungs-Verwaltung:** Erstellung, Bearbeitung und automatischer Systemschutz geschützter Bereiche.
+   * **Benutzer-Approval & Kanban:** Drag-and-Drop-Warteraum zur Zuweisung neuer Benutzer in Abteilungen, Rollenvergabe und Schnell-Ablehnung via Mülleimer-Zone.
+   * **Berechtigungs-Matrix (Permissions):** Feingranulares System zur Verwaltung von Rollen, Ressourcen, Aktionen und Scopes – inklusive Klapp-Modus, Inline-Editing und Sicherheits-Validationen.
+
+2. **🤖 KI-Gestützter Smartplaner & Fokus-Zentrum:**
+   * **Dual-KI-Empfehlungs-System:** Benutzer erhalten intelligente Vorschläge zur Aufgaben-Priorisierung von zwei Modellen (Bayes-Klassifikator & kompaktes Neuronales Netz) und können direkt zwischen den Empfehlungen wählen.
+   * **Pomodoro-Fokustimer:** Integrierte Workflows für unterbrechungsfreies Arbeiten.
+
+3. **📋 Agiles Task-Board:** 
+   * Flexibles Arbeiten über Listenansichten oder ein interaktives Kanban-Board, erweitert um eine Expresserfassung für schnelle Retrospektiven.
+
+4. **💡 Smarte Projekt- & Meilenstein-Kalkulation (Ideenboard):**
+   * Verknüpfung von Ideenfindung mit Projektkalkulation, Meilenstein-Definition und Ressourcenplanung.
+
+5. **📊 Analytisches Statistik-Dashboard *(Work in Progress)*:**
+   * Deep-Dive-Auswertungen zur Team-Performance, Tagesauslastung und Fokussessions (aktuell in kontinuierlicher Erweiterung).
 
 ---
 
 ## 🛠️ Installation & Start
 
 ### Voraussetzungen
-Da das Projekt auf den neuesten Framework-Features aufbaut, werden folgende Mindestversionen zwingend benötigt:
 * **Node.js:** v20.x oder v22.x (LTS)
 * **Angular CLI:** v21.x oder höher 🚀
 * 
@@ -36,45 +48,30 @@ Da das Projekt auf den neuesten Framework-Features aufbaut, werden folgende Mind
    git clone <https://github.com/ekoshman77-coder/circus-kanban-frontend>
    cd <StartProject>
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.0.2.
+2. Abhängigkeiten installieren:
+```bash
+npm install
+```
 
-## Development server
-
-To start a local development server, run:
+3. Entwicklungs-Server starten:
 
 ```bash
 ng serve
 ```
+Wenn server läuft navigieren zu `http://localhost:4200/`
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
 
-## Code scaffolding
+## Testing & Build
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Unit Tests ausführen:
 
 ```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
+ng test
 ```
 
 This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
 
 ## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
 
 ```bash
 ng test
@@ -82,19 +79,17 @@ ng test
 
 ## Running end-to-end tests
 
-For end-to-end (e2e) testing, run:
-
 ```bash
 ng e2e
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+## Production Build erstellen:
 
-## Additional Resources
+```bash
+ng build
+```
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+👥 Team & Projektbeteiligte
 
-## 👥 Team & Projektbeteiligte
-
-* **Elena Koshman** – Lead Developer & Software-Architektin
-* **Gemini 3.5 Flash (Google)** – KI-Entwicklungsassistent (Unterstützung bei Architekturfragen, Codeentwicklung und Code-Review)
+    Elena Koshman – Lead Developer & Software-Architektin
+    Gemini (Google) – Co-Developer (Architektur, UI/UX-Design & Code-Entwicklung)

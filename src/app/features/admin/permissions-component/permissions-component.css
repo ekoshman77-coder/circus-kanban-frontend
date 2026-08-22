@@ -1,0 +1,203 @@
+/* Haupt-Container */
+.permissions-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1rem;
+/*  background: #f4f6f9; /* Frischer, leicht kühler Hintergrund */
+  min-height: 100vh;
+}
+
+/* Basis-Karten Design */
+.card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* 🟢 2. CREATE-FORM (Optisch hervorgehoben) */
+.create-card {
+  border-left: 6px solid #4f46e5; /* Indigoblauer Akzent-Streifen */
+  background: linear-gradient(135deg, #f8fafa 0%, hsl(180, 40%, 98%) 100%);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.08);
+}
+
+.create-card h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #312e81;
+  font-size: 1.15rem;
+}
+
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1;
+  min-width: 160px;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+select {
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background-color: #fff;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+select:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+/* 🔍 4. DEZENTER & DÜNNER FILTER-RIEGEL */
+.filter-card {
+  padding: 0.65rem 1.25rem; /* Viel schlanker */
+  background: #eef2ff; /* Sanfter Indigotton */
+  border: 1px solid #e0e7ff;
+}
+
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.filter-label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #3730a3;
+}
+
+.filter-row select {
+  padding: 0.4rem 0.6rem; /* Kompaktere Select-Boxen */
+  font-size: 0.85rem;
+  background: #ffffff;
+}
+
+/* 📊 1. SCROLLBARE TABELLE */
+.table-card {
+  padding: 0; /* Padding für Sticky Header auf 0 */
+  overflow: hidden;
+}
+
+.permissions-table-wrapper {
+  max-height: 480px; /* Begrenzte Höhe für Scrollbar */
+  overflow-y: auto;
+}
+
+.permissions-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+/* Sticky Header */
+.permissions-table thead th {
+  position: sticky;
+  top: 0;
+  background: #1e293b; /* Dunkler Header als Kontrast */
+  color: #f8fafc;
+  padding: 0.85rem 1rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  z-index: 10;
+}
+
+/* 🎨 3. FARBIGE BADGES & ZEILEN-HOVER */
+.permissions-table tbody tr {
+  border-bottom: 1px solid #f1f5f9;
+  transition: background-color 0.15s ease;
+}
+
+.permissions-table tbody tr:hover {
+  background-color: #f1f5f9; /* Dezenter Hover-Effekt */
+}
+
+.permissions-table td {
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+}
+
+/* Bunte Badges */
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.badge-role {
+  background-color: #e0f2fe;
+  color: #0369a1;
+}
+
+.badge-resource {
+  background-color: #fef3c7;
+  color: #b45309;
+}
+
+.badge-action {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.inline-select {
+  padding: 0.35rem 0.5rem;
+  font-size: 0.85rem;
+  border-radius: 6px;
+}
+
+/* Buttons */
+.btn-primary {
+  background: #4f46e5;
+  color: white;
+  border: none;
+  padding: 0.65rem 1.2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #4338ca;
+}
+
+.btn-primary:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.btn-danger-icon {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 0.3rem;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.btn-danger-icon:hover {
+  background: #fee2e2;
+}

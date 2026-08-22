@@ -1,7 +1,7 @@
 <div class="admin-board-container">
   <h1>👑 Administrator-Zentrale</h1>
 
-  <!-- Die Reiter-Leiste -->
+  <!-- Die Reiter-Leiste mit Glassmorphism -->
   <div class="tab-navigation">
     <button 
       [class.active]="activeTab() === 'departments'" 
@@ -13,15 +13,23 @@
       (click)="changeTab('users')">
       👥 Benutzer & Warteraum
     </button>
+    <button 
+      [class.active]="activeTab() === 'permissions'" 
+      (click)="changeTab('permissions')">
+      🔐 Permissions
+    </button>
   </div>
 
-  <!-- Der dynamische Content-Bereich -->
-  <div class="tab-content">
+  <!-- Der dynamische Content-Bereich mit individuellem Gradient-Glass-Look -->
+  <div class="tab-content" [ngClass]="'tab-' + activeTab()">
     @if (activeTab() === 'departments') {
       <app-departments-component></app-departments-component>
     }
     @if (activeTab() === 'users') {
       <app-admin-users-component></app-admin-users-component>
+    }
+    @if (activeTab() === 'permissions') {
+      <app-permissions-component></app-permissions-component>
     }
   </div>
 </div>

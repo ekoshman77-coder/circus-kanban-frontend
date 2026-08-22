@@ -26,5 +26,6 @@
   export const allUsersAdminApiUrl = `${teamApiUrl}/all-users`;
   export const MasterDataUrl = `${baseUrl}/masterdata`
   export const InvitationUrl = `${baseUrl}/invitation`
+  export const PermissionUrl = `${baseUrl}/admin/permissions`
 
   
