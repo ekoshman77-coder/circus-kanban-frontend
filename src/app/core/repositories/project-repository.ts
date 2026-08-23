@@ -14,6 +14,7 @@ export class ProjectRepository {
 
   // 🔍 Alle Projekte eines Users holen: GET /api/projects?userId=...
   public getProjectsByUserId(userId: string): Observable<any[]> {
+    console.log("ProjectRepository: GET projects")
     let params = new HttpParams()
     params = new HttpParams().set('userId', userId);
 

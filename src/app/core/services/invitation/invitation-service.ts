@@ -1,4 +1,4 @@
-import { inject, Injectable, signal } from "@angular/core";
+import { effect, inject, Injectable, signal } from "@angular/core";
 import { InvitationRepository } from "../../repositories/invitation-repository";
 import { Department } from "../../models/department";
 import { NotificationService } from "../notification/notification-service";
@@ -6,6 +6,8 @@ import { UserSummary } from "../../models/user-summary";
 import { InviteRequestDto, SearchUserDto } from "../../repositories/dto/inivitation-dto";
 import { BaseDataManager } from "../abstract-base-data-manager/base-data-manager";
 import { catchError, map, Observable, of } from "rxjs";
+import { UserService } from "../user/user-service";
+import { ConnectionService } from "../connection/connection-service";
 
 @Injectable({
   providedIn: 'root'
@@ -13,12 +15,18 @@ import { catchError, map, Observable, of } from "rxjs";
 export class InvitationService extends BaseDataManager {
     private invitationRepository = inject(InvitationRepository)
     private notificationService = inject(NotificationService)
+    private userService = inject(UserService)
+    private connectionService = inject(ConnectionService)
 
     public departments = signal<Department[]>([])
 
     constructor() {
         super();
-        this.loadDepartmentsForInvitation()
+        effect(() => {
+            if (this.userService.isLoggedIn() && this.connectionService.isOnline()) {
+                this.loadDepartmentsForInvitation();
+            }
+        });
     }
 
     public loadDepartmentsForInvitation() {

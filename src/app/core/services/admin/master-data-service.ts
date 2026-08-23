@@ -16,9 +16,21 @@ export class MasterDataService {
     
     public departmentScopes = computed(() => this.masterData()?.departmentScopes?? [])
 
+    public allScopes = computed(() => this.masterData()?.allScopes?? [])
+
     public departmentRoles = computed(() => this.masterData()?.departmentRoles?? [])
  
     public projectRoles = computed(() => this.masterData()?.projectRoles?? [])
+
+    public otherRoles = computed(() => this.masterData()?.otherRoles?? [])
+
+    public allRoles = computed(() => 
+        Array.from(new Set([...this.departmentRoles(), ...this.projectRoles()]))
+    )
+
+    public resources = computed(() => this.masterData()?.resources?? [])
+
+    public actions = computed(() => this.masterData()?.actions?? [])
 
     private STORAGE_KEY = "MASTER_DATA"
 
