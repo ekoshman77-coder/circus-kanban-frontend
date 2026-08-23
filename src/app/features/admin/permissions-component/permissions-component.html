@@ -97,46 +97,49 @@
   <!-- 📊 TABELLE -->
   <section class="card table-card">
     <div class="permissions-table-wrapper">
-          <table class="permissions-table">
-      <thead>
-        <tr>
-          <th (click)="toggleSort('role')" class="sortable">Rolle</th>
-          <th (click)="toggleSort('resource')" class="sortable">Ressource</th>
-          <th (click)="toggleSort('action')" class="sortable">Aktion</th>
-          <th>Gültigkeitsbereich (Scope)</th>
-          <th class="actions-col">Aktionen</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (perm of displayedPermissions(); track perm.id) {
-        <tr>
-          <td><span class="badge badge-role">{{ perm.role }}</span></td>
-          <td><span class="badge badge-resource">{{ perm.resource }}</span></td>
-          <td><span class="badge badge-action">{{ perm.action }}</span></td>
-          <td>
-            <!-- 🎯 DROPDOWN FÜR SCOPE-INLINE-BEARBEITUNG -->
-            <select class="inline-select" [ngModel]="perm.targetScope"
-              (change)="onUpdate(perm, $any($event.target).value)">
-              @for (scope of targetScopes(); track scope) {
-              <option [value]="scope" [selected]="scope === perm.targetScope">
-                {{ scope }}
-              </option>
-              }
-            </select>
-          </td>
-          <td class="actions-col">
-            <button class="btn btn-danger-icon" (click)="onDelete(perm.id!)" title="Löschen">
-              🗑️
-            </button>
-          </td>
-        </tr>
-        } @empty {
-        <tr>
-          <td colspan="5" class="empty-state">Keine Berechtigungen gefunden.</td>
-        </tr>
-        }
-      </tbody>
-    </table>
+      <table class="permissions-table">
+        <thead>
+          <tr>
+            <th (click)="toggleSort('role')" class="sortable">Rolle</th>
+            <th (click)="toggleSort('resource')" class="sortable">Ressource</th>
+            <th (click)="toggleSort('action')" class="sortable">Aktion</th>
+            <th>Gültigkeitsbereiche (Scopes)</th>
+            <th class="actions-col">Aktionen</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (group of displayedGroups(); track group.key) {
+          <tr>
+            <td><span class="badge badge-role">{{ group.role }}</span></td>
+            <td><span class="badge badge-resource">{{ group.resource }}</span></td>
+            <td><span class="badge badge-action">{{ group.action }}</span></td>
+            <td>
+              <!-- 🎯 SCOPE PILLS (Toggle an/aus per Klick) -->
+              <div class="scope-badges-container">
+                @for (scope of targetScopes(); track scope) {
+                  <button 
+                    type="button"
+                    class="scope-chip"
+                    [class.active]="group.activePermissions.has(scope)"
+                    (click)="onScopeToggle(group, scope)">
+                    {{ scope }}
+                  </button>
+                }
+              </div>
+            </td>
+            <td class="actions-col">
+              <button class="btn btn-danger-icon" (click)="onDeleteGroup(group)" title="Alle Scopes dieser Zeile löschen">
+                🗑️
+              </button>
+            </td>
+          </tr>
+          } @empty {
+          <tr>
+            <td colspan="5" class="empty-state">Keine Berechtigungen gefunden.</td>
+          </tr>
+          }
+        </tbody>
+      </table>
     </div>
   </section>
 </div>
@@ -150,19 +153,11 @@
 </app-universal-popup-component>
 }
 
-<!-- 🔴 POPUP: LÖSCHEN BESTÄTIGEN -->
-@if (pendingPermissionIdToDelete(); as id) {
-<app-universal-popup-component animationIcon="⚠️" title="Berechtigung löschen"
-  message="Bist du sicher, dass du diese Berechtigung unwiderruflich löschen möchtest?" confirmText="Löschen"
-  cancelText="Abbrechen" mode="danger" [dataContext]="id" (confirm)="confirmDelete($event)"
-  (cancel)="pendingPermissionIdToDelete.set(null)">
-</app-universal-popup-component>
-}
-
-@if (pendingPermissionToUpdate(); as data) {
-<app-universal-popup-component animationIcon="⚠️" title="Rechte einschränken?"
-  [message]="'Du bist dabei, den Scope für <b>' + data.perm.role + '</b> auf <b>' + data.newScope + '</b> einzuschränken.<br>Das kann dazu führen, dass Benutzer den Zugriff verlieren!'"
-  confirmText="Ja, einschränken" cancelText="Abbrechen" mode="danger" [dataContext]="data"
-  (confirm)="confirmUpdate($event)" (cancel)="pendingPermissionToUpdate.set(null)">
+<!-- ⚠️ POPUP: EINSCHRÄNKUNG / SCOPE LÖSCHEN BESTÄTIGEN -->
+@if (pendingPermissionToToggle(); as data) {
+<app-universal-popup-component animationIcon="⚠️" title="Berechtigung entfernen?"
+  [message]="'Möchtest du den Scope <b>' + data.scope + '</b> für <b>' + data.group.role + '</b> wirklich entfernen?'"
+  confirmText="Ja, entfernen" cancelText="Abbrechen" mode="danger" [dataContext]="data"
+  (confirm)="confirmToggle($event)" (cancel)="pendingPermissionToToggle.set(null)">
 </app-universal-popup-component>
 }

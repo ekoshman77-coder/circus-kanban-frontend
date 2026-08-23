@@ -10,26 +10,26 @@ import { NotificationService } from "../notification/notification-service";
 import { generateLocalId } from "../../shared/constants/id-const";
 
 export interface PermissionQueueItem {
-  id: string; // Eindeutige Queue-ID
-  action: 'CREATE' | 'UPDATE' | 'DELETE';
-  payload: RolePermissionResponseDto | CreateRolePermissionDto | UpdateRolePermissionDto | string;
+    id: string; // Eindeutige Queue-ID
+    action: 'CREATE' | 'UPDATE' | 'DELETE';
+    payload: RolePermissionResponseDto | CreateRolePermissionDto | UpdateRolePermissionDto | string;
 }
 
 @Injectable({
-  providedIn: 'root'
+    providedIn: 'root'
 })
 export class PermissionDataManager extends BaseDataManager {
     private connectionService = inject(ConnectionService);
-    private userService = inject(UserService); 
+    private userService = inject(UserService);
     private permissionRepository = inject(PermissionRepository);
     private notificationService = inject(NotificationService);
 
     private QUEUE_KEY = 'PERMISSIONS_QUEUE_KEY';
     private PERMISSIONS_KEY = 'PERMISSIONS_KEY';
-    
+
     private localQueue = signal<PermissionQueueItem[]>([]);
     public permissions = signal<Permission[]>([]);
-    
+
     constructor() {
         super();
         this.loadPermissionsFromStorage();
@@ -37,12 +37,12 @@ export class PermissionDataManager extends BaseDataManager {
 
         effect(() => {
             const isOnline = this.connectionService.isOnline();
-            const isAdmin = this.userService.isAdmin(); 
+            const isAdmin = this.userService.isAdmin();
             if (isOnline && isAdmin) {
                 this.syncDataQueue();
             }
         });
-    } 
+    }
 
     private loadPermissionsFromStorage() {
         const permissionsLocal = this.localStorageService.getItem<Permission[]>(this.PERMISSIONS_KEY) ?? [];
@@ -53,17 +53,17 @@ export class PermissionDataManager extends BaseDataManager {
         const queue = this.localStorageService.getItem<PermissionQueueItem[]>(this.QUEUE_KEY) ?? [];
         this.localQueue.set(queue);
     }
-    
+
     public syncDataQueue() {
         if (this.localQueue().length === 0) return;
 
         const requests = this.localQueue().map(item => {
-            switch(item.action) {
-                case 'CREATE': 
+            switch (item.action) {
+                case 'CREATE':
                     return this.permissionRepository.createPermission(item.payload as CreateRolePermissionDto);
-                case 'UPDATE': 
+                case 'UPDATE':
                     return this.permissionRepository.updatePermission(item.payload as UpdateRolePermissionDto);
-                case 'DELETE': 
+                case 'DELETE':
                     return this.permissionRepository.deletePermission(item.payload as string);
             }
         });
@@ -77,8 +77,8 @@ export class PermissionDataManager extends BaseDataManager {
                 this.loadPermissions();
             },
             error: (err) => {
-               console.error('❌ Fehler bei der Synchronisation der Offline-Queue:', err);
-               this.notificationService.showNotification('Fehler beim Synchronisieren der Permissions.', 'error');
+                console.error('❌ Fehler bei der Synchronisation der Offline-Queue:', err);
+                this.notificationService.showNotification('Fehler beim Synchronisieren der Permissions.', 'error');
             }
         });
     }
@@ -91,21 +91,21 @@ export class PermissionDataManager extends BaseDataManager {
 
         this.permissionRepository.getPermissions().subscribe({
             next: (next) => {
-               console.log("Permissions sind von Server geladen", next);
-               const list = next.map(permission => Permission.fromJson(permission));
-               console.log("Permissions nach dem maping", list);
-               this.permissions.set(list);
-               this.localStorageService.setItem(this.PERMISSIONS_KEY, list);
+                console.log("Permissions sind von Server geladen", next);
+                const list = next.map(permission => Permission.fromJson(permission));
+                console.log("Permissions nach dem maping", list);
+                this.permissions.set(list);
+                this.localStorageService.setItem(this.PERMISSIONS_KEY, list);
             },
             error: (err) => {
-               console.error("Fehler beim Laden permissions von Server", err);
-               this.notificationService.showNotification("Fehler beim Laden permissions von Server", 'error');
+                console.error("Fehler beim Laden permissions von Server", err);
+                this.notificationService.showNotification("Fehler beim Laden permissions von Server", 'error');
             }
         });
     }
 
     private copyToQueue(
-        perm: CreateRolePermissionDto | UpdateRolePermissionDto | string, 
+        perm: CreateRolePermissionDto | UpdateRolePermissionDto | string,
         action: 'CREATE' | 'UPDATE' | 'DELETE'
     ) {
         const permItem: PermissionQueueItem = {
@@ -120,7 +120,7 @@ export class PermissionDataManager extends BaseDataManager {
     public createPermission(permission: Permission) {
         const permissionJson = permission.mapToJson() as CreateRolePermissionDto;
         const updatedList = [...this.permissions(), permission];
-        
+
         // Optimistisch lokal setzen
         this.permissions.set(updatedList);
         this.localStorageService.setItem(this.PERMISSIONS_KEY, updatedList);
@@ -132,12 +132,13 @@ export class PermissionDataManager extends BaseDataManager {
 
         this.permissionRepository.createPermission(permissionJson).subscribe({
             next: (next) => {
-                const perm = this.permissions().map(p => {
-                    if (p.action === next.action && p.resource === next.resource && p.role === next.role) {
-                        return Permission.fromJson(next);
-                    }
-                    return p;
-                });
+                const serverPerm = Permission.fromJson(next);
+
+                // 🎯 Ersetze Punktgenau nur die optimistische Permission anhand ihrer temporären ID
+                const perm = this.permissions().map(p =>
+                    p.id === permission.id ? serverPerm : p
+                );
+
                 this.permissions.set(perm);
                 this.localStorageService.setItem(this.PERMISSIONS_KEY, perm);
             },
@@ -146,11 +147,11 @@ export class PermissionDataManager extends BaseDataManager {
             }
         });
     }
-
+    
     public updatePermission(permission: Permission) {
         const permissionJson = permission.mapToJson() as UpdateRolePermissionDto;
         const updatedList = this.permissions().map(p => p.id === permission.id ? permission : p);
-        
+
         // Optimistisch lokal setzen
         this.permissions.set(updatedList);
         this.localStorageService.setItem(this.PERMISSIONS_KEY, updatedList);
@@ -162,16 +163,16 @@ export class PermissionDataManager extends BaseDataManager {
 
         this.permissionRepository.updatePermission(permissionJson).subscribe({
             error: (err) => {
-               console.log("Fehler bei update permission", err);
-               this.notificationService.showNotification("Fehler bei update permission", 'error');
-               this.copyToQueue(permissionJson, 'UPDATE');
+                console.log("Fehler bei update permission", err);
+                this.notificationService.showNotification("Fehler bei update permission", 'error');
+                this.copyToQueue(permissionJson, 'UPDATE');
             }
         });
     }
 
     public deletePermission(permissionId: string) {
         const updatedList = this.permissions().filter(p => p.id !== permissionId);
-        
+
         // Optimistisch lokal entfernen
         this.permissions.set(updatedList);
         this.localStorageService.setItem(this.PERMISSIONS_KEY, updatedList);
@@ -183,9 +184,9 @@ export class PermissionDataManager extends BaseDataManager {
 
         this.permissionRepository.deletePermission(permissionId).subscribe({
             error: (err) => {
-               console.log("Fehler bei delete permission", err);
-               this.notificationService.showNotification("Fehler bei delete permission", 'error');
-               this.copyToQueue(permissionId, 'DELETE');
+                console.log("Fehler bei delete permission", err);
+                this.notificationService.showNotification("Fehler bei delete permission", 'error');
+                this.copyToQueue(permissionId, 'DELETE');
             }
         });
     }

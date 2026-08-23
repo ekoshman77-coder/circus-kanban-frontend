@@ -22,6 +22,8 @@ export class MasterDataService {
  
     public projectRoles = computed(() => this.masterData()?.projectRoles?? [])
 
+    public otherRoles = computed(() => this.masterData()?.otherRoles?? [])
+
     public allRoles = computed(() => 
         Array.from(new Set([...this.departmentRoles(), ...this.projectRoles()]))
     )

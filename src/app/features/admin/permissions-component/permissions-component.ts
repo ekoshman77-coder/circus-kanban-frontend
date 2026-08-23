@@ -14,6 +14,16 @@ export interface Sorting {
   resourceSortDirection?: SortDirection;
 }
 
+// 🎯 Neue Struktur für die Gruppierung in der UI
+export interface PermissionGroup {
+  key: string; // z.B. "ADMIN|USER|READ"
+  role: string;
+  resource: string;
+  action: string;
+  // Map von Scope zu Permission-Objekt (oder undefined falls nicht vergeben)
+  activePermissions: Map<string, Permission>; 
+}
+
 @Component({
   selector: 'app-permissions-component',
   standalone: true,
@@ -24,23 +34,22 @@ export interface Sorting {
 export class PermissionsComponent {
   private permissionService = inject(PermissionService);
   public masterDataService = inject(MasterDataService);
-  public notificationService = inject(NotificationService)
-  public formBuilder = inject(FormBuilder)
+  public notificationService = inject(NotificationService);
+  public formBuilder = inject(FormBuilder);
 
   public allPermissions = computed(() => this.permissionService.allPermissions());
-  public targetScopes = this.masterDataService.allScopes
-  public roles = this.masterDataService.allRoles
-  public actions = this.masterDataService.actions
-  public resources = this.masterDataService.resources
+  public targetScopes = this.masterDataService.allScopes;
+  public roles = this.masterDataService.allRoles;
+  public actions = this.masterDataService.actions;
+  public resources = this.masterDataService.resources;
 
   public createForm = this.formBuilder.group({
     role: ["", Validators.required],
     action: ["", Validators.required],
     resource: ["", Validators.required],
     targetScope: ['', Validators.required]
-  })
-  
-  // Filter- & Sortier-Zustände
+  });
+
   public selectedRole = signal<string | null>(null);
   public selectedAction = signal<string | null>(null);
   public selectedResource = signal<string | null>(null);
@@ -48,49 +57,65 @@ export class PermissionsComponent {
 
   public isCreateOpen = signal<boolean>(false);
 
-  // 🎯 Zustände für das Universal-Popup
   public pendingPermissionToCreate = signal<Permission | null>(null);
   public pendingPermissionIdToDelete = signal<string | null>(null);
+  public pendingPermissionToToggle = signal<{ perm?: Permission; group: PermissionGroup; scope: string } | null>(null);
 
   /**
-   * Filtert und sortiert die Liste für die Anzeige
+   * 🎯 Gruppiert alle Permissions nach Rolle + Ressource + Aktion
    */
-  public displayedPermissions = computed(() => {
-    let result = this.allPermissions();
+  public displayedGroups = computed(() => {
+    let rawList = this.allPermissions();
 
     // 1. Filtern
     if (this.selectedRole()) {
-      result = result.filter(perm => perm.role === this.selectedRole());
+      rawList = rawList.filter(perm => perm.role === this.selectedRole());
     }
     if (this.selectedAction()) {
-      result = result.filter(perm => perm.action === this.selectedAction());
+      rawList = rawList.filter(perm => perm.action === this.selectedAction());
     }
     if (this.selectedResource()) {
-      result = result.filter(perm => perm.resource === this.selectedResource());
+      rawList = rawList.filter(perm => perm.resource === this.selectedResource());
     }
 
-    // 2. Sortieren
-    const sorted = [...result];
-    const sorting = this.sortPermissions();
+    // 2. Gruppieren nach (Rolle + Ressource + Aktion)
+    const groupMap = new Map<string, PermissionGroup>();
 
-    return sorted.sort((p1, p2) => {
+    for (const perm of rawList) {
+      const groupKey = `${perm.role}|${perm.resource}|${perm.action}`;
+      if (!groupMap.has(groupKey)) {
+        groupMap.set(groupKey, {
+          key: groupKey,
+          role: perm.role,
+          resource: perm.resource,
+          action: perm.action,
+          activePermissions: new Map<string, Permission>()
+        });
+      }
+      groupMap.get(groupKey)!.activePermissions.set(perm.targetScope, perm);
+    }
+
+    const groups = Array.from(groupMap.values());
+
+    // 3. Sortieren
+    const sorting = this.sortPermissions();
+    return groups.sort((g1, g2) => {
       if (sorting.roleSortDirection) {
-        const comp = p1.role.localeCompare(p2.role);
+        const comp = g1.role.localeCompare(g2.role);
         if (comp !== 0) return sorting.roleSortDirection === 'down' ? comp : -comp;
       }
-      if (sorting.actionSortDirection) {
-        const comp = p1.action.localeCompare(p2.action);
-        if (comp !== 0) return sorting.actionSortDirection === 'down' ? comp : -comp;
-      }
       if (sorting.resourceSortDirection) {
-        const comp = p1.resource.localeCompare(p2.resource);
+        const comp = g1.resource.localeCompare(g2.resource);
         if (comp !== 0) return sorting.resourceSortDirection === 'down' ? comp : -comp;
+      }
+      if (sorting.actionSortDirection) {
+        const comp = g1.action.localeCompare(g2.action);
+        if (comp !== 0) return sorting.actionSortDirection === 'down' ? comp : -comp;
       }
       return 0;
     });
   });
 
-  // Umschalten der Sortierrichtung
   public toggleSort(column: 'role' | 'action' | 'resource') {
     this.sortPermissions.update(current => {
       const key = `${column}SortDirection` as keyof Sorting;
@@ -105,70 +130,66 @@ export class PermissionsComponent {
   }
 
   public onSubmitCreate() {
-    // 🛡️ VOLLSTÄNDIGKEITSPRÜFUNG: Wenn ein Feld leer ist, sofort abbrechen!
     if (this.createForm.invalid) {
-      this.notificationService.showNotification('Bitte alle 4 Felder (Rolle, Ressource, Aktion, Scope) auswählen!', 'error');
+      this.notificationService.showNotification('Bitte alle 4 Felder wählen!', 'error');
       return;
     }
     const formValues = this.createForm.value;
     const newPerm = new Permission({
-      role: formValues.role?? "",
-      action: formValues.action?? "",
-      resource: formValues.resource?? "",
-      targetScope: formValues.targetScope?? ""
+      role: formValues.role ?? "",
+      action: formValues.action ?? "",
+      resource: formValues.resource ?? "",
+      targetScope: formValues.targetScope ?? ""
     });
 
     this.pendingPermissionToCreate.set(newPerm);
   }
 
-  // 🟢 Bestätigung aus dem Erstellen-Popup
   public confirmCreate(permission: Permission | null) {
     if (permission) {
       this.permissionService.createPermission(permission);
-      this.createForm.reset()
+      this.createForm.reset();
     }
-    
     this.pendingPermissionToCreate.set(null);
   }
 
-// Signal für das Update-Popup
-public pendingPermissionToUpdate = signal<{ perm: Permission; newScope: string } | null>(null);
+  /**
+   * 🎯 Klick auf Scope-Pill: Aktivieren (Hinzufügen) oder Deaktivieren (Löschen)
+   */
+  public onScopeToggle(group: PermissionGroup, scope: string) {
+    const existingPerm = group.activePermissions.get(scope);
 
-public onUpdate(perm: Permission, newScope: string) {
-  // Falls sich gar nichts geändert hat
-  if (perm.targetScope === newScope) return;
-
-  // Hier definieren wir, was als "Einschränkung / Rechteverlust" gilt
-  const isRestricting = perm.targetScope === 'ALL' || (perm.targetScope === 'DEPARTMENT' && newScope === 'OWN');
-
-  if (isRestricting) {
-    // ⚠️ Bei Einschränkung: Popup verlangen!
-    this.pendingPermissionToUpdate.set({ perm, newScope });
-  } else {
-    // 🟢 Lockerung oder gewöhnliche Änderung: Direkt ausführen
-    perm.targetScope = newScope;
-    this.permissionService.updatePermission(perm);
-  }
-}
-
-public confirmUpdate(data: { perm: Permission; newScope: string } | null) {
-  if (data) {
-    data.perm.targetScope = data.newScope;
-    this.permissionService.updatePermission(data.perm);
-  }
-  this.pendingPermissionToUpdate.set(null);
-}
-  // 🗑️ Wird vom HTML gerufen: Öffnet das Löschen-Popup
-  public onDelete(permissionId: string) {
-    this.pendingPermissionIdToDelete.set(permissionId);
-  }
-
-  // 🔴 Bestätigung aus dem Löschen-Popup
-  public confirmDelete(permissionId: string | null) {
-    if (permissionId) {
-      this.permissionService.deletePermission(permissionId);
+    if (existingPerm) {
+      // Deaktivieren / Löschen (evtl. mit Bestätigung falls COMPANY)
+      if (scope === 'COMPANY') {
+        this.pendingPermissionToToggle.set({ perm: existingPerm, group, scope });
+      } else {
+        this.permissionService.deletePermission(existingPerm.id!);
+      }
+    } else {
+      // Neu Anlegen für diesen Scope
+      const newPerm = new Permission({
+        role: group.role,
+        resource: group.resource,
+        action: group.action,
+        targetScope: scope
+      });
+      this.permissionService.createPermission(newPerm);
     }
-    this.pendingPermissionIdToDelete.set(null);
+  }
+
+  public confirmToggle(data: { perm?: Permission; group: PermissionGroup; scope: string } | null) {
+    if (data && data.perm) {
+      this.permissionService.deletePermission(data.perm.id!);
+    }
+    this.pendingPermissionToToggle.set(null);
+  }
+
+  // 🗑️ Löscht alle Scopes einer ganzen Zeile/Gruppe
+  public onDeleteGroup(group: PermissionGroup) {
+    group.activePermissions.forEach(perm => {
+      this.permissionService.deletePermission(perm.id!);
+    });
   }
 
   public toggleCreateForm() {

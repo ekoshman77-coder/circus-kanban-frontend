@@ -43,7 +43,8 @@ export class Permission{
     public isEqualPermission(permission: Permission): boolean {
         return this.role === permission.role 
                && this.action === permission.action
-               && this.resource === permission.resource 
+               && this.resource === permission.resource
+               && this.targetScope === permission.targetScope 
     }
 
 }

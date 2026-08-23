@@ -36,4 +36,32 @@
 
   </div>
 
+  <div class="workload-card help-card">
+  <div class="help-header">
+    <h3>Wem kann ich helfen? 🤝</h3>
+    
+    <!-- 🏁 Meilensteine UND Projekte auswählbar machen -->
+    <app-milestone-selector-component
+      [canChooseProject]="true"
+      [onlyProjects]="false" 
+      [appearance]="'dropdown'"
+      (projectSelected)="onProjectSelected($event)"
+      (milestoneSelected)="onMilestoneSelected($event)">
+    </app-milestone-selector-component>
+  </div>
+
+  <div class="colleagues-list">
+    @for (colleague of colleaguesNeedingHelp(); track colleague.userId) {
+      <div class="colleague-item">
+        <span class="user-info">👤 Kollege #{{ colleague.userId.slice(0, 5) }}</span>
+        <span class="badge warning">
+          {{ mode === 'tasks' ? colleague.taskCount + ' Tasks offen' : colleague.pointsCount + ' Punkte offen' }}
+        </span>
+      </div>
+    } @empty {
+      <p class="empty-state">✨ Hier ist aktuell alles erledigt oder niemand braucht Hilfe!</p>
+    }
+  </div>
+</div>
+
 </div>
