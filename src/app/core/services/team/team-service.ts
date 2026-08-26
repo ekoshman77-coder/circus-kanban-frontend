@@ -8,32 +8,16 @@ import { ProjectMember } from '../../models/project-member';
 import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 import { Department } from '../../models/department';
 import { UserSummary } from '../../models/user-summary';
+import { PermissionService } from '../permissions/permission-service';
 
 @Injectable({
     providedIn: 'root',
 })
 export class TeamService extends BaseDataManager {
 
-    private readonly ROLE_PERMISSIONS: Record<ProjectRole, ProjectAction[]> = {
-        OWNER: [
-            'PROJECT_EDIT', 'PROJECT_DELETE',
-            'MILESTONE_CREATE', 'MILESTONE_EDIT',
-            'TODO_CREATE', 'TODO_EDIT', 'TODO_DELETE', 'TODO_CHECK'
-        ],
-        PROJECT_MANAGER: [
-            'PROJECT_EDIT',
-            'MILESTONE_CREATE', 'MILESTONE_EDIT',
-            'TODO_CREATE', 'TODO_EDIT', 'TODO_DELETE', 'TODO_CHECK'
-        ],
-        DEVELOPER: [
-            'MILESTONE_CREATE', 'MILESTONE_EDIT',
-            'TODO_CREATE', 'TODO_EDIT', 'TODO_DELETE', 'TODO_CHECK'
-        ],
-        NONE: []
-    };
-
     private dataManager = inject(TeamDataManager);
     private userService = inject(UserService);
+    private permissionService = inject(PermissionService)
 
     // 🎯 Reicht das globale Signal aus dem DataManager direkt weiter (z.B. fürs Dropdown)
     public globalMembersSignal: Signal<ProjectMember[]> = this.dataManager.globalMembersSignal;
@@ -89,8 +73,8 @@ export class TeamService extends BaseDataManager {
         if (!myBinding) return false;
 
         const currentRole = myBinding.projectRole as ProjectRole;
-        const allowedActions = this.ROLE_PERMISSIONS[currentRole] || [];
-        return allowedActions.includes(action);
+        const allowed = this.permissionService.hasPermission(currentRole, action, 'PROJECT', 'PROJECT');
+        return allowed;
     }
 
     /** ➕ Reicht das Hinzufügen an den DataManager weiter */

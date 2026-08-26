@@ -1,1 +1,69 @@
-<p>stats-overview-component works!</p>
+<div class="stats-overview-wrapper">
+  
+  <!-- FILTER SEGMENTE + ROTATE BUTTON -->
+  <div class="filter-bar">
+    <app-stat-filter-bar
+       [myProjects]="myProjects()"
+       [showScopesFilter]="true"
+       [activeFilter]="activeFilter()"
+       (filterChange)="setFilter($event)"
+    >
+    </app-stat-filter-bar>
+  
+    <div class="chart-controls">
+      <button class="rotate-btn" (click)="toggleRotation()">
+        {{ isHorizontal() ? '📊 Vertikale Säulen' : '横 Horizontale Balken' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- DIAGRAMM (Nutzt automatisch .horizontal-layout) -->
+  <div class="chart-container" [class.horizontal-layout]="isHorizontal()">
+    
+    <div class="chart-bar-wrapper all">
+      <div class="bar-label">📋 Gesamt</div>
+      <div class="bar-track">
+        <div class="bar-fill" [style.width]="getBarWidth('total')" [style.height]="getBarHeight('total')">
+          <span class="bar-value">{{ getDisplayValue('total') }}{{ unit }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-bar-wrapper open">
+      <div class="bar-label">⏳ Offen</div>
+      <div class="bar-track">
+        <div class="bar-fill" [style.width]="getBarWidth('open')" [style.height]="getBarHeight('open')">
+          <span class="bar-value">{{ getDisplayValue('open') }}{{ unit }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-bar-wrapper overdue">
+      <div class="bar-label">🚨 Überfällig</div>
+      <div class="bar-track">
+        <div class="bar-fill" [style.width]="getBarWidth('overdue')" [style.height]="getBarHeight('overdue')">
+          <span class="bar-value">{{ getDisplayValue('overdue') }}{{ unit }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 💡 HIER KORRIGIERT: "done" statt "completed" -->
+    <div class="chart-bar-wrapper done">
+      <div class="bar-label">✅ Erledigt</div>
+      <div class="bar-track">
+        <div class="bar-fill" [style.width]="getBarWidth('completed')" [style.height]="getBarHeight('completed')">
+          <span class="bar-value">{{ getDisplayValue('completed') }}{{ unit }}</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="details-accordion">
+    <div class="accordion-summary">
+      <span>🎯 Gesamtfortschritt im aktuellen Scope</span>
+      <strong>{{ calculatedPercent | percent:'1.0-0' }}</strong>
+    </div>
+  </div>
+
+</div>

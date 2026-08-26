@@ -170,7 +170,16 @@ const todo = this.lastDeletedTodo();
   // Zeigt: Eigene private Aufgaben PLUS ihm zugewiesene Team-Aufgaben
   public focusedTodos = computed(() => {
     const currentUserId = this.userService.getCurrentUserId();
-    return this.allTodos().filter(t => !t.milestoneId || t.assignedUserId === currentUserId);
+    return this.allTodos().filter(t => {
+      const isPrivat = !t.milestoneId
+      if (isPrivat) {
+        return true
+      }
+      if (t.teamStatus === 'DONE' && t.lastDeveloperId === currentUserId) {
+        return true
+      }
+      return t.assignedUserId === currentUserId
+    });
   });
 
   // ==========================================
@@ -314,12 +323,6 @@ const todo = this.lastDeletedTodo();
   public updateTodo(updatedTodo: Todo, isDragAndDrop: boolean = false): void {
     console.log(`TodoService:: updateTodo (DragAndDrop: ${isDragAndDrop})`, updatedTodo);
 
-    // 💡 NEU: Nutzen jetzt den todoQueryService statt teamService
-    if (updatedTodo.milestoneId && !this.todoQueryService.hasPermissionForMilestone(updatedTodo.milestoneId, 'TODO_EDIT')) {
-      this.loggerService.warn("todoService", `Abbruch updateTodo: Keine Berechtigung für Meilenstein ${updatedTodo.milestoneId}`);
-      return;
-    }
-
     if (isDragAndDrop) {
       this.allTodosPool.update(todos =>
         todos.map(t => t.id === updatedTodo.id ? updatedTodo : t)
@@ -344,12 +347,6 @@ const todo = this.lastDeletedTodo();
     const todoToUpdate = this.allTodosPool().find(t => t.id === todoId);
     if (!todoToUpdate || todoToUpdate.done) return;
 
-    // 💡 NEU: Nutzen jetzt den todoQueryService statt teamService
-    if (todoToUpdate.milestoneId && !this.todoQueryService.hasPermissionForMilestone(todoToUpdate.milestoneId, 'TODO_EDIT')) {
-      this.loggerService.warn("todoService", `Abbruch updateTodo: Keine Berechtigung für Meilenstein ${todoToUpdate.milestoneId}`);
-      return;
-    }
-
     todoToUpdate.effort = newEffort;
 
     setTimeout(() => {
@@ -370,12 +367,6 @@ const todo = this.lastDeletedTodo();
     const currentTodo = this.allTodosPool().find(t => t.id === todoId);
     if (!currentTodo) {
       this.loggerService.warn("todoService", `Todo with ID ${todoId} not found in state.`);
-      return;
-    }
-
-    // 💡 NEU: Nutzen jetzt den todoQueryService statt teamService
-    if (currentTodo.milestoneId && !this.todoQueryService.hasPermissionForMilestone(currentTodo.milestoneId, 'TODO_CHECK')) {
-      this.loggerService.warn("todoService", `Abbruch toggleComplete: Keine Berechtigung.`);
       return;
     }
 

@@ -1,3 +1,40 @@
+/* Ergänzung für die neuen Filter-Buttons */
+.filter-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.segmented-control {
+  display: flex;
+  background-color: #f1f5f9;
+  padding: 4px;
+  border-radius: 8px;
+  gap: 4px;
+  overflow-x: auto;
+}
+
+.segmented-control button {
+  background: transparent;
+  border: none;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.segmented-control button.active {
+  background-color: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
 .stats-overview-wrapper {
   background: #ffffff;
   padding: 20px;
@@ -53,6 +90,7 @@
   flex: 1;
   gap: 8px;
 }
+
 .bar-track {
   width: 30px; /* Die Breite der Säulen im Stehen */
   height: 100%;
@@ -64,18 +102,37 @@
 }
 
 /* DIE ANIMIERTE FÜLLUNG */
+/* 1. Standard Füllung (Allgemeine Styles ohne feste Transition) */
+/* DIE ANIMIERTE FÜLLUNG */
 .bar-fill {
   width: 100%;
-/*  border-radius: 6px 6px 0 0;*/
   display: flex;
   justify-content: center;
   align-items: flex-start;
   padding-top: 6px;
   box-sizing: border-box;
-  
-  /* 🚀 HIER IST DEINE TRANSITION-ANIMATION! */
-  transition: all 1.0s cubic-bezier(0.175, 0.885, 0.32, 1.1);
 }
+
+/* 🚀 Strenge Animation NUR von unten nach oben */
+.chart-container:not(.horizontal-layout) .bar-fill {
+  width: 100% !important; /* Fixiert die Breite felsenfest auf 100% */
+  transition: height 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 🚀 Strenge Animation NUR von links nach rechts */
+.chart-container.horizontal-layout .bar-fill {
+  height: 100% !important; /* Fixiert die Höhe felsenfest auf 100% */
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 🌈 FARBEN (Nutzt .done wie im HTML) */
+.chart-bar-wrapper.all .bar-fill { 
+  background: linear-gradient(to top, #6366f1, #818cf8); 
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2); 
+}
+.chart-bar-wrapper.open .bar-fill { background: linear-gradient(to top, #00b4d8, #0096c7); }
+.chart-bar-wrapper.overdue .bar-fill { background: linear-gradient(to top, #e74c3c, #c0392b); }
+.chart-bar-wrapper.done .bar-fill { background: linear-gradient(to top, #2ecc71, #27ae60); }
 
 .bar-value {
   font-size: 11px;

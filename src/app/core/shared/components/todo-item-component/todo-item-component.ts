@@ -9,6 +9,7 @@ import { animate, style, transition, trigger } from '@angular/animations';
 import { TeamService } from '../../../services/team/team-service';
 import { UserModel } from '../../../models/user-model';
 import { Todo } from '../../../models/todo';
+import { UserService } from '../../../services/user/user-service';
 
 @Component({
   selector: 'app-todo-item',
@@ -34,6 +35,7 @@ export class TodoItemComponent {
   protected todoService = inject(TodoService)
   private connectionService = inject(ConnectionService)
   public teamService = inject(TeamService);
+  private userService = inject(UserService)
   private router = inject(Router)
 
   item = input.required<TodoViewModel>();
@@ -46,6 +48,7 @@ export class TodoItemComponent {
   @Output() toggleDescription = new EventEmitter<void>();
   @Output() toggleComplete = new EventEmitter<void>();
   @Output() delete = new EventEmitter<void>();
+  @Output() reviewTriggered = new EventEmitter<Todo>();
 
 
   isEditingPoints = signal<boolean>(false);
@@ -99,13 +102,17 @@ export class TodoItemComponent {
   /**
    * 🛡️ Kontrollierter Klick auf die Checkbox
    */
-  public onCheckClick(event: MouseEvent): void {
-    // 1. Dem Browser verbieten, den Haken eigenmächtig zu setzen/löschen!
-    event.preventDefault();
+public onCheckClick(event: MouseEvent): void {
+  event.preventDefault();
 
-    // 2. Die Entscheidung komplett an das ViewModel übergeben
-    this.item().onTodoChecked(this.todoService);
-  }
+  this.item().onTodoChecked(
+    this.todoService, 
+    this.userService.getCurrentUserId() ?? "",
+    (updatedTodo) => {
+      this.reviewTriggered.emit(updatedTodo);
+    }
+  );
+}
 
   // 2. HIER IST DEINE MEHTODE: Die Brücke zum ViewModel!
   public onEffortConfirmed(actualEffort: number): void {
@@ -121,15 +128,15 @@ export class TodoItemComponent {
   }
 
   public onDropdownChange(event: Event): void {
-  const selectElement = event.target as HTMLSelectElement;
-  const newValue = Number(selectElement.value);
-  
-  if (!isNaN(newValue)) {
-    this.selectPoints(newValue);
-  } else {
-    this.isEditingPoints.set(false);
+    const selectElement = event.target as HTMLSelectElement;
+    const newValue = Number(selectElement.value);
+
+    if (!isNaN(newValue)) {
+      this.selectPoints(newValue);
+    } else {
+      this.isEditingPoints.set(false);
+    }
   }
-}
 
   public cancelEffortPopup() {
     this.item().cancelEffortPopup()
@@ -138,13 +145,13 @@ export class TodoItemComponent {
   /**
  * Wird aufgerufen, wenn im eingebetteten Popup ein Mitarbeiter ausgewählt wird!
  */
-public onAssigneeSelected(userId: string | null): void {
+  public onAssigneeSelected(userId: string | null): void {
     const currentTodo = this.item()?.todo;
     if (!currentTodo) return;
 
     // 1. Eine saubere Kopie des aktuellen Todos erstellen
     const updatedTodo = Todo.fromTodo(currentTodo);
-    
+
     // 2. Die neue Zuweisung eintragen (oder null, falls gelöscht wird)
     updatedTodo.assignedUserId = userId;
 
@@ -156,16 +163,16 @@ public onAssigneeSelected(userId: string | null): void {
     // 4. Das Popup reaktiv über das ViewModel wieder schließen
     this.item().showAssigneePopup.set(false);
   }
-  
+
   public toggleAssigneePopup(event: MouseEvent): void {
     event.stopPropagation(); // Verhindert das Öffnen der Todo-Details
-    
+
     // Wenn die Zuweisung gesperrt ist, machen wir gar nichts!
     if (!this.isAssigneeEditable()) {
       console.warn("🔒 Zuweisung in diesem Spalten-Zustand nicht erlaubt.");
       return;
     }
-    
+
     if (this.item()) {
       const currentState = this.item().showAssigneePopup();
       this.item().showAssigneePopup.set(!currentState);
@@ -176,7 +183,7 @@ public onAssigneeSelected(userId: string | null): void {
   public isAssigneeEditable = computed<boolean>(() => {
     const todo = this.item()?.todo;
     if (!todo) return false;
-    
+
     // Nur in Bearbeitung und im Review ist die Zuweisung editierbar!
     return todo.teamStatus === 'IN_PROGRESS' || todo.teamStatus === 'REVIEW';
   });

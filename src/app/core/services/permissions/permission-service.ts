@@ -102,7 +102,7 @@ export class PermissionService {
         this.permissionDataManager.createPermission(permission); 
     }
 
-public updatePermission(permission: Permission) {
+    public updatePermission(permission: Permission) {
         // 1. Strikte MasterData-Prüfung aller 4 Felder
         if (!this.validatePermissionFields(permission)) {
             return;
@@ -140,5 +140,17 @@ public updatePermission(permission: Permission) {
         }
 
         this.permissionDataManager.deletePermission(permissionId);
+    }
+
+    public hasPermission(role: string, action: string, resource: string, scope: string): boolean {
+        const permission = new Permission({
+            role: role,
+            action: action,
+            resource: resource,
+            targetScope: scope
+        })
+        const found = this.allPermissions().find(perm => perm.isEqualPermission(permission))
+        return (!!found)
+        
     }
 }

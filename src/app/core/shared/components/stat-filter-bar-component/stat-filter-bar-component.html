@@ -1,0 +1,9 @@
+<div class="filter-bar">
+    <div class="segmented-control">
+        @for (scope of allFilters(); track scope.id) {
+        <button [class.active]="activeFilter() === scope.id" (click)="selectFilter(scope.id)">
+            {{ scope.label }}
+        </button>
+        }
+    </div>
+</div>

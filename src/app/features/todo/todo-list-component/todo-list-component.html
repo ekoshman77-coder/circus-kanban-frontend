@@ -1,60 +1,52 @@
 <div class="todo-list-container">
 
   <div class="controls-wrapper">
-    <app-filter 
-      [currentFilter]="currentFilter" 
-      [availableFilters]="availableFilters"
+    <app-filter [currentFilter]="currentFilter" [availableFilters]="availableFilters"
       (filterChanged)="onFilterChange($event)">
     </app-filter>
 
-<app-statistic [todos]="todosForStats()"></app-statistic>
+    <app-statistic [todos]="todosForStats()"></app-statistic>
   </div>
 
   <h3>Deine Aufgaben ({{ uiTodos().length }})</h3>
 
   @if (uiTodos().length === 0) {
-    @let msg = emptyFilterMessage();
-    <div class="empty-filter-state">
-      <div class="empty-icon">{{ msg?.icon }}</div>
-      <h3>{{ msg?.title }}</h3>
-      <p>{{ msg?.text }}</p>
-    </div>
+  @let msg = emptyFilterMessage();
+  <div class="empty-filter-state">
+    <div class="empty-icon">{{ msg?.icon }}</div>
+    <h3>{{ msg?.title }}</h3>
+    <p>{{ msg?.text }}</p>
+  </div>
   } @else {
-    <div class="todo-grid-layout">
-      @for (item of uiTodos(); track item.id) {
-        <div @filterAnimation class="grid-item-wrapper">
-          <app-todo-item 
-            [item]="item" 
-            [isDescriptionOpen]="item.isDescriptionOpen"
-            [isKanbanMode]="false"
-            [ngClass]="'status-' + item.visualStatus" 
-            (toggleDescription)="toggleDescription(item.id)"
-            (delete)="onDeleteTodo(item.id)">
-          </app-todo-item>
-        </div>
-      }
+  <div class="todo-grid-layout">
+    @for (item of uiTodos(); track item.id) {
+    <div @filterAnimation class="grid-item-wrapper">
+      <app-todo-item [item]="item" [isDescriptionOpen]="item.isDescriptionOpen" [isKanbanMode]="false"
+        [ngClass]="'status-' + item.visualStatus" (toggleDescription)="toggleDescription(item.id)"
+        (delete)="onDeleteTodo(item.id)" (reviewTriggered)="pendingReviewTodo.set($event)">
+      </app-todo-item>
     </div>
+    }
+  </div>
   }
-<app-todo-footer 
-  [currentTodos]="todosForStats()"
-  (requestClearCompleted)="onOpenClearCompletedPopup()"
-  (requestClearAll)="onOpenClearAllPopup()">
-</app-todo-footer>
+  <app-todo-footer [currentTodos]="todosForStats()" (requestClearCompleted)="onOpenClearCompletedPopup()"
+    (requestClearAll)="onOpenClearAllPopup()">
+  </app-todo-footer>
 </div>
 
 <!-- 🔮 POPUP-PORTAL: Sitzt jetzt perfekt auf Root-Ebene der TodoPage! -->
 @if (activePopupConfig(); as config) {
-  <app-universal-popup-component
-    [title]="config.title"
-    [message]="config.message"
-    [mode]="config.mode"
-    [animationIcon]="config.animationIcon"
-    [confirmText]="config.confirmText || null"
-    [cancelText]="config.cancelText"
-    [showLoadingBar]="config.showLoadingBar"
-    [timerMs]="config.timerMs"
-    (confirm)="config.action(); closePopup()"
-    (cancel)="closePopup()">
-  </app-universal-popup-component>
+<app-universal-popup-component [title]="config.title" [message]="config.message" [mode]="config.mode"
+  [animationIcon]="config.animationIcon" [confirmText]="config.confirmText || null" [cancelText]="config.cancelText"
+  [showLoadingBar]="config.showLoadingBar" [timerMs]="config.timerMs" (confirm)="config.action(); closePopup()"
+  (cancel)="closePopup()">
+</app-universal-popup-component>
 }
 
+@if (pendingReviewTodo(); as todo) {
+<app-universal-popup-component [title]="'Ab ins Code-Review! 🚀'"
+  [message]="'Deine Aufgabe <b>' + todo.task + '</b> wurde erfolgreich in den Review-Status verschoben.'"
+  [animationIcon]="'🔍'" [mode]="'success'" [confirmText]="'Verstanden'" [showLoadingBar]="true" [timerMs]="3500"
+  [dataContext]="todo" (confirm)="pendingReviewTodo.set(null)" (cancel)="pendingReviewTodo.set(null)">
+</app-universal-popup-component>
+}

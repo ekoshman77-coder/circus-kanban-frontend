@@ -31,22 +31,36 @@
 
   <div class="stats-page-content">
     @switch(currentTab()) {
-      @case ('statistic-overview') {
-          <app-statistic-overview-component [mode]="currentMode()"></app-statistic-overview-component>
-      }
-      @case ('todo-overview'){
-          <app-todo-overview [mode]="currentMode()" [totalCount]="allTodos.length" [openTodos]="openTodos()"
-            [completedTodos]="completedTodos()" [overdueTodos]="overdueTodos()">
-          </app-todo-overview>
-        }
-      @case ('performance'){
-          <app-stats-performance [mode]="currentMode()" [completedTodos]="completedTodos()">
-          </app-stats-performance>
-        }
-      @case ('workload'){
-          <app-stats-workload [mode]="currentMode()" [todayTodos]="todayTodos()">
-          </app-stats-workload>
-        }
+    @case ('statistic-overview') {
+    <app-statistic-overview-component 
+      [myProjects]="myProjects()" 
+      [mode]="currentMode()">
+    </app-statistic-overview-component>
+    }
+    @case ('todo-overview'){
+    <app-todo-overview 
+      [privateTodos]="privateTodos()" 
+      [teamTodos]="teamTodos()" 
+      [myTeamTodos]="myTeamTodos()"
+      [myProjects]="myProjects()" 
+      [mode]="currentMode()">
+    </app-todo-overview>
+    }
+    @case ('performance'){
+    <!-- Ansichts-Filter -->
+    <app-stats-performance 
+      [mode]="currentMode()" 
+      [completedTodos]="completedTodos()" 
+      [streakInfo]="streakInfo()"
+      [myProjects]="myProjects()">
+    </app-stats-performance>
+    }
+    @case ('workload'){
+    <app-stats-workload 
+      [mode]="currentMode()" 
+      [todayTodos]="todayTodos()">
+    </app-stats-workload>
+    }
     }
   </div>
 </div>

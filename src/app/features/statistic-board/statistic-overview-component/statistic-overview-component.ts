@@ -6,11 +6,13 @@ import { NoteService } from '../../../core/services/note/note-service';
 import { ProjectService } from '../../../core/services/project/project-service';
 import { TodoQueryService } from '../../../core/services/todo/todo-query-service'; 
 import { MilestoneSelectorComponent } from '../../../core/shared/components/milestone-selector-component/milestone-selector-component';
+import { OverviewFilter, StatFilterBarComponent } from '../../../core/shared/components/stat-filter-bar-component/stat-filter-bar-component';
+import { Project } from '../../../core/models/project';
 
 @Component({
   selector: 'app-statistic-overview-component',
   standalone: true,
-  imports: [CommonModule, MilestoneSelectorComponent],
+  imports: [CommonModule, StatFilterBarComponent],
   templateUrl: './statistic-overview-component.html',
   styleUrl: './statistic-overview-component.css'
 })
@@ -21,9 +23,11 @@ export class StatisticOverviewComponent {
   protected projectService = inject(ProjectService);
  
   mode = input.required<'tasks' | 'points'>();
+  public myProjects = input<Project[]>([]);
 
   // 🎯 Das aktuell ausgewählte Projekt auf dem Dashboard
-  protected selectedProjectId = signal<string | null>(null);
+   protected selectedProjectId = signal<string | null>(null);
+   public activeFilter = signal<OverviewFilter>('all');
 
   // 👤 1. Mein persönlicher Fortschritt im ausgewählten Projekt
   protected personalProgress = computed(() => {
@@ -62,8 +66,9 @@ export class StatisticOverviewComponent {
     return this.tasksPercent(projectTeamTodos);
   });
 
-  protected onProjectSelected(projectId: string): void {
-    this.selectedProjectId.set(projectId);
+  protected onFilterSelected(filter: OverviewFilter): void {
+    this.activeFilter.set(filter)    
+    this.selectedProjectId.set(this.activeFilter() !== 'all' ? this.activeFilter() : null);    
   }
 
   // 📐 Fortschritts-Rechner (Punkte vs. Aufgaben)

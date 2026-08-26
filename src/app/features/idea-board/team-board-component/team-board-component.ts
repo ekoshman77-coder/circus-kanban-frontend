@@ -91,15 +91,6 @@ export class TeamBoardComponent implements OnInit {
   });
 
   /** Prüft, ob der aktuelle User Schreibrechte (Editieren) im aktuellen Projekt besitzt */
-  public readonly canEdit = computed(() => {
-    return this.teamService.hasPermission(this.currentProjectId(), 'TODO_EDIT');
-  });
-
-  /** Prüft, ob der aktuelle User Löschrechte im aktuellen Projekt besitzt */
-  public readonly canDelete = computed(() => {
-    return this.teamService.hasPermission(this.currentProjectId(), 'TODO_DELETE');
-  });
-
   constructor() {
     // Initialisierung: Keinen global aktiven Meilenstein erzwingen
     this.projectService.setActiveMilestoneId(null);
@@ -360,7 +351,7 @@ private handleDoneWorkflow(movedViewModel: TodoViewModel): void {
     if (!this.currentProjectId()) {
       return false;
     }
-    return this.teamService.hasPermission(this.currentProjectId(), 'TODO_EDIT');
+    return true;
   }
 
   // --- Modal Popups ---

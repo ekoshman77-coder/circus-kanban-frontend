@@ -17,6 +17,7 @@ import { Note } from '../../../core/models/note';
 import { NotificationService } from '../../../core/services/notification/notification-service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { TeamService } from '../../../core/services/team/team-service';
+import { PermissionService } from '../../../core/services/permissions/permission-service';
 
 /**
  * @component ProjectCalculatorComponent
@@ -49,7 +50,8 @@ export class ProjectCalculatorComponent implements OnInit {
   protected userService = inject(UserService);
   public projectDraftService = inject(ProjectDraftService);
   private notificationService = inject(NotificationService);
-  private teamService = inject(TeamService);
+  private permissionService = inject(PermissionService);
+  private teamService = inject(TeamService)
 
   // -------------------------------------------------------------------------
   // 🚦 REAKTIVE ZUSTÄNDE (SIGNALS)

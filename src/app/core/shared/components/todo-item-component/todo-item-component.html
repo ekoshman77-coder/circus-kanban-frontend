@@ -24,6 +24,13 @@
           <span class="category-badge">{{ item().category }}</span>
         }
 
+        <!-- 👥 / 🔒 Type-Badge -->
+        @if (item().todo.milestoneId) {
+          <span class="type-badge team-badge" title="Team-Todo aus einem Meilenstein">👥 Team</span>
+        } @else {
+          <span class="type-badge private-badge" title="Privates Todo">🔒 Privat</span>
+        }
+
         <!-- Story-Points (Effort): Nur für offene Todos -->
         @if (!item().done) {
           <div class="points-container">

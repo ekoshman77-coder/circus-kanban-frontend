@@ -31,11 +31,12 @@ import { BaseTodoBoardComponent } from '../base-todo-board-component';
   animations: [FILTER_ANIMATION]
 })
 export class TodoListComponent extends BaseTodoBoardComponent implements OnInit {
-  private todoQueryService = inject(TodoQueryService);
   private filterService = inject(FilterService)
 
   // Zustand für aufgeklappte Beschreibungen
   openedDescrIds = signal<Set<string>>(new Set());
+
+  pendingReviewTodo = signal<Todo | null>(null);
 
   // Die verfügbaren Filter für die UI
   availableFilters = [
@@ -86,11 +87,12 @@ export class TodoListComponent extends BaseTodoBoardComponent implements OnInit 
   });
 
   private mapToViewModel(todo: Todo, openIds: Set<string>): TodoViewModel {
+    const canDelete = !todo.milestoneId
     return new TodoViewModel(
       todo,
       openIds.has(todo.id),
-      this.todoQueryService.hasPermissionForMilestone(todo.milestoneId, 'TODO_EDIT'),
-      this.todoQueryService.hasPermissionForMilestone(todo.milestoneId, 'TODO_DELETE')
+      true,
+      canDelete
     );
   }
 
@@ -122,17 +124,17 @@ export class TodoListComponent extends BaseTodoBoardComponent implements OnInit 
   onDeleteTodo(id: string): void {
     console.log("TodoList: onDeleteTodo startet");
 
-  // 1. Finde das echte To-Do-Objekt aus dem Stream
-  const todo = this.filteredTodos().find(t => t.id === id);
-  
-  if (todo) {
-    // 2. HIER MUSS UNSERE NEUE UNDO-METHODE REIN!
-    this.todoService.deleteTodoWithUndo(todo);
-  } else {
-    // Nur zur Sicherheit, falls es im ViewModel-Mapping verschluckt wurde:
-    console.warn("Todo nicht im gefilterten Stream gefunden!");
+    // 1. Finde das echte To-Do-Objekt aus dem Stream
+    const todo = this.filteredTodos().find(t => t.id === id);
+
+    if (todo) {
+      // 2. HIER MUSS UNSERE NEUE UNDO-METHODE REIN!
+      this.todoService.deleteTodoWithUndo(todo);
+    } else {
+      // Nur zur Sicherheit, falls es im ViewModel-Mapping verschluckt wurde:
+      console.warn("Todo nicht im gefilterten Stream gefunden!");
+    }
   }
-}
 
   toggleDescription(id: string): void {
     const currentSet = new Set(this.openedDescrIds());
@@ -143,4 +145,14 @@ export class TodoListComponent extends BaseTodoBoardComponent implements OnInit 
     }
     this.openedDescrIds.set(currentSet);
   }
+
+    // Wird aufgerufen, wenn im Template das Popup bestätigt oder abgebrochen wird
+  onReviewPopupConfirmed(): void {
+    this.pendingReviewTodo.set(null);
+  }
+
+  onReviewPopupCancelled(): void {
+    this.pendingReviewTodo.set(null);
+  }
+
 }

@@ -1,24 +1,25 @@
-<div class="workload-container">
+<div class="workload-grid">
   
-  <div class="workload-card" [style.background]="workloadMeta().bg" [style.border-color]="workloadMeta().border">
-    
+  <!-- 👈 LINKE SPALTE: MEINE KAPAZITÄT -->
+  <div class="workload-card my-capacity-card" [style.background]="workloadMeta().bg" [style.border-color]="workloadMeta().border">
     <div class="workload-header">
-      <span class="workload-icon">⏳</span>
-      <div class="workload-title-box">
-        <h3>Tageskapazität</h3>
-        <p class="workload-status-text" [style.color]="workloadMeta().color">
-          {{ workloadMeta().text }}
-        </p>
+      <div class="title-with-icon">
+        <span class="workload-icon">⏳</span>
+        <h3>Meine Tageskapazität</h3>
       </div>
       
       <div class="workload-counter" [style.color]="workloadMeta().color">
         @if (mode === 'tasks') {
-          <strong>{{ myTodayTodos().length }}</strong><small>/5</small>
+          <strong>{{ myTodayTodos().length }}</strong><small>/3 Tasks</small>
         } @else {
-          <strong>{{ todayPoints() }}</strong><small>/8P</small>
+          <strong>{{ todayPoints() }}</strong><small>/3P (~7.5h)</small>
         }
       </div>
     </div>
+
+    <p class="workload-status-text" [style.color]="workloadMeta().color">
+      {{ workloadMeta().text }}
+    </p>
 
     <div class="workload-progress-wrapper">
       <div class="progress-bar-bg">
@@ -33,35 +34,55 @@
         <span>Optimal (100%)</span>
       </div>
     </div>
-
   </div>
 
-  <div class="workload-card help-card">
-  <div class="help-header">
-    <h3>Wem kann ich helfen? 🤝</h3>
-    
-    <!-- 🏁 Meilensteine UND Projekte auswählbar machen -->
-    <app-milestone-selector-component
-      [canChooseProject]="true"
-      [onlyProjects]="false" 
-      [appearance]="'dropdown'"
-      (projectSelected)="onProjectSelected($event)"
-      (milestoneSelected)="onMilestoneSelected($event)">
-    </app-milestone-selector-component>
-  </div>
-
-  <div class="colleagues-list">
-    @for (colleague of colleaguesNeedingHelp(); track colleague.userId) {
-      <div class="colleague-item">
-        <span class="user-info">👤 Kollege #{{ colleague.userId.slice(0, 5) }}</span>
-        <span class="badge warning">
-          {{ mode === 'tasks' ? colleague.taskCount + ' Tasks offen' : colleague.pointsCount + ' Punkte offen' }}
-        </span>
+  <!-- 👉 RECHTE SPALTE: KOLLEGEN & DEIN SELECTOR -->
+  <div class="workload-card team-help-card">
+    <div class="help-header">
+      <div class="title-with-icon">
+        <span class="workload-icon">🤝</span>
+        <h3>Team-Unterstützung</h3>
       </div>
-    } @empty {
-      <p class="empty-state">✨ Hier ist aktuell alles erledigt oder niemand braucht Hilfe!</p>
-    }
+      
+      <!-- Der Selector sitzt sauber im Header der rechten Karte -->
+      <app-milestone-selector-component
+        [canChooseProject]="true"
+        [onlyProjects]="false" 
+        [appearance]="'dropdown'"
+        [initialProjectId]="selectedProjectId()"
+        [initialMilestoneId]="selectedMilestoneId()"
+        (projectSelected)="onProjectSelected($event)"
+        (milestoneSelected)="onMilestoneSelected($event)">
+      </app-milestone-selector-component>
+    </div>
+
+    <!-- Liste der Kollegen mit ihren Vor-/Nachnamen und einzelnen Todos -->
+    <div class="colleagues-list">
+      @for (colleague of colleaguesNeedingHelp(); track colleague.userId) {
+        <div class="colleague-card">
+          <div class="colleague-header">
+            <span class="user-name">👤 {{ colleague.userName }}</span>
+            <span class="badge warning">
+              {{ mode === 'tasks' ? colleague.taskCount + ' Tasks' : colleague.pointsCount + ' Points' }}
+            </span>
+          </div>
+
+          <ul class="colleague-todo-list">
+            @for (todo of colleague.todos; track todo.id) {
+              <li class="todo-item-row">
+                <span class="todo-title">{{ todo.task }}</span>
+                <span class="todo-effort-pill">{{ todo.effort }} P</span>
+              </li>
+            }
+          </ul>
+        </div>
+      } @empty {
+        <div class="empty-state">
+          <span>✨</span>
+          <p>Niemand benötigt in dieser Phase Hilfe oder alle Aufgaben sind bereits erledigt.</p>
+        </div>
+      }
+    </div>
   </div>
-</div>
 
 </div>
