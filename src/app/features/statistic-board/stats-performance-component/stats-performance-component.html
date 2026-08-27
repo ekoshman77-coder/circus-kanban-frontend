@@ -1,12 +1,8 @@
 <div class="performance-container">
 
-      <app-stat-filter-bar
-       [myProjects]="myProjects()"
-       [showScopesFilter]="true"
-       [activeFilter]="activeFilter()"
-       (filterChange)="setFilter($event)"
-    >
-    </app-stat-filter-bar>
+  <app-stat-filter-bar [myProjects]="myProjects()" [showScopesFilter]="true" [activeFilter]="activeFilter()"
+    (filterChange)="setFilter($event)">
+  </app-stat-filter-bar>
 
   @if (mode() === 'tasks') {
   <div class="perf-card-grid">
@@ -57,8 +53,12 @@
         <span class="analytic-emoji">🧙‍♂️</span>
         <h3>Ehrlichkeit</h3>
       </div>
-      <div class="medium-percentage" [class.warning-orange]="totalEffortManipulations > 0">
-        {{ totalEffortManipulations }}×
+      <div class="medium-percentage" [style.color]="streakMeta.color">
+        @if (isSpecificProjectFilter()) {
+        {{ projectStreakInfo()?.batteryPercentage ?? 0 }}<span class="text-lg font-normal">%</span>
+        } @else {
+        {{ currentStreak }} <span class="text-lg font-normal">Tage</span>
+        }
       </div>
       <p class="card-sub">Schätz-Korrekturen</p>
     </div>
@@ -74,23 +74,28 @@
       <p class="card-sub">bis zum Haken</p>
     </div>
 
-    <!-- 🎯 DYNAMISCHE STREAK-KACHEL (Nur anzeigen, wenn relevant) -->
+    <!-- 🎯 DYNAMISCHE STREAK-KACHEL (User-Streak ODER Projekt-Streak) -->
     @if (showStreakCard()) {
     <div class="perf-card small-analytic">
       <div class="analytic-header">
         <span class="analytic-emoji">
-          @if (isShieldActive) { 🛡️ } @else { 🔥 }
+          @if (isShieldActive) { 🛡️ } @else if (isSpecificProjectFilter()) { 🔋 } @else { 🔥 }
         </span>
-        <h3>{{ isShieldActive ? 'Ticket-Schild' : 'Aktiv-Streak' }}</h3>
+        <h3>{{ streakTitle }}</h3>
       </div>
       <div class="medium-percentage" [style.color]="streakMeta.color">
+        @if (isSpecificProjectFilter()) {
+        {{ projectStreakInfo()?.batteryPercentage ?? 0 }}<span class="text-lg font-normal">%</span>
+        } @else {
         {{ currentStreak }} <span class="text-lg font-normal">Tage</span>
+        }
       </div>
       <p class="card-sub">
-        {{ isShieldActive ? 'Aktiv geschützt' : 'in Folge aktiv' }}
+        {{ streakSubText }}
       </p>
     </div>
     }
+
     <div class="perf-card small-analytic circular-card">
       <div class="analytic-header">
         <span class="analytic-emoji">🎯</span>

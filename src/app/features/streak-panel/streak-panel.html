@@ -3,95 +3,102 @@
   <!-- DER REITER (TRIGGER) AM RAND -->
   <div class="drawer-trigger" (click)="toggleDrawer()">
     @if (percentage() >= 100) {
-      <!-- 🌌 Reine Overdrive-Flamme ohne Wenn und Aber -->
-      <span class="flame-icon flame-overdrive">🔥</span>
-    } @else if (isShieldActive()) {
+    <!-- 🌌 Reine Overdrive-Flamme -->
+    <span class="flame-icon flame-overdrive">🔥</span>
+    } @else if (!streakData() || percentage() === 0) {
+    <!-- 💀 Akku komplett leer -->
+    <span class="flame-icon flame-muted">🔥</span>
+    } @else if (isShieldActive() && (streakData()?.pufferDaysRemaining ?? 0) <= 0) { <!-- 🛡️ Blaue Schutzschild-Flamme
+      NUR wenn der echte Puffer 0 ist! -->
       <span class="flame-icon flame-shield">🔥</span>
-    } @else if (!streakData || percentage() === 0) {
-      <span class="flame-icon flame-muted">🔥</span>
-    } @else {
+      } @else {
+      <!-- 🔥 Normale heiße Flamme (wenn Saft auf dem Akku ist) -->
       <span class="flame-icon">🔥</span>
-    }
-    
-    @if (!isOpen && streakData() && streakDays() > 0) {
+      }
+
+      @if (!isOpen && streakData() && streakDays() > 0) {
       <span class="trigger-text">{{ streakDays() }}</span>
-    }
+      }
   </div>
 
   <!-- HAUPTINHALT -->
   @if (isOpen) {
-    <div class="drawer-content">
-      <h3>Team-Rhythmus</h3>
-      
-      @if (streakData()) {
-        <div class="streak-display">
-          
-          <!-- DIE GROSSE FLAMME IM PANEL -->
-          @if (percentage() >= 100) {
-            <!-- 🌌 Reine Overdrive-Flamme im Panel -->
-            <span class="large-flame flame-overdrive">🔥</span>
-          } @else if (isShieldActive()) {
-            <span class="large-flame flame-shield">🔥</span>
-          } @else if (percentage() === 0) {
-            <span class="large-flame flame-muted">🔥</span>
-          } @else {
-            <span class="large-flame">🔥</span>
-          }
+  <div class="drawer-content">
+    <h3>Team-Rhythmus</h3>
 
-          <div class="streak-count">
-            <span class="number">{{ streakData()?.streakDays }}</span>
-            <span class="label">Tage Puffer-Streak</span>
-          </div>
-        </div>
+    @if (streakData()) {
+    <div class="streak-display">
 
-        <div class="battery-container">
-          <div class="battery-label">
-            <span>Team-Batterie</span>
-            <span>{{ percentage() }}%</span>
-          </div>
-          <div class="battery-rail">
-            <div class="battery-bar" 
-                 [style.width.%]="percentage()"
-                 [class.shield-active]="isShieldActive()"
-                 [class.overdrive-glow]="percentage() >= 100">
-            </div>
-          </div>
-        </div>
-
-        @if (percentage() < 100) {
-          <p class="info-text">{{ infoText() }}</p>
+      <!-- DIE GROSSE FLAMME IM PANEL -->
+      @if (percentage() >= 100) {
+      <!-- 🌌 Reine Overdrive-Flamme im Panel -->
+      <span class="large-flame flame-overdrive">🔥</span>
+      } @else if (percentage() === 0) {
+      <!-- 💀 Akku komplett leer -->
+      <span class="large-flame flame-muted">🔥</span>
+      } @else if (isShieldActive() && (streakData()?.pufferDaysRemaining ?? 0) <= 0) { <!-- 🛡️ Blaue
+        Schutzschild-Flamme NUR wenn der echte Puffer 0 ist! -->
+        <span class="large-flame flame-shield">🔥</span>
         } @else {
-          <p class="info-text overtime-active">
-            ⚡ <strong>OVERTIME-GLUT AKTIV!</strong> Du hast deine Batterie bis zum Anschlag geladen. Dein persönliches Feuer brennt lichterloh. Morgen bist du vor dem Sinken geschützt – genieß deinen verdienten Puffer! 🪵🔥
-          </p>
-        }   
+        <!-- 🔥 Normale heiße Flamme -->
+        <span class="large-flame">🔥</span>
+        }
+
+        <div class="streak-count">
+          <span class="number">{{ streakData()?.streakDays }}</span>
+          <span class="label">Tage Puffer-Streak</span>
+        </div>
+    </div>
+
+    <div class="battery-container">
+      <div class="battery-label">
+        <span>Team-Batterie</span>
+        <span>{{ percentage() }}%</span>
+      </div>
+      <div class="battery-rail">
+        <div class="battery-bar" 
+          [style.width.%]="percentage()"
+          [class.shield-active]="isShieldActive() && (streakData()?.pufferDaysRemaining ?? 0) <= 0"
+          [class.overdrive-glow]="percentage() >= 100">
+        </div>
+      </div>
+    </div>
+
+    @if (percentage() < 100) { <p class="info-text">{{ infoText() }}</p>
+      } @else {
+      <p class="info-text overtime-active">
+        ⚡ <strong>OVERTIME-GLUT AKTIV!</strong> Du hast deine Batterie bis zum Anschlag geladen. Dein persönliches Feuer
+        brennt lichterloh. Morgen bist du vor dem Sinken geschützt – genieß deinen verdienten Puffer! 🪵🔥
+      </p>
+      }
 
       } @else {
-        <!-- FALL B: Standard-Zustand bei NULL -->
-        <div class="streak-display">
-          <span class="large-flame flame-muted">🔥</span>
-          <div class="streak-count">
-            <span class="number" style="color: #8e8e93;">0</span>
-            <span class="label">Kein Puffer active</span>
-          </div>
+      <!-- FALL B: Standard-Zustand bei NULL -->
+      <div class="streak-display">
+        <span class="large-flame flame-muted">🔥</span>
+        <div class="streak-count">
+          <span class="number" style="color: #8e8e93;">0</span>
+          <span class="label">Kein Puffer active</span>
         </div>
+      </div>
 
-        <div class="battery-container">
-          <div class="battery-label">
-            <span>Batterie</span>
-            <span>0%</span>
-          </div>
-          <div class="battery-rail">
-            <div class="battery-bar" style="width: 0%; background: #ff453a;"></div>
-          </div>
+      <div class="battery-container">
+        <div class="battery-label">
+          <span>Batterie</span>
+          <span>0%</span>
         </div>
+        <div class="battery-rail">
+          <div class="battery-bar" style="width: 0%; background: #ff453a;"></div>
+        </div>
+      </div>
 
-        <p class="info-text" style="border-left: 3px solid #ff453a;">
-          <strong>Akku komplett leer!</strong> Schließe deine erste Projektaufgabe ab, um die Team-Batterie aufzuladen und deine Flamme zu entzünden.
-        </p>
+      <p class="info-text" style="border-left: 3px solid #ff453a;">
+        <strong>Akku komplett leer!</strong> Schließe deine erste Projektaufgabe ab, um die Team-Batterie aufzuladen und
+        deine Flamme zu entzünden.
+      </p>
       }
 
       <button class="close-btn" (click)="toggleDrawer()">Schließen</button>
-    </div>
+  </div>
   }
 </div>

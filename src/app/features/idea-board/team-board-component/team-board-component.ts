@@ -303,16 +303,10 @@ private handleReviewWorkflow(todo: Todo): void {
 }
 
 private handleDoneWorkflow(movedViewModel: TodoViewModel): void {
-  movedViewModel.todo.teamStatus = 'DONE';
-  movedViewModel.todo.assignedUserId = null; // 🧼 User bei DONE entfernen
-  movedViewModel.todo.completedAt = Date.now();
-
-  // Für das Punkte-Popup übergeben wir das bearbeitete Todo
-  console.log("🟢 Karte geht Richtung DONE. Triggere Punkte-Popup direkt auf dem ViewModel.");
+  console.log("🟢 Karte geht Richtung DONE. Triggere Done-Workflow im ViewModel.");
   
-  // 🎪 Wir delegieren das Popup komplett an das ViewModel der Karte!
-  // Die Karte bleibt physikalisch in ihrer aktuellen Spalte stehen.
-  movedViewModel.onTodoChecked(this.todoService);
+  // 🎯 Saubere Delegation an das ViewModel der Karte:
+  movedViewModel.triggerDoneWorkflow();
 }
 
   /** Bestätigt den tatsächlichen Aufwand im Abschluss-Popup */

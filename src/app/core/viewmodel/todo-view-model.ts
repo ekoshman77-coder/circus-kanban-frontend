@@ -91,14 +91,45 @@ export class TodoViewModel {
     }
 
     public onEffortConfirmed(finalEffort: number, todoService: TodoService): void {
-        console.log("ViewModel", "onEffortConfirmed");
         this.showEffortPopup.set(false);
+
+        // 🚀 A) TEAM-TODO:
+        if (this.todo.milestoneId) {
+            const updatedTodo = Todo.fromTodo(this.todo);
+            updatedTodo.teamStatus = 'DONE';
+            updatedTodo.done = true;                 // 🎯 Wichtig für Streak / Batterie
+            updatedTodo.usedEffort = finalEffort;     // 🎯 Wichtig für Aufwandsberechnung
+            updatedTodo.completedAt = Date.now();
+
+            todoService.updateTodo(updatedTodo, true);
+            return;
+        }
+
+        // 📝 B) PRIVATES TODO:
         todoService.toggleComplete(this.id, finalEffort);
     }
-
+    
     public cancelEffortPopup(): void {
         console.log("ViewModel", "cancelEffortPopup");
         this.showEffortPopup.set(false);
+    }
+
+    /**
+     * Triggert den Workflow zum Schließen einer Aufgabe (z. B. aus dem Kanban-Board).
+     * Bereitet den Status vor und öffnet das Effort-Popup des ViewModels.
+     */
+    public triggerDoneWorkflow(): void {
+        // 1. Status & Meta-Daten für DONE vorbereiten
+        this.todo.teamStatus = 'DONE';
+        this.todo.assignedUserId = null;
+        this.todo.completedAt = Date.now();
+
+        // 2. Empfohlenen Aufwand berechnen
+        const recommendedEffort = this.todo.usedEffort > 0 ? this.todo.usedEffort : this.todo.effort;
+
+        // 3. Popup-Signals im ViewModel aktivieren
+        this.popupEffortValue.set(recommendedEffort);
+        this.showEffortPopup.set(true);
     }
 
 }
