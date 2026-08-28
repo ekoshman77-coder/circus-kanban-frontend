@@ -16,8 +16,9 @@ import { Project } from '../../../core/models/project';
   templateUrl: './statistic-overview-component.html',
   styleUrl: './statistic-overview-component.css'
 })
+// statistic-overview-component.ts
+
 export class StatisticOverviewComponent {
-  private todoService = inject(TodoService);
   private todoQueryService = inject(TodoQueryService);
   public noteService = inject(NoteService);
   protected projectService = inject(ProjectService);
@@ -25,21 +26,22 @@ export class StatisticOverviewComponent {
   mode = input.required<'tasks' | 'points'>();
   public myProjects = input<Project[]>([]);
 
-  // 🎯 Das aktuell ausgewählte Projekt auf dem Dashboard
-   protected selectedProjectId = signal<string | null>(null);
-   public activeFilter = signal<OverviewFilter>('all');
+  // 🚀 NEU: Zentrale Inputs aus der StatisticBoardComponent!
+  public myTeamTodos = input<Todo[]>([]); // Das ist das neue userContributionTodos
+  public teamTodos = input<Todo[]>([]);   // Alle Team-Todos für das Gesamtergebnis
 
-  // 👤 1. Mein persönlicher Fortschritt im ausgewählten Projekt
+  protected selectedProjectId = signal<string | null>(null);
+  public activeFilter = signal<OverviewFilter>('all');
+
+  // 👤 1. Mein persönlicher Fortschritt (Nutzt myTeamTodos / Beitrags-Todos)
   protected personalProgress = computed(() => {
-    const todos = this.todoService.todosSignal(); // Bereits dem User zugewiesene Aufgaben
+    const todos = this.myTeamTodos(); // 💡 Beitrags-Liste statt nur todosSignal!
     const activeProjectId = this.selectedProjectId();
 
-    // Wenn kein Projekt gewählt ist, zeigen wir den Gesamtschnitt aller meiner Aufgaben
     if (!activeProjectId) {
       return todos.length === 0 ? 0 : this.tasksPercent(todos);
     }
 
-    // Wir filtern meine Aufgaben lokal: Gehört die milestoneId des To-Dos zum aktiven Projekt?
     const myProjectTodos = todos.filter(t => {
       const projId = this.todoQueryService.getProjectIdByMilestoneId(t.milestoneId);
       return projId === activeProjectId;
@@ -49,17 +51,15 @@ export class StatisticOverviewComponent {
     return this.tasksPercent(myProjectTodos);
   });
 
-  // 👥 2. Team Sprint-Fortschritt im ausgewählten Projekt
+  // 👥 2. Team Sprint-Fortschritt (Nutzt das übergebene teamTodos Input)
   protected teamProgress = computed(() => {
     const activeProjectId = this.selectedProjectId();
 
-    // Wenn kein Projekt gewählt ist, zeigen wir den Fortschritt über alle Team-Aufgaben
     if (!activeProjectId) {
-      const allTeamTodos = this.todoService.teamTodos();
+      const allTeamTodos = this.teamTodos(); // 💡 Nimmt jetzt das Input statt todoService!
       return allTeamTodos.length === 0 ? 0 : this.tasksPercent(allTeamTodos);
     }
 
-    // Wir holen alle Team-Aufgaben des Projekts direkt aus dem Query-Service!
     const projectTeamTodos = this.todoQueryService.getTodosForProject(activeProjectId);
 
     if (projectTeamTodos.length === 0) return 0;
@@ -67,30 +67,28 @@ export class StatisticOverviewComponent {
   });
 
   protected onFilterSelected(filter: OverviewFilter): void {
-    this.activeFilter.set(filter)    
+    this.activeFilter.set(filter);    
     this.selectedProjectId.set(this.activeFilter() !== 'all' ? this.activeFilter() : null);    
   }
 
-  // 📐 Fortschritts-Rechner (Punkte vs. Aufgaben)
+  // 📐 tasksPercent() & activeProjectsCount bleiben unverändert!
   private tasksPercent(todos: Todo[]): number {
     if (todos.length === 0) return 0;
 
     if (this.mode() === 'tasks') {
-      const completed = todos.filter(t => t.done).length;
+      const completed = todos.filter(t => t.done || t.teamStatus === 'DONE').length;
       return Math.round((completed / todos.length) * 100);
     } else {
-      // Gesamtpunkte berechnen:
-      // Für erledigte Aufgaben nehmen wir usedEffort (sofern eingetragen), sonst den geplanten effort.
-      // Für offene Aufgaben nehmen wir den geplanten effort.
       const totalPoints = todos.reduce((sum, t) => {
-        const p = (t.done && t.usedEffort !== undefined && t.usedEffort !== null) ? t.usedEffort : (t.effort || 0);
+        const p = ((t.done || t.teamStatus === 'DONE') && t.usedEffort !== undefined && t.usedEffort !== null) 
+          ? t.usedEffort 
+          : (t.effort || 0);
         return sum + p;
       }, 0);
 
       if (totalPoints === 0) return 0;
 
-      // Erledigte Punkte berechnen (Nutzt usedEffort für ehrliche Werte!)
-      const completedPoints = todos.filter(t => t.done).reduce((sum, t) => {
+      const completedPoints = todos.filter(t => t.done || t.teamStatus === 'DONE').reduce((sum, t) => {
         const p = (t.usedEffort !== undefined && t.usedEffort !== null) ? t.usedEffort : (t.effort || 0);
         return sum + p;
       }, 0);

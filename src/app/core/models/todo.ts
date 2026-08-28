@@ -23,6 +23,9 @@ export class Todo {
   dueDate: number;
   completedAt: number | null;
   effort: number;
+  // 🤝 NEU: Reviewer-Splitting Felder
+  reviewerId?: string | null;
+  reviewerUsedEffort: number;
   usedEffort: number;
   createdAt: number;
   teamStatus: TeamStatus;
@@ -45,6 +48,9 @@ export class Todo {
     dueDate?: number;
     completedAt?: number | null;
     effort?: number;
+    // 🤝 NEU: Reviewer-Splitting Felder
+    reviewerId?: string | null;
+    reviewerUsedEffort?: number;
     usedEffort?: number;
     userId?: string;
     teamStatus?: TeamStatus | string;
@@ -65,8 +71,10 @@ export class Todo {
     this.dueDate = init.dueDate ?? Date.now();
     this.completedAt = init.completedAt ?? null;
     this.effort = init.effort ?? 1; // Standardmäßig 1 Aufwandspunkt
+    this.reviewerId = init.reviewerId ?? null;
+    this.reviewerUsedEffort = init.reviewerUsedEffort ?? 0;
     this.usedEffort = init.usedEffort ?? 0;
-    this.createdAt = Date.now();
+    this.createdAt = init.createdAt ?? Date.now();
     this.userId = init.userId ?? 'local-user'; // Phantastisch für Tests!
     this.syncState = init.syncState ?? 'new';
     this.category = init.category ?? null;
@@ -86,6 +94,9 @@ export class Todo {
       dueDate: this.dueDate,
       completedAt: this.completedAt,
       effort: this.effort,
+      // 🤝 NEU: JSON-Export
+      reviewerId: this.reviewerId ?? null,
+      reviewerUsedEffort: this.reviewerUsedEffort ?? 0,
       usedEffort: this.usedEffort,
       userId: this.userId,
       createdAt: this.createdAt,
@@ -107,6 +118,9 @@ export class Todo {
       effort: oldTodo.effort,
       dueDate: oldTodo.dueDate,
       userId: oldTodo.userId,
+      // 🤝 NEU: Kopieren
+      reviewerId: oldTodo.reviewerId ?? null,
+      reviewerUsedEffort: oldTodo.reviewerUsedEffort,
       usedEffort: oldTodo.usedEffort,
       createdAt: oldTodo.createdAt,
       id: oldTodo.id,
@@ -119,9 +133,34 @@ export class Todo {
       isStarted: oldTodo.isStarted ?? false,
       assignedUserId: oldTodo.assignedUserId ?? null,
       teamStatus: oldTodo.teamStatus,
-      lastDeveloperId: oldTodo.lastDeveloperId
+      lastDeveloperId: oldTodo.lastDeveloperId ?? null
     });
     return copy
+  }
+
+  static fromJson(json: ITodoJSON): Todo {
+    return new Todo({
+      id: json.id,
+      task: json.task,
+      description: json.description,
+      done: json.done,
+      dueDate: json.dueDate,
+      completedAt: json.completedAt,
+      effort: json.effort,
+      reviewerId: json.reviewerId ?? null,
+      reviewerUsedEffort: json.reviewerUsedEffort ?? 0,
+      usedEffort: json.usedEffort,
+      userId: json.userId,
+      createdAt: json.createdAt,
+      syncState: (json.syncState as 'fine' | 'dirty' | 'new') ?? 'fine',
+      category: json.category,
+      effortChangesCount: json.effortChangesCount,
+      milestoneId: json.milestoneId,
+      isStarted: json.isStarted ?? false,
+      assignedUserId: json.assignedUserId ?? null,
+      teamStatus: (json.teamStatus as TeamStatus) ?? 'BACKLOG',
+      lastDeveloperId: json.lastDeveloperId ?? null
+    });
   }
 
   toggleComplete() {

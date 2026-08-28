@@ -5,8 +5,6 @@ import { Todo } from '../../../core/models/todo';
 import { StreakInfoDto } from '../../../core/models/streak.info-dto';
 import { OverviewFilter, StatFilterBarComponent } from '../../../core/shared/components/stat-filter-bar-component/stat-filter-bar-component';
 import { Project } from '../../../core/models/project';
-import { ProjectStreakInfo } from '../../../core/models/project-streak-info';
-import { ProjectService } from '../../../core/services/project/project-service';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { of, switchMap } from 'rxjs';
 import { ProjectStreakService } from '../../../core/services/project/project-streak-service';
@@ -19,28 +17,46 @@ import { ProjectStreakService } from '../../../core/services/project/project-str
   styleUrl: './stats-performance-component.css'
 })
 export class StatsPerformanceComponent {
-  private streakService = inject(ProjectStreakService)
+  private streakService = inject(ProjectStreakService);
 
   public mode = input<StatMode>('tasks');
   public completedTodos = input<Todo[]>([]);
   public streakInfo = input<StreakInfoDto | null>(null);
   public myProjects = input<Project[]>([]);
 
-  // Signal für den aktiven Filter (wird von der Eltern-Komponente gereicht oder intern gesetzt)
+  // Signal für den aktiven Filter
   public activeFilter = signal<OverviewFilter>('all');
 
   protected setFilter(filter: OverviewFilter): void {
     this.activeFilter.set(filter);
   }
 
-  // 🎯 Reaktiv den Projekt-Streak laden, sobald ein Projekt-Filter gewählt ist
+  // 🎯 Reaktiv gefilterte erledigte Aufgaben für alle Performance-Berechnungen
+  protected filteredCompletedTodos = computed(() => {
+    const todos = this.completedTodos();
+    const filter = this.activeFilter();
+
+    if (filter === 'all') return todos;
+    if (filter === 'personal') return todos.filter(t => !t.milestoneId);
+    if (filter === 'team') return todos.filter(t => !!t.milestoneId);
+
+    // Projekt-Filter ohne extra Service
+    const selectedProject = this.myProjects().find(p => p.title === filter || p.id === filter);
+    if (selectedProject && selectedProject.milestones) {
+      const projectMilestoneIds = new Set(selectedProject.milestones.map(m => m.id));
+      return todos.filter(t => t.milestoneId && projectMilestoneIds.has(t.milestoneId));
+    }
+
+    return todos;
+  });
+
+  // 🎯 Projekt-Streak laden
   protected projectStreakInfo = toSignal(
     toObservable(this.activeFilter).pipe(
       switchMap(filter => {
         const selectedProject = this.myProjects().find(p => p.title === filter || p.id === filter);
-
         if (selectedProject) {
-          return this.streakService.getProjectStreakInfo(selectedProject.id); // ✅ Schickt project.id!
+          return this.streakService.getProjectStreakInfo(selectedProject.id);
         }
         return of(null);
       })
@@ -48,19 +64,14 @@ export class StatsPerformanceComponent {
     { initialValue: null }
   );
 
-  // 🎯 Ist ein spezifisches Projekt ausgewählt?
   protected isSpecificProjectFilter = computed(() => {
     const f = this.activeFilter();
     return this.myProjects().some(p => p.title === f || p.id === f);
   });
 
-  // 🎯 Steuer-Signal für die Sichtbarkeit der Streak-Kachel
-  protected showStreakCard = computed(() => {
-    // Anzeigen bei: Privatem Filter, eigenen Teams ODER wenn ein spezifisches Projekt gewählt ist
-    return true;
-  });
+  protected showStreakCard = computed(() => true);
 
-  // --- DYNAMISCHE STREAK-WERTE (User vs. Projekt) ---
+  // --- STREAK GETTER ---
 
   protected get isShieldActive(): boolean {
     if (this.isSpecificProjectFilter()) {
@@ -76,14 +87,10 @@ export class StatsPerformanceComponent {
     return this.streakInfo()?.streakDays ?? 0;
   }
 
-// Für das Zusatz-Label in der Streak-Kachel
   protected get streakSubText(): string {
     if (this.isSpecificProjectFilter()) {
       const p = this.projectStreakInfo();
-      // Sichere Prüfung: Kommen Daten vom Server?
-      if (!p) {
-        return 'Keine Streak-Daten verfügbar';
-      }
+      if (!p) return 'Keine Streak-Daten verfügbar';
       return `${p.todaysContributedMembers} von ${p.requiredMembersCount} im Team aktiv`;
     }
     return this.isShieldActive ? 'Aktiv geschützt' : 'in Folge aktiv';
@@ -96,11 +103,10 @@ export class StatsPerformanceComponent {
     return this.isShieldActive ? 'Ticket-Schild' : 'Aktiv-Streak';
   }
 
-protected get streakMeta() {
+  protected get streakMeta() {
     if (this.isSpecificProjectFilter()) {
       const p = this.projectStreakInfo();
-      // 🛡️ Falls der Server null liefert -> graue/neutrale Darstellung
-      if (!p) return { color: '#64748b' }; 
+      if (!p) return { color: '#64748b' };
 
       const percentage = p.batteryPercentage ?? 0;
       if (percentage >= 80) return { color: '#166534' };
@@ -118,29 +124,26 @@ protected get streakMeta() {
     if (s <= 5) return { color: '#b45309' };
     return { color: '#166534' };
   }
-  
-  // ... (Restliche Methoden wie expressCount, estimationEfficiency, leadTime etc. bleiben unverändert)
-  protected showTeamPerformance = computed(() => {
-    return this.activeFilter() === 'team';
-  });
 
-  // 1. Aufgaben-Modus: Express-Aufgaben
+  protected showTeamPerformance = computed(() => this.activeFilter() === 'team');
+
+  // --- PERFORMANCE METRIKEN (Nutzen alle filteredCompletedTodos) ---
+
   protected get expressCount(): number {
-    return this.completedTodos().filter(t => t.isExpress).length;
+    return this.filteredCompletedTodos().filter(t => t.isExpress).length;
   }
 
   protected get expressRatio(): number {
-    if (this.completedTodos().length === 0) return 0;
-    return this.expressCount / this.completedTodos().length;
+    if (this.filteredCompletedTodos().length === 0) return 0;
+    return this.expressCount / this.filteredCompletedTodos().length;
   }
 
-  // 2. Punkte-Modus: Schätz-Effizienz
   protected get totalPlannedPoints(): number {
-    return this.completedTodos().reduce((sum, t) => sum + (t.effort || 0), 0);
+    return this.filteredCompletedTodos().reduce((sum, t) => sum + (t.effort || 0), 0);
   }
 
   protected get totalUsedPoints(): number {
-    return this.completedTodos().reduce((sum, t) => sum + (t.usedEffort || 0), 0);
+    return this.filteredCompletedTodos().reduce((sum, t) => sum + (t.usedEffort || 0), 0);
   }
 
   protected get estimationEfficiency(): number {
@@ -148,16 +151,14 @@ protected get streakMeta() {
     return this.totalPlannedPoints / this.totalUsedPoints;
   }
 
-  // 🎯 Predictability Score
   protected get predictabilityScore(): number {
-    if (this.completedTodos().length === 0) return 0;
-    const exactMatches = this.completedTodos().filter(t => t.usedEffort === t.effort).length;
-    return exactMatches / this.completedTodos().length;
+    if (this.filteredCompletedTodos().length === 0) return 0;
+    const exactMatches = this.filteredCompletedTodos().filter(t => t.usedEffort === t.effort).length;
+    return exactMatches / this.filteredCompletedTodos().length;
   }
 
-  // 🕵️‍♂️ Ehrlichkeits-Tracker
   protected get totalEffortManipulations(): number {
-    return this.completedTodos().reduce((sum, t) => sum + (t.effortChangesCount || 0), 0);
+    return this.filteredCompletedTodos().reduce((sum, t) => sum + (t.effortChangesCount || 0), 0);
   }
 
   protected get efficiencyMeta() {
@@ -185,22 +186,21 @@ protected get streakMeta() {
   }
 
   protected get averageLeadTime(): number {
-    if (this.completedTodos().length === 0) return 0;
+    if (this.filteredCompletedTodos().length === 0) return 0;
 
-    const totalDays = this.completedTodos().reduce((sum, t) => {
+    const totalDays = this.filteredCompletedTodos().reduce((sum, t) => {
       if (!t.completedAt || !t.createdAt) return sum;
-
-      const diffMs = Math.abs(t.completedAt - t.createdAt);
+      const diffMs = Math.abs(new Date(t.completedAt).getTime() - new Date(t.createdAt).getTime());
       return sum + (diffMs / (1000 * 60 * 60 * 24));
     }, 0);
 
-    const average = totalDays / this.completedTodos().length;
+    const average = totalDays / this.filteredCompletedTodos().length;
     return Math.round(average * 10) / 10;
   }
 
   protected get leadTimeMeta() {
     const days = this.averageLeadTime;
-    if (this.completedTodos().length === 0) return { color: '#64748b', text: 'Noch keine Daten.' };
+    if (this.filteredCompletedTodos().length === 0) return { color: '#64748b', text: 'Noch keine Daten.' };
 
     if (days <= 1) {
       return { color: '#166534', text: '⚡ Überschall-Tempo! Aufgaben fliegen regelrecht bei dir durch.' };
@@ -210,5 +210,4 @@ protected get streakMeta() {
     }
     return { color: '#b45309', text: '🐢 Gemächlicher Fluss! Manche Aufgaben brauchen etwas Reifezeit.' };
   }
-
 }

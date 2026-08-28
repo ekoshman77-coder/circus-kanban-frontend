@@ -6,7 +6,9 @@ export class TodoViewModel {
 
     public showEffortPopup = signal<boolean>(false);
     public pendingTodo = signal<Todo | null>(null);
-    public popupEffortValue = signal<number>(0);
+    public popupEffortValue = signal<number>(0);       // Effort für Dev
+    public popupReviewerEffortValue = signal<number>(0); // Effort für Reviewer
+
     public showAssigneePopup = signal<boolean>(false);
 
     public estimationStatus = computed<'MATCH' | 'FASTER' | 'SLOWER' | 'NONE'>(() => {
@@ -57,26 +59,33 @@ export class TodoViewModel {
     /**
    * 1. Der User klickt auf "Erledigen" im UI
    */
+    // todo-view-model.ts
+
     public onTodoChecked(todoService: TodoService, currentUserId?: string, onReviewTriggered?: (todo: Todo) => void): void {
-        console.log("ViewModel", "onTodoChecked");
-
         if (!this.todo.done) {
-            // 🚀 A) TEAM-TODO: In den REVIEW-Status verschieben
+            // 🚀 A) TEAM-TODO:
             if (this.todo.milestoneId) {
-                const updatedTodo = Todo.fromTodo(this.todo);
-                updatedTodo.teamStatus = 'REVIEW';
-                updatedTodo.lastDeveloperId = currentUserId ?? null;
-                updatedTodo.assignedUserId = null;
+                // Wenn es noch IN_PROGRESS ist -> ab ins REVIEW
+                if (this.todo.teamStatus === 'IN_PROGRESS') {
+                    const updatedTodo = Todo.fromTodo(this.todo);
+                    updatedTodo.teamStatus = 'REVIEW';
+                    updatedTodo.lastDeveloperId = currentUserId ?? null;
+                    updatedTodo.assignedUserId = null;
 
-                todoService.updateTodo(updatedTodo, true);
+                    todoService.updateTodo(updatedTodo, true);
+                    this.pendingTodo.set(updatedTodo);
 
-                // 💡 HIER IST DER SCHLÜSSEL: Das Signal setzen!
-                this.pendingTodo.set(updatedTodo);
-
-                if (onReviewTriggered) {
-                    onReviewTriggered(updatedTodo);
+                    if (onReviewTriggered) {
+                        onReviewTriggered(updatedTodo);
+                    }
+                    return;
                 }
-                return;
+
+                // Wenn es schon im REVIEW ist und abgehakt wird -> DONE-Workflow mit Popup starten!
+                if (this.todo.teamStatus === 'REVIEW') {
+                    this.triggerDoneWorkflow();
+                    return;
+                }
             }
 
             // 📝 B) PRIVATES TODO: Story-Points Abfrage
@@ -86,50 +95,45 @@ export class TodoViewModel {
             return;
         }
 
-        // Wieder öffnen
+        // Wieder öffnen (aus DONE zurücksetzen)
         todoService.toggleComplete(this.id, this.todo.usedEffort);
     }
 
-    public onEffortConfirmed(finalEffort: number, todoService: TodoService): void {
+    /**
+     * Bereitet die Signals für das Auslesen von Dev- & Reviewer-Effort vor
+     */
+    public triggerDoneWorkflow(): void {
+        console.log("triggerDoneWorkflow", this.todo)
+        const devEffort = this.todo.usedEffort > 0 ? this.todo.usedEffort : this.todo.effort;
+        const revEffort = this.todo.reviewerUsedEffort > 0 ? this.todo.reviewerUsedEffort : 1;
+
+        this.popupEffortValue.set(devEffort);
+        this.popupReviewerEffortValue.set(revEffort);
+        this.showEffortPopup.set(true);
+    }
+
+    /**
+     * Bestätigt den Aufwand für BEIDE Parteien und schließt das Ticket.
+     */
+    public onEffortConfirmed(finalDevEffort: number, finalReviewerEffort: number, todoService: TodoService): void {
         this.showEffortPopup.set(false);
 
-        // 🚀 A) TEAM-TODO:
-        if (this.todo.milestoneId) {
-            const updatedTodo = Todo.fromTodo(this.todo);
-            updatedTodo.teamStatus = 'DONE';
-            updatedTodo.done = true;                 // 🎯 Wichtig für Streak / Batterie
-            updatedTodo.usedEffort = finalEffort;     // 🎯 Wichtig für Aufwandsberechnung
-            updatedTodo.completedAt = Date.now();
+        const updatedTodo = Todo.fromTodo(this.todo);
+        updatedTodo.teamStatus = 'DONE';
+        updatedTodo.done = true;
+        updatedTodo.completedAt = Date.now();
 
-            todoService.updateTodo(updatedTodo, true);
-            return;
-        }
+        // 🎯 Aufwände eintragen
+        updatedTodo.usedEffort = finalDevEffort;
+        updatedTodo.reviewerUsedEffort = finalReviewerEffort;
+        updatedTodo.assignedUserId = null
 
-        // 📝 B) PRIVATES TODO:
-        todoService.toggleComplete(this.id, finalEffort);
+        todoService.updateTodo(updatedTodo, true);
     }
-    
+
+
     public cancelEffortPopup(): void {
         console.log("ViewModel", "cancelEffortPopup");
         this.showEffortPopup.set(false);
     }
-
-    /**
-     * Triggert den Workflow zum Schließen einer Aufgabe (z. B. aus dem Kanban-Board).
-     * Bereitet den Status vor und öffnet das Effort-Popup des ViewModels.
-     */
-    public triggerDoneWorkflow(): void {
-        // 1. Status & Meta-Daten für DONE vorbereiten
-        this.todo.teamStatus = 'DONE';
-        this.todo.assignedUserId = null;
-        this.todo.completedAt = Date.now();
-
-        // 2. Empfohlenen Aufwand berechnen
-        const recommendedEffort = this.todo.usedEffort > 0 ? this.todo.usedEffort : this.todo.effort;
-
-        // 3. Popup-Signals im ViewModel aktivieren
-        this.popupEffortValue.set(recommendedEffort);
-        this.showEffortPopup.set(true);
-    }
-
 }

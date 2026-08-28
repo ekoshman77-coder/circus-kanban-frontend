@@ -14,34 +14,27 @@
       <span class="text" [class.completed-text]="item().done">{{ item().task }}</span>
 
       <div class="todo-metadata">
-        <!-- Fällig/Erledigt Text + Datum: Immer -->
         <span class="todo-date">
           📅 {{ item().dateText }} {{ item().timestamp | date:'dd.MM.yyyy HH:mm' }}
         </span>
 
-        <!-- Kategorie: Immer, wenn vorhanden -->
         @if (item().category) {
           <span class="category-badge">{{ item().category }}</span>
         }
 
-        <!-- 👥 / 🔒 Type-Badge -->
         @if (item().todo.milestoneId) {
           <span class="type-badge team-badge" title="Team-Todo aus einem Meilenstein">👥 Team</span>
         } @else {
           <span class="type-badge private-badge" title="Privates Todo">🔒 Privat</span>
         }
 
-        <!-- Story-Points (Effort): Nur für offene Todos -->
         @if (!item().done) {
           <div class="points-container">
-            <!-- Offline-Modus: Reine Text-Anzeige (Gesperrt) -->
             @if (isOffline()) {
               <span class="points-badge offline-text" title="Geplanten Aufwand ansehen (Offline gesperrt)">
                 {{ item().effort }} P
               </span>
-            } 
-<!-- Online-Modus: Interaktive Pille mit Dropdown -->
-            @else {
+            } @else {
               <select 
                 class="points-dropdown-native clickable"
                 [value]="item().effort"
@@ -49,8 +42,6 @@
                 (change)="onDropdownChange($event)"
                 title="Geplanten Aufwand bearbeiten"
               >
-                <!-- Wir nehmen das saubere @for, überlassen das Suchen 
-                     aber dem [value] des select-Tags! -->
                 @for (p of todoService.fibonacciSequence; track p) {
                   <option [value]="p">
                     {{ p === item().effort ? '✍️ ' : '' }}{{ p }} P
@@ -61,7 +52,6 @@
           </div>
         } 
 
-        <!-- Mitarbeiter-Zuweisung: Nur bei Team-Todos (isTeamsPopupEnabled) -->
         @if (isTeamsPopupEnabled()) {
           @if (assignedUser(); as user) {
             <div class="assignee-badge-wrapper" 
@@ -94,11 +84,10 @@
       </div>
     </div>
 
-    <!-- 3. Rechte Aktions-Buttons: Nur in der Listenansicht (nicht bei Kanban) -->
+    <!-- 3. Rechte Aktions-Buttons -->
     @if (!isKanbanMode) {
       <div class="right-actions">
-        <!-- Checkbox: Immer da, aber nur aktiv wenn canEdit -->
-        <label class="circle" [class.disabled-label]="!item().canEdit">
+        <label #checkLabel class="circle" [class.disabled-label]="!item().canEdit">
           <input class="done" type="checkbox" 
                  [checked]="item().done" 
                  [disabled]="!item().canEdit" 
@@ -106,14 +95,12 @@
           <span class="custom-circle"></span>
         </label>
 
-        <!-- Editieren: Verschwindet optisch, wenn das Todo erledigt ist -->
         <button class="btn-utility btn-action-edit" 
                 [class.hidden-edit]="item().done" 
                 (click)="onEditClick()">
           ✏️
         </button>
 
-        <!-- Löschen: Immer da, aber deaktiviert, wenn kein canDelete vorliegt -->
         <button class="btn-utility btn-action-delete" 
                 [disabled]="!item().canDelete" 
                 [title]="!item().canDelete ? 'Keine Berechtigung zum Löschen' : 'Aufgabe löschen'"
@@ -131,22 +118,7 @@
     </div>
   }
 
-  <!-- 5. Popovers -->
-  @if (isPopupOpen()) {
-    <div class="satellite-popover">
-      <div class="popover-controls-row">
-        <div class="input-wrapper">
-          <input type="number" [(ngModel)]="item().popupEffortValue" (keydown.enter)="onEffortConfirmed(item().popupEffortValue())" />
-          <span class="unit">P</span>
-        </div>
-        <div class="popover-buttons-column">
-          <button class="btn-primary" (click)="onEffortConfirmed(item().popupEffortValue())">✔</button>
-          <button class="btn-secondary" (click)="item().showEffortPopup.set(false)">✖</button>
-        </div>
-      </div>
-    </div>
-  }
-
+  <!-- Assignee Popover -->
   @if (isTeamsPopupEnabled() && item().showAssigneePopup()) {
     <div class="satellite-popover assignee-popover">
       <strong class="popover-title">Mitarbeiter zuweisen:</strong>
@@ -180,4 +152,15 @@
     </div>
   }
 </div>
+}
+
+<!-- 🎯 Standalone Modal Aufruf -->
+@if (isPopupOpen()) {
+  <app-effort-modal-component 
+    [vm]="item()"
+    [origin]="checkLabelRef || elementRef"
+    (cancel)="cancelEffortPopup()"
+    (confirm)="onEffortConfirmed($event.devEffort, $event.reviewerEffort)"
+  >
+  </app-effort-modal-component>
 }

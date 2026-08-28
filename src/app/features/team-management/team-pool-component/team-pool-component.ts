@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
 import { TeamService } from '../../../core/services/team/team-service';
 import { UserModel } from '../../../core/models/user-model';
-import { Subject, Subscription, throttleTime } from 'rxjs'; // 🎯 Subscription importieren
 import { FilterService } from '../../../core/services/filter/filter-service';
 import { UniversalPopupComponent } from '../../../core/shared/components/universal-popup-component/universal-popup-component';
 
@@ -14,7 +13,7 @@ import { UniversalPopupComponent } from '../../../core/shared/components/univers
   templateUrl: './team-pool-component.html',
   styleUrl: './team-pool-component.css'
 })
-export class TeamPoolComponent implements OnInit, OnDestroy { // 🎯 OnDestroy für sauberes Aufräumen
+export class TeamPoolComponent implements OnInit { // 🎯 OnDestroy für sauberes Aufräumen
   private teamService = inject(TeamService);
   private filterService = inject(FilterService);
 
@@ -27,18 +26,10 @@ export class TeamPoolComponent implements OnInit, OnDestroy { // 🎯 OnDestroy 
 
   // 👑 Königslösung: Holt die flachen Benutzer direkt aus dem Service-Signal!
   private allUsersServerSignal = computed(() => {
-    return this.teamService.globalMembersSignal().map(member => member.user);
-  })
-
-  // 🛡️ Dein Klick-Spam-Schutz bleibt bestehen!
-  private registerClicks$ = new Subject<void>();
-  private clickSub?: Subscription;
-
-  public userForm = new FormGroup({
-    firstName: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    lastName: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    username: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    password: new FormControl("", { nonNullable: true, validators: [Validators.required] })
+    const members = this.teamService.globalMembersSignal() || [];
+    return members
+      .filter(member => member && member.user)
+      .map(member => member.user);
   });
 
   public editForm = new FormGroup({
@@ -68,59 +59,11 @@ export class TeamPoolComponent implements OnInit, OnDestroy { // 🎯 OnDestroy 
     );
   });
 
-  public isUsernameTaken = computed(() => {
-    const users = this.allUsersServerSignal();
-    const typedUsername = this.userForm.get('username')?.value?.trim().toLowerCase();
-    if (!typedUsername) return false;
-    return users.some(u => u.username.toLowerCase() === typedUsername);
-  });
-
   ngOnInit(): void {
     this.filterService.setInitialCategory('team');
 
     console.log('👥 [TeamPool] Trigger globalen Pool-Sync im OnInit');
     this.teamService.loadGlobalPool();
-    // 🛡️ Wir registrieren das Klick-Abo sauber im ngOnInit, genau wie du es hattest!
-    this.clickSub = this.registerClicks$.pipe(
-      throttleTime(2000)
-    ).subscribe(() => {
-      this.executeUserRegistration();
-    });
-  }
-
-  ngOnDestroy(): void {
-    // 🧹 Wichtig: Abo kündigen, wenn die Komponente verlassen wird!
-    this.clickSub?.unsubscribe();
-  }
-
-  public onAddUser(): void {
-    this.registerClicks$.next();
-  }
-
-  private executeUserRegistration(): void {
-    if (this.userForm.invalid || this.isUsernameTaken()) return;
-
-    const values = this.userForm.getRawValue();
-    const newUser = new UserModel({
-      id: '',
-      firstName: values.firstName.trim(),
-      lastName: values.lastName.trim(),
-      username: values.username.trim().toLowerCase(),
-      coffeeAccount: {
-        role: 'Teammitglied',
-        emoji: '👤',
-        balance: 0,
-      },
-      isApproved: null,
-      department: null,
-      projectIds: []
-    });
-
-    this.teamService.createMember(newUser, values.password, (err) => {
-      this.errorFromServer.set(err);
-    });
-
-    this.userForm.reset();
   }
 
   public onDeleteUser(id: string): void {
@@ -160,8 +103,8 @@ export class TeamPoolComponent implements OnInit, OnDestroy { // 🎯 OnDestroy 
       lastName: formValues.lastName.trim(),
       username: formValues.username.trim(),
       coffeeAccount: currentUser?.coffeeAccount,
-      isApproved: currentUser?.isApproved?? null,
-      department: currentUser?.department?? null,
+      isApproved: currentUser?.isApproved ?? null,
+      department: currentUser?.department ?? null,
       projectIds: currentUser?.projectIds || []
     });
 

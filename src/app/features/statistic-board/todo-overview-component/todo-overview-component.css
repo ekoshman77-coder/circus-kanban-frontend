@@ -133,6 +133,10 @@
 .chart-bar-wrapper.open .bar-fill { background: linear-gradient(to top, #00b4d8, #0096c7); }
 .chart-bar-wrapper.overdue .bar-fill { background: linear-gradient(to top, #e74c3c, #c0392b); }
 .chart-bar-wrapper.done .bar-fill { background: linear-gradient(to top, #2ecc71, #27ae60); }
+/* Neue Farben für Review-Balken */
+.chart-bar-wrapper.in-my-review .bar-fill { background: linear-gradient(to top, #f59e0b, #fbbf24); } /* Warmes Orange */
+.chart-bar-wrapper.in-other-review .bar-fill { background: linear-gradient(to top, #8b5cf6, #a78bfa); } /* Lila */
+.chart-bar-wrapper.reviewed-done .bar-fill { background: linear-gradient(to top, #10b981, #34d399); } /* Smaragdgrün */
 
 .bar-value {
   font-size: 11px;

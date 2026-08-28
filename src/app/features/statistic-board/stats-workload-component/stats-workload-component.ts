@@ -1,17 +1,18 @@
-import { Component, Input, computed, inject, signal } from '@angular/core';
+// stats-workload-component.ts
+
+import { Component, computed, inject, input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { StatMode } from '../statistic-board-component/statistic-board-component';
 import { UserService } from '../../../core/services/user/user-service';
 import { MilestoneSelectorComponent } from '../../../core/shared/components/milestone-selector-component/milestone-selector-component';
-import { Project } from '../../../core/models/project';
 import { ProjectService } from '../../../core/services/project/project-service';
 import { TeamService } from '../../../core/services/team/team-service';
+import { Todo } from '../../../core/models/todo';
 
-// ⚙️ REALISTISCHE RICHTWERTE (Später leicht auf PlannerSettings umstellbar!)
 export const WORKLOAD_CONFIG = {
-  MAX_DAILY_TASKS: 3,        // Realistisch: Max 3 Tasks pro Tag
-  MAX_DAILY_POINTS: 3,       // Realistisch: Max 3 Story Points pro Tag
-  HOURS_PER_POINT: 2.5       // Transparenz: 1 Point = ca. 2.5 Std.
+  MAX_DAILY_TASKS: 3,
+  MAX_DAILY_POINTS: 3,
+  HOURS_PER_POINT: 2.5
 };
 
 export interface ColleagueHelpInfo {
@@ -30,12 +31,13 @@ export interface ColleagueHelpInfo {
   styleUrl: './stats-workload-component.css'
 })
 export class StatsWorkloadComponent {
-  @Input({ required: true }) mode: StatMode = 'tasks';
-  @Input({ required: true }) todayTodos: any[] = [];
+  // 🚀 Modernisierte Signal Inputs:
+  public mode = input<StatMode>('tasks');
+  public todayTodos = input<Todo[]>([]);
 
   private userService = inject(UserService);
-  private projectService = inject(ProjectService)
-  private teamService = inject(TeamService)
+  private projectService = inject(ProjectService);
+  private teamService = inject(TeamService);
 
   protected selectedProjectId = signal<string | null>(null);
   protected selectedMilestoneId = signal<string | null>(null);
@@ -45,12 +47,11 @@ export class StatsWorkloadComponent {
     const currentUserId = this.userService.currentUser()?.id;
     if (!currentUserId) return [];
 
-    return this.todayTodos.filter(t => 
+    return this.todayTodos().filter(t => 
       t.assignedUserId === currentUserId || (!t.assignedUserId && t.userId === currentUserId)
     );
   });
 
-  // Überfällige Tasks herausfiltern (Deadline vor heute und noch offen)
   protected overdueTodos = computed(() => {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
@@ -58,7 +59,6 @@ export class StatsWorkloadComponent {
     return this.myTodayTodos().filter(t => !t.done && t.dueDate && new Date(t.dueDate) < todayStart);
   });
 
-  // Summe der Punkte für heute
   protected todayPoints = computed(() => {
     return this.myTodayTodos().reduce((sum, t) => {
       const points = (t.done && t.usedEffort !== undefined && t.usedEffort !== null)
@@ -68,21 +68,19 @@ export class StatsWorkloadComponent {
     }, 0);
   });
 
-  // Prozentuale Auslastung basierend auf den neuen Konstanten
   protected workloadPercent = computed(() => {
-    const limit = this.mode === 'tasks' ? WORKLOAD_CONFIG.MAX_DAILY_TASKS : WORKLOAD_CONFIG.MAX_DAILY_POINTS;
-    const current = this.mode === 'tasks' ? this.myTodayTodos().length : this.todayPoints();
+    const limit = this.mode() === 'tasks' ? WORKLOAD_CONFIG.MAX_DAILY_TASKS : WORKLOAD_CONFIG.MAX_DAILY_POINTS;
+    const current = this.mode() === 'tasks' ? this.myTodayTodos().length : this.todayPoints();
     return Math.min((current / limit) * 100, 100);
   });
 
-  // --- DYNAMISCHER METADATEN- & STATUS-TEXT ---
+  // --- METADATEN & STATUS ---
   protected workloadMeta = computed(() => {
     const myTodos = this.myTodayTodos();
-    const count = this.mode === 'tasks' ? myTodos.length : this.todayPoints();
-    const limit = this.mode === 'tasks' ? WORKLOAD_CONFIG.MAX_DAILY_TASKS : WORKLOAD_CONFIG.MAX_DAILY_POINTS;
+    const count = this.mode() === 'tasks' ? myTodos.length : this.todayPoints();
+    const limit = this.mode() === 'tasks' ? WORKLOAD_CONFIG.MAX_DAILY_TASKS : WORKLOAD_CONFIG.MAX_DAILY_POINTS;
     const overdueCount = this.overdueTodos().length;
 
-    // 🚨 1. Prio: Überfällige Aufgaben aus der Vergangenheit
     if (overdueCount > 0) {
       return {
         color: '#dc2626',
@@ -92,7 +90,6 @@ export class StatsWorkloadComponent {
       };
     }
 
-    // ☕ 2. Keine Tasks
     if (count === 0) {
       return {
         color: '#0ea5e9',
@@ -102,7 +99,6 @@ export class StatsWorkloadComponent {
       };
     }
 
-    // 🟢 3. Im grünen Bereich (<= 60% des Tageslimits)
     if (count <= limit * 0.6) {
       return {
         color: '#166534',
@@ -112,7 +108,6 @@ export class StatsWorkloadComponent {
       };
     }
 
-    // 🟡 4. Optimale Auslastung (bis 100%)
     if (count <= limit) {
       return {
         color: '#ca8a04',
@@ -122,7 +117,6 @@ export class StatsWorkloadComponent {
       };
     }
 
-    // 🔴 5. Überlastung
     return {
       color: '#dc2626',
       bg: '#fee2e2',
@@ -132,13 +126,13 @@ export class StatsWorkloadComponent {
   });
 
   // --- TEAM-KOLLEGEN FÜR HILFE ---
-protected colleaguesNeedingHelp = computed<ColleagueHelpInfo[]>(() => {
+  protected colleaguesNeedingHelp = computed<ColleagueHelpInfo[]>(() => {
     const currentUserId = this.userService.currentUser()?.id;
     const activeMilestoneId = this.selectedMilestoneId();
     const activeProjectId = this.selectedProjectId();
 
     // 1. Nur offene Tasks von anderen Usern
-    let filtered = this.todayTodos.filter(t => {
+    let filtered = this.todayTodos().filter(t => {
       const ownerOrAssignee = t.assignedUserId || t.userId;
       return !t.done && ownerOrAssignee && ownerOrAssignee !== currentUserId;
     });
@@ -148,19 +142,18 @@ protected colleaguesNeedingHelp = computed<ColleagueHelpInfo[]>(() => {
       filtered = filtered.filter(t => String(t.milestoneId) === String(activeMilestoneId));
     } else if (activeProjectId) {
       const project = this.projectService.projectsList().find(p => String(p.id) === String(activeProjectId));
-      const projectMilestoneIds = project?.milestones.map(m => String(m.id)) || [];
+      const projectMilestoneIds = project?.milestones?.map(m => String(m.id)) || [];
       filtered = filtered.filter(t => t.milestoneId && projectMilestoneIds.includes(String(t.milestoneId)));
     }
 
     // 3. User-Pool aus dem TeamService laden
     const members = this.teamService.globalMembersSignal();
-
     const userMap = new Map<string, ColleagueHelpInfo>();
 
     for (const task of filtered) {
       const uId = task.assignedUserId || task.userId;
+      if (!uId) continue;
       
-      // Vor- und Nachname aus dem TeamService auslesen
       const member = members.find(m => m.user.id === uId);
       const user = member?.user;
       const userName = user 
@@ -188,9 +181,8 @@ protected colleaguesNeedingHelp = computed<ColleagueHelpInfo[]>(() => {
     }
 
     return Array.from(userMap.values())
-      .sort((a, b) => this.mode === 'tasks' ? b.taskCount - a.taskCount : b.pointsCount - a.pointsCount);
+      .sort((a, b) => this.mode() === 'tasks' ? b.taskCount - a.taskCount : b.pointsCount - a.pointsCount);
   });
-
 
   protected onProjectSelected(projectId: string): void {
     this.selectedProjectId.set(projectId);

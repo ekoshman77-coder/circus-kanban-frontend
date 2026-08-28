@@ -8,6 +8,9 @@ export interface ITodoJSON {
   dueDate: number;
   completedAt: number | null;
   effort: number;
+  // 🤝 NEU: Reviewer-Splitting Felder
+  reviewerId?: string | null;
+  reviewerUsedEffort?: number;
   usedEffort: number;
   createdAt: number;
   userId: string;

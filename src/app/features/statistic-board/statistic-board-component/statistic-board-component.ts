@@ -48,7 +48,7 @@ export class StatisticBoardComponent {
     this.allTodos().filter(t => !!t.milestoneId)
   );
 
-  public myTeamTodos = this.todoService.focusedTodos;
+  public myTeamTodos = this.todoService.userContributionTodos;
 
   // Projects-Berechnung
   public myProjects = computed(() => {
@@ -74,16 +74,24 @@ export class StatisticBoardComponent {
     this.allTodos().filter(t => t.done)
   );
 
-  // 🎯 2b. Gefilterte erledigte Aufgaben (Persönlich vs. Team) für die Performance-Komponente
+  // ⚡ PERFORMANCE: Berücksichtigt auch absolvierte Reviews im Personal View
   public filteredCompletedTodos = computed(() => {
-    const allCompleted = this.completedTodos();
     const currentUserId = this.userService.getCurrentUserId();
+    if (!currentUserId) return [];
 
     if (this.activeView() === 'personal') {
-      return allCompleted.filter(t => t.userId === currentUserId);
+      return this.allTodos().filter(t => {
+        const isDone = t.done || t.teamStatus === 'DONE';
+        if (!isDone) return false;
+
+        const isMyPrivate = !t.milestoneId && t.userId === currentUserId;
+        const isMyDevWork = t.lastDeveloperId === currentUserId;
+        const isMyReviewWork = t.reviewerId === currentUserId;
+
+        return isMyPrivate || isMyDevWork || isMyReviewWork;
+      });
     } else {
-      // Team-Ansicht: Nur Aufgaben mit zugewiesener milestoneId
-      return allCompleted.filter(t => !!t.milestoneId);
+      return this.allTodos().filter(t => (t.done || t.teamStatus === 'DONE') && !!t.milestoneId);
     }
   });
 
@@ -95,26 +103,51 @@ export class StatisticBoardComponent {
   });
 
   // 4. UNVERÄNDERT: Deine originale todayTodos-Berechnung
+// ⏳ HEUTE-AUSLASTUNG: Erweitert um "Heute im Review"
   protected todayTodos = computed(() => {
+    const currentUserId = this.userService.getCurrentUserId();
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
 
-    const todos = this.allTodos().filter(t => {
+    return this.allTodos().filter(t => {
       if (!t.dueDate) return false;
       const dueDate = new Date(t.dueDate);
 
-      // Offen & fällig bis Ende heute
-      const isDueOrOverdue = !t.done && dueDate <= todayEnd;
+      // Eigene offene Aufgaben oder Aufgaben, die bei mir im Review liegen
+      const isMyTaskDue = (t.assignedUserId === currentUserId || !t.milestoneId) && !t.done && dueDate <= todayEnd;
+      const isWaitingForMyReview = t.reviewerId === currentUserId && t.teamStatus === 'REVIEW';
+      const isDoneToday = (t.done || t.teamStatus === 'DONE') && dueDate >= todayStart && dueDate <= todayEnd;
 
-      // Oder heute erledigt
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-      const isDoneToday = t.done && dueDate >= todayStart && dueDate <= todayEnd;
-
-      return isDueOrOverdue || isDoneToday;
+      return isMyTaskDue || isWaitingForMyReview || isDoneToday;
     });
-    console.log('TODAY TODOS:', todos);
-    return todos;
+  });
+
+  public inMyReviewTodos = computed(() => {
+    const currentUserId = this.userService.getCurrentUserId();
+    if (!currentUserId) return [];
+    return this.allTodos().filter(t => 
+      t.reviewerId === currentUserId && !t.done && t.teamStatus === 'REVIEW'
+    );
+  });
+
+  // 🔎 2. Bei anderen im Review (Deine Tasks, die auf Review warten)
+  public inOtherReviewTodos = computed(() => {
+    const currentUserId = this.userService.getCurrentUserId();
+    if (!currentUserId) return [];
+    return this.allTodos().filter(t => 
+      t.lastDeveloperId === currentUserId && !t.done && t.teamStatus === 'REVIEW'
+    );
+  });
+
+  // 🎉 3. Von dir erfolgreich freigegebene/geprüfte Reviews
+  public completedReviewedTodos = computed(() => {
+    const currentUserId = this.userService.getCurrentUserId();
+    if (!currentUserId) return [];
+    return this.allTodos().filter(t => 
+      t.reviewerId === currentUserId && (t.done || t.teamStatus === 'DONE')
+    );
   });
 
   // --- NAVIGATION ---

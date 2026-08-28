@@ -1,40 +1,39 @@
 <div class="workload-grid">
-  
+
   <!-- 👈 LINKE SPALTE: MEINE KAPAZITÄT -->
-  <div class="workload-card my-capacity-card" [style.background]="workloadMeta().bg" [style.border-color]="workloadMeta().border">
+  <div class="workload-card my-capacity-card" [style.background]="workloadMeta().bg"
+    [style.border-color]="workloadMeta().border">
     <div class="workload-header">
       <div class="title-with-icon">
         <span class="workload-icon">⏳</span>
         <h3>Meine Tageskapazität</h3>
       </div>
-      
+
       <div class="workload-counter" [style.color]="workloadMeta().color">
-        @if (mode === 'tasks') {
-          <strong>{{ myTodayTodos().length }}</strong><small>/3 Tasks</small>
+        @if (mode() === 'tasks') {
+        <strong>{{ myTodayTodos().length }}</strong><small>/3 Tasks</small>
         } @else {
-          <strong>{{ todayPoints() }}</strong><small>/3P (~7.5h)</small>
+        <strong>{{ todayPoints() }}</strong><small>/3P (~7.5h)</small>
         }
       </div>
-    </div>
 
-    <p class="workload-status-text" [style.color]="workloadMeta().color">
-      {{ workloadMeta().text }}
-    </p>
+      <p class="workload-status-text" [style.color]="workloadMeta().color">
+        {{ workloadMeta().text }}
+      </p>
 
-    <div class="workload-progress-wrapper">
-      <div class="progress-bar-bg">
-        <div 
-          class="progress-bar-fill" 
-          [style.width.%]="workloadPercent()" 
-          [style.background-color]="workloadMeta().color">
+      <div class="workload-progress-wrapper">
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" [style.width.%]="workloadPercent()"
+            [style.background-color]="workloadMeta().color">
+          </div>
+        </div>
+        <div class="progress-labels">
+          <span>0%</span>
+          <span>Optimal (100%)</span>
         </div>
       </div>
-      <div class="progress-labels">
-        <span>0%</span>
-        <span>Optimal (100%)</span>
-      </div>
     </div>
-  </div>
+  </div> <!-- 👈 🎯 HIER WAR DER FEHLER: Das </div> der ersten Karte hat gefehlt! -->
 
   <!-- 👉 RECHTE SPALTE: KOLLEGEN & DEIN SELECTOR -->
   <div class="workload-card team-help-card">
@@ -43,44 +42,39 @@
         <span class="workload-icon">🤝</span>
         <h3>Team-Unterstützung</h3>
       </div>
-      
-      <!-- Der Selector sitzt sauber im Header der rechten Karte -->
-      <app-milestone-selector-component
-        [canChooseProject]="true"
-        [onlyProjects]="false" 
-        [appearance]="'dropdown'"
-        [initialProjectId]="selectedProjectId()"
-        [initialMilestoneId]="selectedMilestoneId()"
-        (projectSelected)="onProjectSelected($event)"
-        (milestoneSelected)="onMilestoneSelected($event)">
+
+      <!-- Selector im Header der rechten Karte -->
+      <app-milestone-selector-component [canChooseProject]="true" [onlyProjects]="false" [appearance]="'dropdown'"
+        [initialProjectId]="selectedProjectId()" [initialMilestoneId]="selectedMilestoneId()"
+        (projectSelected)="onProjectSelected($event)" (milestoneSelected)="onMilestoneSelected($event)">
       </app-milestone-selector-component>
     </div>
 
-    <!-- Liste der Kollegen mit ihren Vor-/Nachnamen und einzelnen Todos -->
+    <!-- Liste der Kollegen -->
     <div class="colleagues-list">
       @for (colleague of colleaguesNeedingHelp(); track colleague.userId) {
-        <div class="colleague-card">
-          <div class="colleague-header">
-            <span class="user-name">👤 {{ colleague.userName }}</span>
-            <span class="badge warning">
-              {{ mode === 'tasks' ? colleague.taskCount + ' Tasks' : colleague.pointsCount + ' Points' }}
-            </span>
-          </div>
+      <div class="colleague-card">
+        <div class="colleague-header">
+          <span class="user-name">👤 {{ colleague.userName }}</span>
+          <span class="badge warning">
+            {{ mode() === 'tasks' ? colleague.taskCount + ' Tasks' : colleague.pointsCount + ' Points' }}
+          </span>
+        </div>
 
-          <ul class="colleague-todo-list">
-            @for (todo of colleague.todos; track todo.id) {
-              <li class="todo-item-row">
-                <span class="todo-title">{{ todo.task }}</span>
-                <span class="todo-effort-pill">{{ todo.effort }} P</span>
-              </li>
-            }
-          </ul>
-        </div>
+        <ul class="colleague-todo-list">
+          @for (todo of colleague.todos; track todo.id) {
+          <li class="todo-item-row">
+            <span class="todo-title">{{ todo.task }}</span>
+            <span class="todo-effort-pill">{{ todo.effort }} P</span>
+          </li>
+          }
+        </ul>
+      </div>
       } @empty {
-        <div class="empty-state">
-          <span>✨</span>
-          <p>Niemand benötigt in dieser Phase Hilfe oder alle Aufgaben sind bereits erledigt.</p>
-        </div>
+      <div class="empty-state">
+        <span>✨</span>
+        <p>Niemand benötigt in dieser Phase Hilfe oder alle Aufgaben sind bereits erledigt.</p>
+      </div>
       }
     </div>
   </div>

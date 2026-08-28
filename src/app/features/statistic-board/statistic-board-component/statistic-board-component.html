@@ -31,27 +31,34 @@
 
   <div class="stats-page-content">
     @switch(currentTab()) {
-    @case ('statistic-overview') {
-    <app-statistic-overview-component 
-      [myProjects]="myProjects()" 
-      [mode]="currentMode()">
-    </app-statistic-overview-component>
-    }
-    @case ('todo-overview'){
-    <app-todo-overview 
-      [privateTodos]="privateTodos()" 
-      [teamTodos]="teamTodos()" 
-      [myTeamTodos]="myTeamTodos()"
-      [myProjects]="myProjects()" 
-      [mode]="currentMode()">
-    </app-todo-overview>
-    }
-    @case ('performance'){
+      @case ('statistic-overview') {
+       <app-statistic-overview-component 
+          [myProjects]="myProjects()" 
+         [myTeamTodos]="myTeamTodos()"
+         [teamTodos]="teamTodos()"
+         [mode]="currentMode()">
+       </app-statistic-overview-component>    
+     }
+
+     @case ('todo-overview'){
+       <app-todo-overview 
+          [privateTodos]="privateTodos()" 
+          [teamTodos]="teamTodos()" 
+          [myTeamTodos]="myTeamTodos()"
+          [inMyReviewTodos]="inMyReviewTodos()" 
+          [inOtherReviewTodos]="inOtherReviewTodos()"
+          [completedReviewedTodos]="completedReviewedTodos()" 
+          [myProjects]="myProjects()" 
+          [mode]="currentMode()">
+        </app-todo-overview>
+     }
+
+     @case ('performance'){
     <!-- Ansichts-Filter -->
     <app-stats-performance 
       [mode]="currentMode()" 
-      [completedTodos]="filteredCompletedTodos()" 
-      [streakInfo]="streakInfo()"
+      [completedTodos]="filteredCompletedTodos()"
+      [streakInfo]="streakInfo()" 
       [myProjects]="myProjects()">
     </app-stats-performance>
     }

@@ -5,6 +5,8 @@ import { Project } from '../../../core/models/project';
 import { StatMode } from '../statistic-board-component/statistic-board-component';
 import { OverviewFilter, StatFilterBarComponent } from '../../../core/shared/components/stat-filter-bar-component/stat-filter-bar-component';
 
+type BarType = 'total' | 'open' | 'overdue' | 'completed' | 'inMyReview' | 'inOtherReview' | 'reviewedDone';
+
 @Component({
   selector: 'app-todo-overview',
   standalone: true,
@@ -17,6 +19,12 @@ export class TodoOverviewComponent {
   public privateTodos = input<Todo[]>([]);
   public teamTodos = input<Todo[]>([]);
   public myTeamTodos = input<Todo[]>([]);
+
+  // 🚀 NEU: Zentrale Review-Inputs aus der StatisticBoardComponent
+  public inMyReviewTodos = input<Todo[]>([]);
+  public inOtherReviewTodos = input<Todo[]>([]);
+  public completedReviewedTodos = input<Todo[]>([]);
+
   public myProjects = input<Project[]>([]);
   public mode = input<StatMode>('tasks');
 
@@ -73,22 +81,27 @@ export class TodoOverviewComponent {
     return this.displayedTodos().filter(t => !t.done && t.dueDate && t.dueDate < today.getTime());
   });
 
+
+
   private sumEffort(todos: Todo[]): number {
     return todos.reduce((sum, t) => {
-      const points = (t.done && t.usedEffort !== undefined && t.usedEffort !== null) 
-        ? t.usedEffort 
+      const points = (t.done && t.usedEffort !== undefined && t.usedEffort !== null)
+        ? t.usedEffort
         : (t.effort || 0);
       return sum + points;
     }, 0);
   }
 
-  protected getDisplayValue(type: 'total' | 'open' | 'overdue' | 'completed'): number {
+  protected getDisplayValue(type: BarType): number {
     if (this.mode() === 'tasks') {
       switch (type) {
         case 'total': return this.displayedTodos().length;
         case 'open': return this.openTodos().length;
         case 'overdue': return this.overdueTodos().length;
         case 'completed': return this.completedTodos().length;
+        case 'inMyReview': return this.inMyReviewTodos().length;
+        case 'inOtherReview': return this.inOtherReviewTodos().length;
+        case 'reviewedDone': return this.completedReviewedTodos().length;
       }
     } else {
       switch (type) {
@@ -96,6 +109,9 @@ export class TodoOverviewComponent {
         case 'open': return this.sumEffort(this.openTodos());
         case 'overdue': return this.sumEffort(this.overdueTodos());
         case 'completed': return this.sumEffort(this.completedTodos());
+        case 'inMyReview': return this.sumEffort(this.inMyReviewTodos());
+        case 'inOtherReview': return this.sumEffort(this.inOtherReviewTodos());
+        case 'reviewedDone': return this.sumEffort(this.completedReviewedTodos());
       }
     }
   }
@@ -106,18 +122,18 @@ export class TodoOverviewComponent {
     return this.getDisplayValue('completed') / total;
   }
 
-  private getPercentage(type: 'total' | 'open' | 'overdue' | 'completed'): number {
-    const max = this.getDisplayValue('total');
-    if (max === 0) return 0;
-    return (this.getDisplayValue(type) / max) * 100;
-  }
-
-  // 🚀 ORIGINAL GITHUB BERECHNUNG (BEHEBT ANIMATIONSBUG PERFEKT)
-  protected getBarWidth(type: 'total' | 'open' | 'overdue' | 'completed'): string {
+  // 3. getBarWidth & getBarHeight anpassen
+  protected getBarWidth(type: BarType): string {
     return this.isHorizontal() ? `${this.getPercentage(type)}%` : '100%';
   }
 
-  protected getBarHeight(type: 'total' | 'open' | 'overdue' | 'completed'): string {
+  protected getBarHeight(type: BarType): string {
     return this.isHorizontal() ? '100%' : `${this.getPercentage(type)}%`;
+  }
+
+  private getPercentage(type: BarType): number {
+    const max = this.getDisplayValue('total');
+    if (max === 0) return 0;
+    return (this.getDisplayValue(type) / max) * 100;
   }
 }

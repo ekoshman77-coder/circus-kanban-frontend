@@ -47,7 +47,7 @@ export class TodoDataManagerService extends BaseDataManager {
 
       if (status === 'ONLINE') {
         const currentUser = this.userService.currentUser();
-        if (!currentUser) return;
+        if (!currentUser || !this.userService.isLoggedIn()) return;
         this.triggerBulkSync(currentUser.id);
       }
     });
@@ -241,7 +241,7 @@ export class TodoDataManagerService extends BaseDataManager {
   private processOnlineUpdate(updatedTodo: Todo, currentList: Todo[]): Observable<Todo[]> {
     return this.todoRepository.updateTodo(updatedTodo).pipe(
       map((response: TodoUpdateResponse) => {
-        const serverTodo = response.todo as unknown as Todo;
+        const serverTodo = response.todo;
         serverTodo.syncState = 'fine';
 
         const finalUpdatedList = currentList.map(todo =>

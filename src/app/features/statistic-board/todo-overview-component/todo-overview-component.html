@@ -57,6 +57,33 @@
       </div>
     </div>
 
+<div class="chart-bar-wrapper in-my-review">
+      <div class="bar-label">🔍 In meinem Review</div>
+      <div class="bar-track">
+        <div class="bar-fill" [style.width]="getBarWidth('inMyReview')" [style.height]="getBarHeight('inMyReview')">
+          <span class="bar-value">{{ getDisplayValue('inMyReview') }}{{ unit }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-bar-wrapper in-other-review">
+      <div class="bar-label">👀 Bei Kollegen</div>
+      <div class="bar-track">
+        <div class="bar-fill" [style.width]="getBarWidth('inOtherReview')" [style.height]="getBarHeight('inOtherReview')">
+          <span class="bar-value">{{ getDisplayValue('inOtherReview') }}{{ unit }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-bar-wrapper reviewed-done">
+      <div class="bar-label">⭐ Reviewed & Fertig</div>
+      <div class="bar-track">
+        <div class="bar-fill" [style.width]="getBarWidth('reviewedDone')" [style.height]="getBarHeight('reviewedDone')">
+          <span class="bar-value">{{ getDisplayValue('reviewedDone') }}{{ unit }}</span>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <div class="details-accordion">

@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, signal, inject, computed, input } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, inject, computed, input, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TodoService } from '../../../services/todo/todo-service';
 import { Router } from '@angular/router';
@@ -10,11 +10,12 @@ import { TeamService } from '../../../services/team/team-service';
 import { UserModel } from '../../../models/user-model';
 import { Todo } from '../../../models/todo';
 import { UserService } from '../../../services/user/user-service';
+import { EffortModalComponent } from '../effort-modal-component/effort-modal-component';
 
 @Component({
   selector: 'app-todo-item',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, EffortModalComponent],
   templateUrl: './todo-item-component.html',
   styleUrl: './todo-item-component.css',
   animations: [
@@ -32,11 +33,15 @@ import { UserService } from '../../../services/user/user-service';
   ]
 })
 export class TodoItemComponent {
-  protected todoService = inject(TodoService)
-  private connectionService = inject(ConnectionService)
+  protected todoService = inject(TodoService);
+  private connectionService = inject(ConnectionService);
   public teamService = inject(TeamService);
-  private userService = inject(UserService)
-  private router = inject(Router)
+  private userService = inject(UserService);
+  private router = inject(Router);
+  public elementRef = inject(ElementRef);
+
+  // 🎯 Greift das Element #checkLabel aus dem Template
+  @ViewChild('checkLabel', { static: false }) checkLabelRef?: ElementRef;
 
   item = input.required<TodoViewModel>();
 
@@ -50,31 +55,25 @@ export class TodoItemComponent {
   @Output() delete = new EventEmitter<void>();
   @Output() reviewTriggered = new EventEmitter<Todo>();
 
-
   isEditingPoints = signal<boolean>(false);
   protected isOffline = computed(() => this.connectionService.isOffline());
   public isPopupOpen = computed(() => this.item().showEffortPopup());
 
-  // 👥 Der aktuell zugewiesene Benutzer
-  // 👥 Der aktuell zugewiesene Benutzer
   public assignedUser = computed<UserModel | null>(() => {
     const todo = this.item()?.todo;
     const assignedId = todo?.assignedUserId;
     if (!assignedId) return null;
 
-    // Wir holen uns die globalen TeamMitglieder und ziehen das .user Model heraus
     const members = this.teamService.globalMembersSignal();
     const foundMember = members.find(m => m.user.id === assignedId);
     return foundMember ? foundMember.user : null;
   });
 
-  // 🧠 Der vorherige Entwickler (aus dem Ticket-Gedächtnis)
   public lastDeveloperUser = computed<UserModel | null>(() => {
     const todo = this.item()?.todo;
     const lastDevId = todo?.lastDeveloperId;
     if (!lastDevId) return null;
 
-    // Auch hier mappen wir über das .user Model
     const members = this.teamService.globalMembersSignal();
     const foundMember = members.find(m => m.user.id === lastDevId);
     return foundMember ? foundMember.user : null;
@@ -84,47 +83,35 @@ export class TodoItemComponent {
     if (this.isOffline()) return;
     const currentTodo = this.item();
 
-    // Nur anstoßen, wenn das To-Do wirklich offen ist
     if (!currentTodo.todo.done && currentTodo.effort > 0) {
       this.todoService.updateTodoEffort(currentTodo.id, newPoints);
     }
 
-    // Auswahlfenster schließen
     this.isEditingPoints.set(false);
   }
 
   onEditClick() {
-    this.router.navigate(['/todopage/edit', this.item().id])
+    this.router.navigate(['/todopage/edit', this.item().id]);
   }
 
-  // onCheckToggle() fliegt raus! ❌
+  public onCheckClick(event: MouseEvent): void {
+    event.preventDefault();
 
-  /**
-   * 🛡️ Kontrollierter Klick auf die Checkbox
-   */
-public onCheckClick(event: MouseEvent): void {
-  event.preventDefault();
+    this.item().onTodoChecked(
+      this.todoService, 
+      this.userService.getCurrentUserId() ?? "",
+      (updatedTodo) => {
+        this.reviewTriggered.emit(updatedTodo);
+      }
+    );
+  }
 
-  this.item().onTodoChecked(
-    this.todoService, 
-    this.userService.getCurrentUserId() ?? "",
-    (updatedTodo) => {
-      this.reviewTriggered.emit(updatedTodo);
-    }
-  );
-}
-
-  // 2. HIER IST DEINE MEHTODE: Die Brücke zum ViewModel!
-  public onEffortConfirmed(actualEffort: number): void {
-    // 🌟 WICHTIG: Über 'this.item' rufst du die Logik des ViewModels auf!
+  public onEffortConfirmed(devEffort: number, reviewerEffort: number): void {
     if (!this.item().canEdit) {
-      console.warn("⚠️ Aktion verweigert: Du darfst die Story Points dieses Todos nicht ändern!");
+      console.warn("⚠️ Keine Berechtigung!");
       return;
     }
-    this.item().onEffortConfirmed(actualEffort, this.todoService);
-
-    // Lokales Popup wieder schließen
-    //    this.isPopupOpen.set(false);
+    this.item().onEffortConfirmed(devEffort, reviewerEffort, this.todoService);
   }
 
   public onDropdownChange(event: Event): void {
@@ -139,37 +126,29 @@ public onCheckClick(event: MouseEvent): void {
   }
 
   public cancelEffortPopup() {
-    this.item().cancelEffortPopup()
+    this.item().cancelEffortPopup();
   }
 
-  /**
- * Wird aufgerufen, wenn im eingebetteten Popup ein Mitarbeiter ausgewählt wird!
- */
   public onAssigneeSelected(userId: string | null): void {
     const currentTodo = this.item()?.todo;
     if (!currentTodo) return;
 
-    // 1. Eine saubere Kopie des aktuellen Todos erstellen
     const updatedTodo = Todo.fromTodo(currentTodo);
-
-    // 2. Die neue Zuweisung eintragen (oder null, falls gelöscht wird)
     updatedTodo.assignedUserId = userId;
 
-    console.log(`👥 [Zuweisung] Todo '${updatedTodo.task}' wird an '${userId}' zugewiesen.`);
-
-    // 3. Das Update an den TodoService (und damit an Spring Boot!) übergeben
+    if (updatedTodo.teamStatus === 'REVIEW') {
+       updatedTodo.reviewerId = userId;
+    }
+    console.log('onAssigneeSelected', updatedTodo)
+    
     this.todoService.updateTodo(updatedTodo, true);
-
-    // 4. Das Popup reaktiv über das ViewModel wieder schließen
     this.item().showAssigneePopup.set(false);
   }
 
   public toggleAssigneePopup(event: MouseEvent): void {
-    event.stopPropagation(); // Verhindert das Öffnen der Todo-Details
+    event.stopPropagation();
 
-    // Wenn die Zuweisung gesperrt ist, machen wir gar nichts!
     if (!this.isAssigneeEditable()) {
-      console.warn("🔒 Zuweisung in diesem Spalten-Zustand nicht erlaubt.");
       return;
     }
 
@@ -179,12 +158,10 @@ public onCheckClick(event: MouseEvent): void {
     }
   }
 
-  // 🔒 Bestimmt, ob die Zuweisung in diesem Status manuell geändert werden darf!
   public isAssigneeEditable = computed<boolean>(() => {
     const todo = this.item()?.todo;
     if (!todo) return false;
 
-    // Nur in Bearbeitung und im Review ist die Zuweisung editierbar!
     return todo.teamStatus === 'IN_PROGRESS' || todo.teamStatus === 'REVIEW';
   });
 }

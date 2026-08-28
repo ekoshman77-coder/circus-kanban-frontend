@@ -53,14 +53,10 @@
         <span class="analytic-emoji">🧙‍♂️</span>
         <h3>Ehrlichkeit</h3>
       </div>
-      <div class="medium-percentage" [style.color]="streakMeta.color">
-        @if (isSpecificProjectFilter()) {
-        {{ projectStreakInfo()?.batteryPercentage ?? 0 }}<span class="text-lg font-normal">%</span>
-        } @else {
-        {{ currentStreak }} <span class="text-lg font-normal">Tage</span>
-        }
+      <div class="medium-percentage warning-orange">
+        {{ totalEffortManipulations }} <span class="text-lg font-normal">Korrekturen</span>
       </div>
-      <p class="card-sub">Schätz-Korrekturen</p>
+      <p class="card-sub">Schätz-Anpassungen im Verlauf</p>
     </div>
 
     <div class="perf-card small-analytic">

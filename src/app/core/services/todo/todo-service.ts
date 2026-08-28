@@ -69,7 +69,7 @@ export class TodoService extends BaseDataManager {
 
   public fibonacciSequence: number[];
 
-// --- UNDO CONTROLS ---
+  // --- UNDO CONTROLS ---
   private isUndoActive = signal<boolean>(false);
   private undoTimeoutRef: any = null;
   private deletedTodosBackup: Todo[] = [];
@@ -97,7 +97,7 @@ export class TodoService extends BaseDataManager {
   // Ein öffentliches Signal, damit die UI weiß, wann sie das Undo-Banner zeigen muss
   public showUndoToast = computed(() => this.lastDeletedTodo() !== null);
 
-// 2. Die optimistische Lösch-Methode für die UI-Komponente
+  // 2. Die optimistische Lösch-Methode für die UI-Komponente
   public deleteTodoWithUndo(newTodo: Todo): void {
     const oldTodo = this.lastDeletedTodo();
 
@@ -143,9 +143,9 @@ export class TodoService extends BaseDataManager {
 
   // 4. Das endgültige Löschen nach Ablauf des Timers
   private triggerFinalDelete(): void {
-const todo = this.lastDeletedTodo();
+    const todo = this.lastDeletedTodo();
     if (!todo) return;
-    
+
     if (this.progressInterval) clearInterval(this.progressInterval); // 🛑 Zur Sicherheit stoppen
 
     this.dataManager.deleteTodo(todo.id).subscribe({
@@ -167,18 +167,29 @@ const todo = this.lastDeletedTodo();
   // ==========================================
   // 🌍 BOARD 1: Die persönliche To-Do-Liste (TodoListComponent)
   // ==========================================
-  // Zeigt: Eigene private Aufgaben PLUS ihm zugewiesene Team-Aufgaben
+  // 1. 🎯 AKTUELLE ARBEITSLISTE: Was du JETZT tun musst + deine privaten Todos
   public focusedTodos = computed(() => {
     const currentUserId = this.userService.getCurrentUserId();
+    if (!currentUserId) return [];
+
     return this.allTodos().filter(t => {
-      const isPrivat = !t.milestoneId
-      if (isPrivat) {
-        return true
-      }
-      if (t.teamStatus === 'DONE' && t.lastDeveloperId === currentUserId) {
-        return true
-      }
-      return t.assignedUserId === currentUserId
+      if (!t.milestoneId) return true; // Private Aufgaben
+
+      // Team-Aufgabe: Dir aktuell zugewiesen (ist automatisch noch offen)
+      return t.assignedUserId === currentUserId;
+    });
+  });
+
+  // 2. 🏆 ERFOLGE / HISTORY: Von dir erledigte Team-Aufgaben
+  public completedTeamHistoryTodos = computed(() => {
+    const currentUserId = this.userService.getCurrentUserId();
+    if (!currentUserId) return [];
+
+    return this.allTodos().filter(t => {
+      if (!t.milestoneId) return false;
+      
+      // Von dir als Dev fertiggestellt
+      return t.lastDeveloperId === currentUserId && (t.done || t.teamStatus === 'DONE');
     });
   });
 
@@ -210,6 +221,31 @@ const todo = this.lastDeletedTodo();
     return this.allTodos().filter(t => !!t.milestoneId);
   });
 
+  // ==========================================
+  // 📊 STATISTIK & IMPACT POOL (userContributionTodos)
+  // ==========================================
+  // Liefert alle Aufgaben, an denen der User mitgewirkt hat:
+  // 1. Seine aktiven/privaten Aufgaben (focusedTodos)
+  // 2. Team-Aufgaben, die ER als Developer abgeschlossen hat (lastDeveloperId)
+  // 3. Team-Aufgaben, die ER gecheckt/geprüft hat (reviewerId)
+  public userContributionTodos = computed(() => {
+    const currentUserId = this.userService.getCurrentUserId();
+    if (!currentUserId) return [];
+
+    return this.allTodos().filter(t => {
+      // 1. Alle aus focusedTodos (Privat + aktuell zugewiesene offene Team-Todos)
+      if (!t.milestoneId || t.assignedUserId === currentUserId) return true;
+
+      // 2. Team-Aufgabe von ihm als Entwickler erledigt
+      const wasDeveloper = t.lastDeveloperId === currentUserId && (t.done || t.teamStatus === 'DONE');
+
+      // 3. Team-Aufgabe von ihm als Reviewer geprüft / abgenommen
+      const wasReviewer = t.reviewerId === currentUserId;
+
+      return wasDeveloper || wasReviewer;
+    });
+  });
+  
   constructor() {
     super()
     this.fibonacciSequence = this.initFibonacciSequence(40);
@@ -322,7 +358,12 @@ const todo = this.lastDeletedTodo();
 
   public updateTodo(updatedTodo: Todo, isDragAndDrop: boolean = false): void {
     console.log(`TodoService:: updateTodo (DragAndDrop: ${isDragAndDrop})`, updatedTodo);
-
+    if (updatedTodo.reviewerId === undefined) {
+      console.warn('🚨 TÄTER GEFORDERT: updateTodo mit undefined aufgerufen!');
+      console.log('Übergebenes Objekt:', updatedTodo);
+      console.log('Ist es eine Todo-Instanz?', updatedTodo instanceof Todo);
+      debugger; // 🛑 Hält die Ausführung im Browser an!
+    }
     if (isDragAndDrop) {
       this.allTodosPool.update(todos =>
         todos.map(t => t.id === updatedTodo.id ? updatedTodo : t)
@@ -612,12 +653,12 @@ const todo = this.lastDeletedTodo();
   }
 
   public resetData(): void {
-  this.filterSignal.set(Filter.ALL);
-  this.searchQuerySignal.set('');
-  this.gamificationState.set(null);
-  this.latestGamificationResult.set(null);
+    this.filterSignal.set(Filter.ALL);
+    this.searchQuerySignal.set('');
+    this.gamificationState.set(null);
+    this.latestGamificationResult.set(null);
 
-  if (this.deleteTimeout) {
+    if (this.deleteTimeout) {
       clearTimeout(this.deleteTimeout);
     }
     if (this.progressInterval) {
