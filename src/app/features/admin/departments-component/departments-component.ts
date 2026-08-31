@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit } from '@angular/core';
+import { Component, computed, effect, ElementRef, inject, OnInit, viewChild } from '@angular/core';
 import { DepartmentService } from '../../../core/services/admin/department-service';
 import { Department } from '../../../core/models/department'; // 👈 Echte Department-Klasse nutzen!
 import { ADMIN_DEPARTMENT_NAME } from '../../../core/shared/constants/admin-constants';
@@ -17,11 +17,12 @@ import { uniqueDepartmentNameValidator } from '../../../core/validators/unique-d
 export class DepartmentTabComponent implements OnInit {
   protected departmentService = inject(DepartmentService);
   protected masterDataService = inject(MasterDataService);
+  private editInput = viewChild<ElementRef<HTMLInputElement>>('editInput');
 
   protected readonly ADMIN_DEPT = ADMIN_DEPARTMENT_NAME;
 
   public departments = computed(() => {
-    return this.departmentService.departments().sort((a, b) => a.name.localeCompare(b.name));
+    return this.departmentService.departmentsSorted();
   });
 
   public departmentScopes = computed(() => this.masterDataService.departmentScopes());
@@ -55,6 +56,17 @@ export class DepartmentTabComponent implements OnInit {
 
   ngOnInit(): void {
     
+  }
+
+  constructor() {
+    // 🟢 Überwacht automatisch, wann das Input erscheint, und fokussiert es!
+    effect(() => {
+      const inputEl = this.editInput()?.nativeElement;
+      if (inputEl) {
+        inputEl.focus();
+        inputEl.select(); // Bonus: Erleichtert das sofortige Überschreiben!
+      }
+    });
   }
 
   public onCreateDepartment(): void {

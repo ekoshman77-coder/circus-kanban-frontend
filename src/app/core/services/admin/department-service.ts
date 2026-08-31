@@ -25,6 +25,19 @@ export class DepartmentService extends BaseDataManager { // 👈 ERBT JETZT VOM 
 
     return currentDept.name.toLowerCase() === ADMIN_DEPARTMENT_NAME.toLowerCase();
   });
+
+  public departmentsSorted = computed(() => {
+      return this.departments().toSorted((a, b) => {
+        if (a.isAdmin()) {
+          return -1
+        } 
+        if (b.isAdmin()) {
+          return 1
+        }
+        return a.name.localeCompare(b.name)
+      })
+  }) 
+  
   
   constructor() {
     super(); // 👈 WICHTIG: Ruft den Konstruktor von BaseDataManager auf, der die Registrierung regelt!

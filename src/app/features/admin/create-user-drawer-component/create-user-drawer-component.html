@@ -1,0 +1,60 @@
+<!-- 1. BACKDROP (Dunkelt nur ab, wenn isOpen true ist) -->
+<div class="drawer-backdrop" [class.is-open]="isOpen()" (click)="closeDrawer()"></div>
+
+<!-- 2. DRAWER CONTAINER (Kleb an der rechten Kante und fliegt als Ganzes rein) -->
+<div class="drawer-wrapper" [class.is-open]="isOpen()">
+
+    <!-- 🚪 DER GRIFF (Jetzt physikalisch an der Wrapper-Kante befestigt) -->
+    <button type="button" class="drawer-handle" (click)="toggleDrawer()"
+        [attr.title]="isOpen() ? 'Drawer schließen' : 'Neuen Benutzer anlegen'">
+        <span class="handle-icon" [class.is-open]="isOpen()">+</span>
+    </button>
+
+    <!-- DAS FORMFELD-PANEL -->
+    <div class="drawer-panel" 
+        (click)="$event.stopPropagation()" 
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="drawer-title">
+
+        <div class="drawer-header">
+            <h3>➕ Neuen Benutzer erstellen</h3>
+        </div>
+
+        @if (errorFromServer()) {
+        <div class="error-banner">
+            ⚠️ {{ errorFromServer() }}
+        </div>
+        }
+
+        <form [formGroup]="userForm" (ngSubmit)="onSubmit()" class="drawer-body">
+            <div class="form-group">
+                <label>Vorname</label>
+                <input #firstNameInput id="firstName" type="text" formControlName="firstName" />
+            </div>
+
+            <div class="form-group">
+                <label>Nachname</label>
+                <input type="text" formControlName="lastName" placeholder="Mustermann">
+            </div>
+
+            <div class="form-group">
+                <label>Benutzername</label>
+                <input type="text" formControlName="username" placeholder="mustermann">
+            </div>
+
+            <div class="form-group">
+                <label>Passwort</label>
+                <input type="password" formControlName="password" placeholder="••••••••">
+            </div>
+
+            <div class="drawer-actions">
+                <button type="button" class="btn-secondary" (click)="closeDrawer()" aria-label="Schließen">Abbrechen</button>
+                <button type="submit" class="btn-primary" [disabled]="userForm.invalid || isSubmitting()">
+                    {{ isSubmitting() ? 'Erstelle...' : 'Erstellen' }}
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>

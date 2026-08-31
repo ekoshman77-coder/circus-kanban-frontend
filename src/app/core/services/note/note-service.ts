@@ -3,6 +3,7 @@ import { Note } from '../../models/note';
 import { NoteDataManagerService } from './note-data-manager-service';
 import { UserService } from '../user/user-service';
 import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
+import { MasterDataService } from '../admin/master-data-service';
 
 /**
  * Zentraler State-Service zur Verwaltung und Bereitstellung aller Benutzer-Notizen.
@@ -18,6 +19,7 @@ import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager
 export class NoteService extends BaseDataManager {
   private dataManager = inject(NoteDataManagerService);
   private userService = inject(UserService);
+  private masterDataService = inject(MasterDataService);
 
   /** Zentraler, interner Zustand aller Notizen */
   private notesSignal = signal<Note[]>([]);
@@ -39,6 +41,15 @@ export class NoteService extends BaseDataManager {
       }
     });
   }
+
+  // Dynamisch filtern anhand der MasterData-Scopes
+  public readonly departmentNotes = computed(() => {
+    return this.notesList().filter(n => n.scope === 'DEPARTMENT');
+  });
+
+  public readonly companyNotes = computed(() => {
+    return this.notesList().filter(n => n.scope === 'COMPANY');
+  });
 
   /** Speichert einen Zettel-Entwurf im LocalStorage. */
   public saveDraft(noteData: any): void {
@@ -191,5 +202,35 @@ export class NoteService extends BaseDataManager {
 
   public override resetData(): void {
     this.clearDraft()
+  }
+
+  /**
+   * 🟢 Hebt eine Idee auf 'COMPANY'-Scope
+   */
+  public promoteToCompany(noteId: string): void {
+    const note = this.notesSignal().find(n => n.id === noteId);
+    if (!note) return;
+
+    const updatedNote = new Note({
+      ...note,
+      scope: 'COMPANY'
+    });
+
+    this.updateNote(updatedNote);
+  }
+
+  /**
+   * 🟢 Stuft eine Idee zurück auf 'DEPARTMENT'-Scope
+   */
+  public revertToDepartment(noteId: string): void {
+    const note = this.notesSignal().find(n => n.id === noteId);
+    if (!note) return;
+
+    const updatedNote = new Note({
+      ...note,
+      scope: 'DEPARTMENT'
+    });
+
+    this.updateNote(updatedNote);
   }
 }

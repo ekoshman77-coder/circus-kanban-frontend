@@ -23,9 +23,14 @@
 
             @for (user of unapprovedUsers(); track user.id) {
             <div class="kanban-user-card unapproved-card" cdkDrag [cdkDragData]="user">
-                <div class="user-card-details">
-                    <strong>{{ user.firstName }} {{ user.lastName }}</strong>
-                    <span class="username">@{{ user.username }}</span>
+                <div class="user-card-header">
+                    <div class="avatar" [style.background-color]="user.getColorHash()">
+                        {{ user.getInitials() }}
+                    </div>
+                    <div class="user-card-details">
+                        <strong>{{ user.fullName }}</strong>
+                        <span class="username">@{{ user.username }}</span>
+                    </div>
                 </div>
             </div>
             } @empty {
@@ -41,8 +46,13 @@
     <main class="kanban-board">
         @for (dept of departments(); track dept.id) {
         <div class="kanban-column">
-            <div class="column-header">
-                <h3>🏢 {{ dept.name }}</h3>
+            <div class="column-header" >
+                <div class="dept-name">
+                    <div class="avatar" [style.background-color]="dept.getColorHash()">
+                        {{dept.getInitials()}}
+                    </div>
+                    <h3>{{ dept.name }}</h3>
+                </div>
                 <span class="user-count-badge">{{ getUsersForDept(dept.id).length }}</span>
             </div>
 
@@ -52,19 +62,22 @@
                 @for (user of getUsersForDept(dept.id); track user.id) {
                 <div class="kanban-user-card" cdkDrag [cdkDragData]="user">
                     <div class="card-header">
-                        <div class="user-card-details">
-                            <strong>{{ user.firstName }} {{ user.lastName }}</strong>
-                            <span class="username">@{{ user.username }}</span>
-
-                            @if ($any(user).departmentRole) {
-                            <span class="role-badge" (click)="openRoleChangeModal(user)">
-                                {{ $any(user).departmentRole }} ✏️
-                            </span>
-                            }
-
+                        <div class="user-card-header">
+                            <div class="avatar" [style.background-color]="user.getColorHash()">
+                                {{ user.getInitials() }}
+                            </div>
+                            <div class="user-card-details">
+                                <strong>{{ user.fullName }}</strong>
+                                <span class="username">@{{ user.username }}</span>
+                
+                                @if (user.departmentRole) {
+                                <span class="role-badge" (click)="openRoleChangeModal(user)">
+                                    {{ user.departmentRole }} ✏️
+                                </span>
+                                }
+                            </div>
                         </div>
                     </div>
-
                     <div class="transfer-box">
                         <label class="select-label">Abteilung wechseln:</label>
                         <select id="dept-select-{{user.id}}" [ngModel]="user.department?.id"
@@ -91,4 +104,29 @@
 </div>
 <app-role-selection-modal [(isOpen)]="isRoleModalOpen" [title]="'Rolle zuweisen (' + selectedDepartment()?.name + ')'"
     [message]="'Welche Rolle soll ' + pendingUser()?.firstName + ' erhalten?'" [options]="filteredRoles()"
-    (confirmed)="onRoleConfirmed($any($event))" (cancelled)="onRoleCancelled()"></app-role-selection-modal>
+    (confirmed)="onRoleConfirmed($any($event))" (cancelled)="onRoleCancelled()">
+</app-role-selection-modal>
+
+
+
+<!-- 🛷 DIE SEPARATE DRAWER-KOMPONENTE -->
+
+  <app-create-user-drawer-component 
+    (close)="onUserDrawerClose()"
+    (userCreated)="onUserCreated()">
+  </app-create-user-drawer-component>
+
+  <!-- 🗑️ UNIVERSAL DELETE POPUP -->
+@if (isDeletePopupOpen() && userToDelete()) {
+  <app-universal-popup-component
+    [title]="'Benutzer löschen?'"
+    [message]="'Möchtest du <b>' + userToDelete()?.firstName + ' ' + userToDelete()?.lastName + '</b> wirklich ablehnen / löschen?'"
+    [animationIcon]="'🗑️'"
+    [mode]="'danger'"
+    [confirmText]="'Löschen'"
+    [cancelText]="'Abbrechen'"
+    [dataContext]="userToDelete()"
+    (confirm)="onDeleteConfirmed($event)"
+    (cancel)="onDeleteCancelled()">
+  </app-universal-popup-component>
+}

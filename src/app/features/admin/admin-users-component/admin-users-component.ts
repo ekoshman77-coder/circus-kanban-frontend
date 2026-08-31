@@ -9,11 +9,15 @@ import { AdminTeamService } from '../../../core/services/admin/admin-team-servic
 import { MasterDataService } from '../../../core/services/admin/master-data-service';
 import { Department } from '../../../core/models/department';
 import { RoleSelectionModalComponent } from '../../../core/shared/components/role-selection-modal/role-selection-modal';
+import { CreateUserDrawerComponent } from '../create-user-drawer-component/create-user-drawer-component';
+import { UniversalPopupComponent } from '../../../core/shared/components/universal-popup-component/universal-popup-component';
 
 @Component({
   selector: 'app-admin-users-component',
   standalone: true,
-  imports: [CommonModule, FormsModule, DragDropModule, RoleSelectionModalComponent],
+  imports: [CommonModule, FormsModule, DragDropModule, 
+            RoleSelectionModalComponent, CreateUserDrawerComponent, UniversalPopupComponent
+          ],
   templateUrl: './admin-users-component.html',
   styleUrl: './admin-users-component.css',
 })
@@ -23,16 +27,21 @@ export class AdminUsersComponent implements OnInit {
   protected adminTeamService = inject(AdminTeamService);
   protected masterDataService = inject(MasterDataService); // 👈 MasterDataService injizieren
 
-  public departments = this.departmentService.departments;
 
   // 🔮 MODAL STATE
   public isRoleModalOpen = signal(false);
   public modalTitle = signal('Rolle zuweisen');
   public modalMessage = signal('');
+  public isAddUserDrawerOpen = signal<boolean>(false)
+  public departments = computed(() => this.departmentService.departmentsSorted())
 
   // Temporäre Speicherung für den ausstehenden Transfer
   public pendingUser = signal<UserModel | null>(null);
   private pendingDeptId = signal<string | null>(null);
+
+  // 🗑️ STATE FÜR LÖSCH-POPUP
+  public isDeletePopupOpen = signal<boolean>(false);
+  public userToDelete = signal<UserModel | null>(null);
 
   public allUsers = computed(() => {
     const search = this.filterService.searchTerm().toLowerCase().trim();
@@ -95,9 +104,8 @@ public filteredRoles = computed(() => {
     const targetListId = event.container.id;
 
     if (targetListId === 'trash-list') {
-      if (confirm(`Möchtest du ${user.firstName} ${user.lastName} wirklich löschen/ablehnen?`)) {
-        this.adminTeamService.deleteMember(user.id);
-      }
+      this.userToDelete.set(user);
+      this.isDeletePopupOpen.set(true);    
     }
     else if (targetListId.startsWith('dept-list-')) {
       const targetDepartmentId = targetListId.replace('dept-list-', '');
@@ -114,6 +122,22 @@ public filteredRoles = computed(() => {
         this.isRoleModalOpen.set(true); // 👈 Modal öffnen
       }
     }
+  }
+
+  public onDeleteConfirmed(user: UserModel | null): void {
+    if (user) {
+      this.adminTeamService.deleteMember(user.id);
+    }
+    this.closeDeletePopup();
+  }
+
+  public onDeleteCancelled(): void {
+    this.closeDeletePopup();
+  }
+
+  private closeDeletePopup(): void {
+    this.isDeletePopupOpen.set(false);
+    this.userToDelete.set(null);
   }
 
   // ⚡ Klick auf Rollen-Badge/Button auf der Karte (Fall B)
@@ -173,4 +197,13 @@ public onRoleConfirmed(selectedRole: string) {
       }
     }
   }
+
+  public onUserDrawerClose() {
+    this.isAddUserDrawerOpen.set(false)
+  }
+
+  public onUserCreated() {
+    this.adminTeamService.loadAdminPool()
+  }
+
 }

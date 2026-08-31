@@ -345,12 +345,16 @@ export class TeamDataManager extends BaseDataManager {
       });
     }
   }
-  public createMember(member: UserModel, password: string, onError?: (errorMessage: string) => void): void {
+  public createMember(member: UserModel, password: string, onError?: (errorMessage?: string) => void): void {
     if (!this.connectionService.isOnline()) {
       if (onError) onError("Registrierungen sind im Offline-Modus nicht möglich.");
       return;
     }
-    this.userRepository.register(member.username, member.firstName, member.lastName, password).subscribe({
+    this.userRepository.createUser({
+      username: member.username, 
+      firstName: member.firstName, 
+      lastName: member.lastName, 
+      password: password}).subscribe({
       next: (user: IUser) => {
         const newModel = new UserModel({
           id: user.id,
@@ -364,6 +368,7 @@ export class TeamDataManager extends BaseDataManager {
         this.globalMembersSignal.set([...this.globalMembersSignal(), new ProjectMember(newModel, 'NONE')]);
         localStorage.setItem(this.STORAGE_KEY_GLOBAL, JSON.stringify(this.globalMembersSignal()));
         this.loadGlobalMembers();
+        if (onError) onError()
       },
       error: (err: string) => { if (onError) onError(err); }
     });

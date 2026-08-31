@@ -132,7 +132,7 @@ export class TeamService extends BaseDataManager {
     }
 
     /** 🚀 Registriert einen brandneuen Benutzer im System (Mit Kaffeekonto-Rolle!) */
-    public createMember(member: UserModel, password: string, onError?: (errorMessage: string) => void): void {
+    public createMember(member: UserModel, password: string, onError?: (errorMessage?: string) => void): void {
         console.log(`📡 [TeamService] Erstelle neuen Benutzer: ${member.username}`);
 
         // 🎯 Hier reichen wir das 'onError' 1:1 an den DataManager weiter!

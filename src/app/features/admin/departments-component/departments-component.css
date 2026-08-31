@@ -245,6 +245,19 @@ button:disabled {
   flex: 1;
 }
 
+.dept-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px; /* Schön abgerundetes Quadrat! */
+  color: #0f172a;
+  font-weight: 800;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
 /* ==========================================================================
    BADGES & SYSTEM INDICATORS
    ========================================================================== */

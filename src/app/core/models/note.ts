@@ -14,6 +14,7 @@ export class Note {
     isInCalculation?: boolean;
     temperature?: number;
     weatherCode?: number;
+    scope: string;
     
     constructor(init: {
         title: string, 
@@ -26,6 +27,7 @@ export class Note {
         departmentId?: string,
         temperature?: number | null;
         weatherCode?: number | null;
+        scope?: string; 
     }) {
         this.userId = init.userId?? ""
         this.title = init.title
@@ -37,5 +39,6 @@ export class Note {
         this.isInCalculation = init.isInCalculation?? false
         this.temperature = init.temperature?? undefined
         this.weatherCode = init.weatherCode?? undefined
+        this.scope = init.scope?? 'DEPARTMENT'
     }
 }

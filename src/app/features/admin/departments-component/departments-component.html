@@ -41,7 +41,11 @@
           <!-- EDITIER-MODUS (verwendet editForm) -->
           <form [formGroup]="editForm" (ngSubmit)="onSaveEdit()" class="edit-group-form">
             <div class="edit-group">
+              <div class="dept-avatar" [style.background-color]="department.getColorHash()" aria-hidden="true">
+                  {{ department.getInitials() }}
+              </div>
               <input 
+                #editInput
                 class="editing-name"
                 type="text"
                 formControlName="name"
@@ -61,7 +65,11 @@
           </form>
         } @else {
           <!-- ANZEIGE-MODUS -->
+           
           <span class="department-name">
+            <div class="dept-avatar" [style.background-color]="department.getColorHash()" aria-hidden="true">
+               {{department.getInitials()}}
+            </div>
             {{department.name}} 
             <small class="badge scope-badge">{{department.scope}}</small>
             @if(department.name === ADMIN_DEPT) { <small class="badge">(System)</small> }

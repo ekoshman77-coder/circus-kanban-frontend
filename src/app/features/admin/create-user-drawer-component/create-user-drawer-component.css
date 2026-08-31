@@ -1,0 +1,218 @@
+/* BACKDROP */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 9998;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.drawer-backdrop.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* WRAPPER */
+.drawer-wrapper {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  z-index: 9999;
+  transform: translateX(420px);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.drawer-wrapper.is-open {
+  transform: translateX(0);
+}
+
+/* PANEL (Luftiger Verlauf von Hellblau nach Pastellgrün) */
+.drawer-panel {
+  width: 380px;
+  height: 100%;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e6fffa 100%);
+  box-shadow: -10px 0 25px rgba(0, 0, 0, 0.15);
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* GRIFF */
+.drawer-handle {
+  position: absolute;
+  left: -44px;
+  top: 100px;
+  width: 44px;
+  height: 48px;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px 0 0 12px;
+  box-shadow: -4px 4px 15px rgba(79, 70, 229, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto !important;
+  transition: background 0.2s, left 0.2s;
+}
+
+.drawer-handle:hover {
+  left: -48px;
+}
+
+.handle-icon {
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1;
+  color: #ffffff;
+  pointer-events: none;
+  display: inline-block;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.drawer-handle:hover .handle-icon {
+  transform: rotate(90deg);
+}
+
+.handle-icon.is-open {
+  transform: rotate(45deg);
+}
+
+.drawer-handle:hover .handle-icon.is-open {
+  transform: rotate(135deg);
+}
+
+/* HEADER */
+.drawer-header {
+  border-bottom: 2px solid rgba(79, 70, 229, 0.12);
+  padding-bottom: 12px;
+  margin-bottom: 24px;
+}
+
+.drawer-header h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #3730a3;
+  margin: 0;
+}
+
+/* FORMULAR BODY & INPUTS */
+.drawer-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  color: #4338ca;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.form-group input {
+  color: #1e1b4b;
+  font-size: 0.95rem;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  padding: 10px 14px;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.18);
+}
+
+/* BUTTON-CONTAINER */
+.drawer-actions {
+  margin-top: 32px;
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+}
+
+.drawer-actions button {
+  flex: 1;
+  padding: 11px 18px;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.2s ease;
+}
+
+/* 🔴 ABBRECHEN BUTTON (Solid, hell/frisch mit Korall-Gradient & Glow) */
+.drawer-actions .btn-secondary {
+  background: linear-gradient(135deg, #ff7b7b 0%, #f43f5e 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(244, 63, 94, 0.35);
+}
+
+.drawer-actions .btn-secondary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(244, 63, 94, 0.45);
+  filter: brightness(1.05);
+}
+
+.drawer-actions .btn-secondary:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.3);
+}
+
+/* 🔵 ERSTELLEN BUTTON (Solid, leuchtend Violett/Indigo-Gradient) */
+.drawer-actions .btn-primary {
+  background: linear-gradient(135deg, #818cf8 0%, #4f46e5 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+}
+
+.drawer-actions .btn-primary:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(79, 70, 229, 0.5);
+  filter: brightness(1.05);
+}
+
+.drawer-actions .btn-primary:not(:disabled):active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+}
+
+/* 🚫 DEAKTIVIERTER ZUSTAND */
+.drawer-actions button:disabled {
+  background: #cbd5e1;
+  color: #94a3b8;
+  box-shadow: none;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.error-banner {
+    background-color: hsla(0, 100%, 74%, 0.116);
+    font-size: 0.875rem;                       /* Etwas feiner & kompakter */
+    color: hsl(0, 100%, 60%);                   /* Bessere Lesbarkeit (etwas dunkleres Rot) */
+    padding: 10px 14px;                        /* Links/rechts etwas mehr Luft für den Text */
+    margin-bottom: 16px;                       /* Bündig an den Seiten, schiebt nur nach unten */
+    border: 1px solid hsla(0, 100%, 74%, 0.352);
+    border-radius: 10px;                       /* Passt perfekt zu den Inputs & Buttons */
+    
+    display: flex;                             /* Falls du ein ⚠️ Icon drinnen hast, */
+    align-items: center;                       /* bleibt alles schön zentriert */
+    gap: 8px;
+}
