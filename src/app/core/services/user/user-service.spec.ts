@@ -44,7 +44,8 @@ describe('UserService', () => {
         defaultWorkingHours: 8
       })),
       updateSettings: vi.fn(),
-      getGamification: vi.fn()
+      getGamification: vi.fn(),
+      logout: vi.fn().mockReturnValue(of(true))
     };
 
     // 3. Angular Testbed konfigurieren und Mocks einschleusen

@@ -60,7 +60,8 @@ deleteNote(id: string, userId: string): Observable<void> {
       tag: json.tag,
       isInCalculation: json.isInCalculation,
       temperature: json.temperature,
-      weatherCode: json.weatherCode
+      weatherCode: json.weatherCode,
+      scope: json.scope
     });
   }
 }

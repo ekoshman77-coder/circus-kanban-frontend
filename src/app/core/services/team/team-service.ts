@@ -64,16 +64,32 @@ export class TeamService extends BaseDataManager {
     /** 🛡️ Die universelle Rechte-Prüfung basierend auf dem neuen Signal */
     public hasPermission(projectId: string | null, action: ProjectAction): boolean {
         const currentUserId = this.userService.getCurrentUserId();
-        if (!currentUserId || !projectId) return false;
+        if (!currentUserId || !projectId) {
+            console.warn('🔍 [hasPermission] Abbruch: keine userId oder projectId', { currentUserId, projectId });
+            return false;
+        }
 
-        // Wir lesen ganz entspannt das synchrone Projekt-Signal aus!
         const members = this.currentProjectMembersSignal();
         const myBinding = members.find(m => m.user.id === currentUserId);
 
-        if (!myBinding) return false;
+        if (!myBinding) {
+            console.warn('🔍 [hasPermission] User ist NICHT im currentProjectMembersSignal gefunden!', {
+                currentUserId,
+                availableMembers: members
+            });
+            return false;
+        }
 
         const currentRole = myBinding.projectRole as ProjectRole;
         const allowed = this.permissionService.hasPermission(currentRole, action, 'PROJECT', 'PROJECT');
+
+        console.log('🔍 [hasPermission] Ergebnis-Check:', {
+            userRole: currentRole,
+            action: action,
+            permissionFound: allowed,
+            allPermissionsCount: this.permissionService.allPermissions().length
+        });
+
         return allowed;
     }
 

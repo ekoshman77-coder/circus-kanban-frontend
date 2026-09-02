@@ -1,0 +1,17 @@
+<div class="tabs-container">
+    <button class="tab" 
+       [class.active]="activeTab() === 'departments-idea'" 
+       (click)="onTabClick('departments-idea')">
+       🏢 Abteilungs-Ideen
+    </button>
+    <button 
+      class="tab" 
+      [class.active]="activeTab() === 'companies-idea'" 
+      (click)="onTabClick('companies-idea')">
+      🚀 Company-Ideen
+    </button>
+</div>
+
+<div class="content-container">
+    <app-idea-board [mode]="currentBoardMode()"></app-idea-board>
+</div>

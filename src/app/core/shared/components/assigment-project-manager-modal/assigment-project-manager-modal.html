@@ -1,0 +1,72 @@
+<div class="modal-backdrop" (click)="onCancel()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    
+    <header class="modal-header">
+      <h2>🎯 Neues Projekt aus Idee starten</h2>
+      <button class="close-btn" (click)="onCancel()">✖</button>
+    </header>
+
+    <div class="modal-body">
+      <p class="idea-source-info">
+        Ursprung: <strong>{{ note().title }}</strong>
+      </p>
+
+      <!-- Projekt-Titel -->
+      <div class="form-group">
+        <label for="projectTitle">Projektname</label>
+        <input 
+          id="projectTitle" 
+          type="text" 
+          [ngModel]="projectTitle()" 
+          (ngModelChange)="projectTitle.set($event)" 
+          placeholder="Titel eingeben..."
+        />
+      </div>
+
+      <!-- Abteilungs-Filter Dropdown -->
+      <div class="form-group">
+        <label for="deptSelect">Abteilung filtern</label>
+        <select 
+          id="deptSelect" 
+          [ngModel]="selectedDepartmentId()" 
+          (ngModelChange)="onDepartmentChange($event)">
+          <option value="ALL">🌐 Alle Abteilungen</option>
+          @for (dept of departments(); track dept.id) {
+            <option [value]="dept.id">
+              🏢 {{ dept.name }}
+            </option>
+          }
+        </select>
+      </div>
+
+      <!-- PM-Auswahl gefiltert nach gewählter Abteilung -->
+      <div class="form-group">
+        <label for="pmSelect">Projektleiter (PM)</label>
+        <select 
+          id="pmSelect" 
+          [ngModel]="selectedPmId()" 
+          (ngModelChange)="onChange($event)">
+          <option value="" disabled selected>-- Person auswählen --</option>
+          @for (member of filteredMembers(); track member.user.id) {
+            <option [value]="member.user.id">
+              👤 {{ member.user.firstName }} {{ member.user.lastName }}
+            </option>
+          } @empty {
+            <option disabled>Keine Personen in dieser Abteilung gefunden</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <footer class="modal-footer">
+      <button class="btn-secondary" (click)="onCancel()">Abbrechen</button>
+      <button 
+        class="btn-primary" 
+        [disabled]="!selectedPmId() || !projectTitle().trim()"
+        (click)="onSubmit()">
+        🚀 Projekt jetzt starten
+      </button>
+    </footer>
+
+  </div>
+</div>

@@ -26,6 +26,13 @@ describe('ProjectMilestonesComponent (Vitest Edition)', () => {
   let sampleTodos: Todo[];
 
   beforeEach(async () => {
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn(() => null),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+      clear: vi.fn(),
+    });
+    
     // 1. Echte Test-Strukturen aufbauen
     sampleProjects = [
       {
@@ -84,7 +91,7 @@ describe('ProjectMilestonesComponent (Vitest Edition)', () => {
 
     mockTeamService = {
       setCurrentProject: vi.fn(),
-      hasPermission: vi.fn().mockReturnValue(true)
+      hasPermission: vi.fn().mockImplementation((projectId?: string | null, action?: any) => true)
     };
 
     mockTodoQueryService = {};

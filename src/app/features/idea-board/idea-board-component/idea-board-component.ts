@@ -1,4 +1,4 @@
-import { Component, inject, signal, effect, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, effect, computed, OnInit, input } from '@angular/core';
 import { Note } from '../../../core/models/note';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { FormsModule } from '@angular/forms';
@@ -7,7 +7,7 @@ import { NoteService } from '../../../core/services/note/note-service';
 import { NoteViewModel } from '../../../core/viewmodel/note-view-model';
 import { IdeaSortingService } from '../../../core/services/note/idea-sorting-service';
 import { NoteSortOrder } from '../../../core/models/note-sort-order';
-import { BoardFilterComponent, FilterState } from '../board-filter-component/board-filter-component';
+import { BoardFilterComponent, FilterState } from '../../../core/shared/components/board-filter-component/board-filter-component';
 import { NotesStatisticsComponent } from '../notes-statistics-component/notes-statistics-component';
 import { TabNavigationService } from '../tab-navigation-service';
 import { BoardTab } from '../tab-navigation-service';
@@ -15,6 +15,13 @@ import { NoteInputComponent } from '../note-input-component/note-input-component
 import { FilterService } from '../../../core/services/filter/filter-service';
 import { TodoPlanningModalComponent } from '../../../core/shared/components/todo-planning-modal-component/todo-planning-modal-component';
 import { UserService } from '../../../core/services/user/user-service';
+import { ProjectService } from '../../../core/services/project/project-service';
+import { AssignProjectManagerModalComponent, CreateProjectPayload } from '../../../core/shared/components/assigment-project-manager-modal/assigment-project-manager-modal';
+import { Project } from '../../../core/models/project';
+import { TeamService } from '../../../core/services/team/team-service';
+import { NotificationService } from '../../../core/services/notification/notification-service';
+
+export type BoardMode = 'USER_BOARD' | 'ADMIN_DEPARTMENTS' | 'ADMIN_COMPANY';
 
 /**
  * @component IdeaBoardComponent
@@ -31,7 +38,7 @@ import { UserService } from '../../../core/services/user/user-service';
     BoardFilterComponent,
     NotesStatisticsComponent,
     NoteInputComponent,
-    TodoPlanningModalComponent
+    AssignProjectManagerModalComponent
   ],
   templateUrl: './idea-board-component.html',
   styleUrls: ['./idea-board-component.css']
@@ -45,11 +52,39 @@ export class IdeaBoardComponent implements OnInit {
   private userService = inject(UserService);
   private tabService = inject(TabNavigationService);
   private filterService = inject(FilterService);
+  private projectService = inject(ProjectService)
+  private teamService = inject(TeamService)
+  private notificationService = inject(NotificationService);
 
+  public mode = input<BoardMode>('USER_BOARD');
+  /** Interne Sortier-Orders für diesen spezifischen Kontext */
+  public sortOrders = signal<NoteSortOrder[]>([]);
+
+  public selectedNoteForProject = signal<Note | null>(null);
   // -------------------------------------------------------------------------
   // 🚦 REAKTIVE ZUSTÄNDE (SIGNALS)
   // -------------------------------------------------------------------------
-  
+
+  /** 🟢 Liefert dynamisch nur die IDs der Zonen, die im jeweiligen Modus gerendert werden */
+  public connectedDropLists = computed(() => {
+    const currentMode = this.mode();
+
+    switch (currentMode) {
+      case 'USER_BOARD':
+        // User-Board hat Trash und Calculator
+        return ['trashList', 'calculatorList'];
+
+      case 'ADMIN_COMPANY':
+        // Admin Company hat Revert (ID: trashList) und Project (ID: calculatorList)
+        return ['trashList', 'calculatorList'];
+
+      case 'ADMIN_DEPARTMENTS':
+      default:
+        // Admin Department hat NUR den Promote-Schlitz rechts! (Keine Trash-Zone links)
+        return ['calculatorList'];
+    }
+  });
+
   /** Der aktuell aktive Filterzustand (Suchbegriff, Verknüpfungsmodus, Tag, Farbe)[cite: 9] */
   public currentFilters = signal<FilterState>({ query: '', mode: 'AND', tag: '', color: '' });
 
@@ -64,13 +99,34 @@ export class IdeaBoardComponent implements OnInit {
 
   /** 🌟 UI-EXKLUSIVER ZUSTAND: Hält die transformierten und angereicherten Notizen-Ausstellungsstücke (ViewModels)[cite: 9] */
   public viewModels = signal<NoteViewModel[]>([]);
-  
+
   /** Interner Cache, um bestehende ViewModels bei Daten-Updates reaktiv zu recyclen[cite: 9] */
   private viewModelCache: NoteViewModel[] = [];
-  
-  /** Direktes Lese-Signal auf die rohe Notizen-Liste aus der Datenbank[cite: 9] */
-  public currentNotes = computed(() => this.noteService.notesList());
-  
+
+  /** 🟢 NEU: Filtert die rohen Notizen dynamisch je nach Modus */
+  public currentNotes = computed(() => {
+    const allNotes = this.noteService.notesList();
+    const mode = this.mode();
+
+    // 1. Nach Board-Modus / Scope filtern
+    let modeFiltered = allNotes;
+    switch (mode) {
+      case 'ADMIN_DEPARTMENTS':
+        modeFiltered = allNotes.filter(n => n.scope === 'DEPARTMENT');
+        break;
+      case 'ADMIN_COMPANY':
+        modeFiltered = allNotes.filter(n => n.scope === 'COMPANY');
+        break;
+      case 'USER_BOARD':
+      default:
+        modeFiltered = allNotes;
+        break;
+    }
+
+    // 2. 🟢 Ideen ausblenden, die aktuell in Verarbeitung/Kalkulation sind
+    return modeFiltered.filter(note => !note.isInCalculation);
+  });
+
   /** Steuert die Anzeige des Todo-Planungs-Modal-Popups[cite: 8, 9] */
   public isTodoPopupShow = signal<boolean>(false);
 
@@ -86,24 +142,22 @@ export class IdeaBoardComponent implements OnInit {
   // -------------------------------------------------------------------------
 
   ngOnInit(): void {
-    /** Setzt die globale Suche fest auf die Kategorie 'ideas', um boardfremde Elemente zu ignorieren[cite: 9] */
     this.filterService.setInitialCategory('ideas');
+
+    // 🟢 NEU: Lädt die Sortierung spezifisch für diesen Modus/Kontext
+    const savedOrders = this.boardStateService.loadSorting(this.mode());
+    this.sortOrders.set(savedOrders);
   }
 
   constructor() {
-    /**
-     * 🛡️ DIE REAKTIVE WARTESHLEIFE
-     * Wartet, bis das Backend Daten liefert, und transformiert sie kontrolliert in ViewModels[cite: 9].
-     * Erlaubt explizite Signals-Schreibrechte (`allowSignalWrites`), um NG0600-Konflikte im Konstruktor zu verhindern[cite: 9].
-     */
     effect(() => {
-      const rawNotes = this.noteService.notesList();
-      console.log('👀 Liste auf dem Board:', rawNotes);
-      
+      // 🟢 Greift jetzt reaktiv auf currentNotes() basierend auf dem mode zu
+      const rawNotes = this.currentNotes();
+
       this.viewModelCache = rawNotes.map(note => {
         const existingVM = this.viewModelCache.find(vm => vm.note.id === note.id);
         if (existingVM) {
-          existingVM.note = note; // Updatet reaktiv die Daten, behält den UI-State bei
+          existingVM.note = note;
           return existingVM;
         } else {
           return new NoteViewModel(note);
@@ -111,6 +165,12 @@ export class IdeaBoardComponent implements OnInit {
       });
 
       this.viewModels.set(this.viewModelCache);
+    });
+    effect(() => {
+      const currentMode = this.mode();
+      const savedOrders = this.boardStateService.loadSorting(currentMode);
+      this.sortOrders.set(savedOrders);
+      this.filterService.resetData();
     });
   }
 
@@ -158,20 +218,94 @@ export class IdeaBoardComponent implements OnInit {
    * Entscheidet anhand der Ziel-Container-ID, ob gelöscht, kalkuliert oder sortiert wird[cite: 8, 9].
    */
   public onDropped(event: CdkDragDrop<any[]>): void {
-    // Sektor 1: Im Mülleimer gelandet 🗑️
+    const vm = event.item.data as NoteViewModel;
+    if (!vm || !vm.note.id) return;
+
+    // A: In die linke Dropzone gezogen
     if (event.container.id === 'trashList') {
-      this.handleTrashDrop(event.item.data);
+      if (this.mode() === 'USER_BOARD') {
+        this.handleTrashDrop(vm);
+      } else if (this.mode() === 'ADMIN_COMPANY') {
+        // ↩️ Zurückstufen auf Department-Scope
+        this.noteService.revertToDepartment(vm.note.id);
+        this.notificationService.showNotification(`Idee "${vm.note.title}" wurde an die Abteilung zurückgesendet.`, 'info');
+      }
       return;
     }
 
-    // Sektor 2: Im Automaten-Schlitz gelandet 🎰
+    // B: In den rechten Schlitz gezogen
     if (event.container.id === 'calculatorList') {
-      this.handleCalculatorDrop(event.item.data);
+      if (this.mode() === 'USER_BOARD') {
+        this.handleCalculatorDrop(vm);
+      } else if (this.mode() === 'ADMIN_DEPARTMENTS') {
+        console.log("Note geht zum Promoting", vm.note)
+        // 🚀 Auf Company-Ebene heben
+        this.noteService.promoteToCompany(vm.note.id);
+        this.notificationService.showNotification(`Idee "${vm.note.title}" wurde auf Company-Ebene gehoben! 🚀`, 'success');
+      } else if (this.mode() === 'ADMIN_COMPANY') {
+        console.log('🚀 Open Modal for Note:', vm.note);
+        // 🎯 Checking-Slot: Modal für PM-Auswahl & Projekt-Erstellung öffnen
+        this.openProjectCreationModal(vm);
+      }
       return;
     }
 
-    // Sektor 3: Umsortieren auf der Pinnwand 📌
+    // C: Umsortieren auf der Pinnwand
     this.handleBoardSorting(event.previousIndex, event.currentIndex);
+  }
+
+  public openProjectCreationModal(vm: NoteViewModel): void {
+    console.log("openProjectCreationModal: vm-note ", vm)
+    this.selectedNoteForProject.set(vm.note);
+  }
+
+  // Event vom Modal behandeln:
+  public handleProjectCreation(payload: CreateProjectPayload): void {
+    if (!this.selectedNoteForProject()) {
+      return;
+    }
+    const idea = this.selectedNoteForProject();
+    
+    this.projectService.saveCalculatedProject({
+      title: payload.title,
+      ideaId: payload.ideaId,
+      area: 'Default', 
+      userId: this.userService.getCurrentUserId() ?? "",
+      departmentId: idea?.departmentId ?? '',
+      status: 'Calculation',
+      scope: 'COMPANY'
+    } as any).subscribe({
+      next: (createdProject) => {
+        console.log('✅ Projekt erfolgreich erstellt:', createdProject);
+        
+        const pm = this.teamService.globalMembersSignal().find(member => member.user.id === payload.projectManagerId);
+        
+        if (pm) {
+          // Projektleiter zuweisen
+          this.teamService.addMemberToProject(
+            createdProject.id,
+            pm.user,
+            'PROJECT_MANAGER'
+          );
+          this.notificationService.showNotification(
+            `Projekt "${createdProject.title}" wurde erfolgreich erstellt und ${pm.user.firstName} ${pm.user.lastName} als PM zugewiesen!`,
+            'success'
+          );
+        } else {
+          this.notificationService.showNotification(
+            `Projekt "${createdProject.title}" wurde ohne zugewiesenen PM erstellt.`,
+            'info'
+          );
+        }
+      },
+      error: (err) => {
+        console.error('Fehler beim Erstellen des Projekts:', err);
+        this.notificationService.showNotification('Fehler beim Erstellen des Projekts.', 'error');
+      }
+    });
+
+    // Modal schließen
+    this.selectedNoteForProject.set(null);
   }
 
   /** Verarbeitet das Hineinwerfen einer Karte in die Mülltonne[cite: 8, 9] */
@@ -224,7 +358,9 @@ export class IdeaBoardComponent implements OnInit {
       sortIndex: index
     }));
 
-    this.boardStateService.saveSorting(newOrders);
+    // 🟢 Aktualisiert lokales Signal & speichert mit contextKey = this.mode
+    this.sortOrders.set(newOrders);
+    this.boardStateService.saveSorting(this.mode(), newOrders);
   }
 
   // -------------------------------------------------------------------------
@@ -282,7 +418,7 @@ export class IdeaBoardComponent implements OnInit {
   /** 📊 Das finale, sortierte Ausgabe-Signal für das Zettel-Grid[cite: 8, 9] */
   public sortedViewModels = computed(() => {
     const { finalSelection } = this.filterPipeline();
-    const orders = this.boardStateService.currentSortOrders();
+    const orders = this.sortOrders();
 
     if (orders.length === 0) return finalSelection;
     return [...finalSelection].sort((a, b) => {

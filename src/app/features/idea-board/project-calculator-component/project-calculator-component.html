@@ -38,10 +38,8 @@
         </div>
 
         <app-milestone-suggestions-component [projectTitle]="activeProject()?.title ?? ''"
-            [existingMilestones]="activeProject()?.milestones ?? []" 
-            [area]="suggestedArea()"
-            (milestoneAccepted)="onMilestoneAdded($event)"
-            (degradedAreShown)="degradedAreShown($event)">
+            [existingMilestones]="activeProject()?.milestones ?? []" [area]="suggestedArea()"
+            (milestoneAccepted)="onMilestoneAdded($event)" (degradedAreShown)="degradedAreShown($event)">
         </app-milestone-suggestions-component>
 
         <table class="milestone-premium-table animate-fade-in">
@@ -188,18 +186,16 @@
                 ❌ Kalkulation abbrechen
             </button>
 
-            <!-- 👑 DIE AKTIVIERTE SPEICHER-WEICHE -->
-            @if (!localEditProject()) {
-            <!-- Fall 1: Reiner geladener Entwurf/Draft -> Volle Creator-Rechte! -->
+            <!-- 👑 WEICHE: Neuer Entwurf ODER leeres DB-Projekt vs. Existierendes gefülltes Projekt -->
+            @if (isBrandNewDraft()) {
             <button type="button" class="btn-primary" (click)="finishCalculation()">
                 Kalkulation abschließen & Projekt starten! 🚀
             </button>
             } @else {
-            <!-- Fall 2: Existierendes Projekt bearbeiten -> Prüft Berechtigungen -->
             <button type="button" class="btn-primary" (click)="finishCalculation()" [disabled]="!canSaveCalculation()"
                 [title]="canSaveCalculation() 
-                            ? 'Änderungen am Projekt speichern!' 
-                            : '💡 Reingeguckt! Du bist im sicheren Experimentier-Modus. Tob dich aus – zum offiziellen Speichern fehlen dir für dieses Projekt die Chef-Laborrechte.'">
+                        ? 'Änderungen am Projekt speichern!' 
+                        : '💡 Reingeguckt! Du bist im sicheren Experimentier-Modus. Zum offiziellen Speichern fehlen dir für dieses Projekt die Schreibrechte.'">
                 @if (canSaveCalculation()) {
                 💾 Änderungen speichern
                 } @else {
@@ -208,6 +204,7 @@
             </button>
             }
         </div>
+
     </div>
 
     }

@@ -1,6 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { CreateUserDrawerComponent } from './create-user-drawer-component';
+import { setupLocalStorageMock } from '../../../core/shared/test-utils/local-storage-mock';
+
+setupLocalStorageMock();
 
 describe('CreateUserDrawerComponent', () => {
   let component: CreateUserDrawerComponent;

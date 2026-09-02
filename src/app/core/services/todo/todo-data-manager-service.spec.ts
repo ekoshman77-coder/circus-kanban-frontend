@@ -57,6 +57,7 @@ describe('TodoDataManagerService (TDD Offline-Sperren mit Vitest)', () => {
     mockUserService = {
       currentUser: vi.fn(() => ({ id: 'user-123', username: 'TestUser' })),
       getCurrentUserId: vi.fn(() => 'user-123'),
+      isLoggedIn: vi.fn().mockReturnValue(true), // 🟢 NEU
       onLogout$: new Subject<void>()
     };
 
@@ -98,6 +99,7 @@ describe('TodoDataManagerService (TDD Offline-Sperren mit Vitest)', () => {
       const localUserMock = {
         currentUser: localUserSignal,
         getCurrentUserId: () => localUserSignal()?.id || null,
+        isLoggedIn: vi.fn(() => !!localUserSignal()), // 🟢 NEU: True wenn User da ist, sonst False
         onLogout$: new Subject<void>()
       };
 

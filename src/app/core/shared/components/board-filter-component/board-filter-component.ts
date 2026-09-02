@@ -1,13 +1,20 @@
 import { Component, Output, EventEmitter, input, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { FilterService } from '../../../core/services/filter/filter-service';
+import { FilterService } from '../../../services/filter/filter-service';
+
+// 🟢 Minimales Interface oder Import deines Department-Typs
+export interface DepartmentItem {
+  id: string;
+  name: string;
+}
 
 export interface FilterState {
   query: string;
   mode: 'AND' | 'OR';
   tag: string;
   color: string;
+  departmentId?: string; // 🟢 NEU: Optionale Abteilungs-ID für Admins
 }
 
 @Component({
@@ -18,23 +25,22 @@ export interface FilterState {
   styleUrls: ['./board-filter-component.css']
 })
 export class BoardFilterComponent {
-  // 🌟 Die dynamischen Listen, die von der Hauptkomponente kommen
   public availableTags = input<string[]>([]);
   public availableColors = input<string[]>([]);
-  private filterService = inject(FilterService)
+  // 🟢 NEU: Liste der verfügbaren Abteilungen
+  public availableDepartments = input<DepartmentItem[]>([]);
 
-  // Interne Zustände der Eingabefelder
+  private filterService = inject(FilterService);
+
   public searchQuery: string = '';
   public searchMode: 'AND' | 'OR' = 'AND';
-  public tagFilter: string = '';  // Wird jetzt über ein Select-Feld gesteuert
+  public tagFilter: string = '';
   public colorFilter: string = '';
+  public departmentFilter: string = ''; // 🟢 NEU: Ausgewählte Department-ID
 
   @Output() filterChanged = new EventEmitter<FilterState>();
 
   constructor() {
-    // 🚀 DIE AUTOMATISCHE BRÜCKE:
-    // Sobald sich der globale searchTerm ändert (z.B. durch Header-Eingabe oder Reset),
-    // aktualisieren wir die lokale searchQuery und triggern den Board-Filter!
     effect(() => {
       const globalTerm = this.filterService.searchTerm();
       if (this.searchQuery !== globalTerm) {
@@ -49,11 +55,11 @@ export class BoardFilterComponent {
       query: this.searchQuery,
       mode: this.searchMode,
       tag: this.tagFilter,
-      color: this.colorFilter
+      color: this.colorFilter,
+      departmentId: this.departmentFilter // 🟢 NEU
     });
   }
 
-  // Hilfsmethode, um den lesbaren Namen der Farbe für das Dropdown anzuzeigen
   public getColorLabel(colorType: string): string {
     switch (colorType) {
       case 'note-yellow': return 'Gelb 🟡';
@@ -71,10 +77,10 @@ export class BoardFilterComponent {
   }
 
   public onSearchModeChange(val: 'AND' | 'OR'): void { this.searchMode = val; this.emitChange(); }
-
   public onTagFilterChange(val: string): void { this.tagFilter = val; this.emitChange(); }
-
   public onColorFilterChange(val: string): void { this.colorFilter = val; this.emitChange(); }
+  // 🟢 NEU: Handler für Abteilungswechsel
+  public onDepartmentFilterChange(val: string): void { this.departmentFilter = val; this.emitChange(); }
 
   public resetAll(): void {
     this.searchQuery = '';
@@ -82,6 +88,7 @@ export class BoardFilterComponent {
     this.searchMode = 'AND';
     this.tagFilter = '';
     this.colorFilter = '';
+    this.departmentFilter = ''; // 🟢 NEU
     this.emitChange();
   }
 }

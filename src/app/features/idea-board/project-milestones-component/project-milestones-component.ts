@@ -303,16 +303,19 @@ public readonly unassignedTodos = computed(() => {
     });
   }
 
-  /** 🔒 ZENTRALE SICHERHEITSPRÜFUNG FÜR DIE INTERAKTION MIT AUFGABEN */
+/** 🔒 ZENTRALE SICHERHEITSPRÜFUNG FÜR DIE INTERAKTION MIT AUFGABEN */
   public canInteractWithTodos(): boolean {
     const allProjects = this.projectService.projectsList();
     const foundProject = allProjects.find((p) => 
       p.milestones.some((m) => m.id === this.activeMilestoneId())
     );
+    
     if (!foundProject) {
       return false;
     }
-    const hasPermission = true;
+
+    // 🟢 Wir übergeben die ID des gefundenen Projekts und die gewünschte Action
+    const hasPermission = this.teamService.hasPermission(foundProject.id, 'PROJECT_EDIT');
     console.log("canInteractWithTodos :: Berechtigungsergebnis: ", hasPermission);
     return hasPermission; 
   }

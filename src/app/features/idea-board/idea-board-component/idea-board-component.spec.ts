@@ -38,6 +38,7 @@ describe('IdeaBoardComponent (Vitest Edition)', () => {
 
     const mockBoardStateService = {
         currentSortOrders: signal<any[]>([]),
+        loadSorting: vi.fn().mockReturnValue([]), // 🟢 HINZUGEFÜGT!
         saveSorting: vi.fn()
     };
 
@@ -47,7 +48,9 @@ describe('IdeaBoardComponent (Vitest Edition)', () => {
     const mockUserService = {
         currentUser: computed(() => mockUserSignal()),
         getCurrentUserId: vi.fn().mockReturnValue('user-123'),
-        onLogout$: new Subject<void>()
+        onLogout$: new Subject<void>(),
+        isAdmin: vi.fn().mockReturnValue(false),
+        isLoggedIn: vi.fn().mockReturnValue(true)
 
     };
 
@@ -57,7 +60,8 @@ describe('IdeaBoardComponent (Vitest Edition)', () => {
 
     const mockFilterService = {
         setInitialCategory: vi.fn(),
-        searchTerm: signal<string>('')
+        searchTerm: signal<string>(''),
+        resetData: vi.fn()
     };
 
     beforeEach(async () => {

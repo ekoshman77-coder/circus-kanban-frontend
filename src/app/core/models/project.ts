@@ -15,6 +15,7 @@ export class Project {
   public departmentId: string;
   public status: 'Calculation' | 'Active' | 'Zip';
   public milestones: Milestone[];
+  public scope: string;
   public teamMembers: ProjectMember[];
 
   // 💡 INLINE-KONSTRUKTOR: Keine extra Interfaces mehr nötig!
@@ -29,6 +30,7 @@ export class Project {
     status?: 'Calculation' | 'Active' | 'Zip';
     milestones?: Milestone[];
     teamMembers?: ProjectMember[];
+    scope?: string;
   }) {
     this.title = init.title;
     this.area = init.area;
@@ -42,6 +44,7 @@ export class Project {
     this.departmentId = init.departmentId
     this.milestones = init.milestones ?? [];
     this.teamMembers = init.teamMembers ?? [];
+    this.scope = init.scope?? "DEPARTMENT"
   }
 
   // 🧮 Geplante Zeit (Soll)

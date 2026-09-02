@@ -11,6 +11,18 @@
     </div>
     
     <div class="select-group">
+      <!-- 🟢 NEU: Abteilungs-Dropdown (nur sichtbar bei mehr als 1 Abteilung) -->
+      @if (availableDepartments().length > 1) {
+        <select [ngModel]="departmentFilter" 
+                (ngModelChange)="onDepartmentFilterChange($event)" 
+                class="filter-dropdown filter-dept-select">
+          <option value="">Alle Abteilungen 🏢</option>
+          @for (dept of availableDepartments(); track dept.id) {
+            <option [value]="dept.id">{{ dept.name }}</option>
+          }
+        </select>
+      }
+
       <select [ngModel]="searchMode" 
               (ngModelChange)="onSearchModeChange($event)" 
               class="filter-dropdown filter-mode-select">
@@ -42,8 +54,8 @@
     </div>
 
     <button class="clear-filter-btn" 
-            [disabled]="!searchQuery && !tagFilter && !colorFilter"
-            [class.is-disabled]="!searchQuery && !tagFilter && !colorFilter"
+            [disabled]="!searchQuery && !tagFilter && !colorFilter && !departmentFilter"
+            [class.is-disabled]="!searchQuery && !tagFilter && !colorFilter && !departmentFilter"
             (click)="resetAll()">
       <span>❌ Filter löschen</span>
     </button>  

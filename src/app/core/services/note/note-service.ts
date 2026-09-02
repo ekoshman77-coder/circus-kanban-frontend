@@ -127,6 +127,7 @@ export class NoteService extends BaseDataManager {
    * Führt bei Serverfehlern einen automatischen Rollback durch
    */
   public updateNote(updatedNote: Note): void {
+    console.log("NoteService", updatedNote)
     const alteListe = this.notesSignal();
 
     // Optimistisches UI-Update: Zustand wird sofort im Signal gerendert
@@ -134,6 +135,7 @@ export class NoteService extends BaseDataManager {
 
     this.dataManager.updateNote(updatedNote, alteListe).subscribe({
       next: (savedFromServer) => {
+        console.log("NoteDataManager savedFromServer", savedFromServer)
         // Zustand mit endgültigen Serverwerten überschreiben (z.B. neu generierte IDs/Metadaten)
         this.notesSignal.update(notes => notes.map(n => n.id === updatedNote.id ? savedFromServer : n));
       },

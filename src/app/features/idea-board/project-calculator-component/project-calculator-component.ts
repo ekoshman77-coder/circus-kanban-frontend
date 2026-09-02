@@ -56,25 +56,33 @@ export class ProjectCalculatorComponent implements OnInit {
   // -------------------------------------------------------------------------
   // 🚦 REAKTIVE ZUSTÄNDE (SIGNALS)
   // -------------------------------------------------------------------------
-  
+
   /** Die zugrundeliegende Idee (Notiz), aus welcher der Entwurf gestartet wurde */
   public currentIdea = signal<Note | null>(null);
-  
+
   /** Flag, ob wir ein brandneues Projekt kalkulieren (true) oder ein existierendes bearbeiten (false) */
   protected isBrandNewDraft = signal<boolean>(true);
-  
+  /** projekt existiert in DB (egal ganz neu o) */
+  public isExistingDbProject = computed(() => {
+   const proj = this.activeProject();
+   if (!proj || !proj.id) return false;
+
+    // Existiert die ID des aktiven Projekts in der geladenen DB-Liste?
+    return this.projectService.projectsList().some(p => p.id === proj.id);
+  });
+
   /** Zustand der KI-Vorschläge-Sidebar (offen/geschlossen) */
   protected isSidebarOpen = signal<boolean>(false);
 
   /** Steuert die Anzeige des Wiederherstellungs-Banners für ungespeicherte Entwürfe */
   protected showRestoreBanner = signal<boolean>(false);
-  
+
   /** Der aus dem LocalStorage ausgelesene Titel des ungespeicherten Entwurfs */
   protected draftTitleFromStorage = signal<string>('');
 
   /** Formular-Zustand für den Titel eines manuell hinzuzufügenden Meilensteins */
   protected newMilestoneTitle = signal<string>('');
-  
+
   /** Formular-Zustand für die Dauer eines manuell hinzuzufügenden Meilensteins */
   protected newMilestoneDuration = signal<number>(1);
 
@@ -83,25 +91,25 @@ export class ProjectCalculatorComponent implements OnInit {
 
   /** Der Fachbereich (Tag) des Projekts zur gezielten Abfrage passender KI-Templates */
   protected suggestedArea = signal<string>('Allgemein');
-  
+
   /** Steuert die Lade-Animation während KI-Vorschläge abgerufen werden */
   protected isMagicLoading = signal<boolean>(false);
 
   /** Steuert die Anzeige des Erfolgs-Popups nach Abschluss der Kalkulation */
   protected showSuccessPopup = signal<boolean>(false);
-  
+
   /** Hält den finalen Projekttitel für die Anzeige im Erfolgs-Popup bereit */
   protected finalProjectTitle = signal<string>('');
 
   /** Die ID des Meilensteins, der sich aktuell im Inline-Edit-Modus befindet (null falls keiner) */
   protected editingMilestoneId: string | null = null;
-  
+
   /** Temporärer Titel während des Inline-Edits */
   protected editTitle: string = '';
-  
+
   /** Temporäre Dauer während des Inline-Edits */
   protected editTime: number = 1;
-  
+
   /** Array von 1 bis 30 für die Dropdown-Auswahl der Meilenstein-Tage */
   public availableDays: number[] = Array.from({ length: 30 }, (_, i) => i + 1);
 
@@ -140,7 +148,7 @@ export class ProjectCalculatorComponent implements OnInit {
   // -------------------------------------------------------------------------
   // 🏗️ CONSTRUCTOR & LIFECYCLE HOOKS
   // -------------------------------------------------------------------------
-  
+
   constructor() {
     /**
      * Reagiert autark auf Änderungen des Navigation-States und steuert den internen State
@@ -206,20 +214,44 @@ export class ProjectCalculatorComponent implements OnInit {
       }
     }
     else if (navState.type === 'project') {
-      this.isBrandNewDraft.set(false);
       this.currentIdea.set(null);
       this.showRestoreBanner.set(false);
 
       const matchingProject = this.projectService.projectsList().find((p) => p.id === navState.id);
       if (matchingProject) {
-        this.localEditProject.set(new Project({
-          ...matchingProject,
-          milestones: [...(matchingProject.milestones || [])]
-        }));
-        this.suggestedArea.set(matchingProject.area || 'Allgemein');
+        // 1. TeamService über das aktive Projekt informieren -> lädt die ProjectMembers & Berechtigungen
+        this.teamService.setCurrentProject(matchingProject.id);
+
+        // 2. Altlasten im lokale Draft-Storage aufräumen
+        this.projectDraftService.clearDraft();
+
+        const isNewEmptyProject = !matchingProject.milestones || matchingProject.milestones.length === 0;
+
+        if (isNewEmptyProject) {
+          // 🟢 Fall 2: DB-Projekt existiert schon, hat aber noch keine Meilensteine
+          this.isBrandNewDraft.set(true);
+          this.localEditProject.set(null);
+
+          // Wir setzen das existierende Projekt in den DraftService
+          this.projectDraftService.currentDraft.set(new Project({
+            ...matchingProject,
+            milestones: []
+          }));
+          this.suggestedArea.set(matchingProject.area || 'Allgemein');
+
+          // Automatisch KI-Vorschläge laden
+          this.applySmartTemplates();
+        } else {
+          // 🔵 Fall 3: Richtig existierendes DB-Projekt mit Meilensteinen -> Edit-Modus
+          this.isBrandNewDraft.set(false);
+          this.localEditProject.set(new Project({
+            ...matchingProject,
+            milestones: [...(matchingProject.milestones || [])]
+          }));
+          this.suggestedArea.set(matchingProject.area || 'Allgemein');
+        }
       }
     }
-
     this.navigationService.currentNavigationState.set(null);
   }
 
@@ -509,24 +541,27 @@ export class ProjectCalculatorComponent implements OnInit {
       return;
     }
 
+    // Für bereits bestehende, gefüllte Projekte: Rechterad-Prüfung
     if (!this.isBrandNewDraft()) {
       const currentUserId = this.userService.getCurrentUserId();
-      if (project.userId !== currentUserId) {
+      if (project.userId !== currentUserId && !this.teamService.hasPermission(project.id, 'PROJECT_EDIT')) {
         this.notificationService.showNotification('Keine Berechtigung! 🛑', 'error');
         this.showSuccessPopup.set(false);
         return;
       }
     }
 
-    const saveObservable = this.isBrandNewDraft()
-      ? this.projectService.saveCalculatedProject(project)
-      : (this.projectService as any).updateProject?.(project) || this.projectService.saveCalculatedProject(project);
+    //    const isExistingDbProject = !!project.id && !project.id.trim();
+
+    const saveObservable = this.isExistingDbProject()
+      ? this.projectService.updateCalculatedProject(project)
+      : this.projectService.saveCalculatedProject(project);
 
     saveObservable.subscribe({
       next: () => {
-        const erfolgsNachricht = this.isBrandNewDraft()
-          ? `Projekt "${project.title}" wurde erfolgreich gestartet! 🚀`
-          : `Änderungen am Projekt "${project.title}" wurden gespeichert! 💾`;
+        const erfolgsNachricht = this.isExistingDbProject()
+          ? `Änderungen am Projekt "${project.title}" wurden gespeichert! 💾`
+          : `Projekt "${project.title}" wurde erfolgreich kalkuliert und gestartet! 🚀`;
 
         this.notificationService.showNotification(erfolgsNachricht, 'success');
 

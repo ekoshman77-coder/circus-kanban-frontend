@@ -24,7 +24,7 @@ describe('MilestoneSuggestionsComponent (Vitest Edition)', () => {
         degradeSuggestion: vi.fn()
     };
 
-    beforeEach(async () => {
+beforeEach(async () => {
         vi.clearAllMocks();
 
         await TestBed.configureTestingModule({
@@ -37,13 +37,16 @@ describe('MilestoneSuggestionsComponent (Vitest Edition)', () => {
         fixture = TestBed.createComponent(MilestoneSuggestionsComponent);
         component = fixture.componentInstance;
 
-        // 🟢 DER FIX: Signal-Inputs werden über componentRef.setInput() gesetzt!
+        // 🟢 Signal-Inputs über fixture.componentRef setzen
+        // Beachte: 'area' IST ZWINGEND erforderlich (input.required)
         fixture.componentRef.setInput('projectTitle', 'Test-Projekt');
+        fixture.componentRef.setInput('area', 'Software');
         fixture.componentRef.setInput('existingMilestones', []);
 
+        // Ersten Change-Detection-Zyklus DICH NACH DEN INPUTS ausführen!
         fixture.detectChanges();
     });
-
+    
     describe('🧠 Filter- & Anzeige-Logik (computed)', () => {
         
         it('sollte standardmäßig nur empfohlene Vorschläge anzeigen', () => {
@@ -85,8 +88,7 @@ describe('MilestoneSuggestionsComponent (Vitest Edition)', () => {
 
             component.handleAccept('Architektur-Setup');
 
-            // Prüfen, ob der Service gerufen und das Event gefeuert wurde
-            expect(mockProjectService.acceptSuggestion).toHaveBeenCalledWith('Test-Projekt', 'Architektur-Setup');
+            expect(mockProjectService.acceptSuggestion).toHaveBeenCalledWith('Test-Projekt', 'Software', 'Architektur-Setup');
             expect(emittedTitle).toBe('Architektur-Setup');
         });
 
@@ -94,7 +96,7 @@ describe('MilestoneSuggestionsComponent (Vitest Edition)', () => {
             component.handleDegrade('Kaffee kochen');
 
             // Prüfen, ob die Degradierung an den Service gemeldet wurde
-            expect(mockProjectService.degradeSuggestion).toHaveBeenCalledWith('Test-Projekt', 'Kaffee kochen');
+            expect(mockProjectService.degradeSuggestion).toHaveBeenCalledWith('Test-Projekt', 'Software', 'Kaffee kochen');
         });
     });
 });

@@ -1,24 +1,44 @@
 import { TestBed } from '@angular/core/testing';
-import { signal } from '@angular/core';
+import { signal, WritableSignal } from '@angular/core';
 import { TeamService } from './team-service';
 import { TeamDataManager } from './team-data-manager';
 import { UserService } from '../user/user-service';
-import { UserModel } from '../../models/user-model';
+import { PermissionService } from '../permissions/permission-service';
+import { IUserInit, UserModel } from '../../models/user-model';
 import { ProjectMember } from '../../models/project-member';
+import { ProjectAction } from '../../enums/project-action-enum';
+import { describe, beforeEach, it, expect, vi } from 'vitest';
 
-describe('TeamService (Vitest)', () => {
+describe('TeamService (Vitest - Strict Typing)', () => {
   let service: TeamService;
-  
-  // Mocks für die injizierten Services
-  let dataManagerMock: any;
-  let userServiceMock: any;
 
-  // Wir simulieren die Signals aus dem DataManager
-  let globalMembersSignalMock = signal<ProjectMember[]>([]);
-  let currentProjectMembersSignalMock = signal<ProjectMember[]>([]);
+  const createTestUser = (overrides: Partial<IUserInit> = {}): UserModel => {
+    return new UserModel({
+      id: 'user-active',
+      username: 'testuser',
+      firstName: 'Max',
+      lastName: 'Mustermann',
+      department: null,
+      isApproved: true,
+      projectIds: [],
+      ...overrides
+    });
+  };
+  
+  // 🛡️ Typisierte Signals & Mocks
+  let globalMembersSignalMock: WritableSignal<ProjectMember[]>;
+  let currentProjectMembersSignalMock: WritableSignal<ProjectMember[]>;
+
+  // Interfaces statt `any`
+  let dataManagerMock: Partial<TeamDataManager>;
+  let userServiceMock: Partial<UserService>;
+  let permissionServiceMock: Partial<PermissionService>;
 
   beforeEach(() => {
-    // Spione für den DataManager aufbauen
+    globalMembersSignalMock = signal<ProjectMember[]>([]);
+    currentProjectMembersSignalMock = signal<ProjectMember[]>([]);
+
+    // 🎯 Typsicherer DataManager-Mock
     dataManagerMock = {
       globalMembersSignal: globalMembersSignalMock,
       currentProjectMembersSignal: currentProjectMembersSignalMock,
@@ -32,22 +52,33 @@ describe('TeamService (Vitest)', () => {
       createMember: vi.fn()
     };
 
-    // Spion für den UserService
+    // 🎯 Typsicherer UserService-Mock
     userServiceMock = {
       getCurrentUserId: vi.fn().mockReturnValue('user-active')
+    };
+
+    // 🎯 Typsicherer PermissionService-Mock
+    permissionServiceMock = {
+      allPermissions: signal([]),
+      hasPermission: vi.fn((role: string, action: ProjectAction) => {
+        if (role === 'OWNER') return true;
+        if (role === 'DEVELOPER' && action === 'TODO_CREATE') return true;
+        if (role === 'DEVELOPER' && action === 'PROJECT_DELETE') return false;
+        return false;
+      })
     };
 
     TestBed.configureTestingModule({
       providers: [
         TeamService,
         { provide: TeamDataManager, useValue: dataManagerMock },
-        { provide: UserService, useValue: userServiceMock }
+        { provide: UserService, useValue: userServiceMock },
+        { provide: PermissionService, useValue: permissionServiceMock }
       ]
     });
 
     service = TestBed.inject(TeamService);
     
-    // Vor jedem Test Signals zurücksetzen
     globalMembersSignalMock.set([]);
     currentProjectMembersSignalMock.set([]);
   });
@@ -55,80 +86,67 @@ describe('TeamService (Vitest)', () => {
   it('sollte bei setCurrentProject die ID setzen und den DataManager zum Laden triggern', () => {
     const projectId = 'project-123';
 
-    // Ausführung
     service.setCurrentProject(projectId);
 
-    // Auswertung
     expect(service.currentProjectId()).toBe(projectId);
     expect(dataManagerMock.loadProjectMembers).toHaveBeenCalledWith(projectId);
   }); 
 
   describe('Rechteprüfung (hasPermission)', () => {
     it('sollte false zurückgeben, wenn keine Projektmitglieder geladen sind', () => {
-      expect(service.hasPermission('project-123', 'PROJECT_EDIT')).toBe(false);
+      expect(service.hasPermission('project-123', 'PROJECT_EDIT' as ProjectAction)).toBe(false);
     });
 
     it('sollte true zurückgeben, wenn ein OWNER das Projekt löschen möchte', () => {
-      // Vorbereitung: Wir setzen den aktiven User als OWNER ins Projekt-Signal
-      const activeUser = new UserModel({ id: 'user-active', username: 'elena', firstName: 'E', lastName: 'L', projectIds: ['project-123'] });
+      const activeUser = createTestUser({ id: 'user-active', username: 'elena', firstName: 'E', lastName: 'L', projectIds: ['project-123'] });
       currentProjectMembersSignalMock.set([
         new ProjectMember(activeUser, 'OWNER')
       ]);
 
-      // Ausführung & Auswertung
-      expect(service.hasPermission('project-123', 'PROJECT_DELETE')).toBe(true);
-      expect(service.hasPermission('project-123', 'MILESTONE_CREATE')).toBe(true);
+      expect(service.hasPermission('project-123', 'PROJECT_DELETE' as ProjectAction)).toBe(true);
+      expect(service.hasPermission('project-123', 'MILESTONE_CREATE' as ProjectAction)).toBe(true);
     });
 
     it('sollte false zurückgeben, wenn ein DESIGNER versucht ein Projekt zu löschen', () => {
-      // Vorbereitung: Wir setzen den aktiven User als DESIGNER ins Projekt-Signal
-      const activeUser = new UserModel({ id: 'user-active', username: 'designer-guy', firstName: 'D', lastName: 'G', projectIds: ['project-123'] });
+      const activeUser = createTestUser({ id: 'user-active', username: 'designer-guy', firstName: 'D', lastName: 'G', projectIds: ['project-123'] });
       currentProjectMembersSignalMock.set([
-        new ProjectMember(activeUser, 'DESIGNER')
+        new ProjectMember(activeUser, 'DEVELOPER')
       ]);
 
-      // Ausführung & Auswertung
-      expect(service.hasPermission('project-123', 'PROJECT_DELETE')).toBe(false); // Verboten!
-      expect(service.hasPermission('project-123', 'TODO_CREATE')).toBe(true);     // Erlaubt!
+      expect(service.hasPermission('project-123', 'PROJECT_DELETE' as ProjectAction)).toBe(false);
+      expect(service.hasPermission('project-123', 'TODO_CREATE' as ProjectAction)).toBe(true);
     });
   });
 
   it('sollte addMemberToProject transparent an den DataManager weiterreichen', () => {
     const projectId = 'proj-99';
-    const fakeUser = new UserModel({ id: 'u-9', username: 'test', firstName: 'A', lastName: 'B', projectIds: [] });
+    const fakeUser = createTestUser({ id: 'u-9', username: 'test', firstName: 'A', lastName: 'B', projectIds: [] });
 
-    // Ausführung
     service.addMemberToProject(projectId, fakeUser, 'DEVELOPER');
 
-    // Auswertung
     expect(dataManagerMock.addMemberToProject).toHaveBeenCalledWith(projectId, fakeUser, 'DEVELOPER');
   });
 
   it('sollte getProjectUsersSignal ein reaktives Signal mit reinen UserModels liefern', () => {
-    // Vorbereitung: Wir befüllen das Members-Signal
-    const user1 = new UserModel({ id: '1', username: 'u1', firstName: 'A', lastName: 'B', projectIds: [] });
-    const user2 = new UserModel({ id: '2', username: 'u2', firstName: 'C', lastName: 'D', projectIds: [] });
+    const user1 = createTestUser({ id: '1', username: 'u1', firstName: 'A', lastName: 'B', projectIds: [] });
+    const user2 = createTestUser({ id: '2', username: 'u2', firstName: 'C', lastName: 'D', projectIds: [] });
     
     currentProjectMembersSignalMock.set([
       new ProjectMember(user1, 'DEVELOPER'),
-      new ProjectMember(user2, 'VIEWER')
+      new ProjectMember(user2, 'DEVELOPER')
     ]);
 
-    // Ausführung
     const usersSignal = service.getProjectUsersSignal('any-project');
     const userList = usersSignal();
 
-    // Auswertung
     expect(userList.length).toBe(2);
     expect(userList[0]).toBe(user1);
     expect(userList[1]).toBe(user2);
   });
 
   it('sollte updateCoffeeAccount transparent an den DataManager weiterreichen', () => {
-    // Ausführung
     service.updateCoffeeAccount('user-1', 15.50, 'DEVELOPER', '☕');
 
-    // Auswertung
     expect(dataManagerMock.updateCoffeeAccount).toHaveBeenCalledWith('user-1', 15.50, 'DEVELOPER', '☕');
   });
 });

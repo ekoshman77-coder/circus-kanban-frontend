@@ -11,4 +11,5 @@ export interface IProjectJSON {
   departmentId: string;
   milestones: IMilestoneJSON[]; // ❌ Kein Fragezeichen! Das Backend liefert IMMER mindestens []
   teamMembers: IUser[];     // ❌ Kein Fragezeichen!
+  scope: string;
 }

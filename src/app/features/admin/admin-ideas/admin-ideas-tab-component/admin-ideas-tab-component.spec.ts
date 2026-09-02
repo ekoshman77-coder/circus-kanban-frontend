@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
+import { setupLocalStorageMock } from '../../../../core/shared/test-utils/local-storage-mock';
 import { AdminIdeasTabComponent } from './admin-ideas-tab-component';
+
+setupLocalStorageMock();
 
 describe('AdminIdeasTabComponent', () => {
   let component: AdminIdeasTabComponent;

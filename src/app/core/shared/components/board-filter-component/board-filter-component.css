@@ -148,3 +148,7 @@
   transform: none !important;
   opacity: 0.8;
 }
+
+.filter-dept-select {
+  min-width: 160px;
+}

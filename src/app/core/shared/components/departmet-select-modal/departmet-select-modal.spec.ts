@@ -1,6 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DepartmetSelectModal } from './departmet-select-modal';
+import { setupLocalStorageMock } from '../../test-utils/local-storage-mock';
+
+setupLocalStorageMock();
 
 describe('DepartmetSelectModal', () => {
   let component: DepartmetSelectModal;

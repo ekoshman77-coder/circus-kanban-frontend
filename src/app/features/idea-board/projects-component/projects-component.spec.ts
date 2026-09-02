@@ -30,6 +30,7 @@ describe('ProjectsComponent (Vitest Edition)', () => {
       ideaId: 'idea-1',
       area: 'Show',
       status: 'Active',
+      departmentId: "dept1",
       content: 'Die große Eröffnungsshow planen'
     });
     // Dummy-Meilenstein verknüpfen (as any um komplexe Interfaces zu umgehen)
@@ -42,7 +43,8 @@ describe('ProjectsComponent (Vitest Edition)', () => {
       ideaId: 'idea-2',
       area: 'Sicherheit',
       status: 'Active',
-      content: 'Löwendressur optimieren'
+      content: 'Löwendressur optimieren',
+      departmentId: "dept1"
     });
 
     sampleProjects = [proj1, proj2];

@@ -4,19 +4,24 @@ import { ProjectRepository } from '../../repositories/project-repository';
 import { ConnectionService } from '../connection/connection-service';
 import { AiRepository } from '../../repositories/ai-repository';
 import { Project } from '../../models/project';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { of, throwError } from 'rxjs';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { of } from 'rxjs';
+import { signal, WritableSignal } from '@angular/core';
 
-describe('ProjectDataManagerService', () => {
+describe('ProjectDataManagerService (Vitest - Strictly Typed)', () => {
   let service: ProjectDataManagerService;
 
-  let mockProjectRepo: any;
-  let mockConnectionService: any;
-  let mockAiRepo: any;
+  // Typsichere Mocks
+  let mockProjectRepo: Partial<ProjectRepository>;
+  let mockConnectionService: Partial<ConnectionService>;
+  let mockAiRepo: Partial<AiRepository>;
 
+  // LocalStorage Mock-Store
   let store: Record<string, string> = {};
   
   let testProject: Project;
+
+  let isOfflineSignal: WritableSignal<boolean>;
 
   beforeEach(() => {
     store = {};
@@ -27,17 +32,19 @@ describe('ProjectDataManagerService', () => {
       clear: () => { store = {}; }
     });
 
-    mockConnectionService = {
-      isOffline: vi.fn().mockReturnValue(false)
-    };
+    isOfflineSignal = signal<boolean>(false);
 
+    mockConnectionService = {
+      isOffline: isOfflineSignal
+    };
+    
     mockProjectRepo = {
       getProjectsByUserId: vi.fn().mockReturnValue(of([])),
       createProject: vi.fn().mockImplementation((p) => of(p)),
       updateProject: vi.fn().mockImplementation((id, p) => of({ id, ...p })),
       deleteProject: vi.fn().mockReturnValue(of(undefined)),
       syncLocalProjects: vi.fn().mockReturnValue(of([])),
-      getDashboardStatistics: vi.fn().mockReturnValue(of({ total: 10 }))
+      getDashboardStatistics: vi.fn().mockReturnValue(of({ totalProjects: 10, activeProjects: 5, completedProjects: 5 }))
     };
 
     mockAiRepo = {
@@ -64,6 +71,7 @@ describe('ProjectDataManagerService', () => {
       ideaId: 'idea-999',
       title: 'Standard Test Projekt',
       area: 'Software',
+      departmentId: 'dept-123',
       content: 'Beschreibung',
       status: 'Active',
       milestones: [],
@@ -71,12 +79,25 @@ describe('ProjectDataManagerService', () => {
     });
   });
 
+  afterEach(() => {
+    vi.clearAllMocks();
+    vi.unstubAllGlobals();
+  });
+
   describe('getProjects (Projekte laden)', () => {
     it('sollte online Daten vom Server laden und im global_pool cachen', () => {
-      const backendProj = { id: 'live-1', title: 'Online Projekt', milestones: [] };
-      mockProjectRepo.getProjectsByUserId.mockReturnValueOnce(of([backendProj]));
+      const backendProj = { 
+        id: 'live-1', 
+        title: 'Online Projekt', 
+        userId: 'user-123', 
+        ideaId: 'idea-1', 
+        area: 'Tech', 
+        departmentId: 'dept-1', 
+        milestones: [] 
+      };
+      vi.mocked(mockProjectRepo.getProjectsByUserId!).mockReturnValueOnce(of([backendProj as any]));
 
-      service.getProjects().subscribe((projects: Project[]) => {
+      service.getProjects('user-123').subscribe((projects: Project[]) => {
         expect(projects.length).toBe(1);
         expect(projects[0].title).toBe('Online Projekt');
         
@@ -85,13 +106,14 @@ describe('ProjectDataManagerService', () => {
       });
     });
 
-    it('sollte offline direkt auf das LocalStorage-Backup (global_pool) zugreifen', () => {
-      mockConnectionService.isOffline.mockReturnValueOnce(true);
+it('sollte offline direkt auf das LocalStorage-Backup (global_pool) zugreifen', () => {
+      // 🟢 Richtig: Signal auf true setzen
+      isOfflineSignal.set(true);
       
       testProject.title = 'Offline UI Projekt';
       localStorage.setItem('local_projects_global_pool', JSON.stringify([testProject]));
 
-      service.getProjects().subscribe((projects: Project[]) => {
+      service.getProjects('user-123').subscribe((projects: Project[]) => {
         expect(projects.length).toBe(1);
         expect(projects[0].title).toBe('Offline UI Projekt');
         expect(mockProjectRepo.getProjectsByUserId).not.toHaveBeenCalled();
@@ -101,7 +123,7 @@ describe('ProjectDataManagerService', () => {
 
   describe('Doppel-Buchführung im Offline-Modus', () => {
     it('sollte beim Erstellen offline das Projekt im global_pool UND in der pending_sync Queue sichern', () => {
-      mockConnectionService.isOffline.mockReturnValueOnce(true);
+      isOfflineSignal.set(true);
       
       testProject.id = 'OFFLINE_123';
       testProject.title = 'Neues Offline Projekt';
@@ -120,14 +142,18 @@ describe('ProjectDataManagerService', () => {
     });
 
     it('sollte beim Ändern offline die Änderung im global_pool UND in der pending_sync Queue nachführen', () => {
-      mockConnectionService.isOffline.mockReturnValueOnce(true);
+     isOfflineSignal.set(true);
       
       testProject.id = 'proj-555';
       testProject.title = 'Projekt Version A';
       localStorage.setItem('local_projects_pending_sync', JSON.stringify([testProject]));
 
       const geaendertesProj = new Project({
-        ...testProject,
+        id: testProject.id,
+        userId: testProject.userId,
+        ideaId: testProject.ideaId,
+        area: testProject.area,
+        departmentId: testProject.departmentId,
         title: 'Projekt Version B'
       });
 
@@ -162,8 +188,15 @@ describe('ProjectDataManagerService', () => {
       testProject.title = 'Offline Entwurf';
       localStorage.setItem('local_projects_pending_sync', JSON.stringify([testProject]));
 
-      const serverResponse = [{ id: 'server-id-1', title: 'Offline Entwurf (Serverversion)' }];
-      mockProjectRepo.syncLocalProjects.mockReturnValueOnce(of(serverResponse));
+      const serverResponse = [{ 
+        id: 'server-id-1', 
+        title: 'Offline Entwurf (Serverversion)', 
+        userId: 'user-777', 
+        ideaId: 'idea-1', 
+        area: 'Tech', 
+        departmentId: 'dept-1' 
+      }];
+      vi.mocked(mockProjectRepo.syncLocalProjects!).mockReturnValueOnce(of(serverResponse as any));
 
       service.synchronizeData('user-777').subscribe((res: Project[]) => {
         expect(res.length).toBe(1);
@@ -178,25 +211,24 @@ describe('ProjectDataManagerService', () => {
   describe('Hybrid-Weiche (getMilestoneSuggestions)', () => {
     it('sollte online das AiRepository befragen', () => {
       const mockSuggestion = { title: 'KI-Tipp', score: 99, words: [] };
-      mockAiRepo.getMilestoneSuggestions.mockReturnValueOnce(of({
+      vi.mocked(mockAiRepo.getMilestoneSuggestions!).mockReturnValueOnce(of({
         recommended: [mockSuggestion],
         degraded: []
       }));
 
       service.getMilestoneSuggestions('App', 'Software', 'user-1').subscribe(res => {
-        expect(res!.recommended.length).toBe(1);
-        expect(res!.recommended[0].title).toBe('KI-Tipp');
-        expect(res!.recommended[0].source).toBe('KI');
+        expect(res.recommended.length).toBe(1);
+        expect(res.recommended[0].title).toBe('KI-Tipp');
+        expect(res.recommended[0].source).toBe('KI');
       });
     });
 
     it('sollte offline auf statische Templates ausweichen', () => {
-      mockConnectionService.isOffline.mockReturnValueOnce(true);
+      isOfflineSignal.set(true);
 
       service.getMilestoneSuggestions('App', 'Software', 'user-1').subscribe(res => {
-        // Wir prüfen einfach, ob wir statische Templates erhalten und die Quelle korrekt gesetzt ist
-        expect(res!.recommended.length).toBeGreaterThan(0);
-        expect(res!.recommended[0].source).toBe('TEMPLATE');
+        expect(res.recommended.length).toBeGreaterThan(0);
+        expect(res.recommended[0].source).toBe('TEMPLATE');
       });
     });
   });

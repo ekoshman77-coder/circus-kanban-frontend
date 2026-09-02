@@ -3,13 +3,14 @@ import { PlannerService } from './planner-service';
 import { UserService } from '../user/user-service';
 import { AiRepository } from '../../repositories/ai-repository';
 import { Todo } from '../../models/todo';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { of, throwError } from 'rxjs';
+import { RecommendationResult } from '../../models/recommendation-result';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { of } from 'rxjs';
 
-describe('PlannerService', () => {
+describe('PlannerService (Vitest - Strictly Typed)', () => {
   let service: PlannerService;
-  let mockUserService: any;
-  let mockAiRepository: any;
+  let mockUserService: Partial<UserService>;
+  let mockAiRepository: Partial<AiRepository>;
 
   const rawServerTodo = {
     id: 'todo-123',
@@ -21,9 +22,7 @@ describe('PlannerService', () => {
   };
 
   beforeEach(() => {
-    // 1. Uhren und Mocks vor JEDEM Test komplett auf Null setzen
     vi.useFakeTimers();
-    vi.resetAllMocks();
 
     mockUserService = {
       getCurrentUserId: vi.fn().mockReturnValue('user-999')
@@ -31,12 +30,17 @@ describe('PlannerService', () => {
 
     mockAiRepository = {
       getPlannerRecommendation: vi.fn().mockReturnValue(of({
-        todo: rawServerTodo,
-        modeCode: 'STANDARD',
-        reasonCode: 'DEFAULT'
+        roundId: 'round-abc',
+        recommendations: [
+          {
+            todo: rawServerTodo,
+            plannerDetails: [],
+            modeCode: 'STANDARD'
+          }
+        ]
       })),
       sendPlannerFeedback: vi.fn().mockReturnValue(of(null)),
-      snoozyTodo: vi.fn().mockReturnValue(of(null))
+      snoozyTodo: vi.fn().mockReturnValue(of(undefined))
     };
 
     TestBed.configureTestingModule({
@@ -51,72 +55,84 @@ describe('PlannerService', () => {
   });
 
   afterEach(() => {
-    // 2. Nach jedem Test aufräumen, damit parallele Worker sich nicht beißen
     vi.useRealTimers();
+    vi.clearAllMocks();
   });
 
   it('sollte den Service erfolgreich instanziieren', () => {
     expect(service).toBeTruthy();
   });
 
-  describe('sendFeedback', () => {
-    it('sollte Feedback an das Repository schicken', () => {
-      // Stream abonnieren, damit er ausgeführt wird
-      service.sendFeedback('todo-123', false, 'too_heavy', 'normal').subscribe();
+  describe('loadSmartRecommendation', () => {
+    it('sollte die Empfehlungen laden und das Signal befüllen', () => {
+      service.loadSmartRecommendation('HIGH', 4);
 
-      expect(mockAiRepository.sendPlannerFeedback).toHaveBeenCalledWith({
+      expect(mockAiRepository.getPlannerRecommendation).toHaveBeenCalledWith({
         userId: 'user-999',
-        todoId: 'todo-123',
-        accepted: false,
-        rejectReason: 'too_heavy',
-        currentEnergy: 'normal'
-      });
-    });
-
-    it('sollte bei Akzeptanz der Aufgabe die Empfehlungs-Signals leeren', async () => {
-      const initialTodo = new Todo(rawServerTodo);
-      service.recommendedTodo.set(initialTodo);
-      service.aiResponseCode.set({ todo: initialTodo, modeCode: 'STANDARD', reasonCode: 'DEFAULT' });
-
-      service.sendFeedback('todo-123', true, null, 'high').subscribe();
-
-      // Wartet exakt das delay(800) in der virtuellen Zeit ab
-      await vi.advanceTimersByTimeAsync(800);
-
-      expect(service.recommendedTodo()).toBeNull();
-      expect(service.aiResponseCode()).toBeNull();
-    });
-
-    it('sollte bei Ablehnung der Aufgabe die Empfehlungs-Signals NICHT leeren', async () => {
-      const initialTodo = new Todo(rawServerTodo);
-      service.recommendedTodo.set(initialTodo);
-
-      service.sendFeedback('todo-123', false, 'no_motivation', 'low').subscribe();
-
-      await vi.advanceTimersByTimeAsync(800);
-
-      expect(service.recommendedTodo()).toEqual(initialTodo);
-    });
-
-    describe('snoozyrecommendedTodo', () => {
-      it('sollte das Snoozing an das Repository melden', () => {
-        service.snoozyrecommendedTodo('todo-123', 15).subscribe();
-
-        expect(mockAiRepository.snoozyTodo).toHaveBeenCalledWith('todo-123', 15);
+        userEnergy: 'HIGH',
+        workingTimeLeft: 4
       });
 
-      it('sollte das recommendedTodo-Signal nach erfolgreichem Snoozing leeren', () => {
-        // Setup: Signal hat einen Wert
-        const initialTodo = new Todo(rawServerTodo);
-        service.recommendedTodo.set(initialTodo);
-
-        // Aktion: Snooze aufrufen und abonnieren
-        service.snoozyrecommendedTodo('todo-123', 15).subscribe();
-
-        // Assert: Signal muss danach null sein
-        expect(service.recommendedTodo()).toBeNull();
-      });
+      expect(service.activeRoundId()).toBe('round-abc');
+      expect(service.recommendations().length).toBe(1);
+      expect(service.recommendations()[0].todo.task).toBe('Räume deinen Schreibtisch auf');
+      expect(service.isLoading()).toBe(false);
     });
   });
 
+  describe('sendFeedback', () => {
+    it('sollte Snooze-Aktionen sofort ausführen und danach Runden-Feedback absenden', async () => {
+      service.activeRoundId.set('round-abc');
+
+      const feedback: RecommendationResult = {
+        selectedTodoId: 'todo-999',
+        rejections: [
+          { todoId: 'todo-123', reason: 'snooze' },
+          { todoId: 'todo-456', reason: 'too_heavy' }
+        ]
+      };
+
+      // Aufruf ist void
+      service.sendFeedback(feedback);
+
+      // Verify immediate Snooze
+      expect(mockAiRepository.snoozyTodo).toHaveBeenCalledWith('todo-123', 30);
+
+      // Virtuelle Zeit vorspulen (delay(800) im Service)
+      await vi.advanceTimersByTimeAsync(800);
+
+      // Verify Feedback Payload
+      expect(mockAiRepository.sendPlannerFeedback).toHaveBeenCalledWith({
+        userId: 'user-999',
+        roundId: 'round-abc',
+        acceptedTodoId: 'todo-999',
+        rejectedTodos: [
+          { todoId: 'todo-456', rejectReason: 'too_heavy' }
+        ]
+      });
+
+      // Verification of cleared state
+      expect(service.recommendations()).toEqual([]);
+      expect(service.activeRoundId()).toBeNull();
+      expect(service.isLoading()).toBe(false);
+    });
+  });
+
+  describe('snoozyrecommendedTodo', () => {
+    it('sollte das Snoozing an das Repository melden und lokal aus dem Signal entfernen', () => {
+      const todo1 = new Todo({ task: 'Task 1', id: 'todo-1' });
+      const todo2 = new Todo({ task: 'Task 2', id: 'todo-2' });
+
+      service.recommendations.set([
+        { todo: todo1, plannerDetails: [], modeCode: 'STANDARD' },
+        { todo: todo2, plannerDetails: [], modeCode: 'STANDARD' }
+      ]);
+
+      service.snoozyrecommendedTodo('todo-1', 15).subscribe();
+
+      expect(mockAiRepository.snoozyTodo).toHaveBeenCalledWith('todo-1', 15);
+      expect(service.recommendations().length).toBe(1);
+      expect(service.recommendations()[0].todo.id).toBe('todo-2');
+    });
+  });
 });

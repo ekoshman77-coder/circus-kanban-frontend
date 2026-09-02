@@ -8,7 +8,11 @@ import { Note } from '../../models/note';
 describe('ProjectDraftService', () => {
     let service: ProjectDraftService;
     // Wir erstellen einen sauberen Mock-Typen
-    let userServiceMock: { getCurrentUserId: ReturnType<typeof vi.fn> };
+    let userServiceMock: { 
+        getCurrentUserId: ReturnType<typeof vi.fn>;
+        currentUser: ReturnType<typeof vi.fn>; // 🟢 Signal-Mock ergänzt
+    };
+
     const mockUserId = 'user_123';
 
     let store: Record<string, string> = {};
@@ -29,8 +33,11 @@ describe('ProjectDraftService', () => {
         // 4. Angular TestBed zurücksetzen und neu konfigurieren
         TestBed.resetTestingModule();
 
+        // Wir erstellen einen sauberen Mock-Typen
         userServiceMock = {
-            getCurrentUserId: vi.fn().mockReturnValue(mockUserId)
+            getCurrentUserId: vi.fn().mockReturnValue(mockUserId),
+            // 🟢 Neu: Liefert ein Objekt mit passender Department-ID zurück
+            currentUser: vi.fn().mockReturnValue({ department: { id: 'dept-123' } })
         };
 
         TestBed.configureTestingModule({
@@ -66,7 +73,9 @@ describe('ProjectDraftService', () => {
             tag: 'IT',
             userId: "123",
             colorType: "note-yellow",
-            content: 'Das ist eine Test-Beschreibung'
+            content: 'Das ist eine Test-Beschreibung',
+            scope: "department",
+            departmentId: "dept 1"
         };
 
         service.initDraftFromIdea(mockIdea);
@@ -118,11 +127,11 @@ describe('ProjectDraftService', () => {
 
         // Vollständig typisiertes Modell passend zu eurem Constructor
         const testProject = new Project({
-            title: 'Zu löschen',
-            status: 'Calculation',
-            ideaId: 'idea_123',
-            userId: mockUserId,
-            area: 'Testing'
+            title: 'Test Projekt',
+            ideaId: 'idea-123',
+            userId: 'user-123',
+            area: 'Tech',
+            departmentId: 'dept-123' // 👈 Das geforderte Pflichtfeld hat hier gefehlt!
         });
 
         service.currentDraft.set(testProject);
@@ -141,7 +150,8 @@ describe('ProjectDraftService', () => {
             status: 'Calculation', // Erfüllt die Bedingung im Effekt!
             ideaId: 'idea_456',
             userId: mockUserId,
-            area: 'Entwicklung'
+            area: 'Entwicklung',
+            departmentId: "dept"
         });
 
         // 2. Wir ändern das Signal (das triggert den Effekt im Hintergrund)

@@ -244,7 +244,8 @@ export class ProjectDataManagerService extends BaseDataManager {
       status: bp.status,
       departmentId: bp.departmentId,
       milestones: frontendMilestones,
-      teamMembers: bp.teamMembers || []
+      teamMembers: bp.teamMembers || [],
+      scope: bp.scope
     });
   }
 

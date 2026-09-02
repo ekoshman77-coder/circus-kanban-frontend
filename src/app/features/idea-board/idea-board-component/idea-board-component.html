@@ -1,68 +1,103 @@
 <div class="board-container">
     <div class="top-bar">
 
-        <div class="trash-zone" id="trashList" 
-            cdkDropList  
-            [cdkDropListConnectedTo]="['wallList']"
-            [cdkDropListEnterPredicate]="canIdeaEnterTrash"
-            (cdkDropListDropped)="onDropped($event)">
-            <div class="trash-content">
-                <span class="trash-icon">🗑️</span>
-                <p>Zettel löschen</p>
+        <!-- LINKE ZONE: Mülleimer ODER Revert-Zone -->
+        @if (mode() === 'USER_BOARD') {
+            <div class="trash-zone" id="trashList" 
+                cdkDropList  
+                [cdkDropListConnectedTo]="['wallList']"
+                [cdkDropListEnterPredicate]="canIdeaEnterTrash"
+                (cdkDropListDropped)="onDropped($event)">
+                <div class="trash-content">
+                    <span class="trash-icon">🗑️</span>
+                    <p>Zettel löschen</p>
+                </div>
             </div>
-        </div>
+        } @else if (mode() === 'ADMIN_COMPANY') {
+            <div class="revert-zone" id="trashList" 
+                cdkDropList  
+                [cdkDropListConnectedTo]="['wallList']"
+                (cdkDropListDropped)="onDropped($event)">
+                <div class="trash-content">
+                    <span class="trash-icon">↩️</span>
+                    <p>An Abteilung zurücksenden</p>
+                </div>
+            </div>
+        }
 
-        <div class="top-flex-row">
-            <details open class="idea-form-section">
-                <summary class="form-toggle-header">
-                    <span>✍️ Neue Idee anpinnen? (Klicke zum Einklappen)</span>
-                </summary>
+        <!-- EINGABE-FORMULAR: Nur im User-Board -->
+        @if (mode() === 'USER_BOARD') {
+            <div class="top-flex-row">
+                <details open class="idea-form-section">
+                    <summary class="form-toggle-header">
+                        <span>✍️ Neue Idee anpinnen? (Klicke zum Einklappen)</span>
+                    </summary>
+                    <app-note-input (convertToTodoRequested)="openTodoPlanningFromIdea($event)"></app-note-input>
+                </details>
+            </div>
+        }
 
-                <!-- 👂 Hier lauschen wir auf das Event und rufen eine Methode im Board auf! -->
-                <app-note-input (convertToTodoRequested)="openTodoPlanningFromIdea($event)"></app-note-input>
-            </details>
-        </div>
-
+        <!-- RECHTER SCHLITZ: Kalkulator vs. Promote vs. Projekt-Checking -->
         <div class="calculator-slot" id="calculatorList" 
             cdkDropList [cdkDropListConnectedTo]="['wallList']"
-            [cdkDropListEnterPredicate]="canIdeaEnterCalculator" 
             (cdkDropListDropped)="onDropped($event)">
             <div class="slot-content">
                 <div class="slot-row">
-                    <span class="slot-icon">🧮</span>
+                    <span class="slot-icon">
+                        @switch (mode()) {
+                            @case ('USER_BOARD') { 🧮 }
+                            @case ('ADMIN_DEPARTMENTS') { 🚀 }
+                            @case ('ADMIN_COMPANY') { 🎯 }
+                        }
+                    </span>
                     <div class="slot-opening-vertical"></div>
                 </div>
-                <p class="slot-text">In Kalkulator schieben</p>
+                <p class="slot-text">
+                    @switch (mode()) {
+                        @case ('USER_BOARD') { In Kalkulator schieben }
+                        @case ('ADMIN_DEPARTMENTS') { Auf Company-Ebene heben }
+                        @case ('ADMIN_COMPANY') { In Projekt umwandeln }
+                    }
+                </p>
             </div>
         </div>
     </div>
 
-    <app-board-filter [availableTags]="availableTags()" [availableColors]="availableColors()"
+    <!-- RESTLICHER FILTER & GRID UNVERÄNDERT SAUBER -->
+    <app-board-filter 
+        [availableTags]="availableTags()" 
+        [availableColors]="availableColors()"
         (filterChanged)="onFilterChanged($event)">
     </app-board-filter>
 
     <app-notes-statistics [allNotes]="viewModels()" [filteredNotes]="sortedViewModels()">
     </app-notes-statistics>
 
-    <div class="ideas-grid" id="wallList" cdkDropList cdkDropListOrientation="mixed"
-        [cdkDropListConnectedTo]="['trashList', 'calculatorList']" (cdkDropListDropped)="onDropped($event)">
+    <div class="ideas-grid" 
+         id="wallList" 
+         cdkDropList 
+         cdkDropListOrientation="mixed"
+         [cdkDropListConnectedTo]="connectedDropLists()" 
+         (cdkDropListDropped)="onDropped($event)">
 
         @for (singleVM of sortedViewModels(); track singleVM.note.id) {
-
-        <app-note-component [vm]="singleVM" cdkDrag [cdkDragData]="singleVM" (updated)="onNoteUpdated($any($event))">
-        </app-note-component>
-
+            <app-note-component 
+                [vm]="singleVM" 
+                cdkDrag 
+                [cdkDragData]="singleVM" 
+                (updated)="onNoteUpdated($any($event))">
+            </app-note-component>
         } @empty {
+            <p class="empty-state-text">Keine Ideen in diesem Bereich vorhanden.</p>
         }
     </div>
+
 </div>
 
-@if (isTodoPopupShow()) {
-  <app-todo-planning-modal-component
-      [initialTaskName]="ideaToPlanTitle()"
-      [initialDescription]="ideaToPlanDescription()"
-      [initialCategory]="ideaToPlanCategory()"
-      (closeModal)="closePlanningModal()"
-      (todoPlanned)="closePlanningModal()">
-  </app-todo-planning-modal-component>
+@if (selectedNoteForProject(); as noteToConvert) {
+  <app-assign-project-manager-modal 
+    [note]="noteToConvert"
+    (cancel)="selectedNoteForProject.set(null)"
+    (confirm)="handleProjectCreation($event)">
+  </app-assign-project-manager-modal>
 }
