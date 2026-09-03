@@ -2,13 +2,13 @@ import { computed, inject, Injectable, signal, Signal } from '@angular/core';
 import { Observable } from 'rxjs';
 import { TeamDataManager } from './team-data-manager';
 import { ProjectRole, UserModel } from '../../models/user-model';
-import { ProjectAction } from '../../enums/project-action-enum';
 import { UserService } from '../user/user-service';
 import { ProjectMember } from '../../models/project-member';
 import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 import { Department } from '../../models/department';
 import { UserSummary } from '../../models/user-summary';
-import { PermissionService } from '../permissions/permission-service';
+import { PermissionService, UIActionIntent } from '../permissions/permission-service';
+import { ProjectService } from '../project/project-service';
 
 @Injectable({
     providedIn: 'root',
@@ -17,7 +17,8 @@ export class TeamService extends BaseDataManager {
 
     private dataManager = inject(TeamDataManager);
     private userService = inject(UserService);
-    private permissionService = inject(PermissionService)
+    private permissionService = inject(PermissionService);
+    private projectService = inject(ProjectService)
 
     // 🎯 Reicht das globale Signal aus dem DataManager direkt weiter (z.B. fürs Dropdown)
     public globalMembersSignal: Signal<ProjectMember[]> = this.dataManager.globalMembersSignal;
@@ -62,35 +63,24 @@ export class TeamService extends BaseDataManager {
     }
 
     /** 🛡️ Die universelle Rechte-Prüfung basierend auf dem neuen Signal */
-    public hasPermission(projectId: string | null, action: ProjectAction): boolean {
+    public hasPermission(projectId: string | null, action: UIActionIntent): boolean {
         const currentUserId = this.userService.getCurrentUserId();
-        if (!currentUserId || !projectId) {
-            console.warn('🔍 [hasPermission] Abbruch: keine userId oder projectId', { currentUserId, projectId });
-            return false;
-        }
+        if (!currentUserId || !projectId) return false;
+
+        const currentProject = this.projectService.projectsList().find(p => p.id === projectId);
+        if (!currentProject) return false;
 
         const members = this.currentProjectMembersSignal();
         const myBinding = members.find(m => m.user.id === currentUserId);
 
-        if (!myBinding) {
-            console.warn('🔍 [hasPermission] User ist NICHT im currentProjectMembersSignal gefunden!', {
-                currentUserId,
-                availableMembers: members
-            });
-            return false;
-        }
-
-        const currentRole = myBinding.projectRole as ProjectRole;
-        const allowed = this.permissionService.hasPermission(currentRole, action, 'PROJECT', 'PROJECT');
-
-        console.log('🔍 [hasPermission] Ergebnis-Check:', {
-            userRole: currentRole,
-            action: action,
-            permissionFound: allowed,
-            allPermissionsCount: this.permissionService.allPermissions().length
+        // Die Bestimmung, ob er Owner ist, passiert kurz vor dem Aufruf:
+        const isOwner = currentProject.userId === currentUserId;
+        
+        return this.permissionService.canUserPerformAction(action, {
+            isOwner: isOwner,
+            contextRole: myBinding?.projectRole,
+            systemRole: this.userService.currentUser()?.departmentRole?? ""
         });
-
-        return allowed;
     }
 
     /** ➕ Reicht das Hinzufügen an den DataManager weiter */

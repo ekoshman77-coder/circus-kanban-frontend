@@ -50,6 +50,7 @@ export class ProjectsComponent implements OnInit {
    */
   public readonly projects = computed(() => {
     const list = this.projectService.projectsList();
+    console.log("projectlist ", list)
     const query = this.filterService.searchTerm().toLowerCase().trim();
     
     if (!query) {

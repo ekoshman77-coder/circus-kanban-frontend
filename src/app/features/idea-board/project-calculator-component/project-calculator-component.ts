@@ -60,12 +60,25 @@ export class ProjectCalculatorComponent implements OnInit {
   /** Die zugrundeliegende Idee (Notiz), aus welcher der Entwurf gestartet wurde */
   public currentIdea = signal<Note | null>(null);
 
+  // Ein einziges computed Signal als Schnittstelle für das UI:
+  readonly activeIdea = computed(() => {
+    const project = this.activeProject(); // bzw. das geladene Projekt aus deinem Signal
+
+    // 1. Wenn wir ein bestehendes Projekt laden und es eine ideaId hat -> Notiz aus der Liste holen
+    if (project?.ideaId) {
+      return this.noteService.notesList().find(n => n.id === project.ideaId) ?? null;
+    }
+
+    // 2. Ansonsten den Wert aus currentIdea nehmen (z.B. bei neuem Entwurf von der Pinnwand)
+    return this.currentIdea();
+  });
+
   /** Flag, ob wir ein brandneues Projekt kalkulieren (true) oder ein existierendes bearbeiten (false) */
   protected isBrandNewDraft = signal<boolean>(true);
   /** projekt existiert in DB (egal ganz neu o) */
   public isExistingDbProject = computed(() => {
-   const proj = this.activeProject();
-   if (!proj || !proj.id) return false;
+    const proj = this.activeProject();
+    if (!proj || !proj.id) return false;
 
     // Existiert die ID des aktiven Projekts in der geladenen DB-Liste?
     return this.projectService.projectsList().some(p => p.id === proj.id);

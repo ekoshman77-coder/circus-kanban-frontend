@@ -3,7 +3,6 @@ import { TodoDataManagerService } from './todo-data-manager-service';
 import { ProjectService } from '../project/project-service';
 import { TeamService } from '../team/team-service';
 import { Todo } from '../../models/todo';
-import { ProjectAction } from '../../enums/project-action-enum'; // Passe das an dein echtes Enum/Typ an
 
 @Injectable({
   providedIn: 'root'

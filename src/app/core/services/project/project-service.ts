@@ -164,7 +164,7 @@ export class ProjectService extends BaseDataManager {
    */
   public saveCalculatedProject(project: Project): Observable<Project> {
     project.userId = this.userService.getCurrentUserId() ?? "";
-    this.noteService.updateNoteStatus(project.ideaId, true);
+//    this.noteService.updateNoteStatus(project.ideaId, true);
     this.ignoreSuggestions(project.title, project.area, this.degradedWereShownSignal())
     
     return this.dataManager.createProject(project, this.allProjectsPool()).pipe(

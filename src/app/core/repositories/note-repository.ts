@@ -29,10 +29,33 @@ export class NoteRepository {
   }
 
   // ✏️ PUT /api/notes/{id}
-  updateNote(id: string, note: Note): Observable<Note> {
+  updateNote(note: Note): Observable<Note> {
+    const id = note.id!
     return this.http.put<INoteJson>(`${noteApiUrl}/${id}`, note).pipe(
       map(json => this.mapToNoteClass(json))
     );
+  }
+
+  promoteNote(id: string): Observable<Note> {
+    return this.http.patch<INoteJson>(`${noteApiUrl}/${id}/promote`, {}).pipe(
+      map(json => this.mapToNoteClass(json))
+    );
+  }
+
+  revertNote(id: string): Observable<Note> {
+    return this.http.patch<INoteJson>(`${noteApiUrl}/${id}/revert`, {}).pipe(
+      map(json => this.mapToNoteClass(json))
+    );
+  }
+
+  changeStatus(id: string, newStatus: boolean): Observable<Note> {
+    const payload = {
+      id: id,
+      inCalculation: newStatus
+    }
+    return this.http.patch<INoteJson>(`${noteApiUrl}/status`, payload).pipe(
+      map(json => this.mapToNoteClass(json))
+    )
   }
 
   // 🗑️ DELETE /api/notes/{id}

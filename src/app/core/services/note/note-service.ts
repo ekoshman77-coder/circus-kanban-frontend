@@ -5,6 +5,7 @@ import { UserService } from '../user/user-service';
 import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 import { MasterDataService } from '../admin/master-data-service';
 
+export type NoteUpdateOption = 'update' | 'promote' | 'revert' | 'status_change' 
 /**
  * Zentraler State-Service zur Verwaltung und Bereitstellung aller Benutzer-Notizen.
  * * **Architektur-Highlight (Doppelt-Optimistischer State-Sicherheitsgurt):**
@@ -126,14 +127,14 @@ export class NoteService extends BaseDataManager {
    * Aktualisiert eine Notiz optimistisch im Signal.
    * Führt bei Serverfehlern einen automatischen Rollback durch
    */
-  public updateNote(updatedNote: Note): void {
+  public updateNote(updatedNote: Note, updateAction?: NoteUpdateOption): void {
     console.log("NoteService", updatedNote)
     const alteListe = this.notesSignal();
 
     // Optimistisches UI-Update: Zustand wird sofort im Signal gerendert
     this.notesSignal.update(notes => notes.map(n => n.id === updatedNote.id ? updatedNote : n));
 
-    this.dataManager.updateNote(updatedNote, alteListe).subscribe({
+    this.dataManager.updateNote(updatedNote, alteListe, updateAction).subscribe({
       next: (savedFromServer) => {
         console.log("NoteDataManager savedFromServer", savedFromServer)
         // Zustand mit endgültigen Serverwerten überschreiben (z.B. neu generierte IDs/Metadaten)
@@ -175,23 +176,15 @@ export class NoteService extends BaseDataManager {
   public updateNoteStatus(noteId: string, inCalculation: boolean): void {
     const note = this.notesSignal().find(n => n.id === noteId);
     if (!note) {
-      console.warn(`Zettel mit ID ${noteId} wurde nicht gefunden.`);
       return;
     }
 
     const updatedNote = new Note({
-      title: note.title,
-      content: note.content,
-      colorType: note.colorType,
-      userId: note.userId,
-      tag: note.tag,
-      id: note.id,
-      isInCalculation: inCalculation,
-      temperature: note.temperature,
-      weatherCode: note.weatherCode
-    });
+      ...note,
+      isInCalculation: inCalculation
+    })
 
-    this.updateNote(updatedNote);
+    this.updateNote(updatedNote, 'status_change');
   }
 
   public override checkUnsavedData(): string | null {
@@ -218,7 +211,7 @@ export class NoteService extends BaseDataManager {
       scope: 'COMPANY'
     });
 
-    this.updateNote(updatedNote);
+    this.updateNote(updatedNote, 'promote');
   }
 
   /**
@@ -233,6 +226,6 @@ export class NoteService extends BaseDataManager {
       scope: 'DEPARTMENT'
     });
 
-    this.updateNote(updatedNote);
+    this.updateNote(updatedNote, 'revert');
   }
 }

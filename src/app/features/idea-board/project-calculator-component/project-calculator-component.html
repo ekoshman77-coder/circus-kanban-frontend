@@ -259,9 +259,9 @@
 </app-universal-popup-component>
 }
 
-@if (currentIdea()) {
+@if (activeIdea()) {
 <div class="idea-sliding-sidebar" [class.open]="isSidebarOpen()"
-    [style.background]="currentIdea()?.colorType ? 'var(--' + currentIdea()?.colorType + ')' : 'rgba(255, 255, 255, 0.85)'">
+    [style.background]="activeIdea()?.colorType ? 'var(--' + activeIdea()?.colorType + ')' : 'rgba(255, 255, 255, 0.85)'">
 
     <button class="sidebar-pull-tab" (click)="toggleSidebar()" title="Original-Idee anzeigen">
         <span class="tab-icon idea-bulb">💡</span>
@@ -275,11 +275,11 @@
 
     <div class="sidebar-content">
         <div class="idea-premium-card">
-            <h4 class="idea-card-title">{{ currentIdea()?.title }}</h4>
-            <span class="idea-card-tag">{{ currentIdea()?.tag || 'Allgemein' }}</span>
+            <h4 class="idea-card-title">{{ activeIdea()?.title }}</h4>
+            <span class="idea-card-tag">{{ activeIdea()?.tag || 'Allgemein' }}</span>
             <hr class="sidebar-divider" />
             <p class="idea-card-description">
-                {{ currentIdea()?.content || 'Keine Beschreibung oder Notizen hinterlegt.' }}
+                {{ activeIdea()?.content || 'Keine Beschreibung oder Notizen hinterlegt.' }}
             </p>
         </div>
     </div>

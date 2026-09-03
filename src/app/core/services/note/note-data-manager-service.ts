@@ -5,6 +5,7 @@ import { Note } from '../../models/note';
 import { ConnectionService } from '../connection/connection-service';
 import { NoteRepository } from '../../repositories/note-repository';
 import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
+import { NoteUpdateOption } from './note-service';
 
 /**
  * Service für das offline-sichere und optimistische Datenmanagement von Notizen/Zetteln.
@@ -94,15 +95,23 @@ export class NoteDataManagerService extends BaseDataManager {
    * @param updatedNote Die bearbeitete Notiz.
    * @param actualList Die aktuell im UI gerenderte Liste von Notizen.
    */
-  public updateNote(updatedNote: Note, actualList: Note[]): Observable<Note> {
+  public updateNote(updatedNote: Note, actualList: Note[], updateAction?: NoteUpdateOption): Observable<Note> {
     const aktualisierteListe = actualList.map(n => n.id === updatedNote.id ? updatedNote : n);
     this.saveToLocalStorage(aktualisierteListe);
 
     if (this.connectionService.status() === 'OFFLINE' || updatedNote.id?.startsWith('tmp_')) {
       return of(updatedNote);
     }
+    const id = updatedNote.id!;
+    let updateCall$ = this.noteRepository.updateNote(updatedNote);
 
-    return this.noteRepository.updateNote(updatedNote.id!, updatedNote).pipe(
+    switch (updateAction) {
+      case 'promote': updateCall$ = this.noteRepository.promoteNote(id); break;
+      case 'revert': updateCall$ = this.noteRepository.revertNote(id); break;
+      case 'status_change': updateCall$ = this.noteRepository.changeStatus(id, updatedNote.isInCalculation!)
+    }
+    
+    return updateCall$.pipe(
       map(savedNote => {
         // Zustand nachträglich mit finaler Serverantwort synchronisieren
         const synchedList = actualList.map(n => n.id === updatedNote.id ? savedNote : n);
