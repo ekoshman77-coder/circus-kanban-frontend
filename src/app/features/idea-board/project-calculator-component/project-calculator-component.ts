@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal, effect, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ProjectService } from '../../../core/services/project/project-service';
 import { NoteService } from '../../../core/services/note/note-service';
 import { Project } from '../../../core/models/project';
@@ -30,7 +30,7 @@ import { PermissionService } from '../../../core/services/permissions/permission
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
+    FormsModule, ReactiveFormsModule,
     DragDropModule,
     UniversalPopupComponent,
     MilestoneSuggestionsComponent,
@@ -51,7 +51,8 @@ export class ProjectCalculatorComponent implements OnInit {
   public projectDraftService = inject(ProjectDraftService);
   private notificationService = inject(NotificationService);
   private permissionService = inject(PermissionService);
-  private teamService = inject(TeamService)
+  private teamService = inject(TeamService);
+  private formBuilder = inject(FormBuilder);
 
   // -------------------------------------------------------------------------
   // 🚦 REAKTIVE ZUSTÄNDE (SIGNALS)
@@ -84,6 +85,8 @@ export class ProjectCalculatorComponent implements OnInit {
     return this.projectService.projectsList().some(p => p.id === proj.id);
   });
 
+  protected isHeaderEditingOpen = signal<boolean>(false);
+
   /** Zustand der KI-Vorschläge-Sidebar (offen/geschlossen) */
   protected isSidebarOpen = signal<boolean>(false);
 
@@ -113,6 +116,13 @@ export class ProjectCalculatorComponent implements OnInit {
 
   /** Hält den finalen Projekttitel für die Anzeige im Erfolgs-Popup bereit */
   protected finalProjectTitle = signal<string>('');
+
+  /** form für Eingabe Metadaten */
+  protected projectForm = this.formBuilder.group({
+    title: ["", [Validators.required, Validators.minLength(5)]],
+    area: ["", [Validators.required, Validators.minLength(3)]],
+    content: ["", [Validators.required, Validators.minLength(20)]]
+  })
 
   /** Die ID des Meilensteins, der sich aktuell im Inline-Edit-Modus befindet (null falls keiner) */
   protected editingMilestoneId: string | null = null;
@@ -184,6 +194,16 @@ export class ProjectCalculatorComponent implements OnInit {
 
       this.handleNavigationStateChange(navState, userId);
     });
+
+    effect(() => {
+      const proj = this.activeProject()
+      if (!proj) return;
+      this.projectForm.patchValue({
+        title: proj.title ?? "",
+        area: proj.area ?? "",
+        content: proj.content ?? ""
+      }, { emitEvent: false })
+    })
   }
 
   ngOnInit(): void {
@@ -634,5 +654,38 @@ export class ProjectCalculatorComponent implements OnInit {
    */
   public onDrop(event: any): void {
     this.onMilestoneDropped(event);
+  }
+
+  public toggleHeaderEdit() {
+    this.isHeaderEditingOpen.update(value => !value)
+  }
+
+  protected onProjectFormSubmit() {
+    if (this.projectForm.invalid) {
+      this.projectForm.markAllAsTouched()
+      return
+    }
+
+    const targetSignal = this.getActiveSignal();
+    const current = targetSignal();
+    if (!current) return;
+
+    const values = this.projectForm.value;
+    targetSignal.set(new Project({
+      ...current,
+      title: values.title ?? current.title,
+      area: values.area ?? current.area,
+      content: values.content ?? current.content
+    }));
+  }
+
+  protected onProjectFormReset() {
+      const proj = this.activeProject()
+      if (!proj) return;
+      this.projectForm.patchValue({
+        title: proj.title ?? "",
+        area: proj.area ?? "",
+        content: proj.content ?? ""
+      })
   }
 }

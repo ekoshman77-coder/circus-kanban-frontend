@@ -1,10 +1,9 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 import { projectApiUrl } from './links';
-import { N } from '@angular/cdk/keycodes';
+import { IProjectJSON } from './dto/project-json';
 import { ProjectDashboardStatsDTO } from './dto/project-dashboard-stats-dto';
-import { Project } from '../models/project';
 
 @Injectable({
   providedIn: 'root'
@@ -13,28 +12,27 @@ export class ProjectRepository {
   private http = inject(HttpClient);
 
   // 🔍 Alle Projekte eines Users holen: GET /api/projects?userId=...
-  public getProjectsByUserId(userId: string): Observable<any[]> {
-    console.log("ProjectRepository: GET projects")
-    let params = new HttpParams()
-    params = new HttpParams().set('userId', userId);
+  public getProjectsByUserId(userId: string): Observable<IProjectJSON[]> {
+    console.log("ProjectRepository: GET projects");
+    const params = new HttpParams().set('userId', userId);
 
-    return this.http.get<any[]>(projectApiUrl, { params });
+    return this.http.get<IProjectJSON[]>(projectApiUrl, { params });
   }
 
-  // 🔍 2) Einzelnes Projekt per ID holen: GET /api/projects/{id}
-  public getProjectById(id: string): Observable<any> {
-    return this.http.get<any>(`${projectApiUrl}/${id}`);
+  // 🔍 Einzelnes Projekt per ID holen: GET /api/projects/{id}
+  public getProjectById(id: string): Observable<IProjectJSON> {
+    return this.http.get<IProjectJSON>(`${projectApiUrl}/${id}`);
   }
 
   // ➕ Projekt erstellen: POST /api/projects
-  public createProject(projectDto: Project): Observable<any> {
-    console.log("ProjectRepository createProject", projectDto)
-    return this.http.post<any>(projectApiUrl, projectDto);
+  public createProject(projectJson: IProjectJSON): Observable<IProjectJSON> {
+    console.log("ProjectRepository createProject", projectJson);
+    return this.http.post<IProjectJSON>(projectApiUrl, projectJson);
   }
 
   // ✏️ Projekt updaten (inkl. Meilensteine): PUT /api/projects/{id}
-  public updateProject(id: string, projectDto: any): Observable<any> {
-    return this.http.put<any>(`${projectApiUrl}/${id}`, projectDto);
+  public updateProject(projectJson: IProjectJSON): Observable<IProjectJSON> {
+    return this.http.put<IProjectJSON>(`${projectApiUrl}/${projectJson.id}`, projectJson);
   }
 
   // 🗑️ Projekt löschen: DELETE /api/projects/{id}
@@ -43,14 +41,12 @@ export class ProjectRepository {
   }
 
   // 🔄 BULK SYNC: Schickt alle lokalen Projekte zum Abgleich ans Backend
-  public syncLocalProjects(userId: string, localProjects: any[]): Observable<any[]> {
-    return this.http.post<any[]>(`${projectApiUrl}/sync`, { userId, projects: localProjects });
+  public syncLocalProjects(userId: string, localProjects: IProjectJSON[]): Observable<IProjectJSON[]> {
+    return this.http.post<IProjectJSON[]>(`${projectApiUrl}/sync`, { userId, projects: localProjects });
   }
 
-  // 🌟 NEU FÜR DASHBOARD: Holt die aggregierten Zahlen vom Server
-  // Temporär mit Mockdaten, bis der Server-Endpunkt bereit ist!
+  // 🌟 DASHBOARD STATS
   public getDashboardStatistics(userId: string): Observable<ProjectDashboardStatsDTO> {
-    // 🔌 Der echte Stecker zum Kotlin-Server!
     return this.http.get<ProjectDashboardStatsDTO>(`${projectApiUrl}/statistics/${userId}`);
   }
 }

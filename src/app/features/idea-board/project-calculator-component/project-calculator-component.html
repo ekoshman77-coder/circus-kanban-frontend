@@ -22,6 +22,7 @@
 
         <div class="active-project-subbar">
             <span>Aktiver Entwurf für: <strong>{{ activeProject()?.title }}</strong></span>
+            <button class="metadata-edit" (click)="toggleHeaderEdit()">✏️</button>
 
             <button class="magic-template-btn" [class.general-btn]="suggestedArea() === 'Allgemein'"
                 [disabled]="isMagicLoading()" (click)="applySmartTemplates()">
@@ -36,6 +37,57 @@
                 }
             </button>
         </div>
+
+        @if (isHeaderEditingOpen()) {
+        <!-- 1. Binde hier das [formGroup]="projectForm" an das Formular -->
+        <form [formGroup]="projectForm" (ngSubmit)="onProjectFormSubmit()"
+            class="project-details-edit-card animate-fade-in"
+            >
+
+            <div class="project-form-container">
+                <!-- INPUT 1: Projekttitel -->
+                <div class="title-edit">
+                    <label class="title-label">PROJEKTTITEL</label>
+                    <!-- Verwende formControlName="title" und rufe bei (input) oder (blur) onMetadataChanged() auf -->
+                    <input type="text" class="calc-input" formControlName="title" />
+
+                    <!-- Validierungsfehler anzeigen -->
+                    @if (projectForm.get('title')?.touched && projectForm.get('title')?.invalid) {
+                    <small class="validate-error">Titel benötigt mind. 5 Zeichen.</small>
+                    }
+                </div>
+
+                <!-- INPUT 2: Fachbereich / Area -->
+                <div class="area-edit">
+                    <label class="area-label">FACHBEREICH / TAG</label>
+                    <input type="text" class="calc-input" formControlName="area" />
+
+                    @if (projectForm.get('area')?.touched && projectForm.get('area')?.invalid) {
+                    <small class="validate-error">Mindestens 3 Zeichen.</small>
+                    }
+                </div>
+
+            </div>
+
+            <!-- TEXTAREA: Beschreibung / Content -->
+            <div class="content-edit">
+                <label class="content-label">BESCHREIBUNG / INHALT</label>
+                <textarea class="calc-input" formControlName="content">
+                </textarea>
+       
+                @if (projectForm.get('content')?.touched && projectForm.get('content')?.invalid) {
+                <small class="validate-error">Beschreibung benötigt mind. 20 Zeichen.</small>
+                }
+            </div>
+
+            <div class="project-edit-buttons">
+                <button type="button" class="project-data-reset" (click)="onProjectFormReset()">reset</button>
+                <button type="submit" class="project-data-submit">speichern</button>
+            </div>
+
+        
+        </form>
+        }
 
         <app-milestone-suggestions-component [projectTitle]="activeProject()?.title ?? ''"
             [existingMilestones]="activeProject()?.milestones ?? []" [area]="suggestedArea()"

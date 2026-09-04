@@ -132,5 +132,5 @@ export class UserModel {
       emoji: this.coffeeAccount.emoji,
       coffeeAccount: this.coffeeAccount
     };
-  }
+  } 
 }

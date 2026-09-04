@@ -1,4 +1,4 @@
-import { TodoTeamStatus } from "../repositories/dto/milestone-json";
+import { IMilestoneJSON, TodoTeamStatus } from "../repositories/dto/milestone-json";
 import { generateLocalId } from "../shared/constants/id-const";
 import { UserModel } from "./user-model";
 
@@ -10,7 +10,7 @@ export class Milestone {
   public status: TodoTeamStatus;
   public assignedUserId?: string | null;
   public assignedUser?: UserModel | null;
-  public projectId?: string | null; 
+  public projectId?: string | null;
   public orderIndex: number; // 🔢 Die Sortierung ist jetzt fest eingebaut!
 
   private localIdPrefix: string = 'local-';
@@ -30,7 +30,7 @@ export class Milestone {
   }) {
     this.title = init.title;
     this.duration = init.duration;
-    
+
     // 🛡️ Automatische Fallbacks für alles Optionale:
     this.id = init.id ?? generateLocalId();
     this.usedDuration = init.usedDuration ?? 0;
@@ -63,5 +63,19 @@ export class Milestone {
       projectId: this.projectId,
       orderIndex: this.orderIndex // Schicken wir direkt mit zum Server!
     };
+  }
+
+  public static fromJSON(json: IMilestoneJSON): Milestone {
+    return new Milestone({
+      id: json.id,
+      title: json.title,
+      duration: json.duration,
+      usedDuration: json.usedDuration,
+      status: json.status,
+      assignedUserId: json.assignedUserId,
+      assignedUser: json.assignedUser,
+      projectId: json.projectId,
+      orderIndex: json.orderIndex
+    });
   }
 }
