@@ -6,12 +6,14 @@ export class Department {
   public id: string;
   public name: string;
   public scope: string;
+  public specialization?: string;
 
-  constructor(init: {name: string, scope: string, id?: string}) {
+  constructor(init: {name: string, scope: string, id?: string, specialization?: string}) {
     // Generiert eine temporäre UUID oder nutzt die Server-ID
     this.id = init.id ?? generateLocalId();
     this.name = init.name || '';
     this.scope = init.scope || 'DEPARTMENT';
+    this.specialization = init.specialization
   }
 
   // 👑 Domänen-Logik direkt am Objekt!

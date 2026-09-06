@@ -46,14 +46,22 @@
     <main class="kanban-board">
         @for (dept of departments(); track dept.id) {
         <div class="kanban-column">
-            <div class="column-header" >
+            <div class="column-header">
                 <div class="dept-name">
                     <div class="avatar" [style.background-color]="dept.getColorHash()">
                         {{dept.getInitials()}}
                     </div>
                     <h3>{{ dept.name }}</h3>
                 </div>
-                <span class="user-count-badge">{{ getUsersForDept(dept.id).length }}</span>
+    
+                <div class="header-badges">
+                    @if (dept.specialization) {
+                    <span class="specialization-badge" [ngClass]="dept.specialization.toLowerCase()">
+                        🛡️ {{ dept.specialization }}
+                    </span>
+                    }
+                    <span class="user-count-badge">{{ getUsersForDept(dept.id).length }}</span>
+                </div>
             </div>
 
             <div [id]="'dept-list-' + dept.id" cdkDropList [cdkDropListData]="getUsersForDept(dept.id)"

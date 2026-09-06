@@ -20,6 +20,14 @@
         }
       </select>
 
+      <select formControlName="specialization" class="form-select">
+        <option [value]="null">Keine Spezialisierung</option>
+        @for (specialization of specializations(); track specialization) {
+          <option [value]="specialization">{{ specialization }}</option>
+        }
+
+      </select>
+
       <button type="submit" [disabled]="createForm.invalid" class="btn-primary">
         ➕ Erstellen
       </button>
@@ -56,6 +64,12 @@
                   <option [value]="scope">{{ scope }}</option>
                 }
               </select>
+              <select formControlName="specialization" class="form-select">
+                @for (specialization of specializations(); track specialization) {
+                  <option [value]="specialization">{{ specialization }}</option>
+                }
+              </select>
+
             </div>
 
             <div class="action-buttons">
@@ -73,6 +87,10 @@
             {{department.name}} 
             <small class="badge scope-badge">{{department.scope}}</small>
             @if(department.name === ADMIN_DEPT) { <small class="badge">(System)</small> }
+
+            @if (department.specialization) {
+               <small class="badge spec-badge">⭐ {{ department.specialization }}</small>
+            }
           </span>
           
           <div class="action-buttons">

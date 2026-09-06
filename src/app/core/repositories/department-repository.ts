@@ -7,6 +7,7 @@ export interface IDepartment {
   id?: string;
   name: string;
   scope: string;
+  specialization?: string;
 }
 
 @Injectable({
@@ -21,20 +22,22 @@ export class DepartmentRepository {
   }
 
   // ✨ Neue Abteilung erstellen
-  public create$(name: string, scope: string): Observable<IDepartment> {
+  public create$(name: string, scope: string, specialisation?: string): Observable<IDepartment> {
     const payload: IDepartment = {
       name: name,
-      scope: scope
+      scope: scope,
+      specialization: specialisation
     }
     return this.http.post<IDepartment>(departmentApiUrl,  payload);
   }
 
   // 📝 Abteilung umbenennen
-  public update$(id: string, name: string, scope: string): Observable<IDepartment> {
+  public update$(id: string, name: string, scope: string, specialisation?: string): Observable<IDepartment> {
     const payload: IDepartment = {
       id: id,
       name: name,
-      scope: scope
+      scope: scope,
+      specialization: specialisation
     }
     return this.http.put<IDepartment>(`${departmentApiUrl}/${id}`, payload );
   }

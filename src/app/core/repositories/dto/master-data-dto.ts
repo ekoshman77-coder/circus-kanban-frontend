@@ -6,4 +6,5 @@ export interface MasterDataDto {
   otherRoles: string[]
   resources: string[];
   actions: string[];
+  specializations: string[];
 }

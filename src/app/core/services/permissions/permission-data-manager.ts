@@ -147,7 +147,7 @@ export class PermissionDataManager extends BaseDataManager {
             }
         });
     }
-    
+
     public updatePermission(permission: Permission) {
         const permissionJson = permission.mapToJson() as UpdateRolePermissionDto;
         const updatedList = this.permissions().map(p => p.id === permission.id ? permission : p);
@@ -171,6 +171,7 @@ export class PermissionDataManager extends BaseDataManager {
     }
 
     public deletePermission(permissionId: string) {
+        const previousPermissions = [...this.permissions()];
         const updatedList = this.permissions().filter(p => p.id !== permissionId);
 
         // Optimistisch lokal entfernen
@@ -185,8 +186,13 @@ export class PermissionDataManager extends BaseDataManager {
         this.permissionRepository.deletePermission(permissionId).subscribe({
             error: (err) => {
                 console.log("Fehler bei delete permission", err);
-                this.notificationService.showNotification("Fehler bei delete permission", 'error');
-                this.copyToQueue(permissionId, 'DELETE');
+
+                // 🔄 Bei HTTP 403 / 400 (Backend-Sperre) den lokalen State zurückrollen & NICHT in die Queue legen
+                this.permissions.set(previousPermissions);
+                this.localStorageService.setItem(this.PERMISSIONS_KEY, previousPermissions);
+
+                const errorMsg = err.error?.message || "Fehler beim Löschen der Permission";
+                this.notificationService.showNotification(`⛔ ${errorMsg}`, 'error');
             }
         });
     }

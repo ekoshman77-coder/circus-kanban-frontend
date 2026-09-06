@@ -32,6 +32,8 @@ export class MasterDataService {
 
     public actions = computed(() => this.masterData()?.actions?? [])
 
+    public specializations = computed(() => this.masterData()?.specializations?? [])
+
     private STORAGE_KEY = "MASTER_DATA"
 
     private lastLoaded: number = 0;

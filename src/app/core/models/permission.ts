@@ -6,18 +6,21 @@ export class Permission{
     resource: string;
     action: string;
     targetScope: string;
+    specialization?: string;
     constructor(init: {
         id?: string,
         role: string,
         resource: string,
         action: string,
-        targetScope: string
+        targetScope: string,
+        specialization?: string;
     }) {
         this.id = init.id?? generateLocalId();
         this.role = init.role;
         this.resource = init.resource;
         this.action = init.action;
         this.targetScope = init.targetScope;
+        this.specialization = init.specialization
     }
 
     static fromJson(json: any): Permission {
@@ -26,7 +29,8 @@ export class Permission{
             role: json.role,
             resource: json.resource,
             action: json.action,
-            targetScope: json.targetScope
+            targetScope: json.targetScope,
+            specialization: json.specialization
         })
     }
 
@@ -36,7 +40,8 @@ export class Permission{
             role: this.role,
             resource: this.resource,
             action: this.action,
-            targetScope: this.targetScope
+            targetScope: this.targetScope,
+            specialization: this.specialization
         }
     }
 
@@ -44,7 +49,8 @@ export class Permission{
         return this.role === permission.role 
                && this.action === permission.action
                && this.resource === permission.resource
-               && this.targetScope === permission.targetScope 
+               && this.targetScope === permission.targetScope
+               && this.specialization === permission.specialization 
     }
 
 }

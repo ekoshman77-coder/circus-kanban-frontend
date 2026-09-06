@@ -7,16 +7,16 @@ import { ADMIN_DEPARTMENT_NAME } from "../../shared/constants/admin-constants";
 import { UserService } from "../user/user-service";
 import { ConnectionService } from "../connection/connection-service";
 
-export type UIActionIntent = 
-    'PROJECT_EDIT' 
-  | 'PROJECT_DELETE'
-  | 'TODO_CREATE' 
-  | 'TODO_EDIT' 
-  | 'TODO_DELETE' 
-  | string; // Erlaubt auch dynamische Erweiterungen
+export type UIActionIntent =
+    'PROJECT_EDIT'
+    | 'PROJECT_DELETE'
+    | 'TODO_CREATE'
+    | 'TODO_EDIT'
+    | 'TODO_DELETE'
+    | string; // Erlaubt auch dynamische Erweiterungen
 
 @Injectable({
-  providedIn: 'root'
+    providedIn: 'root'
 })
 export class PermissionService {
     private permissionDataManager = inject(PermissionDataManager);
@@ -25,35 +25,16 @@ export class PermissionService {
     private userService = inject(UserService)
     private connectionService = inject(ConnectionService)
 
-    public allPermissions = this.permissionDataManager.permissions; 
+    public allPermissions = this.permissionDataManager.permissions;
 
     private actionIntentRegistry: Record<string, { resource: string; action: string }> = {
-        'PROJECT_EDIT':   { resource: 'PROJECT', action: 'UPDATE' },
+        'PROJECT_EDIT': { resource: 'PROJECT', action: 'UPDATE' },
         'PROJECT_DELETE': { resource: 'PROJECT', action: 'DELETE' },
-        'PROJECT_VIEW':   { resource: 'PROJECT', action: 'READ' },
-        'NOTE_CONVERT':   { resource: 'NOTE',    action: 'EXECUTE' },
-        'TODO_UPDATE':    { resource: 'TODO',    action: 'UPDATE' },
-        'TODO_DELETE':    { resource: 'TODO',    action: 'DELETE' },
+        'PROJECT_VIEW': { resource: 'PROJECT', action: 'READ' },
+        'NOTE_CONVERT': { resource: 'NOTE', action: 'EXECUTE' },
+        'TODO_UPDATE': { resource: 'TODO', action: 'UPDATE' },
+        'TODO_DELETE': { resource: 'TODO', action: 'DELETE' },
     };
-
-    // Dynamische Berechnung der kritischen Admin-Permissions basierend auf Signals
-    public criticalPermissions = computed(() => {
-        const adminRoles = this.masterDataService.departmentRoles().filter(role => role.toUpperCase().includes("ADMIN"));
-        const actions = this.masterDataService.actions();
-        const criticalList: Permission[] = [];
-
-        adminRoles.forEach(role => {
-            for (let action of actions) {
-                criticalList.push(new Permission({
-                   role: role,
-                   resource: 'PERMISSION',
-                   action: action,
-                   targetScope: 'COMPANY',
-                }));
-            }
-        });
-        return criticalList;
-    });
 
     constructor() {
         // 🔄 Lädt bei jedem Login und nach Re-Connects sauber die Berechtigungen neu
@@ -109,14 +90,14 @@ export class PermissionService {
 
         // 2. Duplikatsprüfung über die unikalen 4 Felder
         if (this.allPermissions().some(perm => perm.isEqualPermission(permission))) {
-            console.error("Permission existiert schon", permission); 
+            console.error("Permission existiert schon", permission);
             this.notificationService.showNotification(
                 `Permission für ${permission.role} - ${permission.action} - ${permission.resource} [${permission.targetScope}] existiert schon.`, 'error'
             );
             return;
         }
 
-        this.permissionDataManager.createPermission(permission); 
+        this.permissionDataManager.createPermission(permission);
     }
 
     public updatePermission(permission: Permission) {
@@ -127,35 +108,31 @@ export class PermissionService {
 
         const existing = this.allPermissions().find(perm => perm.id === permission.id);
         if (!existing) {
-            console.error("Permission kann nicht aktualisiert werden: ID nicht gefunden", permission); 
+            console.error("Permission kann nicht aktualisiert werden: ID nicht gefunden", permission);
             this.notificationService.showNotification(
                 `Permission konnte nicht aktualisiert werden: Existiert nicht.`, 'error'
             );
             return;
         }
-        
+
         this.permissionDataManager.updatePermission(permission);
     }
 
     public deletePermission(permissionId: string) {
         const deleted = this.allPermissions().find(perm => perm.id === permissionId);
         if (!deleted) {
-            console.error("Permission existiert nicht", permissionId); 
+            console.error("Permission existiert nicht", permissionId);
             this.notificationService.showNotification(
                 `Permission mit ID ${permissionId} existiert nicht.`, 'error'
             );
             return;
         }
 
-        const isCritical = this.criticalPermissions().some(critical => deleted.isEqualPermission(critical));
-        if (isCritical) {
-            console.error(`Permission für ${deleted.role} auf ${deleted.resource} [${deleted.targetScope}] ist kritisch und kann nicht gelöscht werden.`); 
-            this.notificationService.showNotification(
-                `System-Schutz: Kritische Admin-Berechtigung (${deleted.role} -> ${deleted.resource} [${deleted.targetScope}]) darf nicht gelöscht werden!`, 'error'
-            );
-            return;
-        }
+        // ❌ DIESER ABSCHNITT FÄLLT WEG:
+        // const isCritical = this.criticalPermissions().some(...);
+        // if (isCritical) { ... return; }
 
+        // Directly execute DataManager -> Server / Queue
         this.permissionDataManager.deletePermission(permissionId);
     }
 
@@ -168,7 +145,7 @@ export class PermissionService {
         })
         const found = this.allPermissions().find(perm => perm.isEqualPermission(permission))
         return (!!found)
-        
+
     }
 
     /**
@@ -191,10 +168,10 @@ export class PermissionService {
     /**
      * 🌐 Universeller Rechte-Check für beliebige Ressourcen (PROJECT, TODO, NOTE, USER, DEPARTMENT)
      */
-/**
-     * 🌐 Universeller Rechte-Check für beliebige Ressourcen (PROJECT, TODO, NOTE, USER, etc.)
-     */
-public canUserPerformAction(
+    /**
+         * 🌐 Universeller Rechte-Check für beliebige Ressourcen (PROJECT, TODO, NOTE, USER, etc.)
+         */
+    public canUserPerformAction(
         intent: UIActionIntent,
         context: {
             isOwner?: boolean;

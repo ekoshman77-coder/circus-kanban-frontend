@@ -1,6 +1,7 @@
 export interface UpdateRolePermissionDto{
     id: string;
     targetScope: string;
+    specialization: string;
 }
 
 export interface CreateRolePermissionDto{
@@ -8,6 +9,7 @@ export interface CreateRolePermissionDto{
     resource: string;
     action: string;
     targetScope: string;
+    specialization: string;
 }
 
 export interface RolePermissionResponseDto{
@@ -16,4 +18,5 @@ export interface RolePermissionResponseDto{
     resource: string;
     action: string;
     targetScope: string;
+    specialization: string;
 }

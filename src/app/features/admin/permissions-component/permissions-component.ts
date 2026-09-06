@@ -42,6 +42,7 @@ export class PermissionsComponent {
   public roles = this.masterDataService.allRoles;
   public actions = this.masterDataService.actions;
   public resources = this.masterDataService.resources;
+  public specializations = this.masterDataService.specializations;
 
   public createForm = this.formBuilder.group({
     role: ["", Validators.required],
@@ -53,8 +54,10 @@ export class PermissionsComponent {
   public selectedRole = signal<string | null>(null);
   public selectedAction = signal<string | null>(null);
   public selectedResource = signal<string | null>(null);
-  public sortPermissions = signal<Sorting>({});
+  public selectedSpec = signal<string | null>(null);
 
+  public sortPermissions = signal<Sorting>({});
+  
   public isCreateOpen = signal<boolean>(false);
 
   public pendingPermissionToCreate = signal<Permission | null>(null);
@@ -67,6 +70,15 @@ export class PermissionsComponent {
   public displayedGroups = computed(() => {
     let rawList = this.allPermissions();
 
+    // filtern für spezifikation
+    rawList = rawList.filter(perm => {
+      if (!this.selectedSpec()) {
+         return !perm.specialization
+      }
+              
+      return (perm.specialization === this.selectedSpec()) 
+    })
+    
     // 1. Filtern
     if (this.selectedRole()) {
       rawList = rawList.filter(perm => perm.role === this.selectedRole());
@@ -139,7 +151,8 @@ export class PermissionsComponent {
       role: formValues.role ?? "",
       action: formValues.action ?? "",
       resource: formValues.resource ?? "",
-      targetScope: formValues.targetScope ?? ""
+      targetScope: formValues.targetScope ?? "",
+      specialization: this.selectedSpec()?? undefined
     });
 
     this.pendingPermissionToCreate.set(newPerm);
@@ -172,7 +185,8 @@ export class PermissionsComponent {
         role: group.role,
         resource: group.resource,
         action: group.action,
-        targetScope: scope
+        targetScope: scope,
+        specialization: this.selectedSpec()?? undefined
       });
       this.permissionService.createPermission(newPerm);
     }
@@ -194,5 +208,23 @@ export class PermissionsComponent {
 
   public toggleCreateForm() {
     this.isCreateOpen.update(open => !open);
+  }
+
+  public getCreatePopupMessage(): string {
+  const perm = this.pendingPermissionToCreate();
+  if (!perm) return '';
+
+  const specLabel = perm.specialization 
+    ? `<b>${perm.specialization}</b>` 
+    : '<i>🌐 Global (Alle Abteilungen)</i>';
+
+  return `
+    Möchtest du folgende Berechtigung wirklich anlegen?<br><br>
+    <b>Kontext:</b> ${specLabel}<br>
+    <b>Rolle:</b> ${perm.role}<br>
+    <b>Ressource:</b> ${perm.resource}<br>
+    <b>Aktion:</b> ${perm.action}<br>
+    <b>Scope:</b> ${perm.targetScope}
+  `;
   }
 }

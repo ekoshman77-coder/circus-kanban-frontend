@@ -86,10 +86,10 @@ export class DepartmentService extends BaseDataManager { // 👈 ERBT JETZT VOM 
     });
   }
 
-  public createDepartment(name: string, scope: string): void {
+  public createDepartment(name: string, scope: string, specialisation?: string): void {
     if (this.connectionService.isOffline()) return;
 
-    this.departmentRepo.create$(name, scope).subscribe({
+    this.departmentRepo.create$(name, scope, specialisation).subscribe({
       next: (newDept) => {
         this.departmentsSignal.update((current) => {
           const updated = [...current, Department.fromJson(newDept)];
@@ -101,10 +101,10 @@ export class DepartmentService extends BaseDataManager { // 👈 ERBT JETZT VOM 
     });
   }
 
-  public updateDepartment(id: string, newName: string, scope: string): void {
+  public updateDepartment(id: string, newName: string, scope: string, specialisation?: string): void {
     if (this.connectionService.isOffline()) return;
 
-    this.departmentRepo.update$(id, newName, scope).subscribe({
+    this.departmentRepo.update$(id, newName, scope, specialisation).subscribe({
       next: (updatedDept) => {
         this.departmentsSignal.update((current) => {
           const updated = current.map((dept) => (dept.id === id ? Department.fromJson(updatedDept) : dept));

@@ -62,15 +62,22 @@
   <!-- 🔍 FILTER-ZEILE -->
   <section class="card filter-card">
     <div class="filter-row">
-      <span class="filter-label">🔍 Filtern nach:</span>
+      <span class="filter-label">🔍 Kontext:</span>
 
+      <select [value]="selectedSpec() ?? ''" (change)="selectedSpec.set($any($event.target).value || null)">
+        <option value="">🌐 Globale Berechtigungen</option>
+        @for (spec of specializations(); track spec) {
+          <option [value]="spec">{{ spec }}</option>
+        }
+      </select>  
+          
       <select [value]="selectedRole() ?? ''" (change)="selectedRole.set($any($event.target).value || null)">
         <option value="">Alle Rollen</option>
         @for (role of roles(); track role) {
         <option [value]="role">{{ role }}</option>
         }
       </select>
-
+      
       <select [value]="selectedResource() ?? ''" (change)="selectedResource.set($any($event.target).value || null)">
         <option value="">Alle Ressourcen</option>
         @for (res of resources(); track res) {
@@ -156,7 +163,7 @@
 <!-- ⚠️ POPUP: EINSCHRÄNKUNG / SCOPE LÖSCHEN BESTÄTIGEN -->
 @if (pendingPermissionToToggle(); as data) {
 <app-universal-popup-component animationIcon="⚠️" title="Berechtigung entfernen?"
-  [message]="'Möchtest du den Scope <b>' + data.scope + '</b> für <b>' + data.group.role + '</b> wirklich entfernen?'"
+  [message]="getCreatePopupMessage()"
   confirmText="Ja, entfernen" cancelText="Abbrechen" mode="danger" [dataContext]="data"
   (confirm)="confirmToggle($event)" (cancel)="pendingPermissionToToggle.set(null)">
 </app-universal-popup-component>
