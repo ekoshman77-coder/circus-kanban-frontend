@@ -53,6 +53,7 @@ export class PermissionService {
         const validResources = this.masterDataService.resources();
         const validActions = this.masterDataService.actions();
         const validScopes = this.masterDataService.allScopes();
+        const validSpec = this.masterDataService.specializations();
 
         if (!permission.role || !validRoles.includes(permission.role)) {
             this.showValidationError(`Ungültige oder fehlende Rolle: '${permission.role}'`);
@@ -71,6 +72,49 @@ export class PermissionService {
 
         if (!permission.targetScope || !validScopes.includes(permission.targetScope)) {
             this.showValidationError(`Ungültiger oder fehlender TargetScope: '${permission.targetScope}'`);
+            return false;
+        }
+
+        if (!!permission.specialization && !validSpec.includes(permission.specialization)) {
+            this.showValidationError(`Ungültiger oder fehlender department spezialisation: '${permission.specialization}'`);
+            return false;
+        }
+
+        return true;
+    }
+
+        private validateFields(roles: string[], actions: string[], resource: string, scope:string, specialization?: string): boolean {
+        const validRoles = this.masterDataService.allRoles();
+        const validResources = this.masterDataService.resources();
+        const validActions = this.masterDataService.actions();
+        const validScopes = this.masterDataService.allScopes();
+        const validSpec = this.masterDataService.specializations();
+
+        const wrongRole = roles.find(role => !role || !validRoles.includes(role))
+        if (wrongRole) {
+            this.showValidationError(`Ungültige oder fehlende Rolle: '${wrongRole}'`);
+            return false
+        }
+
+        const wrongAction = actions.find(actions => (!actions || !validActions.includes(actions)))
+        if (wrongAction) {
+            this.showValidationError(`Ungültige oder fehlende Action: '${wrongAction}'`);
+            return false;
+   
+        }
+
+        if (!resource || !validResources.includes(resource)) {
+            this.showValidationError(`Ungültige oder fehlende Ressource: '${resource}'`);
+            return false;
+        }
+
+        if (!scope || !validScopes.includes(scope)) {
+            this.showValidationError(`Ungültiger oder fehlender TargetScope: '${scope}'`);
+            return false;
+        }
+
+        if (!!specialization && !validSpec.includes(specialization)) {
+            this.showValidationError(`Ungültiger oder fehlender department spezialisation: '${specialization}'`);
             return false;
         }
 
@@ -98,6 +142,21 @@ export class PermissionService {
         }
 
         this.permissionDataManager.createPermission(permission);
+    }
+
+    public batchCreatePermission(
+        roles: string[], 
+        actions: string[], 
+        resoource: string, 
+        scope: string, 
+        specialization?: string
+    ) {
+
+        if (!this.validateFields(roles, actions, resoource, scope, specialization)) {
+            return;
+        }
+
+        this.permissionDataManager.batchCreatePermissions(roles, actions, resoource, scope, specialization);
     }
 
     public updatePermission(permission: Permission) {

@@ -8,11 +8,12 @@ import { PermissionRepository } from "../../repositories/permission-repository";
 import { concat, toArray } from "rxjs";
 import { NotificationService } from "../notification/notification-service";
 import { generateLocalId } from "../../shared/constants/id-const";
+import { BatchCreatePermissionsDto } from "../../repositories/dto/batch-create-permissions";
 
 export interface PermissionQueueItem {
     id: string; // Eindeutige Queue-ID
-    action: 'CREATE' | 'UPDATE' | 'DELETE';
-    payload: RolePermissionResponseDto | CreateRolePermissionDto | UpdateRolePermissionDto | string;
+    action: 'CREATE' | 'UPDATE' | 'DELETE' | 'BATCH';
+    payload: RolePermissionResponseDto | CreateRolePermissionDto | UpdateRolePermissionDto | BatchCreatePermissionsDto | string;
 }
 
 @Injectable({
@@ -65,6 +66,8 @@ export class PermissionDataManager extends BaseDataManager {
                     return this.permissionRepository.updatePermission(item.payload as UpdateRolePermissionDto);
                 case 'DELETE':
                     return this.permissionRepository.deletePermission(item.payload as string);
+                case 'BATCH':
+                    return this.permissionRepository.batchCreatePermissions(item.payload as BatchCreatePermissionsDto)
             }
         });
 
@@ -105,8 +108,8 @@ export class PermissionDataManager extends BaseDataManager {
     }
 
     private copyToQueue(
-        perm: CreateRolePermissionDto | UpdateRolePermissionDto | string,
-        action: 'CREATE' | 'UPDATE' | 'DELETE'
+        perm: CreateRolePermissionDto | UpdateRolePermissionDto | BatchCreatePermissionsDto | string,
+        action: 'CREATE' | 'UPDATE' | 'DELETE' | 'BATCH'
     ) {
         const permItem: PermissionQueueItem = {
             id: generateLocalId(),
@@ -144,6 +147,75 @@ export class PermissionDataManager extends BaseDataManager {
             },
             error: () => {
                 this.copyToQueue(permissionJson, 'CREATE');
+            }
+        });
+    }
+
+    public batchCreatePermissions(
+        roles: string[], 
+        actions: string[], 
+        resource: string,
+        scope: string,
+        specialization?: string
+    ) {
+        const previousPermissions = [...this.permissions()];
+        let updatedList = [...this.permissions()]
+        roles.forEach(role => {
+            actions.forEach(action => {
+               const permission = new Permission({
+                role: role, 
+                resource: resource, 
+                action: action, 
+                targetScope: scope,
+                specialization: specialization
+               })
+               if (!updatedList.some(perm => perm.isEqualPermission(permission))) {
+                updatedList.push(permission)
+               }
+            })
+        })
+        this.permissions.set(updatedList)
+        this.localStorageService.setItem(this.PERMISSIONS_KEY, updatedList);
+
+        const batchJson: BatchCreatePermissionsDto = {
+            roles: roles,
+            resource: resource,
+            actions: actions,
+            scope: scope,
+            specialization: specialization
+        }
+
+        if (this.connectionService.isOffline()) {
+            this.copyToQueue(batchJson, 'BATCH');
+            return;
+        }
+
+        this.permissionRepository.batchCreatePermissions(batchJson).subscribe({
+            next: (next) => {
+                const serverPerm = next.map(perm => Permission.fromJson(perm));
+                let checkedList = this.permissions()
+                serverPerm.forEach(permFromServer => {
+                    checkedList = checkedList.map(permission => {
+                        if (permFromServer.isEqualPermission(permission)) {
+                           return permFromServer
+                        }
+                        return permission
+                    })
+                })
+                this.permissions.set(checkedList)
+                this.localStorageService.setItem(this.PERMISSIONS_KEY, checkedList);
+                this.notificationService.showNotification('Berechtigungen erfolgreich zugewiesen! 🎉', 'success');
+            },
+            error: (err) => {
+                this.permissions.set(previousPermissions)
+                this.localStorageService.setItem(this.PERMISSIONS_KEY, previousPermissions)
+                const errorMsg = err.error?.message || "Fehler beim Erstellen der Berechtigungen";
+                this.notificationService.showNotification(`⛔ ${errorMsg}`, 'error');
+
+                if (err.status === 0 || (err.status >= 500 && err.status < 600)) {
+                    this.copyToQueue(batchJson, 'BATCH');
+                    this.notificationService.showNotification('Server vorübergehend nicht erreichbar. In Queue gespeichert. 🔄', 'info');
+                }
             }
         });
     }

@@ -88,13 +88,7 @@ public filteredRoles = computed(() => {
   if (!dept) return [];
 
   // Direkter Zugriff auf das string[] aus MasterData
-  const allRoles = this.masterDataService.departmentRoles();
-
-  if (dept.isAdmin()) {
-    return allRoles.filter(role => role.toLowerCase().includes('admin'));
-  } else {
-    return allRoles.filter(role => !role.toLowerCase().includes('admin'));
-  }
+  return this.masterDataService.departmentRoles();
 });
 
   public handleDrop(event: CdkDragDrop<UserModel[]>) {

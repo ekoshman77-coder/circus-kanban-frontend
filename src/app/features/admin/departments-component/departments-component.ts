@@ -25,18 +25,12 @@ export class DepartmentTabComponent implements OnInit {
     return this.departmentService.departmentsSorted();
   });
 
-  public departmentScopes = computed(() => this.masterDataService.departmentScopes());
-
   public specializations = computed(() => this.masterDataService.specializations())
 
   createForm = new FormGroup({
     name: new FormControl('', {
       nonNullable: true,
       validators: [Validators.required, uniqueDepartmentNameValidator(() => this.departments().map(d => d.name))]
-    }),
-    scope: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required]
     }),
     specialization: new FormControl<string | null>(null),
   });
@@ -48,10 +42,6 @@ export class DepartmentTabComponent implements OnInit {
         this.departments()
           .filter(d => d.id !== this.editingDepartmentId)
           .map(d => d.name))]
-    }),
-    scope: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required]
     }),
     specialization: new FormControl<string | null>(null)
   });
@@ -76,9 +66,9 @@ export class DepartmentTabComponent implements OnInit {
   public onCreateDepartment(): void {
     if (this.createForm.invalid) return;
 
-    const { name, scope, specialization } = this.createForm.getRawValue();
+    const { name, specialization } = this.createForm.getRawValue();
 
-    this.departmentService.createDepartment(name.trim(), scope, specialization?? undefined);
+    this.departmentService.createDepartment(name.trim(), specialization?? undefined);
 
     this.createForm.reset();
   }
@@ -91,7 +81,6 @@ export class DepartmentTabComponent implements OnInit {
 
     this.editForm.patchValue({
       name: dept.name,
-      scope: dept.scope,
       specialization: dept.specialization
     });
   }
@@ -104,8 +93,8 @@ export class DepartmentTabComponent implements OnInit {
   public onSaveEdit(): void {
     if (this.editForm.invalid || !this.editingDepartmentId) return;
 
-    const { name, scope, specialization } = this.editForm.getRawValue();
-    this.departmentService.updateDepartment(this.editingDepartmentId, name.trim(), scope, specialization?? undefined);
+    const { name, specialization } = this.editForm.getRawValue();
+    this.departmentService.updateDepartment(this.editingDepartmentId, name.trim(), specialization?? undefined);
 
     this.cancelEdit();
   }

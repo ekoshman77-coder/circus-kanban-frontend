@@ -3,6 +3,7 @@ import { inject, Injectable } from "@angular/core";
 import { CreateRolePermissionDto, RolePermissionResponseDto, UpdateRolePermissionDto } from "./dto/role-permissions";
 import { PermissionUrl } from "./links";
 import { Observable } from "rxjs";
+import { BatchCreatePermissionsDto } from "./dto/batch-create-permissions";
 
 @Injectable({
   providedIn: 'root'
@@ -18,6 +19,11 @@ export class PermissionRepository {
     public createPermission(permission: CreateRolePermissionDto): Observable<RolePermissionResponseDto> {
         console.log("PERMISSION_REPOSOTORY: POST", permission)
         return this.http.post<RolePermissionResponseDto>(PermissionUrl, permission)
+    }
+
+    public batchCreatePermissions(permissions: BatchCreatePermissionsDto): Observable<RolePermissionResponseDto[]> {
+        console.log("PERMISSION_REPOSOTORY: POST", permissions)
+        return this.http.post<RolePermissionResponseDto[]>(`${PermissionUrl}/batch`, permissions)
     }
 
     public updatePermission(permission: UpdateRolePermissionDto): Observable<RolePermissionResponseDto> {

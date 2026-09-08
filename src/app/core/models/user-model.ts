@@ -1,4 +1,4 @@
-import { IDepartment } from "../repositories/department-repository";
+import { IDepartment } from "../repositories/dto/deparment-json";
 import { generateLocalId, isLocalId } from "../shared/constants/id-const";
 import { Department } from "./department";
 

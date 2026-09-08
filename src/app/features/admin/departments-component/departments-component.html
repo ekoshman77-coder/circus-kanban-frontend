@@ -13,13 +13,6 @@
         [class.is-invalid]="createForm.controls.name.invalid && createForm.controls.name.touched"
       />
 
-      <select formControlName="scope" class="form-select">
-        <option value="" disabled selected>Scope wählen...</option>
-        @for (scope of departmentScopes(); track scope) {
-          <option [value]="scope">{{ scope }}</option>
-        }
-      </select>
-
       <select formControlName="specialization" class="form-select">
         <option [value]="null">Keine Spezialisierung</option>
         @for (specialization of specializations(); track specialization) {
@@ -59,11 +52,6 @@
                 formControlName="name"
                 (keyup.escape)="cancelEdit()"
               />
-              <select formControlName="scope" class="form-select">
-                @for (scope of departmentScopes(); track scope) {
-                  <option [value]="scope">{{ scope }}</option>
-                }
-              </select>
               <select formControlName="specialization" class="form-select">
                 @for (specialization of specializations(); track specialization) {
                   <option [value]="specialization">{{ specialization }}</option>
@@ -85,7 +73,6 @@
                {{department.getInitials()}}
             </div>
             {{department.name}} 
-            <small class="badge scope-badge">{{department.scope}}</small>
             @if(department.name === ADMIN_DEPT) { <small class="badge">(System)</small> }
 
             @if (department.specialization) {

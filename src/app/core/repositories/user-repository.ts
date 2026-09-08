@@ -3,7 +3,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { catchError, Observable, tap, throwError } from 'rxjs';
 import { GamificationResult } from '../models/gamification';
 import { gamificationApiUrl, settingsApiUrl, userApiUrl } from './links';
-import { IDepartment } from './department-repository';
+import { IDepartment } from './dto/deparment-json';
 
 export interface IUser {
   id: string;

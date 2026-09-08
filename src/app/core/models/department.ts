@@ -1,18 +1,16 @@
-import { IDepartment } from "../repositories/department-repository";
+import { IDepartment } from "../repositories/dto/deparment-json";
 import { ADMIN_DEPARTMENT_NAME } from "../shared/constants/admin-constants";
 import { generateLocalId } from "../shared/constants/id-const";
 
 export class Department {
   public id: string;
   public name: string;
-  public scope: string;
   public specialization?: string;
 
-  constructor(init: {name: string, scope: string, id?: string, specialization?: string}) {
+  constructor(init: {name: string, id?: string, specialization?: string}) {
     // Generiert eine temporäre UUID oder nutzt die Server-ID
     this.id = init.id ?? generateLocalId();
     this.name = init.name || '';
-    this.scope = init.scope || 'DEPARTMENT';
     this.specialization = init.specialization
   }
 

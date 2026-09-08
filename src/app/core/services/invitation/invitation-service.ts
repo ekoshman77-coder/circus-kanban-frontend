@@ -36,7 +36,6 @@ export class InvitationService extends BaseDataManager {
            console.log("INVITATION_SEVICE loadDepartmentsForInvitation next = ", next)
             const depts = next.map(dept => Department.fromJson({
                 name: dept.name,
-                scope: dept.scope,
                 id: dept.id?? ""
             }))
             this.departments.set(depts)

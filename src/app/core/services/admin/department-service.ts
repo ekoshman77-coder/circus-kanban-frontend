@@ -1,10 +1,11 @@
 import { Injectable, inject, signal, computed, effect } from '@angular/core';
-import { DepartmentRepository, IDepartment } from '../../repositories/department-repository';
+import { DepartmentRepository} from '../../repositories/department-repository';
 import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 import { ConnectionService } from '../connection/connection-service';
 import { UserService } from '../user/user-service';
 import { ADMIN_DEPARTMENT_NAME } from '../../shared/constants/admin-constants';
 import { Department } from '../../models/department';
+import { IDepartment } from '../../repositories/dto/deparment-json';
 
 @Injectable({
   providedIn: 'root',
@@ -86,10 +87,10 @@ export class DepartmentService extends BaseDataManager { // 👈 ERBT JETZT VOM 
     });
   }
 
-  public createDepartment(name: string, scope: string, specialisation?: string): void {
+  public createDepartment(name: string, specialisation?: string): void {
     if (this.connectionService.isOffline()) return;
 
-    this.departmentRepo.create$(name, scope, specialisation).subscribe({
+    this.departmentRepo.create$(name, specialisation).subscribe({
       next: (newDept) => {
         this.departmentsSignal.update((current) => {
           const updated = [...current, Department.fromJson(newDept)];
@@ -101,10 +102,10 @@ export class DepartmentService extends BaseDataManager { // 👈 ERBT JETZT VOM 
     });
   }
 
-  public updateDepartment(id: string, newName: string, scope: string, specialisation?: string): void {
+  public updateDepartment(id: string, newName: string, specialisation?: string): void {
     if (this.connectionService.isOffline()) return;
 
-    this.departmentRepo.update$(id, newName, scope, specialisation).subscribe({
+    this.departmentRepo.update$(id, newName, specialisation).subscribe({
       next: (updatedDept) => {
         this.departmentsSignal.update((current) => {
           const updated = current.map((dept) => (dept.id === id ? Department.fromJson(updatedDept) : dept));
