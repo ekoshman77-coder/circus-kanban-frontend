@@ -10,11 +10,7 @@ export class AdminTeamService {
   private adminDataManager = inject(AdminDataManager);
 
   // Reicht das saubere Admin-Signal weiter
-  public adminUsersSignal: Signal<ProjectMember[]> = this.adminDataManager.adminUsersSignal;
-
-  public loadAdminPool(): void {
-    this.adminDataManager.loadAdminBoardPool();
-  }
+  public adminUsersSignal = this.adminDataManager.adminUsersSignal;
 
   public approveMember(userId: string, department: Department, role: string): void {
     this.adminDataManager.approveMember(userId, department, role);

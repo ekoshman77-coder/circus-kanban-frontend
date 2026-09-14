@@ -1,0 +1,16 @@
+// 1. Grund-Interface: Jedes Payload braucht eine ID und kann optional einen Snapshot tragen
+// J = Typ der Entität im Snapshot (z.B. Todo, Note)
+export interface SnapshotPayload< J = any > {
+  id: string;
+  snapshot?: J[];
+}
+
+// 2. Das generische QueueItem
+// T = Spezifischer Payload-Typ, der von SnapshotPayload< J> erbt
+export interface QueueItem< T extends SnapshotPayload = SnapshotPayload > {
+  id: string;          // Eindeutige Queue-ID
+  serviceName: string; // Z.B. 'TodoDataManagerService'
+  action: string;      // Z.B. 'CREATE_TODO'
+  payload: T;          // Nutzdaten inklusive optionalem Snapshot
+  timestamp: number;
+}

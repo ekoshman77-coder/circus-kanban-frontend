@@ -27,24 +27,6 @@
     }
   </section>
 
-<!-- 🍞 DER UNDO-TOAST MIT DYNAMISCHER ZEIT -->
-@if (activeDeletedTodo(); as deletedTodo) {
-  <div class="undo-toast-wrapper">
-    
-    <div class="undo-toast animate-slide-up">
-      <div class="toast-info">
-        <span>🗑️ "{{ deletedTodo.task }}" wurde gelöscht.</span>
-      </div>
-      <button class="undo-button" (click)="restoreTodo()">
-        ↩️ Rückgängig
-      </button>
-      
-      <!-- 🚀 Das ist die ganze Magie: Das Signal bestimmt die Breite! -->
-      <div class="progress-bar" [style.width.%]="deleteToastProgress()"></div>
-    </div>
-
-  </div>
-}
   @if (localShowLevelUpBanner(); as result) {
   <div class="level-up-overlay">
     <div class="level-up-card animated pop-in">

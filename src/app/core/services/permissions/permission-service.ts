@@ -25,7 +25,7 @@ export class PermissionService {
     private userService = inject(UserService)
     private connectionService = inject(ConnectionService)
 
-    public allPermissions = this.permissionDataManager.permissions;
+    public allPermissions = this.permissionDataManager.permissionsSignal;
 
     private actionIntentRegistry: Record<string, { resource: string; action: string }> = {
         'PROJECT_EDIT': { resource: 'PROJECT', action: 'UPDATE' },
@@ -35,15 +35,6 @@ export class PermissionService {
         'TODO_UPDATE': { resource: 'TODO', action: 'UPDATE' },
         'TODO_DELETE': { resource: 'TODO', action: 'DELETE' },
     };
-
-    constructor() {
-        // 🔄 Lädt bei jedem Login und nach Re-Connects sauber die Berechtigungen neu
-        effect(() => {
-            if (this.userService.isLoggedIn() && this.connectionService.isOnline()) {
-                this.permissionDataManager.loadPermissions();
-            }
-        });
-    }
 
     /**
      * Prüft, ob alle 4 Felder gesetzt sind und in den offiziellen MasterData-Listen existieren.

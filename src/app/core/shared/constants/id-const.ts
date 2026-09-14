@@ -5,7 +5,7 @@ export const LOCAL_ID_PREFIX = 'local-';
  * Generiert eine absolut sichere, eindeutige Dummy-ID fürs Frontend
  */
 export function generateLocalId(): string {
-  return `${LOCAL_ID_PREFIX}${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+  return `${LOCAL_ID_PREFIX}${crypto.randomUUID()}`;
 }
 
 /**

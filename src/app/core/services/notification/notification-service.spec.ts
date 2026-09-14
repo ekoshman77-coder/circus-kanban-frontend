@@ -78,7 +78,7 @@ describe('NotificationService', () => {
       service.showNotification('Meldung', 'info');
       expect(service.allNotifications().length).toBe(1);
 
-      // Wir holen uns die dynamisch generierte ID direkt aus dem Signal[cite: 6]
+      // Wir holen uns die dynamisch generierte ID direkt aus dem Signal
       const generatedId = service.allNotifications()[0].id;
 
       service.clearNotification(generatedId);

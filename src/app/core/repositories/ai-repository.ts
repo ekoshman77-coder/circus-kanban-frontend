@@ -41,14 +41,17 @@ export interface RejectedTodoFeedback {
   rejectReason: 'no_motivation' | 'too_heavy' | 'too_long' | null;
 }
 
-/**
- * Schlanker Feedback-Payload basierend auf der DB-roundId
- */
 export interface PlannerFeedbackPayload {
+  id: string; 
   userId: string;
   roundId: string;
   acceptedTodoId: string | null;
   rejectedTodos: RejectedTodoFeedback[];
+}
+
+export interface SnoozePayload {
+  id: string; // todoId
+  durationInMin: number;
 }
 
 export interface MilestoneSuggestion {

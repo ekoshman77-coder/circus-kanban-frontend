@@ -21,7 +21,7 @@ import { UniversalPopupComponent } from '../../../core/shared/components/univers
   templateUrl: './admin-users-component.html',
   styleUrl: './admin-users-component.css',
 })
-export class AdminUsersComponent implements OnInit {
+export class AdminUsersComponent {
   protected departmentService = inject(DepartmentService);
   protected filterService = inject(FilterService);
   protected adminTeamService = inject(AdminTeamService);
@@ -46,7 +46,6 @@ export class AdminUsersComponent implements OnInit {
   public allUsers = computed(() => {
     const search = this.filterService.searchTerm().toLowerCase().trim();
     return this.adminTeamService.adminUsersSignal()
-      .map(member => member.user)
       .filter((user) => {
         return user.firstName.toLowerCase().includes(search)
           || user.lastName.toLowerCase().includes(search)
@@ -71,11 +70,6 @@ export class AdminUsersComponent implements OnInit {
     }
     return map;
   });
-
-  public ngOnInit(): void {
-    this.adminTeamService.loadAdminPool();
-     // 👈 Masterdata laden
-  }
 
   public getUsersForDept(departmentId: string): UserModel[] {
     return this.approvedUsersByDept().get(departmentId) || [];
@@ -197,7 +191,7 @@ public onRoleConfirmed(selectedRole: string) {
   }
 
   public onUserCreated() {
-    this.adminTeamService.loadAdminPool()
+    
   }
 
 }

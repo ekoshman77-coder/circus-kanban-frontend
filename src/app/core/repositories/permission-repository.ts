@@ -1,38 +1,38 @@
-import { HttpClient } from "@angular/common/http";
-import { inject, Injectable } from "@angular/core";
-import { CreateRolePermissionDto, RolePermissionResponseDto, UpdateRolePermissionDto } from "./dto/role-permissions";
-import { PermissionUrl } from "./links";
-import { Observable } from "rxjs";
-import { BatchCreatePermissionsDto } from "./dto/batch-create-permissions";
+import { HttpClient } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { PermissionUrl } from './links';
+import { Permission } from '../models/permission';
+import { PermissionJson } from './dto/permission-json';
+import { BatchCreatePermissionsPayload } from '../models/queue-items/permission-queue-item';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PermissionRepository {
-    private http = inject(HttpClient)
+  private http = inject(HttpClient);
 
-    public getPermissions(): Observable<RolePermissionResponseDto[]> {
-        console.log("PERMISSION_REPOSOTORY: GET")
-        return this.http.get<RolePermissionResponseDto[]>(PermissionUrl)
-    }
+  public getPermissions(): Observable< PermissionJson[]> {
+    return this.http.get< PermissionJson[]>(PermissionUrl);
+  }
 
-    public createPermission(permission: CreateRolePermissionDto): Observable<RolePermissionResponseDto> {
-        console.log("PERMISSION_REPOSOTORY: POST", permission)
-        return this.http.post<RolePermissionResponseDto>(PermissionUrl, permission)
-    }
+  public createPermission(permission: Permission): Observable< PermissionJson> {
+    const body = permission.mapToJson();
+    return this.http.post< PermissionJson>(PermissionUrl, body);
+  }
 
-    public batchCreatePermissions(permissions: BatchCreatePermissionsDto): Observable<RolePermissionResponseDto[]> {
-        console.log("PERMISSION_REPOSOTORY: POST", permissions)
-        return this.http.post<RolePermissionResponseDto[]>(`${PermissionUrl}/batch`, permissions)
-    }
+  public batchCreatePermissions(payload: BatchCreatePermissionsPayload): Observable< PermissionJson[]> {
+    // Strippen von snapshot vor dem HTTP-Call
+    const { snapshot, ...body } = payload;
+    return this.http.post< PermissionJson[]>(`${PermissionUrl}/batch`, body);
+  }
 
-    public updatePermission(permission: UpdateRolePermissionDto): Observable<RolePermissionResponseDto> {
-        console.log("PERMISSION_REPOSOTORY: PUT", permission)
-        return this.http.put<RolePermissionResponseDto>(PermissionUrl, permission)
-    }
+  public updatePermission(permission: Permission): Observable< PermissionJson> {
+    const body = permission.mapToJson();
+    return this.http.put< PermissionJson>(PermissionUrl, body);
+  }
 
-    public deletePermission(id: string): Observable<void> {
-        console.log("PERMISSION_REPOSOTORY: DELETE id=",id)
-        return this.http.delete<void>(`${PermissionUrl}/${id}`)
-    }
+  public deletePermission(id: string): Observable< void> {
+    return this.http.delete< void>(`${PermissionUrl}/${id}`);
+  }
 }

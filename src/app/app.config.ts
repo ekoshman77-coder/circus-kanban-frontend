@@ -7,9 +7,12 @@ import { provideAnimations } from '@angular/platform-browser/animations';
 import { Token } from '@angular/compiler';
 import { withCredentialsInterceptor } from './core/interceptors/with-credentials';
 import { authErrorInterceptor } from './core/interceptors/auth-error-intercaptor';
+import { AUTH_CONTEXT } from './core/services/user/auth-context';
+import { UserService } from './core/services/user/user-service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    { provide: AUTH_CONTEXT, useExisting: UserService },
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
     provideHttpClient(

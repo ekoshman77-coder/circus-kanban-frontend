@@ -61,9 +61,6 @@ export class TeamPoolComponent implements OnInit { // 🎯 OnDestroy für sauber
 
   ngOnInit(): void {
     this.filterService.setInitialCategory('team');
-
-    console.log('👥 [TeamPool] Trigger globalen Pool-Sync im OnInit');
-    this.teamService.loadGlobalPool();
   }
 
   public onDeleteUser(id: string): void {

@@ -20,13 +20,14 @@ import { AssignProjectManagerModalComponent, CreateProjectPayload } from '../../
 import { Project } from '../../../core/models/project';
 import { TeamService } from '../../../core/services/team/team-service';
 import { NotificationService } from '../../../core/services/notification/notification-service';
+import { generateLocalId } from '../../../core/shared/constants/id-const';
 
 export type BoardMode = 'USER_BOARD' | 'ADMIN_DEPARTMENTS' | 'ADMIN_COMPANY';
 
 /**
  * @component IdeaBoardComponent
  * @description Die digitale Magnettafel unseres Systems. Verwaltet das Erstellen, Filtern, 
- * Sortieren und Verteilen von Notizen (Ideen) via Drag & Drop in den Kalkulator-Schlitz oder den Mülleimer[cite: 7, 8, 9].
+ * Sortieren und Verteilen von Notizen (Ideen) via Drag & Drop in den Kalkulator-Schlitz oder den Mülleimer.
  */
 @Component({
   selector: 'app-idea-board',
@@ -85,22 +86,22 @@ export class IdeaBoardComponent implements OnInit {
     }
   });
 
-  /** Der aktuell aktive Filterzustand (Suchbegriff, Verknüpfungsmodus, Tag, Farbe)[cite: 9] */
+  /** Der aktuell aktive Filterzustand (Suchbegriff, Verknüpfungsmodus, Tag, Farbe) */
   public currentFilters = signal<FilterState>({ query: '', mode: 'AND', tag: '', color: '' });
 
-  /** Formular-Zustand: Titel einer manuell via Fallback erstellten Notiz[cite: 9] */
+  /** Formular-Zustand: Titel einer manuell via Fallback erstellten Notiz */
   public newTitle: string = "";
-  /** Formular-Zustand: Inhalt einer manuell via Fallback erstellten Notiz[cite: 9] */
+  /** Formular-Zustand: Inhalt einer manuell via Fallback erstellten Notiz */
   public newContent: string = "";
-  /** Formular-Zustand: Kartenfarbe einer manuell via Fallback erstellten Notiz[cite: 9] */
+  /** Formular-Zustand: Kartenfarbe einer manuell via Fallback erstellten Notiz */
   public newColor: string = 'note-yellow';
-  /** Formular-Zustand: Tag/Fachbereich einer manuell via Fallback erstellten Notiz[cite: 9] */
+  /** Formular-Zustand: Tag/Fachbereich einer manuell via Fallback erstellten Notiz */
   public newTag: string = "";
 
-  /** 🌟 UI-EXKLUSIVER ZUSTAND: Hält die transformierten und angereicherten Notizen-Ausstellungsstücke (ViewModels)[cite: 9] */
+  /** 🌟 UI-EXKLUSIVER ZUSTAND: Hält die transformierten und angereicherten Notizen-Ausstellungsstücke (ViewModels) */
   public viewModels = signal<NoteViewModel[]>([]);
 
-  /** Interner Cache, um bestehende ViewModels bei Daten-Updates reaktiv zu recyclen[cite: 9] */
+  /** Interner Cache, um bestehende ViewModels bei Daten-Updates reaktiv zu recyclen */
   private viewModelCache: NoteViewModel[] = [];
 
   /** 🟢 NEU: Filtert die rohen Notizen dynamisch je nach Modus */
@@ -127,14 +128,14 @@ export class IdeaBoardComponent implements OnInit {
     return modeFiltered.filter(note => !note.isInCalculation);
   });
 
-  /** Steuert die Anzeige des Todo-Planungs-Modal-Popups[cite: 8, 9] */
+  /** Steuert die Anzeige des Todo-Planungs-Modal-Popups */
   public isTodoPopupShow = signal<boolean>(false);
 
-  /** KI-Zwischenspeicher: Titel der Idee, die in ein Todo konvertiert werden soll[cite: 8, 9] */
+  /** KI-Zwischenspeicher: Titel der Idee, die in ein Todo konvertiert werden soll */
   public ideaToPlanTitle = signal<string>('');
-  /** KI-Zwischenspeicher: Beschreibung der Idee, die in ein Todo konvertiert werden soll[cite: 8, 9] */
+  /** KI-Zwischenspeicher: Beschreibung der Idee, die in ein Todo konvertiert werden soll */
   public ideaToPlanDescription = signal<string>('');
-  /** KI-Zwischenspeicher: Vorgeschlagene Kategorie für das geplante Todo[cite: 8, 9] */
+  /** KI-Zwischenspeicher: Vorgeschlagene Kategorie für das geplante Todo */
   public ideaToPlanCategory = signal<string>('');
 
   // -------------------------------------------------------------------------
@@ -178,7 +179,7 @@ export class IdeaBoardComponent implements OnInit {
   // 📌 NOTIZ-AKTIONEN (CRUD)
   // -------------------------------------------------------------------------
 
-  /** Erstellt eine neue Notiz direkt über das Board-Eingabefeld[cite: 9] */
+  /** Erstellt eine neue Notiz direkt über das Board-Eingabefeld */
   public createNewNote(): void {
     if (!this.newTitle.trim()) return;
     this.noteService.addNote({
@@ -193,17 +194,17 @@ export class IdeaBoardComponent implements OnInit {
     this.newTag = "";
   }
 
-  /** Leitet Aktualisierungen an einer Notiz (z.B. Textänderung) an den Service weiter[cite: 8, 9] */
+  /** Leitet Aktualisierungen an einer Notiz (z.B. Textänderung) an den Service weiter */
   public onNoteUpdated(updatedNote: Note): void {
     this.noteService.updateNote(updatedNote);
   }
 
-  /** Löscht eine spezifische Notiz permanent aus dem System[cite: 9] */
+  /** Löscht eine spezifische Notiz permanent aus dem System */
   public onNoteDeleted(id: string): void {
     this.noteService.removeNote(id);
   }
 
-  /** Verarbeitet Filteränderungen aus der UI und synchronisiert sie mit dem Suchbegriff-Service[cite: 8, 9] */
+  /** Verarbeitet Filteränderungen aus der UI und synchronisiert sie mit dem Suchbegriff-Service */
   public onFilterChanged(newFilters: FilterState): void {
     this.currentFilters.set(newFilters);
     this.filterService.searchTerm.set(newFilters.query);
@@ -215,7 +216,7 @@ export class IdeaBoardComponent implements OnInit {
 
   /**
    * 🔄 DER ZENTRALE DRAG & DROP VERTEILER
-   * Entscheidet anhand der Ziel-Container-ID, ob gelöscht, kalkuliert oder sortiert wird[cite: 8, 9].
+   * Entscheidet anhand der Ziel-Container-ID, ob gelöscht, kalkuliert oder sortiert wird.
    */
   public onDropped(event: CdkDragDrop<any[]>): void {
     const vm = event.item.data as NoteViewModel;
@@ -260,55 +261,55 @@ export class IdeaBoardComponent implements OnInit {
   }
 
   // Event vom Modal behandeln:
+// Event vom Modal behandeln:
+// Event vom Modal behandeln:
   public handleProjectCreation(payload: CreateProjectPayload): void {
     if (!this.selectedNoteForProject()) {
       return;
     }
     const idea = this.selectedNoteForProject();
     
-    this.projectService.saveCalculatedProject({
+    // 1. Projekt-Modell mit temporärer Local-ID instanziieren
+    const newProject = new Project({
+      id: generateLocalId(),
       title: payload.title,
-      ideaId: payload.ideaId,
-      area: 'Default', 
-      userId: this.userService.getCurrentUserId() ?? "",
+      ideaId: idea?.id ?? '',
+      area: 'Default',
+      userId: this.userService.getCurrentUserId() ?? '',
       departmentId: idea?.departmentId ?? '',
       status: 'Calculation',
-      scope: 'COMPANY'
-    } as any).subscribe({
-      next: (createdProject) => {
-        console.log('✅ Projekt erfolgreich erstellt:', createdProject);
-        
-        const pm = this.teamService.globalMembersSignal().find(member => member.user.id === payload.projectManagerId);
-        
-        if (pm) {
-          // Projektleiter zuweisen
-          this.teamService.addMemberToProject(
-            createdProject.id,
-            pm.user,
-            'PROJECT_MANAGER'
-          );
-          this.notificationService.showNotification(
-            `Projekt "${createdProject.title}" wurde erfolgreich erstellt und ${pm.user.firstName} ${pm.user.lastName} als PM zugewiesen!`,
-            'success'
-          );
-        } else {
-          this.notificationService.showNotification(
-            `Projekt "${createdProject.title}" wurde ohne zugewiesenen PM erstellt.`,
-            'info'
-          );
-        }
-      },
-      error: (err) => {
-        console.error('Fehler beim Erstellen des Projekts:', err);
-        this.notificationService.showNotification('Fehler beim Erstellen des Projekts.', 'error');
-      }
+      scope: 'COMPANY',
+      teamMembers: []
     });
+
+    // 2. Projekt speichern (Sync void Call)
+    this.projectService.saveCalculatedProject(newProject);
+
+    // 3. Projektleiter suchen und dem neu erstellten Projekt zuweisen
+    const pmMember = this.teamService.globalMembersSignal().find(member => member.user.id === payload.projectManagerId);
+
+    if (pmMember) {
+      this.projectService.addMemberToProject(
+        newProject.id,
+        pmMember.user,
+        'PROJECT_MANAGER'
+      );
+      this.notificationService.showNotification(
+        `Projekt "${newProject.title}" wurde erfolgreich erstellt und ${pmMember.user.firstName} ${pmMember.user.lastName} als PM zugewiesen!`,
+        'success'
+      );
+    } else {
+      this.notificationService.showNotification(
+        `Projekt "${newProject.title}" wurde ohne zugewiesenen PM erstellt.`,
+        'info'
+      );
+    }
 
     // Modal schließen
     this.selectedNoteForProject.set(null);
   }
-
-  /** Verarbeitet das Hineinwerfen einer Karte in die Mülltonne[cite: 8, 9] */
+    
+  /** Verarbeitet das Hineinwerfen einer Karte in die Mülltonne */
   private handleTrashDrop(data: any): void {
     const vmToDelete = data as NoteViewModel;
     if (vmToDelete && vmToDelete.note.id) {
@@ -318,7 +319,7 @@ export class IdeaBoardComponent implements OnInit {
 
   /** 
    * 🛡️ MÜLLEIMER-PRÄDIKAT
-   * Prüft in Echtzeit vor dem Drop, ob der aktuelle User die Berechtigung besitzt, diese Idee zu löschen[cite: 8, 9].
+   * Prüft in Echtzeit vor dem Drop, ob der aktuelle User die Berechtigung besitzt, diese Idee zu löschen.
    */
   public canIdeaEnterTrash = (drag: any): boolean => {
     const vm = drag.data as NoteViewModel;
@@ -329,7 +330,7 @@ export class IdeaBoardComponent implements OnInit {
 
   /** 
    * 🎰 AUTOMATEN-DROP
-   * Wirft die Idee in den vertikalen Schlitz und triggert den Tab-Wechsel in das Kalkulator-Labor[cite: 7, 8, 9].
+   * Wirft die Idee in den vertikalen Schlitz und triggert den Tab-Wechsel in das Kalkulator-Labor.
    */
   private handleCalculatorDrop(data: any): void {
     const vmToCalculator = data as NoteViewModel;
@@ -348,7 +349,7 @@ export class IdeaBoardComponent implements OnInit {
     }
   }
 
-  /** Ändert die Reihenfolge der Elemente direkt auf dem Board und speichert den neuen Index permanent[cite: 8, 9] */
+  /** Ändert die Reihenfolge der Elemente direkt auf dem Board und speichert den neuen Index permanent */
   private handleBoardSorting(previousIndex: number, currentIndex: number): void {
     const currentSorted = [...this.sortedViewModels()];
     moveItemInArray(currentSorted, previousIndex, currentIndex);
@@ -370,7 +371,7 @@ export class IdeaBoardComponent implements OnInit {
   /**
    * 🔀 DIE FILTER-PIPELINE
    * Rechnet völlig unabhängig von der Ausführungsreihenfolge Text-, Farb- und Tag-Schnittmengen aus.
-   * Eliminiert Seiteneffekte und stellt Daten kreuzweise für dynamische Dropdowns bereit[cite: 9].
+   * Eliminiert Seiteneffekte und stellt Daten kreuzweise für dynamische Dropdowns bereit[.
    */
   private filterPipeline = computed(() => {
     const allVMs = this.viewModels();
@@ -381,7 +382,7 @@ export class IdeaBoardComponent implements OnInit {
 
     let textFiltered = [...allVMs];
 
-    // Multi-Term-Textsuche mit Komma-Trennung (unterstützt AND/OR Verknüpfungen)[cite: 9]
+    // Multi-Term-Textsuche mit Komma-Trennung (unterstützt AND/OR Verknüpfungen)
     if (searchQuery) {
       const searchTerms = searchQuery.split(',').map(term => term.trim()).filter(term => term.length > 0);
       textFiltered = textFiltered.filter(vm => {
@@ -393,18 +394,18 @@ export class IdeaBoardComponent implements OnInit {
       });
     }
 
-    // Teilstrom für dynamische Tags (berücksichtigt Text- und Farbfilter)[cite: 9]
+    // Teilstrom für dynamische Tags (berücksichtigt Text- und Farbfilter)
     let forTags = [...textFiltered];
     if (colorFilter) { forTags = forTags.filter(vm => vm.note.colorType === colorFilter); }
 
-    // Teilstrom für dynamische Farben (berücksichtigt Text- und Tagfilter)[cite: 9]
+    // Teilstrom für dynamische Farben (berücksichtigt Text- und Tagfilter)
     let forColors = [...textFiltered];
     if (tagFilter) {
       if (tagFilter === 'none') { forColors = forColors.filter(vm => !vm.note.tag || !vm.note.tag.trim()); }
       else { forColors = forColors.filter(vm => vm.note.tag && vm.note.tag.toLowerCase().includes(tagFilter)); }
     }
 
-    // Finales Ergebnis nach Anwendung aller Filterkriterien[cite: 9]
+    // Finales Ergebnis nach Anwendung aller Filterkriterien
     let finalSelection = [...textFiltered];
     if (tagFilter) {
       if (tagFilter === 'none') { finalSelection = finalSelection.filter(vm => !vm.note.tag || !vm.note.tag.trim()); }
@@ -415,7 +416,7 @@ export class IdeaBoardComponent implements OnInit {
     return { finalSelection, dataForColors: forColors, dataForTags: forTags };
   });
 
-  /** 📊 Das finale, sortierte Ausgabe-Signal für das Zettel-Grid[cite: 8, 9] */
+  /** 📊 Das finale, sortierte Ausgabe-Signal für das Zettel-Grid */
   public sortedViewModels = computed(() => {
     const { finalSelection } = this.filterPipeline();
     const orders = this.sortOrders();
@@ -428,7 +429,7 @@ export class IdeaBoardComponent implements OnInit {
     });
   });
 
-  /** 🏷️ Berechnet dynamisch alle verfügbaren Tags basierend auf den aktiven Filtern[cite: 8, 9] */
+  /** 🏷️ Berechnet dynamisch alle verfügbaren Tags basierend auf den aktiven Filtern */
   public availableTags = computed(() => {
     const { dataForTags } = this.filterPipeline();
     const tagSet = new Set<string>();
@@ -446,7 +447,7 @@ export class IdeaBoardComponent implements OnInit {
     return hatNotizenOhneTag ? ['none', ...sortierteTags] : sortierteTags;
   });
 
-  /** 🌈 Berechnet dynamisch alle verfügbaren Kartenfarben basierend auf den aktiven Filtern[cite: 8, 9] */
+  /** 🌈 Berechnet dynamisch alle verfügbaren Kartenfarben basierend auf den aktiven Filtern */
   public availableColors = computed(() => {
     const { dataForColors } = this.filterPipeline();
     const colorSet = new Set<string>();
@@ -460,13 +461,13 @@ export class IdeaBoardComponent implements OnInit {
     return Array.from(colorSet);
   });
 
-  /** 🛡️ KALKULATOR-PRÄDIKAT: Validiert vor dem Drop, ob eine Idee kalkuliert werden darf[cite: 8, 9] */
+  /** 🛡️ KALKULATOR-PRÄDIKAT: Validiert vor dem Drop, ob eine Idee kalkuliert werden darf */
   public canIdeaEnterCalculator = (drag: any): boolean => {
     const vm = drag.data;
     return vm ? vm.canEnterCalculator() : false;
   };
 
-  /** Hilfsmethode zur String-Validierung bei Tag-Wechseln[cite: 9] */
+  /** Hilfsmethode zur String-Validierung bei Tag-Wechseln */
   public onTagChanged(neuerTag: any): void {
     this.newTag = String(neuerTag || '');
   }
@@ -475,7 +476,7 @@ export class IdeaBoardComponent implements OnInit {
   // 🔮 KI INTERAKTION & MODAL MANAGEMENT
   // -------------------------------------------------------------------------
 
-  /** Öffnet das Todo-Planungs-Popup und injiziert die von der KI vorgeschlagenen strukturierten Daten[cite: 8, 9] */
+  /** Öffnet das Todo-Planungs-Popup und injiziert die von der KI vorgeschlagenen strukturierten Daten */
   public openTodoPlanningFromIdea(ideaData: { title: string; content: string; category: string }): void {
     console.log("🎯 KI-Daten empfangen, wir füttern die Signale und öffnen das Popup!");
     this.ideaToPlanTitle.set(ideaData.title);
@@ -484,7 +485,7 @@ export class IdeaBoardComponent implements OnInit {
     this.isTodoPopupShow.set(true);
   }
 
-  /** Schließt das Todo-Planungs-Popup und bereinigt alle transienten KI-Daten-Buffer[cite: 8, 9] */
+  /** Schließt das Todo-Planungs-Popup und bereinigt alle transienten KI-Daten-Buffer */
   public closePlanningModal(): void {
     this.isTodoPopupShow.set(false);
     this.ideaToPlanTitle.set('');

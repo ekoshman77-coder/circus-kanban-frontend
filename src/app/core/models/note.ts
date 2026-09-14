@@ -4,7 +4,7 @@ import { INoteJson } from "../repositories/dto/note-json";
 import { generateLocalId } from "../shared/constants/id-const";
 
 export class Note {
-    id?: string;
+    id: string;
     userId: string;
     title: string;
     content: string;
@@ -41,4 +41,42 @@ export class Note {
         this.weatherCode = init.weatherCode?? undefined
         this.scope = init.scope?? 'DEPARTMENT'
     }
+
+    /**
+   * 📥 Erzeugt eine echte Note-Instanz aus dem JSON/Plain-Objekt der Queue
+   */
+  public static fromJson(json: any): Note {
+    return new Note({
+      id: json.id,
+      userId: json.userId,
+      title: json.title,
+      content: json.content,
+      colorType: json.colorType,
+      tag: json.tag,
+      departmentId: json.departmentId,
+      isInCalculation: json.isInCalculation,
+      temperature: json.temperature,
+      weatherCode: json.weatherCode,
+      scope: json.scope
+    });
+  }
+
+  /**
+   * 📤 Erzeugt ein fahrbereites JSON-Objekt für den LocalStorage / QueuePayload
+   */
+  public toJson(): any {
+    return {
+      id: this.id,
+      userId: this.userId,
+      title: this.title,
+      content: this.content,
+      colorType: this.colorType,
+      tag: this.tag,
+      departmentId: this.departmentId,
+      isInCalculation: this.isInCalculation,
+      temperature: this.temperature,
+      weatherCode: this.weatherCode,
+      scope: this.scope
+    };
+  }
 }

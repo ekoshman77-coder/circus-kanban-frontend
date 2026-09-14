@@ -5,7 +5,6 @@ import { TodoListComponent } from '../todo-list-component/todo-list-component';
 import { TodoFooterComponent } from '../todo-footer-component/todo-footer-component';
 import { TodoKanbanComponent } from '../todo-kanban-component/todo-kanban-component';
 import { TodoService } from '../../../core/services/todo/todo-service';
-import { PlannerComponent } from '../../planner/planner-component/planner-component';
 import { ArchivExpressComponent } from '../../archiv-express/archiv-express-component/archiv-express-component';
 import { GamificationResult } from '../../../core/models/gamification';
 
@@ -29,7 +28,6 @@ export class TodoPageComponent {
   public currentView = signal<'list' | 'kanban' | 'express'>('list');
   public pageError = computed(() => this.todoService.globalError());
 
-  protected activeDeletedTodo = computed(() => this.todoService.lastDeletedTodo());
   protected localShowLevelUpBanner = signal<GamificationResult | null>(null);
 
   constructor() {
@@ -45,11 +43,6 @@ export class TodoPageComponent {
         }, 800);
       }
     });
-  }
-
-  public deleteToastProgress = computed(() => this.todoService.toastProgress())
-  public restoreTodo() {
-    this.todoService.restoreTodo()
   }
 
   protected closeBanner() {

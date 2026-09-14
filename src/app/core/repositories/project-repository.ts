@@ -12,11 +12,10 @@ export class ProjectRepository {
   private http = inject(HttpClient);
 
   // 🔍 Alle Projekte eines Users holen: GET /api/projects?userId=...
-  public getProjectsByUserId(userId: string): Observable<IProjectJSON[]> {
+  public getAllProjects(): Observable<IProjectJSON[]> {
     console.log("ProjectRepository: GET projects");
-    const params = new HttpParams().set('userId', userId);
 
-    return this.http.get<IProjectJSON[]>(projectApiUrl, { params });
+    return this.http.get<IProjectJSON[]>(projectApiUrl);
   }
 
   // 🔍 Einzelnes Projekt per ID holen: GET /api/projects/{id}

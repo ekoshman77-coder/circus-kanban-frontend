@@ -128,10 +128,9 @@ export class TodoListComponent extends BaseTodoBoardComponent implements OnInit 
     const todo = this.filteredTodos().find(t => t.id === id);
 
     if (todo) {
-      // 2. HIER MUSS UNSERE NEUE UNDO-METHODE REIN!
-      this.todoService.deleteTodoWithUndo(todo);
+      // 🟢 Direktes Löschen über die neue DataManager/Queue-Architektur
+      this.todoService.deleteTodoDirectly(todo.id);
     } else {
-      // Nur zur Sicherheit, falls es im ViewModel-Mapping verschluckt wurde:
       console.warn("Todo nicht im gefilterten Stream gefunden!");
     }
   }

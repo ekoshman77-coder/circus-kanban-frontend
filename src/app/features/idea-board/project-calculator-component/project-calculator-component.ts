@@ -39,7 +39,7 @@ import { PermissionService } from '../../../core/services/permissions/permission
   templateUrl: './project-calculator-component.html',
   styleUrl: './project-calculator-component.css'
 })
-export class ProjectCalculatorComponent implements OnInit {
+export class ProjectCalculatorComponent {
   // -------------------------------------------------------------------------
   // 🛠️ INJIZIERTE SERVICES
   // -------------------------------------------------------------------------
@@ -204,10 +204,6 @@ export class ProjectCalculatorComponent implements OnInit {
         content: proj.content ?? ""
       }, { emitEvent: false })
     })
-  }
-
-  ngOnInit(): void {
-    this.projectService.loadProjects();
   }
 
   /**
@@ -566,6 +562,10 @@ export class ProjectCalculatorComponent implements OnInit {
    * Schickt das fertige Rechenergebnis per HTTP-Request an das Backend. 
    * Löscht bei Erfolg lokale Entwurfsdaten und wechselt reaktiv in die Projektübersicht.
    */
+/**
+   * Schickt das fertige Rechenergebnis an den Service. 
+   * Löscht bei Erfolg lokale Entwurfsdaten und wechselt reaktiv in die Projektübersicht.
+   */
   public handleAutoSaveConfirm(): void {
     const project = this.activeProject();
     if (!project || !project.milestones || project.milestones.length === 0) {
@@ -574,7 +574,7 @@ export class ProjectCalculatorComponent implements OnInit {
       return;
     }
 
-    // Für bereits bestehende, gefüllte Projekte: Rechterad-Prüfung
+    // Für bereits bestehende, gefüllte Projekte: Rechte-Prüfung
     if (!this.isBrandNewDraft()) {
       const currentUserId = this.userService.getCurrentUserId();
       if (project.userId !== currentUserId && !this.teamService.hasPermission(project.id, 'PROJECT_EDIT')) {
@@ -584,39 +584,38 @@ export class ProjectCalculatorComponent implements OnInit {
       }
     }
 
-    //    const isExistingDbProject = !!project.id && !project.id.trim();
-
-    const saveObservable = this.isExistingDbProject()
-      ? this.projectService.updateCalculatedProject(project)
-      : this.projectService.saveCalculatedProject(project);
-
-    saveObservable.subscribe({
-      next: () => {
-        const erfolgsNachricht = this.isExistingDbProject()
-          ? `Änderungen am Projekt "${project.title}" wurden gespeichert! 💾`
-          : `Projekt "${project.title}" wurde erfolgreich kalkuliert und gestartet! 🚀`;
-
-        this.notificationService.showNotification(erfolgsNachricht, 'success');
-
-        if (this.isBrandNewDraft()) {
-          this.projectDraftService.clearDraft();
-          this.currentIdea.set(null);
-        } else {
-          this.localEditProject.set(null);
-        }
-
-        this.isBrandNewDraft.set(true);
-        this.showSuccessPopup.set(false);
-        this.navigationService.changeTab(BoardTab.Projects, { type: 'project', id: "" });
-      },
-      error: (err: HttpErrorResponse) => {
-        const serverMessage = err.error?.message || 'Fehler beim Speichern!';
-        this.notificationService.showNotification(serverMessage, 'error');
-        this.showSuccessPopup.set(false);
+    try {
+      // Synchrones Speichern/Update über den Service
+      if (this.isExistingDbProject()) {
+        this.projectService.updateCalculatedProject(project);
+      } else {
+        this.projectService.saveCalculatedProject(project);
       }
-    });
-  }
 
+      const erfolgsNachricht = this.isExistingDbProject()
+        ? `Änderungen am Projekt "${project.title}" wurden gespeichert! 💾`
+        : `Projekt "${project.title}" wurde erfolgreich kalkuliert und gestartet! 🚀`;
+
+      this.notificationService.showNotification(erfolgsNachricht, 'success');
+
+      if (this.isBrandNewDraft()) {
+        this.projectDraftService.clearDraft();
+        this.currentIdea.set(null);
+      } else {
+        this.localEditProject.set(null);
+      }
+
+      this.isBrandNewDraft.set(true);
+      this.showSuccessPopup.set(false);
+      this.navigationService.changeTab(BoardTab.Projects, { type: 'project', id: "" });
+
+    } catch (err: any) {
+      const serverMessage = err?.error?.message || err?.message || 'Fehler beim Speichern!';
+      this.notificationService.showNotification(serverMessage, 'error');
+      this.showSuccessPopup.set(false);
+    }
+  }
+  
   /** Schließt das Bestätigungs-Popup ohne zu speichern */
   public cancelPopupCountdown(): void {
     this.showSuccessPopup.set(false);

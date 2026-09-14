@@ -1,282 +1,227 @@
-import { effect, inject, Injectable, signal } from "@angular/core";
-import { CreateRolePermissionDto, RolePermissionResponseDto, UpdateRolePermissionDto } from "../../repositories/dto/role-permissions";
-import { BaseDataManager } from "../abstract-base-data-manager/base-data-manager";
-import { ConnectionService } from "../connection/connection-service";
-import { UserService } from "../user/user-service";
-import { Permission } from "../../models/permission";
-import { PermissionRepository } from "../../repositories/permission-repository";
-import { concat, toArray } from "rxjs";
-import { NotificationService } from "../notification/notification-service";
-import { generateLocalId } from "../../shared/constants/id-const";
-import { BatchCreatePermissionsDto } from "../../repositories/dto/batch-create-permissions";
+import { inject, Injectable, signal } from '@angular/core';
+import { Observable, of, throwError, map } from 'rxjs';
+import { BaseQueueDataManager } from '../central-queue/base-queue-data-manager';
+import { PermissionRepository } from '../../repositories/permission-repository';
+import { Permission } from '../../models/permission';
+import { QueueItem } from '../../models/queue-items/queue-item';
+import { generateLocalId } from '../../shared/constants/id-const';
+import { PermissionJson } from '../../repositories/dto/permission-json';
+import {
+  PermissionPayload,
+  DeletePermissionPayload,
+  BatchCreatePermissionsPayload
+} from '../../models/queue-items/permission-queue-item';
 
-export interface PermissionQueueItem {
-    id: string; // Eindeutige Queue-ID
-    action: 'CREATE' | 'UPDATE' | 'DELETE' | 'BATCH';
-    payload: RolePermissionResponseDto | CreateRolePermissionDto | UpdateRolePermissionDto | BatchCreatePermissionsDto | string;
-}
+export type PermissionQueueAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'BATCH';
 
 @Injectable({
-    providedIn: 'root'
+  providedIn: 'root'
 })
-export class PermissionDataManager extends BaseDataManager {
-    private connectionService = inject(ConnectionService);
-    private userService = inject(UserService);
-    private permissionRepository = inject(PermissionRepository);
-    private notificationService = inject(NotificationService);
+export class PermissionDataManager extends BaseQueueDataManager {
+  private permissionRepository = inject(PermissionRepository);
 
-    private QUEUE_KEY = 'PERMISSIONS_QUEUE_KEY';
-    private PERMISSIONS_KEY = 'PERMISSIONS_KEY';
+  public permissionsSignal = signal< Permission[]>([]);
+  private readonly STORAGE_KEY = 'global_permissions_pool';
 
-    private localQueue = signal<PermissionQueueItem[]>([]);
-    public permissions = signal<Permission[]>([]);
+  constructor() {
+    super('PermissionDataManager');
+    this.loadFromCache();
+  }
 
-    constructor() {
-        super();
-        this.loadPermissionsFromStorage();
-        this.loadQueueFromStorage();
+  // ==========================================
+  // 🚀 BASE QUEUE DATA MANAGER HOOKS
+  // ==========================================
 
-        effect(() => {
-            const isOnline = this.connectionService.isOnline();
-            const isAdmin = this.userService.isAdmin();
-            if (isOnline && isAdmin) {
-                this.syncDataQueue();
-            }
+  public override executeQueueItem(item: QueueItem): Observable< any> {
+    const action = item.action as PermissionQueueAction;
+    const payload = item.payload;
+
+    switch (action) {
+      case 'CREATE': {
+        const createPayload = payload as PermissionPayload;
+        // 🛡️ Security: Backend soll eigene ID vergeben -> Local ID entfernen
+        const permissionToSend = new Permission({
+          ...createPayload.permission,
+          id: undefined
         });
+        return this.permissionRepository.createPermission(permissionToSend);
+      }
+      case 'UPDATE': {
+        const updatePayload = payload as PermissionPayload;
+        return this.permissionRepository.updatePermission(updatePayload.permission);
+      }
+      case 'DELETE': {
+        const deletePayload = payload as DeletePermissionPayload;
+        return this.permissionRepository.deletePermission(deletePayload.id);
+      }
+      case 'BATCH': {
+        const batchPayload = payload as BatchCreatePermissionsPayload;
+        return this.permissionRepository.batchCreatePermissions(batchPayload);
+      }
+      default:
+        return throwError((): Error => new Error(`[PermissionDataManager] Unbekannte Action: ${item.action}`));
     }
+  }
 
-    private loadPermissionsFromStorage() {
-        const permissionsLocal = this.localStorageService.getItem<Permission[]>(this.PERMISSIONS_KEY) ?? [];
-        this.permissions.set(permissionsLocal);
+  public override resetState(snapshot: PermissionJson[]): void {
+    if (Array.isArray(snapshot)) {
+      const restored = snapshot.map((json: PermissionJson) => Permission.fromJson(json));
+      this.permissionsSignal.set(restored);
+      this.saveToCache(restored);
     }
+  }
 
-    private loadQueueFromStorage() {
-        const queue = this.localStorageService.getItem<PermissionQueueItem[]>(this.QUEUE_KEY) ?? [];
-        this.localQueue.set(queue);
-    }
+  protected override onEntityCreated(tempId: string, response: unknown): void {
+    const realPermission = Permission.fromJson(response);
+    const updated = this.permissionsSignal().map((p) => (p.id === tempId ? realPermission : p));
+    this.permissionsSignal.set(updated);
+    this.saveToCache(updated);
+  }
 
-    public syncDataQueue() {
-        if (this.localQueue().length === 0) return;
+  // ==========================================
+  // 🔄 REHYDRATION PATTERN (BaseQueueDataManager)
+  // ==========================================
 
-        const requests = this.localQueue().map(item => {
-            switch (item.action) {
-                case 'CREATE':
-                    return this.permissionRepository.createPermission(item.payload as CreateRolePermissionDto);
-                case 'UPDATE':
-                    return this.permissionRepository.updatePermission(item.payload as UpdateRolePermissionDto);
-                case 'DELETE':
-                    return this.permissionRepository.deletePermission(item.payload as string);
-                case 'BATCH':
-                    return this.permissionRepository.batchCreatePermissions(item.payload as BatchCreatePermissionsDto)
-            }
+  protected override fetchFromServer(userId: string): Observable< void> {
+    return this.permissionRepository.getPermissions().pipe(
+      map((serverPermissionsJson): void => {
+        const permissions = serverPermissionsJson.map((json) => Permission.fromJson(json));
+        this.permissionsSignal.set(permissions);
+        this.saveToCache(permissions);
+      })
+    );
+  }
+
+  // ==========================================
+  // 📝 PUBLIC API METHODEN (mit Snapshots)
+  // ==========================================
+
+  public createPermission(permission: Permission): void {
+    const snapshot = this.getSnapshotJson();
+    const tempId = permission.id || generateLocalId();
+
+    const newPermission = new Permission({
+      ...permission,
+      id: tempId
+    });
+
+    const updated = [...this.permissionsSignal(), newPermission];
+    this.permissionsSignal.set(updated);
+    this.saveToCache(updated);
+
+    const payload: PermissionPayload = {
+      id: tempId,
+      permission: newPermission,
+      snapshot
+    };
+
+    this.queueService.enqueue(this.serviceName, 'CREATE', payload);
+  }
+
+  public batchCreatePermissions(
+    roles: string[],
+    actions: string[],
+    resource: string,
+    scope: string,
+    specialization?: string
+  ): void {
+    const snapshot = this.getSnapshotJson();
+    const updatedList = [...this.permissionsSignal()];
+
+    roles.forEach((role) => {
+      actions.forEach((action) => {
+        const permission = new Permission({
+          id: generateLocalId(),
+          role,
+          resource,
+          action,
+          targetScope: scope,
+          specialization
         });
-
-        concat(...requests).pipe(toArray()).subscribe({
-            next: () => {
-                console.info("Permissions wurden synchronisiert");
-                this.localQueue.set([]);
-                this.localStorageService.removeItem(this.QUEUE_KEY);
-                this.notificationService.showNotification('Alle Offline-Permissionsänderungen wurden synchronisiert. 🔄', 'success');
-                this.loadPermissions();
-            },
-            error: (err) => {
-                console.error('❌ Fehler bei der Synchronisation der Offline-Queue:', err);
-                this.notificationService.showNotification('Fehler beim Synchronisieren der Permissions.', 'error');
-            }
-        });
-    }
-
-    public loadPermissions() {
-        if (this.connectionService.isOffline()) {
-            this.loadPermissionsFromStorage();
-            return;
+        if (!updatedList.some((perm) => perm.isEqualPermission(permission))) {
+          updatedList.push(permission);
         }
+      });
+    });
 
-        this.permissionRepository.getPermissions().subscribe({
-            next: (next) => {
-                console.log("Permissions sind von Server geladen", next);
-                const list = next.map(permission => Permission.fromJson(permission));
-                console.log("Permissions nach dem maping", list);
-                this.permissions.set(list);
-                this.localStorageService.setItem(this.PERMISSIONS_KEY, list);
-            },
-            error: (err) => {
-                console.error("Fehler beim Laden permissions von Server", err);
-                this.notificationService.showNotification("Fehler beim Laden permissions von Server", 'error');
-            }
-        });
+    this.permissionsSignal.set(updatedList);
+    this.saveToCache(updatedList);
+
+    const payload: BatchCreatePermissionsPayload = {
+      id: generateLocalId(),
+      roles,
+      resource,
+      actions,
+      scope,
+      specialization,
+      snapshot
+    };
+
+    this.queueService.enqueue(this.serviceName, 'BATCH', payload);
+  }
+
+  public updatePermission(permission: Permission): void {
+    if (!permission.id) return;
+
+    const snapshot = this.getSnapshotJson();
+    const updated = this.permissionsSignal().map((p) => (p.id === permission.id ? permission : p));
+
+    this.permissionsSignal.set(updated);
+    this.saveToCache(updated);
+
+    const payload: PermissionPayload = {
+      id: permission.id,
+      permission,
+      snapshot
+    };
+
+    this.queueService.enqueue(this.serviceName, 'UPDATE', payload);
+  }
+
+  public deletePermission(permissionId: string): void {
+    const snapshot = this.getSnapshotJson();
+    const updated = this.permissionsSignal().filter((p) => p.id !== permissionId);
+
+    this.permissionsSignal.set(updated);
+    this.saveToCache(updated);
+
+    const payload: DeletePermissionPayload = {
+      id: permissionId,
+      snapshot
+    };
+
+    this.queueService.enqueue(this.serviceName, 'DELETE', payload);
+  }
+
+  // ==========================================
+  // 🛠️ PRIVATE CACHE HELPER
+  // ==========================================
+
+  private getSnapshotJson(): PermissionJson[] {
+    return this.permissionsSignal().map((p) => p.mapToJson());
+  }
+
+  private saveToCache(permissions: Permission[]): void {
+    const jsonArray = permissions.map((p) => p.mapToJson());
+    this.localStorageService.setItem(this.STORAGE_KEY, jsonArray);
+  }
+
+  private loadFromCache(): void {
+    const cached = this.localStorageService.getItem< PermissionJson[]>(this.STORAGE_KEY);
+    if (cached && Array.isArray(cached)) {
+      const restored = cached.map((json) => Permission.fromJson(json));
+      this.permissionsSignal.set(restored);
+    } else {
+      this.permissionsSignal.set([]);
     }
+  }
 
-    private copyToQueue(
-        perm: CreateRolePermissionDto | UpdateRolePermissionDto | BatchCreatePermissionsDto | string,
-        action: 'CREATE' | 'UPDATE' | 'DELETE' | 'BATCH'
-    ) {
-        const permItem: PermissionQueueItem = {
-            id: generateLocalId(),
-            action: action,
-            payload: perm
-        };
-        this.localQueue.update(value => [...value, permItem]);
-        this.localStorageService.setItem(this.QUEUE_KEY, this.localQueue());
-    }
+  public override resetData(): void {
+    this.localStorageService.removeItem(this.STORAGE_KEY);
+    this.permissionsSignal.set([]);
+  }
 
-    public createPermission(permission: Permission) {
-        const permissionJson = permission.mapToJson() as CreateRolePermissionDto;
-        const updatedList = [...this.permissions(), permission];
-
-        // Optimistisch lokal setzen
-        this.permissions.set(updatedList);
-        this.localStorageService.setItem(this.PERMISSIONS_KEY, updatedList);
-
-        if (this.connectionService.isOffline()) {
-            this.copyToQueue(permissionJson, 'CREATE');
-            return;
-        }
-
-        this.permissionRepository.createPermission(permissionJson).subscribe({
-            next: (next) => {
-                const serverPerm = Permission.fromJson(next);
-
-                // 🎯 Ersetze Punktgenau nur die optimistische Permission anhand ihrer temporären ID
-                const perm = this.permissions().map(p =>
-                    p.id === permission.id ? serverPerm : p
-                );
-
-                this.permissions.set(perm);
-                this.localStorageService.setItem(this.PERMISSIONS_KEY, perm);
-            },
-            error: () => {
-                this.copyToQueue(permissionJson, 'CREATE');
-            }
-        });
-    }
-
-    public batchCreatePermissions(
-        roles: string[], 
-        actions: string[], 
-        resource: string,
-        scope: string,
-        specialization?: string
-    ) {
-        const previousPermissions = [...this.permissions()];
-        let updatedList = [...this.permissions()]
-        roles.forEach(role => {
-            actions.forEach(action => {
-               const permission = new Permission({
-                role: role, 
-                resource: resource, 
-                action: action, 
-                targetScope: scope,
-                specialization: specialization
-               })
-               if (!updatedList.some(perm => perm.isEqualPermission(permission))) {
-                updatedList.push(permission)
-               }
-            })
-        })
-        this.permissions.set(updatedList)
-        this.localStorageService.setItem(this.PERMISSIONS_KEY, updatedList);
-
-        const batchJson: BatchCreatePermissionsDto = {
-            roles: roles,
-            resource: resource,
-            actions: actions,
-            scope: scope,
-            specialization: specialization
-        }
-
-        if (this.connectionService.isOffline()) {
-            this.copyToQueue(batchJson, 'BATCH');
-            return;
-        }
-
-        this.permissionRepository.batchCreatePermissions(batchJson).subscribe({
-            next: (next) => {
-                const serverPerm = next.map(perm => Permission.fromJson(perm));
-                let checkedList = this.permissions()
-                serverPerm.forEach(permFromServer => {
-                    checkedList = checkedList.map(permission => {
-                        if (permFromServer.isEqualPermission(permission)) {
-                           return permFromServer
-                        }
-                        return permission
-                    })
-                })
-                this.permissions.set(checkedList)
-                this.localStorageService.setItem(this.PERMISSIONS_KEY, checkedList);
-                this.notificationService.showNotification('Berechtigungen erfolgreich zugewiesen! 🎉', 'success');
-            },
-            error: (err) => {
-                this.permissions.set(previousPermissions)
-                this.localStorageService.setItem(this.PERMISSIONS_KEY, previousPermissions)
-                const errorMsg = err.error?.message || "Fehler beim Erstellen der Berechtigungen";
-                this.notificationService.showNotification(`⛔ ${errorMsg}`, 'error');
-
-                if (err.status === 0 || (err.status >= 500 && err.status < 600)) {
-                    this.copyToQueue(batchJson, 'BATCH');
-                    this.notificationService.showNotification('Server vorübergehend nicht erreichbar. In Queue gespeichert. 🔄', 'info');
-                }
-            }
-        });
-    }
-
-    public updatePermission(permission: Permission) {
-        const permissionJson = permission.mapToJson() as UpdateRolePermissionDto;
-        const updatedList = this.permissions().map(p => p.id === permission.id ? permission : p);
-
-        // Optimistisch lokal setzen
-        this.permissions.set(updatedList);
-        this.localStorageService.setItem(this.PERMISSIONS_KEY, updatedList);
-
-        if (this.connectionService.isOffline()) {
-            this.copyToQueue(permissionJson, 'UPDATE');
-            return;
-        }
-
-        this.permissionRepository.updatePermission(permissionJson).subscribe({
-            error: (err) => {
-                console.log("Fehler bei update permission", err);
-                this.notificationService.showNotification("Fehler bei update permission", 'error');
-                this.copyToQueue(permissionJson, 'UPDATE');
-            }
-        });
-    }
-
-    public deletePermission(permissionId: string) {
-        const previousPermissions = [...this.permissions()];
-        const updatedList = this.permissions().filter(p => p.id !== permissionId);
-
-        // Optimistisch lokal entfernen
-        this.permissions.set(updatedList);
-        this.localStorageService.setItem(this.PERMISSIONS_KEY, updatedList);
-
-        if (this.connectionService.isOffline()) {
-            this.copyToQueue(permissionId, 'DELETE');
-            return;
-        }
-
-        this.permissionRepository.deletePermission(permissionId).subscribe({
-            error: (err) => {
-                console.log("Fehler bei delete permission", err);
-
-                // 🔄 Bei HTTP 403 / 400 (Backend-Sperre) den lokalen State zurückrollen & NICHT in die Queue legen
-                this.permissions.set(previousPermissions);
-                this.localStorageService.setItem(this.PERMISSIONS_KEY, previousPermissions);
-
-                const errorMsg = err.error?.message || "Fehler beim Löschen der Permission";
-                this.notificationService.showNotification(`⛔ ${errorMsg}`, 'error');
-            }
-        });
-    }
-
-    public override checkUnsavedData(): string | null {
-        return this.localQueue().length > 0 ? "Permissionsänderungen sind nicht gespeichert" : null;
-    }
-
-    public override resetData(): void {
-        this.localStorageService.removeItem(this.QUEUE_KEY);
-        this.localStorageService.removeItem(this.PERMISSIONS_KEY);
-        this.localQueue.set([]);
-        this.permissions.set([]);
-    }
+  public override checkUnsavedData(): string | null {
+    return null;
+  }
 }

@@ -1,96 +1,162 @@
 import { Injectable, inject, signal } from '@angular/core';
+import { Observable, of, map } from 'rxjs';
 import { TeamRepository } from '../../repositories/team-repository';
-import { UserRepository } from '../../repositories/user-repository';
-import { ConnectionService } from '../connection/connection-service';
-import { ProjectMember } from '../../models/project-member';
+import { IUser, UserRepository } from '../../repositories/user-repository';
 import { Department } from '../../models/department';
+import { UserModel } from '../../models/user-model';
+import { BaseQueueDataManager } from '../central-queue/base-queue-data-manager';
+import { QueueItem } from '../../models/queue-items/queue-item';
+import { ApproveUserPayload, DeleteUserPayload } from '../../models/queue-items/users-queue-payloads';
+import { ConnectionService } from '../connection/connection-service';
+import { UserService } from '../user/user-service';
+
+export type AdminAction = 'APPROVE_USER' | 'DELETE_USER';
 
 @Injectable({
   providedIn: 'root'
 })
-export class AdminDataManager {
+export class AdminDataManager extends BaseQueueDataManager {
   private teamRepository = inject(TeamRepository);
   private userRepository = inject(UserRepository);
-  private connectionService = inject(ConnectionService);
 
-  // 👑 Das exklusive reaktive Signal NUR für das Admin-Board
-  public adminUsersSignal = signal<ProjectMember[]>([]);
-
-  // 🔑 Eigener Cache-Schlüssel, damit nichts vermischt wird!
+  public adminUsersSignal = signal<UserModel[]>([]);
   private readonly STORAGE_KEY_ADMIN_POOL = 'offline_admin_all_users';
 
   constructor() {
+    super('AdminDataManager');
     this.loadAdminPoolFromCache();
   }
 
-  /** 📥 Lädt die unzensierte Gesamtliste für Admins */
-  public loadAdminBoardPool(): void {
-    if (!this.connectionService.isOnline()) { //[cite: 7]
-      console.log(`📡 [AdminDataManager] Offline! Nutze Admin-Cache.`); //[cite: 7]
-      this.loadAdminPoolFromCache(); //[cite: 7]
-      return; //[cite: 7]
-    }
+  // ==========================================================================
+  // ⚙️ QUEUE HANDLER IMPLEMENTIERUNG
+  // ==========================================================================
 
-    console.log(`👑 [AdminDataManager] Online! Lade unzensierten Admin-Pool vom Server...`); //[cite: 7]
-    this.teamRepository.getAllUsersForAdminBoard$().subscribe({ //[cite: 7]
-      next: (members) => {
-        console.log('🔍 [DEBUG AdminDataManager] Vom Server empfangene Mitglieder:', members);
-        if (members.length > 0) {
-          console.log('🔍 [DEBUG AdminDataManager] Erstes User-Objekt Detail:', members[0].user);
-        }
-
-        this.adminUsersSignal.set(members); //[cite: 7]
-        localStorage.setItem(this.STORAGE_KEY_ADMIN_POOL, JSON.stringify(members)); //[cite: 7]
-      },
-      error: (err) => console.error("❌ Fehler beim Laden des Admin-User-Pools:", err) //[cite: 7]
-    });
-  }
-
-  /** 🔓 Schaltet ein Mitglied frei und weist eine Abteilung zu */
-  public approveMember(userId: string, department: Department, role: string): void {
-    // 🚀 OPTIMISTIC UI: Direkt im Admin-Signal manipulieren
-    const updatedList = this.adminUsersSignal().map(m => {
-      if (m.user.id === userId) {
-        m.user.isApproved = true;
-        m.user.department = department;
-        m.user.departmentRole = role
+  public override executeQueueItem(item: QueueItem): Observable<any> {
+    switch (item.action as AdminAction) {
+      case 'APPROVE_USER': {
+        const payload = item.payload as ApproveUserPayload;
+        return this.userRepository.approveUser(payload.id, payload.departmentId, payload.role);
       }
-      return m;
-    });
-
-    this.adminUsersSignal.set(updatedList);
-    localStorage.setItem(this.STORAGE_KEY_ADMIN_POOL, JSON.stringify(updatedList));
-
-    if (this.connectionService.isOnline()) {
-      this.userRepository.approveUser(userId, department.id, role).subscribe({
-        next: () => this.loadAdminBoardPool() // Lädt exklusiv den Admin-Pool frisch nach!
-      });
-    } else {
-      // Hinweis: Wenn du möchtest, kannst du hier später eine eigene Admin-Warteschlange einbauen.
-      console.warn("Offline-Approve im Admin-Modus noch nicht synchronisiert.");
+      case 'DELETE_USER': {
+        const payload = item.payload as DeleteUserPayload;
+        return this.userRepository.deleteGlobalUser$(payload.id);
+      }
+      default:
+        return of(null);
     }
   }
 
-  /** 💀 Löscht ein Mitglied global aus dem System */
-  public deleteAdminMember(memberId: string): void {
-    // Optimistic UI
-    const updatedList = this.adminUsersSignal().filter(m => m.user.id !== memberId);
-    this.adminUsersSignal.set(updatedList);
-    localStorage.setItem(this.STORAGE_KEY_ADMIN_POOL, JSON.stringify(updatedList));
+  // ==========================================================================
+  // 🔄 REHYDRATION PATTERN (BaseQueueDataManager)
+  // ==========================================================================
 
-    if (this.connectionService.isOnline()) {
-      this.userRepository.deleteGlobalUser$(memberId).subscribe({
-        next: () => this.loadAdminBoardPool()
-      });
+  protected override fetchFromServer(userId: string): Observable<void> {
+    return this.teamRepository.getAllUsersForAdminBoard$().pipe(
+      map((members): void => {
+        const userModels = members.map((m) => m.user);
+        this.adminUsersSignal.set(userModels);
+        this.saveToCache(userModels);
+      })
+    );
+  }
+
+  public override resetState(snapshot: IUser[]): void {
+    if (Array.isArray(snapshot)) {
+      const restoredList = snapshot.map((json) => UserModel.fromJson(json));
+      this.adminUsersSignal.set(restoredList);
+      this.saveToCache(restoredList);
     }
+  }
+
+  protected override onEntityCreated(tempId: string, response: unknown): void {
+    // Admin-Aktionen führen nur Update/Delete aus
+  }
+
+  public override checkAndReplaceIds(item: QueueItem, localId: string, serverId: string): void {
+    if (item.action === 'APPROVE_USER') {
+      const payload = item.payload as ApproveUserPayload;
+      // Wenn das genehmigte Department vorher die temporäre ID hatte, auf Server-ID biegen
+      if (payload.departmentId === localId) {
+        payload.departmentId = serverId;
+      }
+    }
+  }
+
+  // ==========================================================================
+  // 🔄 AKTIONEN (Optimistic UI + Queue)
+  // ==========================================================================
+
+  public approveMember(userId: string, department: Department, role: string): void {
+    const snapshot = this.createSnapshot();
+
+    const updatedList = this.adminUsersSignal().map((user) => {
+      if (user.id === userId) {
+        return new UserModel({
+          ...user,
+          isApproved: true,
+          department: department,
+          departmentRole: role
+        });
+      }
+      return user;
+    });
+
+    this.adminUsersSignal.set(updatedList);
+    this.saveToCache(updatedList);
+
+    const payload: ApproveUserPayload = {
+      id: userId,
+      departmentId: department.id,
+      role: role,
+      snapshot: snapshot
+    };
+
+    this.queueService.enqueue(this.serviceName, 'APPROVE_USER' as AdminAction, payload);
+  }
+
+  public deleteAdminMember(memberId: string): void {
+    const snapshot = this.createSnapshot();
+
+    const updatedList = this.adminUsersSignal().filter((user) => user.id !== memberId);
+    this.adminUsersSignal.set(updatedList);
+    this.saveToCache(updatedList);
+
+    const payload: DeleteUserPayload = {
+      id: memberId,
+      snapshot: snapshot
+    };
+
+    this.queueService.enqueue(this.serviceName, 'DELETE_USER' as AdminAction, payload);
+  }
+
+  // ==========================================================================
+  // 🧹 HILFSMETHODEN
+  // ==========================================================================
+
+  private createSnapshot(): IUser[] {
+    return this.adminUsersSignal().map((user) => user.toJson());
+  }
+
+  private saveToCache(users: UserModel[]): void {
+    const jsonPayload = users.map((u) => u.toJson());
+    this.localStorageService.setItem(this.STORAGE_KEY_ADMIN_POOL, jsonPayload);
   }
 
   private loadAdminPoolFromCache(): void {
-    const cached = localStorage.getItem(this.STORAGE_KEY_ADMIN_POOL);
-    if (cached) {
-      const parsed = JSON.parse(cached) as any[];
-      const hydrated = parsed.map(m => new ProjectMember(m.user, m.projectRole));
+    const cached = this.localStorageService.getItem(this.STORAGE_KEY_ADMIN_POOL);
+    if (cached && Array.isArray(cached)) {
+      const hydrated = cached.map((json) => UserModel.fromJson(json));
       this.adminUsersSignal.set(hydrated);
+    } else {
+      this.adminUsersSignal.set([]);
     }
+  }
+
+  public override checkUnsavedData(): string | null {
+    return null;
+  }
+
+  public override resetData(): void {
+    this.localStorageService.removeItem(this.STORAGE_KEY_ADMIN_POOL);
   }
 }

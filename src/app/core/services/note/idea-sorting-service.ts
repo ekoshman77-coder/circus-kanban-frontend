@@ -11,14 +11,7 @@ export class IdeaSortingService {
   private noteService = inject(NoteService);
   private readonly BASE_STORAGE_KEY = 'my_note_sorting';
 
-  constructor() {
-    effect(() => {
-      const user = this.userService.currentUser();
-      if (user && user.id) {
-        this.noteService.loadNotes();
-      }
-    });
-  }
+  public currentNotes = this.noteService.notesList; 
 
   /**
    * Lädt die Sortierung für einen bestimmten Kontext (Board-Modus)

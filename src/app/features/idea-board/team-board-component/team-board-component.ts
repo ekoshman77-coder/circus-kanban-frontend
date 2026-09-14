@@ -30,10 +30,10 @@ export type BoardFilterState = {
  * Das interaktive Herzstück der Team-Zusammenarbeit im edlen Zirkus-Design.
  * 
  * **Hauptaufgaben der Komponente:**
- * * **Statusverwaltung:** Steuert das 5-Spalten-Kanban-System (Workflow-Zustände von BACKLOG bis DONE)[cite: 2, 3].
- * * **Ticket-Lebenszyklus:** Regelt das reaktive Drag & Drop, wendet automatisierte Workflow-Regeln an (z. B. automatisches Zuweisen/Freigeben von Entwicklern)[cite: 3].
- * * **Zuweisung & Bearbeitung:** Verwaltet die Zuweisung von Team-Mitgliedern zu spezifischen Aufgaben[cite: 3].
- * * **Reaktive Filterung:** Filtert Aufgaben nahtlos nach Projekt oder Meilenstein in Echtzeit via Angular Signals[cite: 3].
+ * * **Statusverwaltung:** Steuert das 5-Spalten-Kanban-System (Workflow-Zustände von BACKLOG bis DONE).
+ * * **Ticket-Lebenszyklus:** Regelt das reaktive Drag & Drop, wendet automatisierte Workflow-Regeln an (z. B. automatisches Zuweisen/Freigeben von Entwicklern).
+ * * **Zuweisung & Bearbeitung:** Verwaltet die Zuweisung von Team-Mitgliedern zu spezifischen Aufgaben.
+ * * **Reaktive Filterung:** Filtert Aufgaben nahtlos nach Projekt oder Meilenstein in Echtzeit via Angular Signals.
  */
 @Component({
   selector: 'app-team-board',
@@ -109,7 +109,7 @@ export class TeamBoardComponent implements OnInit {
     });
 
     // Reaktiv das aktive Projekt synchronisieren, wenn sich der Filter ändert
-    effect(() => {
+effect(() => {
       const filter = this.boardFilter();
       let projectId = "";
 
@@ -119,9 +119,16 @@ export class TeamBoardComponent implements OnInit {
         projectId = this.todoQueryService.getProjectIdByMilestoneId(filter.id) ?? "";
       }
 
-      if (projectId && projectId !== this.teamService.currentProjectId()) {
+      // 1. Projekt-Kontext im zentralen ProjectService setzen/abgleichen
+      if (projectId && projectId !== this.projectService.activeProjectId()) {
+        this.projectService.setActiveProjectId(projectId);
+      }
+
+      // 2. Dem TeamService Bescheid geben, damit er die Teammitglieder für dieses Projekt lädt
+      if (projectId) {
         this.teamService.setCurrentProject(projectId);
       }
+
       this.currentProjectId.set(projectId);
     });
   }

@@ -1,4 +1,5 @@
 import { ITodoJSON, TodoSyncState } from "../repositories/dto/todo-json";
+import { generateLocalId } from "../shared/constants/id-const";
 
 export enum DateStatus {
   DUE = "due",
@@ -65,7 +66,7 @@ export class Todo {
   }) {
     // 🛡️ Wenn ein Wert im 'init' fehlt, greift automatisch das '??' mit dem Standardwert!
     this.task = init.task;
-    this.id = init.id ?? 'local-' + String(Date.now() + Math.floor(Math.random() * 1000));
+    this.id = init.id ?? generateLocalId()
     this.description = init.description ?? null;
     this.done = init.done ?? false;
     this.dueDate = init.dueDate ?? Date.now();

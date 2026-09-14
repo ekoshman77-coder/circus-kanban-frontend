@@ -52,10 +52,6 @@ export class AssignProjectManagerModalComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    // 1. Sicherstellen, dass die globale User-Liste geladen ist
-    this.teamService.loadGlobalPool();
-    // 2. Abteilungen laden
-    this.departmentService.loadDepartments();
   }
 
   constructor() {

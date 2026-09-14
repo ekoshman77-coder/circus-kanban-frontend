@@ -29,7 +29,7 @@ import { SelectRoleModal } from '../../../../core/shared/components/select-role-
   templateUrl: './team-assigment-component.html',
   styleUrl: './team-assigment-component.css'
 })
-export class TeamAssigmentComponent implements OnInit {
+export class TeamAssigmentComponent {
   private teamService = inject(TeamService);
   private projectService = inject(ProjectService);
   private masterDataService = inject(MasterDataService);
@@ -64,11 +64,6 @@ export class TeamAssigmentComponent implements OnInit {
   public userIdPendingAssignment = signal<string | null>(null);
   public selectedRoleForAssignment = signal<ProjectRole>('DEVELOPER');
 
-  ngOnInit(): void {
-    console.log('👥 [TeamAssignment] Triggere globalen Pool im OnInit');
-    this.teamService.loadGlobalPool();
-  }
-
   constructor() {
     effect(() => {
       const projectId = this.selectedProjectId();
@@ -92,8 +87,10 @@ export class TeamAssigmentComponent implements OnInit {
   public onRemoveUserFromProject(userId: string): void {
     const projId = this.selectedProjectId();
     if (!projId) return;
-    this.newUsers.update(current => current.filter(u => u.user.id !== userId))
-    this.teamService.removeMemberFromProject(projId, userId);    
+    this.newUsers.update(current => current.filter(u => u.user.id !== userId));
+    
+    // 🟢 Korrektur: ProjectService kümmert sich ums Entfernen
+    this.projectService.removeMemberFromProject(projId, userId);    
   }
 
   public onAddUserToProject(userId: string): void {
@@ -110,28 +107,26 @@ export class TeamAssigmentComponent implements OnInit {
     this.showRoleModal.set(true);
   }
   
-  public onConfirmRoleAssignment(): void {
-    console.log("onConfirmRoleAssignment")
+public onConfirmRoleAssignment(): void {
+    console.log("onConfirmRoleAssignment");
     const projId = this.selectedProjectId();
     const userId = this.userIdPendingAssignment();
     const role = this.selectedRoleForAssignment();
 
-    console.log("onConfirmRoleAssignment userId", userId)
-    console.log("onConfirmRoleAssignment role", role)
-
     if (!projId || !userId) return;
 
     const member = [...this.allUsers(), ...this.activeMembers()].find(m => m.user.id === userId);
-    console.log("onConfirmRoleAssignment member", member)
 
     if (member) {
-      this.newUsers.update(value => value.filter(m => m.user.id !== userId))
-      this.teamService.addMemberToProject(projId, member.user, role);
+      this.newUsers.update(value => value.filter(m => m.user.id !== userId));
+      
+      // 🟢 Korrektur: ProjectService kümmert sich ums Hinzufügen
+      this.projectService.addMemberToProject(projId, member.user, role);
     }
 
     this.onCloseRoleModal();
   }
-
+  
   public onBadgeClicked(userId: string) {
     console.log(`ℹ️ [TeamAssignment] onBadgeClicked: userId ${userId}`);
     const alreadyMember = this.activeMembers().find(member => member.user.id === userId);

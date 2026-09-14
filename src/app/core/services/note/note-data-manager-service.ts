@@ -1,153 +1,215 @@
-import { inject, Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { inject, Injectable, signal } from '@angular/core';
+import { Observable, of, throwError, map } from 'rxjs';
 import { Note } from '../../models/note';
-import { ConnectionService } from '../connection/connection-service';
+import { BaseQueueDataManager } from '../central-queue/base-queue-data-manager';
+import { QueueItem } from '../../models/queue-items/queue-item';
 import { NoteRepository } from '../../repositories/note-repository';
-import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 import { NoteUpdateOption } from './note-service';
+import {
+  NotePayload,
+  NoteActionPayload,
+  NoteStatusChangePayload,
+  NoteSnapshotPayload
+} from '../../models/queue-items/note-queue-payload';
+import { INoteJson } from '../../repositories/dto/note-json';
 
-/**
- * Service für das offline-sichere und optimistische Datenmanagement von Notizen/Zetteln.
- * * **Architektur-Highlight (Optimistic Caching & Offline-First):**
- * - Verwaltet einen globalen Notizen-Pool im `LocalStorage` als schnelles Fallback-Backup.
- * - Im Offline-Modus werden Operationen lokal ausgeführt und Notizen mit temporären IDs (`tmp_`) markiert.
- * - Schreibende und löschende Aktionen aktualisieren den lokalen Cache *sofort synchron*,
- *   wodurch die App für den Nutzer extrem reaktionsschnell wirkt (Zero-Latency UI).
- */
+export type NoteQueueAction = 'CREATE' | 'UPDATE' | 'PROMOTE' | 'REVERT' | 'STATUS_CHANGE' | 'DELETE';
+
 @Injectable({
   providedIn: 'root'
 })
-export class NoteDataManagerService extends BaseDataManager {
+export class NoteDataManagerService extends BaseQueueDataManager {
   private noteRepository = inject(NoteRepository);
-  private connectionService = inject(ConnectionService);
 
-  /** Einheitlicher Key für den permanenten Notizen-Cache im LocalStorage */
+  /** 🟢 Single Source of Truth */
+  public notesSignal = signal<Note[]>([]);
   private readonly STORAGE_KEY = 'global_notes_pool';
 
-  /** Speichert das übergebene Notizen-Array im lokalen Cache. */
-  private saveToLocalStorage(notes: Note[]): void {
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(notes));
+  constructor() {
+    super('NoteDataManagerService');
+    this.loadFromCache();
   }
 
-  /** Holt die Notizen aus dem lokalen Cache und rekonstruiert die Klassen-Instanzen. */
-  private getFromLocalStorage(): Note[] {
-    const data = localStorage.getItem(this.STORAGE_KEY);
-    if (!data) return [];
-    try {
-      const rawArray: any[] = JSON.parse(data);
-      return rawArray.map(json => new Note(json));
-    } catch (e) {
-      console.error('Fehler beim Dekodieren des local_notes_pool:', e);
-      return [];
+  // ==========================================
+  // 🚀 BASE QUEUE DATA MANAGER HOOKS
+  // ==========================================
+
+  public override executeQueueItem(item: QueueItem): Observable<any> {
+    const action = item.action as NoteQueueAction;
+    const payload = item.payload as NoteSnapshotPayload;
+    switch (action) {
+      case 'CREATE': {
+        // 🛡️ Security: Backend soll eigene ID erzeugen -> Local ID weglassen!
+        const noteToSend = new Note({
+          ...(payload as NotePayload).note,
+          id: undefined
+        });
+        return this.noteRepository.createNote(noteToSend);
+      }
+      case 'UPDATE': {
+        return this.noteRepository.updateNote((payload as NotePayload).note);
+      }
+      case 'PROMOTE': {
+        return this.noteRepository.promoteNote(payload.id);
+      }
+      case 'REVERT': {
+        return this.noteRepository.revertNote(payload.id);
+      }
+      case 'STATUS_CHANGE': {
+        return this.noteRepository.changeStatus(payload.id, (payload as NoteStatusChangePayload).isInCalculation);
+      }
+      case 'DELETE': {
+        return this.noteRepository.deleteNote(payload.id);
+      }
+      default:
+        return throwError((): Error => new Error(`[NoteDataManager] Unbekannte Action: ${item.action}`));
     }
   }
 
-  /**
-   * Lädt alle Notizen eines Benutzers. Weicht bei Offline-Zustand oder Serverfehlern
-   * vollautomatisch auf den lokalen Cache aus.
-   * @param userId Die ID des Benutzers.
-   * @returns Ein Observable mit dem Array der Notizen.
-   */
-  public getNotes(userId: string): Observable<Note[]> {
-    if (this.connectionService.status() === 'OFFLINE') {
-      return of(this.getFromLocalStorage());
+  public override resetState(snapshot: INoteJson[]): void {
+    if (Array.isArray(snapshot)) {
+      const restored = snapshot.map((json: INoteJson) => Note.fromJson(json));
+      this.notesSignal.set(restored);
+      this.saveToCache(restored);
     }
+  }
 
+  protected override onEntityCreated(tempId: string, response: unknown): void {
+    const realNote = Note.fromJson(response);
+    const updated = this.notesSignal().map((n) => (n.id === tempId ? realNote : n));
+    this.notesSignal.set(updated);
+    this.saveToCache(updated);
+  }
+
+  public override checkAndReplaceIds(item: QueueItem, localId: string, serverId: string): void {
+    const payload = item.payload;
+    // Wenn die Notiz selbst ein CREATE ist, ändert sich ihre Haupt-ID ohnehin über item.payload.id.
+    // Aber wir müssen prüfen, ob sie eine departmentId als Fremdschlüssel referenziert:
+    if (payload && 'note' in payload && payload.note) {
+      const notePayload = payload as NotePayload;
+      if (notePayload.note.departmentId === localId) {
+        notePayload.note.departmentId = serverId;
+      }
+    }
+  }
+  
+  // ==========================================
+  // 🔄 REHYDRATION PATTERN (BaseQueueDataManager)
+  // ==========================================
+
+  protected override fetchFromServer(userId: string): Observable<void> {
     return this.noteRepository.getNotesByUserId(userId).pipe(
-      map(serverNotes => {
-        this.saveToLocalStorage(serverNotes); // Lokales Backup synchronisieren
-        return serverNotes;
-      }),
-      catchError(err => {
-        console.error('Fehler beim Online-Laden der Zettel, weiche auf Cache aus', err);
-        return of(this.getFromLocalStorage());
+      map((serverNotes: Note[]): void => {
+        this.notesSignal.set(serverNotes);
+        this.saveToCache(serverNotes);
       })
     );
   }
 
-  /**
-   * Erstellt eine neue Notiz. Vergibt im Offline-Modus eine temporäre ID.
-   * Aktualisiert den lokalen Cache sofort.
-   * @param newNote Die neu zu erstellende Notiz.
-   * @param actualList Die aktuell im UI gerenderte Liste von Notizen.
-   */
-  public createNote(newNote: Note, actualList: Note[]): Observable<Note> {
-    if (this.connectionService.status() === 'OFFLINE') {
-      if (!newNote.id) newNote.id = 'tmp_' + Date.now();
-      const aktualisierteListe = [...actualList, newNote];
-      this.saveToLocalStorage(aktualisierteListe);
-      return of(newNote);
-    }
+  // ==========================================
+  // 📝 PUBLIC API METHODEN (mit Listen-Snapshot!)
+  // ==========================================
 
-    return this.noteRepository.createNote(newNote).pipe(
-      map(savedNote => {
-        const aktualisierteListe = [...actualList, savedNote];
-        this.saveToLocalStorage(aktualisierteListe);
-        return savedNote;
-      })
-    );
+  public createNote(newNote: Note): void {
+    const snapshot = this.getSnapshotJson();
+    const updated = [...this.notesSignal(), newNote];
+
+    this.notesSignal.set(updated);
+    this.saveToCache(updated);
+
+    const payload: NotePayload = {
+      id: newNote.id,
+      note: newNote,
+      snapshot
+    };
+
+    this.queueService.enqueue(this.serviceName, 'CREATE', payload);
   }
 
-  /**
-   * Aktualisiert eine bestehende Notiz. Schreibt die Änderung für maximale gefühlte
-   * Geschwindigkeit sofort in den Cache, bevor die Serverantwort eintrifft (Optimistic).
-   * @param updatedNote Die bearbeitete Notiz.
-   * @param actualList Die aktuell im UI gerenderte Liste von Notizen.
-   */
-  public updateNote(updatedNote: Note, actualList: Note[], updateAction?: NoteUpdateOption): Observable<Note> {
-    const aktualisierteListe = actualList.map(n => n.id === updatedNote.id ? updatedNote : n);
-    this.saveToLocalStorage(aktualisierteListe);
+  public updateNote(updatedNote: Note, updateAction?: NoteUpdateOption): void {
+    const snapshot = this.getSnapshotJson();
+    const updated = this.notesSignal().map((n) => (n.id === updatedNote.id ? updatedNote : n));
 
-    if (this.connectionService.status() === 'OFFLINE' || updatedNote.id?.startsWith('tmp_')) {
-      return of(updatedNote);
-    }
-    const id = updatedNote.id!;
-    let updateCall$ = this.noteRepository.updateNote(updatedNote);
+    this.notesSignal.set(updated);
+    this.saveToCache(updated);
 
     switch (updateAction) {
-      case 'promote': updateCall$ = this.noteRepository.promoteNote(id); break;
-      case 'revert': updateCall$ = this.noteRepository.revertNote(id); break;
-      case 'status_change': updateCall$ = this.noteRepository.changeStatus(id, updatedNote.isInCalculation!)
+      case 'promote': {
+        const payload: NoteActionPayload = { id: updatedNote.id, snapshot };
+        this.queueService.enqueue(this.serviceName, 'PROMOTE', payload);
+        return;
+      }
+      case 'revert': {
+        const payload: NoteActionPayload = { id: updatedNote.id, snapshot };
+        this.queueService.enqueue(this.serviceName, 'REVERT', payload);
+        return;
+      }
+      case 'status_change': {
+        const payload: NoteStatusChangePayload = {
+          id: updatedNote.id,
+          isInCalculation: updatedNote.isInCalculation ?? false,
+          snapshot
+        };
+        this.queueService.enqueue(this.serviceName, 'STATUS_CHANGE', payload);
+        return;
+      }
+      default: {
+        // Standard UPDATE
+        const payload: NotePayload = {
+          id: updatedNote.id,
+          note: updatedNote,
+          snapshot
+        };
+        this.queueService.enqueue(this.serviceName, 'UPDATE', payload);
+        return;
+      }
     }
-    
-    return updateCall$.pipe(
-      map(savedNote => {
-        // Zustand nachträglich mit finaler Serverantwort synchronisieren
-        const synchedList = actualList.map(n => n.id === updatedNote.id ? savedNote : n);
-        this.saveToLocalStorage(synchedList);
-        return savedNote;
-      }),
-      catchError(err => {
-        console.warn('Zettel-Update konnte nicht an Server gesendet werden (wird offline gehalten):', err);
-        return of(updatedNote);
-      })
-    );
   }
 
-  /**
-   * Löscht eine Notiz. Entfernt sie für verzögerungsfreie UI sofort aus dem Cache.
-   * @param id Die ID der zu löschenden Notiz.
-   * @param userId Die ID des Benutzers.
-   * @param actualList Die aktuell im UI gerenderte Liste von Notizen.
-   */
-  public deleteNote(id: string, userId: string, actualList: Note[]): Observable<void> {
-    const gefilterteListe = actualList.filter(n => n.id !== id);
-    this.saveToLocalStorage(gefilterteListe);
+  public deleteNote(id: string): void {
+    const snapshot = this.getSnapshotJson();
+    const updated = this.notesSignal().filter((n) => n.id !== id);
 
-    if (this.connectionService.status() === 'OFFLINE' || id.startsWith('tmp_')) {
-      return of(undefined);
+    this.notesSignal.set(updated);
+    this.saveToCache(updated);
+
+    const payload: NoteActionPayload = {
+      id,
+      snapshot
+    };
+
+    this.queueService.enqueue(this.serviceName, 'DELETE', payload);
+  }
+
+  // ==========================================
+  // 🛠️ PRIVATE CACHE HELPER
+  // ==========================================
+
+  private getSnapshotJson(): INoteJson[] {
+    return this.notesSignal().map((n) => n.toJson());
+  }
+
+  private saveToCache(notes: Note[]): void {
+    const jsonArray = notes.map((n) => n.toJson());
+    this.localStorageService.setItem(this.STORAGE_KEY, jsonArray);
+  }
+
+  private loadFromCache(): void {
+    const cached = this.localStorageService.getItem(this.STORAGE_KEY);
+    if (cached && Array.isArray(cached)) {
+      const restored = cached.map((json) => Note.fromJson(json));
+      this.notesSignal.set(restored);
+    } else {
+      this.notesSignal.set([]);
     }
-
-    return this.noteRepository.deleteNote(id, userId);
   }
 
   public override resetData(): void {
-    localStorage.removeItem(this.STORAGE_KEY);
-    console.log('🧼 [NoteDataManager] Globaler Ideen-Pool wurde gelöscht.');
+    this.localStorageService.removeItem(this.STORAGE_KEY);
+    this.notesSignal.set([]);
   }
 
   public override checkUnsavedData(): string | null {
-    return null; // Hier gibt es nichts zu blockieren
+    return null;
   }
 }

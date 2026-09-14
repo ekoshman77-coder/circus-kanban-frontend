@@ -7,9 +7,9 @@ export type SearchCategory = 'all' | 'team' | 'projects' | 'ideas' | 'milestones
 /**
  * Service für die globale Verwaltung von Filter- und Suchzuständen.
  * * **Architektur-Highlight:** Nutzt Angular Signals für ein leichtgewichtiges,
- * reaktives State-Management ohne den Overhead komplexer RxJS-Streams[cite: 6].
+ * reaktives State-Management ohne den Overhead komplexer RxJS-Streams
  * Ermöglicht es verschiedenen Komponenten (z. B. der Suchleiste im Header und den
- * Listenansichten auf den Boards), sich synchron auf denselben Filterzustand aufzuschalten[cite: 6].
+ * Listenansichten auf den Boards), sich synchron auf denselben Filterzustand aufzuschalten
  */
 @Injectable({
   providedIn: 'root'
@@ -28,8 +28,8 @@ export class FilterService extends BaseDataManager {
   /**
    * Setzt die Standard-Kategorie beim Navigieren auf eine neue Seite.
    * Setzt gleichzeitig den Suchbegriff und die Spezial-Filter zurück, um
-   * unerwartete Filter-Überlagerungen für den Benutzer zu vermeiden[cite: 6].
-   * * @param category Die Kategorie, die initial aktiv sein soll[cite: 6].
+   * unerwartete Filter-Überlagerungen für den Benutzer zu vermeiden
+   * * @param category Die Kategorie, die initial aktiv sein soll
    */
   public setInitialCategory(category: SearchCategory): void {
     this.currentCategory.set(category);
@@ -38,7 +38,7 @@ export class FilterService extends BaseDataManager {
   }
 
   /**
-   * Setzt alle Filter und Suchbegriffe sofort auf ihre Standardwerte zurück[cite: 6].
+   * Setzt alle Filter und Suchbegriffe sofort auf ihre Standardwerte zurück.
    */
   public resetAll(): void {
     this.searchTerm.set('');

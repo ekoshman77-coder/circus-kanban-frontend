@@ -1,6 +1,7 @@
 import { Component, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { UserService } from '../../../core/services/user/user-service';
+import { UserSettingsDataManager } from '../../../core/services/user/user-settings-data-manager';
 
 @Component({
   selector: 'app-planner-settings',
@@ -10,27 +11,27 @@ import { UserService } from '../../../core/services/user/user-service';
   styleUrl: './planner-settings-component.css'
   })
 export class PlannerSettingsComponent {
-  userService = inject(UserService);
+  public userSettingsDataManager = inject(UserSettingsDataManager);
 
   // 1️⃣ REINE SLIDER SIGNALE (Erlauben unendliche Fließkommazahlen für 100% flüssige Maus-Bewegung)
-  sliderWorkingTimeLeft = signal<number>(this.userService.workingTimeLeft());
-  sliderWorkingHours = signal<number>(this.userService.workingHours());
-  sliderPrimeStart = signal<number>(this.userService.primeTimeStartHour());
-  sliderPrimeEnd = signal<number>(this.userService.primeTimeEndHour());
+  sliderWorkingTimeLeft = signal<number>(this.userSettingsDataManager.workingTimeLeft());
+  sliderWorkingHours = signal<number>(this.userSettingsDataManager.workingHours());
+  sliderPrimeStart = signal<number>(this.userSettingsDataManager.primeTimeStartHour());
+  sliderPrimeEnd = signal<number>(this.userSettingsDataManager.primeTimeEndHour());
 
   // 2️⃣ DISKRETE ANZEIGE-SIGNALE (Springen stur erst um, wenn eine neue Ganzzahl erreicht ist)
-  displayWorkingTimeLeft = signal<number>(this.userService.workingTimeLeft());
-  displayWorkingHours = signal<number>(this.userService.workingHours());
-  displayPrimeStart = signal<number>(this.userService.primeTimeStartHour());
-  displayPrimeEnd = signal<number>(this.userService.primeTimeEndHour());
+  displayWorkingTimeLeft = signal<number>(this.userSettingsDataManager.workingTimeLeft());
+  displayWorkingHours = signal<number>(this.userSettingsDataManager.workingHours());
+  displayPrimeStart = signal<number>(this.userSettingsDataManager.primeTimeStartHour());
+  displayPrimeEnd = signal<number>(this.userSettingsDataManager.primeTimeEndHour());
 
   constructor() {
     // Wenn Daten initial geladen werden, setzen wir beide Signal-Welten gleich
     effect(() => {
-      const hours = this.userService.workingHours();
-      const start = this.userService.primeTimeStartHour();
-      const end = this.userService.primeTimeEndHour();
-      const left = this.userService.workingTimeLeft();
+      const hours = this.userSettingsDataManager.workingHours();
+      const start = this.userSettingsDataManager.primeTimeStartHour();
+      const end = this.userSettingsDataManager.primeTimeEndHour();
+      const left = this.userSettingsDataManager.workingTimeLeft();
 
       this.sliderWorkingHours.set(hours);
       this.displayWorkingHours.set(hours);
@@ -73,18 +74,18 @@ export class PlannerSettingsComponent {
 
   // 💾 CHANGE-EVENTS (beim Loslassen): Schießen die saubere Ganzzahl in den Service
   onWorkingTimeLeftChange() {
-    this.userService.changeWorkingTimeLeft(this.displayWorkingTimeLeft());
+    this.userSettingsDataManager.changeWorkingTimeLeft(this.displayWorkingTimeLeft());
   }
 
   onWorkingHoursChange() {
-    this.userService.changeDefaultWorkingHours(this.displayWorkingHours());
+    this.userSettingsDataManager.changeDefaultWorkingHours(this.displayWorkingHours());
   }
 
   onPrimeTimeStartChange() {
-    this.userService.changePrimeTimeStart(this.displayPrimeStart());
+    this.userSettingsDataManager.changePrimeTimeStart(this.displayPrimeStart());
   }
 
   onPrimeTimeEndChange() {
-    this.userService.changePrimeTimeEnd(this.displayPrimeEnd());
+    this.userSettingsDataManager.changePrimeTimeEnd(this.displayPrimeEnd());
   }
 }

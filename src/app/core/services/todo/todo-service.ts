@@ -1,13 +1,12 @@
-import { Injectable, signal, computed, inject, effect, untracked } from '@angular/core';
+import { Injectable, signal, computed, inject, effect } from '@angular/core';
 import { Todo } from '../../models/todo';
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 import { UserService } from '../user/user-service';
 import { LoggerService } from '../logger/logger-service';
-import { ErrorCode } from '../../enums/error-enum';
 import { GamificationResult } from '../../models/gamification';
 import { TodoDataManagerService } from './todo-data-manager-service';
 import { TodoRepository } from '../../repositories/todo-repository';
-import { TodoQueryService } from './todo-query-service'; // 💡 NEU: Der Kreis-Sprenger importiert!
+import { TodoQueryService } from './todo-query-service';
 import { NotificationService } from '../notification/notification-service';
 import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 
@@ -45,14 +44,10 @@ export class TodoService extends BaseDataManager {
   private loggerService = inject(LoggerService);
   private todoRepository = inject(TodoRepository);
   private todoQueryService = inject(TodoQueryService);
-  private notificationService = inject(NotificationService)
-
-  // ⏱️ NEU: Die exakten Prozente für unseren Balken
-  public toastProgress = signal<number>(100);
-  private progressInterval: any = null;
+  private notificationService = inject(NotificationService);
 
   // --- REAKTIVER STATE (SIGNALS & GLOBAL POOL) ---
-  // 🌍 DER TRICK: Verweist jetzt direkt auf das Signal im DataManager unten!
+  // 🌍 DER TRICK: Verweist jetzt direkt auf das Signal im DataManager!
   private allTodosPool = this.dataManager.allTodosPool;
 
   // 👤 Die Brücke für die UI: Filtert den Pool vollautomatisch auf deine Aufgaben!
@@ -62,107 +57,25 @@ export class TodoService extends BaseDataManager {
     return this.allTodosPool().filter(t => t.userId === currentUserId);
   });
 
-  public filterSignal = signal<Filter>(Filter.ALL);
-  public searchQuerySignal = signal<string>('');
-  public gamificationState = signal<GamificationResult | null>(null);
+  public filterSignal = signal(Filter.ALL);
+  public searchQuerySignal = signal('');
+  public gamificationState = signal(null);
   public streakState = computed(() => this.dataManager.streakSignal());
 
   public fibonacciSequence: number[];
+  public globalError = signal(null);
 
-  // --- UNDO CONTROLS ---
-  private isUndoActive = signal<boolean>(false);
-  private undoTimeoutRef: any = null;
-  private deletedTodosBackup: Todo[] = [];
-
-  public globalError = signal<string | null>(null);
-  public latestGamificationResult = signal<GamificationResult | null>(null);
+  // 🟢 Spiegelung des Gamification-Signals aus dem DataManager
+  public latestGamificationResult = this.dataManager.gamificationSignal;
 
   // --- COMPUTED STATES ---
   public openTodosOnly = computed(() => {
     return this.todosSignal().filter(t => !t.done);
   });
 
-  // 0. Die absolute Rohquelle vom Server/Datenbank
-  private todosFromServer = computed(() => this.dataManager.allTodosPool());
-
-  public lastDeletedTodo = signal<Todo | null>(null);
-  private deleteTimeout: any = null;
-
   public allTodos = computed(() => {
-    const deleted = this.lastDeletedTodo();
-    if (!deleted) return this.todosFromServer();
-    return this.todosFromServer().filter(t => t.id !== deleted.id);
+    return this.allTodosPool();
   });
-
-  // Ein öffentliches Signal, damit die UI weiß, wann sie das Undo-Banner zeigen muss
-  public showUndoToast = computed(() => this.lastDeletedTodo() !== null);
-
-  // 2. Die optimistische Lösch-Methode für die UI-Komponente
-  public deleteTodoWithUndo(newTodo: Todo): void {
-    const oldTodo = this.lastDeletedTodo();
-
-    if (oldTodo) {
-      if (this.deleteTimeout) clearTimeout(this.deleteTimeout);
-      this.dataManager.deleteTodo(oldTodo.id).subscribe();
-    }
-
-    this.lastDeletedTodo.set(newTodo);
-
-    // --- NEU: Balken-Logik ---
-    if (this.progressInterval) clearInterval(this.progressInterval);
-    this.toastProgress.set(100); // 🚀 Balken springt hart auf 100%
-
-    const durationMs = 10000; // ⏱️ Deine 60 Sekunden (später wieder auf 5000)
-    const intervalMs = 50;    // Alle 50ms aktualisieren (sorgt für flüssiges Bild)
-    const step = 100 / (durationMs / intervalMs); // Wie viel % pro Tick abgezogen werden
-
-    this.progressInterval = setInterval(() => {
-      this.toastProgress.update(val => {
-        const newVal = val - step;
-        if (newVal <= 0) {
-          clearInterval(this.progressInterval);
-          return 0;
-        }
-        return newVal;
-      });
-    }, intervalMs);
-
-    // 5-Sekunden-Uhr (aktuell 60s) für das neue Todo starten
-    this.deleteTimeout = setTimeout(() => {
-      this.triggerFinalDelete();
-    }, durationMs);
-  }
-
-  // 3. Der Rettungsanker, wenn der User auf "Rückgängig" klickt
-  public restoreTodo(): void {
-    if (this.deleteTimeout) clearTimeout(this.deleteTimeout);
-    if (this.progressInterval) clearInterval(this.progressInterval); // 🛑 Animation stoppen
-    
-    this.lastDeletedTodo.set(null);
-  }
-
-  // 4. Das endgültige Löschen nach Ablauf des Timers
-  private triggerFinalDelete(): void {
-    const todo = this.lastDeletedTodo();
-    if (!todo) return;
-
-    if (this.progressInterval) clearInterval(this.progressInterval); // 🛑 Zur Sicherheit stoppen
-
-    this.dataManager.deleteTodo(todo.id).subscribe({
-      next: () => {
-        // Erst bei Erfolg aus dem Frontend-Filter entlassen
-        if (this.lastDeletedTodo()?.id === todo.id) {
-          this.lastDeletedTodo.set(null);
-          this.deleteTimeout = null;
-        }
-      },
-      error: (err) => {
-        console.error('Fehler beim endgültigen Löschen:', err);
-        // Falls der Server-Request fehlschlägt, blenden wir es zur Sicherheit wieder ein
-        this.lastDeletedTodo.set(null);
-      }
-    });
-  }
 
   // ==========================================
   // 🌍 BOARD 1: Die persönliche To-Do-Liste (TodoListComponent)
@@ -201,7 +114,6 @@ export class TodoService extends BaseDataManager {
     return this.allTodos().filter(t => !t.milestoneId);
   });
 
-
   // ==========================================
   // 🏛️ BOARD 3: Project Milestone Board (ProjectMilestoneComponent)
   // ==========================================
@@ -210,7 +122,6 @@ export class TodoService extends BaseDataManager {
   public milestoneBoardTodos = computed(() => {
     return this.allTodos(); // Einfach der gesamte Pool!
   });
-
 
   // ==========================================
   // 🤝 BOARD 4: Team Board (TeamBoardComponent)
@@ -245,63 +156,14 @@ export class TodoService extends BaseDataManager {
       return wasDeveloper || wasReviewer;
     });
   });
-  
+
   constructor() {
-    super()
+    super();
     this.fibonacciSequence = this.initFibonacciSequence(40);
-
-    effect(() => {
-      const userId = this.userService.getCurrentUserId();
-
-      if (userId) { // Einfach nur prüfen, ob überhaupt ein User eingeloggt ist!
-        this.loggerService.info("controller", `🚀 [TodoService] User "${userId}" erkannt. Lade Aufgaben...`);
-        this.loadTodosFromBackend(userId);
-      } else {
-        this.loggerService.info("controller", `⏳ [TodoService] Warte auf Anmeldung...`);
-        this.updateTodosState([]);
-      }
-    });
-
-    effect(() => {
-      const syncResult = this.dataManager.syncCompleted();
-      if (syncResult !== null) {
-        this.handleSyncCompleted(syncResult);
-      }
-    });
-  }
-
-  private handleSyncCompleted(syncResult: any): void {
-    // 🛑 DIESE ZEILE ENTFERNEN: this.allTodosPool.set(syncResult.liste);
-    // Denn der DataManager hat das Signal bereits perfekt aktualisiert!
-
-    // 1. Nur noch den Gamification-State für die UI setzen
-    this.gamificationState.set(syncResult.gamificationResult);
-
-    // 2. Benachrichtigung bei Level Up anzeigen
-    if (syncResult.gamificationResult?.levelUp) {
-      this.notificationService.showNotification(
-        `🎉 LEVEL UP! Du bist jetzt Level ${syncResult.gamificationResult.currentLevel}!`, 'success'
-      );
-    }
-
-    // 3. Den Sync-Zustand im DataManager wieder freigeben
-    this.dataManager.clearSyncResult();
-  }
-
-  private loadTodosFromBackend(userId: string) {
-    this.dataManager.loadTodos(userId).subscribe({
-      next: (todosFromDB) => {
-        this.updateTodosState(todosFromDB);
-      },
-      error: (err) => {
-        this.handleBackendError(err, false);
-      }
-    });
   }
 
   /**
    * 🔍 Sucht ein To-Do anhand seiner ID aus dem aktuellen Signal-Zustand.
-   * Perfekt für Detail- oder Editier-Ansichten, ohne allTodos public machen zu müssen!
    */
   public getTodoById(id: string): Todo | undefined {
     return this.todosSignal().find(t => t.id === id);
@@ -324,10 +186,6 @@ export class TodoService extends BaseDataManager {
     return sequence;
   }
 
-  private updateTodosState(newTodos: Todo[]) {
-    this.allTodosPool.set(newTodos.map(todo => new Todo(todo)));
-  }
-
   // --- STATE MUTATIONS ---
 
   public createAndAddTodo(input: {
@@ -337,33 +195,24 @@ export class TodoService extends BaseDataManager {
     dueDate: number,
     category?: string,
     milestoneId?: string | null,
-    isStarted: false
-  }) {
+    isStarted?: boolean
+  }): void {
     const userId = this.userService.getCurrentUserId();
     if (!userId) return;
 
-    const withUser = { ...input, userId: userId }
-    const newTodo = new Todo(withUser);
-    this.addDoneTodo(newTodo);
+    const newTodo = new Todo({ ...input, userId, isStarted: input.isStarted ?? false });
+    this.dataManager.createTodo(newTodo);
   }
 
-  public addDoneTodo(todo: Todo) {
-    this.dataManager.createTodo(todo, this.allTodosPool()).subscribe({
-      next: (newListe) => {
-        this.updateTodosState(newListe);
-      },
-      error: (err) => this.handleBackendError(err, false)
-    });
+  public createTodo(todo: Todo): Todo {
+    return Todo.fromTodo(todo);
+  }
+
+  public addDoneTodo(todo: Todo): void {
+    this.dataManager.createTodo(todo);
   }
 
   public updateTodo(updatedTodo: Todo, isDragAndDrop: boolean = false): void {
-    console.log(`TodoService:: updateTodo (DragAndDrop: ${isDragAndDrop})`, updatedTodo);
-    if (updatedTodo.reviewerId === undefined) {
-      console.warn('🚨 TÄTER GEFORDERT: updateTodo mit undefined aufgerufen!');
-      console.log('Übergebenes Objekt:', updatedTodo);
-      console.log('Ist es eine Todo-Instanz?', updatedTodo instanceof Todo);
-      debugger; // 🛑 Hält die Ausführung im Browser an!
-    }
     if (isDragAndDrop) {
       this.allTodosPool.update(todos =>
         todos.map(t => t.id === updatedTodo.id ? updatedTodo : t)
@@ -373,43 +222,27 @@ export class TodoService extends BaseDataManager {
     const delay = isDragAndDrop ? 0 : 300;
 
     setTimeout(() => {
-      this.dataManager.updateTodo(updatedTodo, this.allTodosPool()).subscribe({
-        next: (neueListe) => {
-          this.updateTodosState(neueListe);
-        },
-        error: (err) => {
-          this.handleBackendError(err, false);
-        }
-      });
+      this.dataManager.updateTodo(updatedTodo);
     }, delay);
   }
 
-  public updateTodoEffort(todoId: string, newEffort: number) {
+  public updateTodoEffort(todoId: string, newEffort: number): void {
     const todoToUpdate = this.allTodosPool().find(t => t.id === todoId);
     if (!todoToUpdate || todoToUpdate.done) return;
 
-    todoToUpdate.effort = newEffort;
-
+    const updated = new Todo({ ...todoToUpdate, effort: newEffort });
+    
     setTimeout(() => {
-      this.dataManager.updateTodo(todoToUpdate, this.allTodosPool()).subscribe({
-        next: (neueListe) => {
-          this.updateTodosState(neueListe);
-        },
-        error: (err) => this.handleBackendError(err, false)
-      });
+      this.dataManager.updateTodo(updated);
     }, 300);
   }
 
   public toggleComplete(todoId: string, usedEffort: number): void {
-    this.loggerService.info("todoService", `Starting toggleComplete for ID: ${todoId} with effort: ${usedEffort}`);
     const userId = this.userService.getCurrentUserId();
     if (!userId) return;
 
     const currentTodo = this.allTodosPool().find(t => t.id === todoId);
-    if (!currentTodo) {
-      this.loggerService.warn("todoService", `Todo with ID ${todoId} not found in state.`);
-      return;
-    }
+    if (!currentTodo) return;
 
     const updatedTodo = Todo.fromTodo(currentTodo);
     updatedTodo.done = !updatedTodo.done;
@@ -422,135 +255,49 @@ export class TodoService extends BaseDataManager {
     }
 
     setTimeout(() => {
-      const optimisticList = this.allTodosPool().map(t => t.id === todoId ? updatedTodo : t);
-      this.allTodosPool.set(optimisticList);
-
-      this.dataManager.updateTodo(updatedTodo, optimisticList).subscribe({
-        next: (finalList) => {
-          this.updateTodosState(finalList);
-          this.loggerService.info("todoService", "Full todo update successfully processed.");
-        },
-        error: (err) => {
-          this.loggerService.warn('TODO_SERVICE', 'Update failed, triggering rollback...', err);
-          const userId = this.userService.getCurrentUserId()
-          if (userId) {
-            this.loadTodosFromBackend(userId);
-          }
-        }
-      });
+      this.dataManager.updateTodo(updatedTodo);
     }, 500);
   }
 
-  public addPoint(id: string) {
+  public addPoint(id: string): void {
     const todoToUpdate = this.allTodosPool().find(t => t.id === id);
     if (!todoToUpdate) return;
 
-    todoToUpdate.usedEffort++;
+    const updated = Todo.fromTodo(todoToUpdate);
+    updated.usedEffort++;
 
     setTimeout(() => {
-      this.dataManager.updateTodo(todoToUpdate, this.allTodosPool()).subscribe({
-        next: (neueListe) => {
-          this.updateTodosState(neueListe);
-        },
-        error: (err) => this.handleBackendError(err, false)
-      });
+      this.dataManager.updateTodo(updated);
     }, 500);
   }
 
-  public createTodo(todo: Todo): Todo {
-    return Todo.fromTodo(todo);
+  public deleteTodoDirectly(id: string): void {
+    this.dataManager.deleteTodo(id);
   }
-
-  // 🗑️ Einzelnes To-Do über die UI löschen
-  // public deleteTodo(id: string): void {
-  //   this.dataManager.deleteTodo(id).subscribe({
-  //     next: () => this.loggerService.info("TodoService", `Todo ${id} erfolgreich gelöscht.`),
-  //     error: (err) => this.loggerService.error("TodoService", "Fehler beim Löschen des Todos", err)
-  //   });
-  // }
 
   public getTodosForMilestone(id: string | null): Todo[] {
-    if (!id) {
-      return [];
-    }
-    return this.filteredFocusedTodos().filter(t => t.milestoneId === id)
+    if (!id) return [];
+    return this.filteredFocusedTodos().filter(t => t.milestoneId === id);
   }
 
-  // 🗑️ Footer-Aktion Links: Erledigte private Aufgaben löschen
   public clearCompletedTodos(): void {
     const userId = this.userService.getCurrentUserId();
     if (!userId) return;
 
-    this.dataManager.deleteCompleted(userId).subscribe({
-      next: () => {
-        this.loggerService.info("TodoService", "Erledigte private Aufgaben erfolgreich archiviert.");
-        // 🌟 Der NotificationService meldet Erfolg!
-        this.notificationService.showNotification("Erledigte private Aufgaben wurden erfolgreich archiviert! 🧹", "success");
-      },
-      error: (err) => {
-        this.loggerService.error("TodoService", "Fehler beim Leeren der Aufgaben", err);
-        // 🌟 Der NotificationService meldet den Fehler!
-        this.notificationService.showNotification("Fehler beim Archivieren der erledigten Aufgaben. Bitte erneut versuchen! ⚠️", "error");
-      }
-    });
+    this.dataManager.deleteCompleted(userId);
+    this.notificationService.showNotification("Erledigte private Aufgaben wurden erfolgreich archiviert! 🧹", "success");
   }
 
-  // 🗑️ Footer-Aktion Rechts: Alle privaten Aufgaben löschen
   public clearAllTodos(): void {
     const userId = this.userService.getCurrentUserId();
     if (!userId) return;
 
-    this.dataManager.deleteAll(userId).subscribe({
-      next: () => {
-        this.loggerService.info("TodoService", "Alle privaten Aufgaben erfolgreich archiviert.");
-        // 🌟 Der NotificationService meldet Erfolg!
-        this.notificationService.showNotification("Dein privates Board wurde komplett geleert! 🔥", "success");
-      },
-      error: (err) => {
-        this.loggerService.error("TodoService", "Fehler beim Löschen aller privaten Aufgaben", err);
-        // 🌟 Der NotificationService meldet den Fehler!
-        this.notificationService.showNotification("Das Board konnte nicht geleert werden. Server-Verbindung prüfen! ⚠️", "error");
-      }
-    });
+    this.dataManager.deleteAll(userId);
+    this.notificationService.showNotification("Dein privates Board wurde komplett geleert! 🔥", "success");
   }
 
-  private handleBackendError(err: any, isDelayedAction: boolean): void {
-    this.loggerService.error('STATE_CHANGE', 'Mutation fehlgeschlagen', err);
-
-    const errorCode: ErrorCode = err.error?.errorCode;
-
-    if (errorCode === ErrorCode.UserNotFound) {
-      console.warn('Zentraler Handler: User in DB gelöscht. Setze nur State zurück!');
-      this.userService.logout();
-      return;
-    }
-
-    if (errorCode === ErrorCode.TodoNotFound) {
-      alert('Huch! Diese Aufgabe existiert nicht mehr auf dem Server. 📋');
-      const userId = this.userService.getCurrentUserId();
-      if (userId) this.loadTodosFromBackend(userId);
-      return;
-    }
-
-    this.globalError.set('Aktion fehlgeschlagen. Verbindung zum Server verloren.');
-
-    if (isDelayedAction) {
-      if (this.deletedTodosBackup.length > 0) {
-        this.allTodosPool.set([...this.deletedTodosBackup, ...this.allTodosPool()]);
-        this.deletedTodosBackup = [];
-      }
-      this.isUndoActive.set(false);
-      this.undoTimeoutRef = null;
-    }
-  }
-
-  // --- COMPUTED STATES ---
+  // --- COMPUTED STATES & FILTERING ---
   public isListEmpty = computed(() => this.todosSignal().length === 0);
-
-  // public totalOpenEffort = computed(() => {
-  //   const todos = this.todosSignal().filter(t => !t.done);
-  //   return todos.reduce((prev, t) => prev + (t.effort || 0), 0);
-  // });
 
   public filteredFocusedTodos = computed(() => {
     const todos = this.focusedTodos();
@@ -566,7 +313,7 @@ export class TodoService extends BaseDataManager {
         result = todos.filter(t => !t.done).sort((a, b) => a.dueDate - b.dueDate);
         break;
       case Filter.COMPLETED:
-        result = todos.filter(t => t.done).sort((a, b) => a.completedAt! - b.completedAt!);
+        result = todos.filter(t => t.done).sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0));
         break;
       case Filter.DUE_TODAY:
         result = todos.filter(t => !t.done && t.dueDate >= todayStart && t.dueDate <= todayEnd)
@@ -578,9 +325,7 @@ export class TodoService extends BaseDataManager {
         break;
       default:
         result = [...todos].sort((a, b) => {
-          const getWeight = (t: Todo) => {
-            return t.done ? 1 : 0;
-          };
+          const getWeight = (t: Todo) => (t.done ? 1 : 0);
           const weightA = getWeight(a);
           const weightB = getWeight(b);
           if (weightA !== weightB) return weightA - weightB;
@@ -652,18 +397,13 @@ export class TodoService extends BaseDataManager {
     return this.todoRepository.getServerCategories(userId);
   }
 
-  public resetData(): void {
+  public override checkUnsavedData(): string | null {
+    return null;
+  }
+
+  public override resetData(): void {
     this.filterSignal.set(Filter.ALL);
     this.searchQuerySignal.set('');
     this.gamificationState.set(null);
-    this.latestGamificationResult.set(null);
-
-    if (this.deleteTimeout) {
-      clearTimeout(this.deleteTimeout);
-    }
-    if (this.progressInterval) {
-      clearInterval(this.progressInterval);
-    }
-    this.lastDeletedTodo.set(null);
   }
 }
