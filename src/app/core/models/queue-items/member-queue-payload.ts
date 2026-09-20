@@ -1,7 +1,14 @@
 
 import { SnapshotPayload } from "./queue-item";
-import { IUser } from "../../repositories/user-repository";
+import { IUser } from "../../repositories/dto/user-dto";
 
+export type TeamAction = 
+  | 'SET_MEMBERS'
+  | 'UPDATE_COFFEE' 
+  | 'UPDATE_PROFILE' 
+  | 'DELETE_MEMBER' 
+  | 'CREATE_MEMBER';
+  
 // 1. Basis für alle Member-Payloads mit IUserJSON-Snapshot
 export interface MemberSnapshotPayload extends SnapshotPayload< IUser> {}
 

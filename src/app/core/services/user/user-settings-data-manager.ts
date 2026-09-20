@@ -1,149 +1,157 @@
-import { Injectable, inject, signal, effect } from '@angular/core';
+import { Injectable, inject, computed, Signal } from '@angular/core';
 import { map, Observable, of, tap } from 'rxjs';
 import { BaseQueueDataManager } from '../central-queue/base-queue-data-manager';
 import { QueueItem } from '../../models/queue-items/queue-item';
-import { UserRepository, PlannerSettingsDto } from '../../repositories/user-repository';
-import { LocalStorageService } from './local-storage-service';
 import { AUTH_CONTEXT } from './auth-context';
+import { UserSettingsStateProvider } from './user-settings-state-provider';
+import { StateProvider } from '../central-queue/state-providers/base-state-provider';
+import { UserRepository } from '../../repositories/user-repository';
+import { UserEnergyLevel, UserSettings } from '../../models/user.settings';
+import { PlannerSettingsDto } from '../../repositories/dto/planner-settings-dto';
 import { UserSettingsPayload } from '../../models/queue-items/user-settings-payload';
-
-export type UserEnergyLevel = 'LOW' | 'MEDIUM' | 'HIGH';
 
 @Injectable({
   providedIn: 'root'
 })
 export class UserSettingsDataManager extends BaseQueueDataManager {
-
   private userRepository = inject(UserRepository);
   private authContext = inject(AUTH_CONTEXT);
 
-  // 🎯 Die Fachdaten-Signals
-  public primeTimeStartHour = signal< number >(10);
-  public primeTimeEndHour = signal< number >(18);
-  public workingHours = signal< number >(8);
-  public workingTimeLeft = signal< number >(8);
-  
-  // ⚡ Tagesform / Energie (Lokal im Storage)
-  public userEnergy = signal< UserEnergyLevel >('MEDIUM');
-
   constructor() {
     super('UserSettingsDataManager');
-
-    const savedTimeLeft = this.localStorageService.getItem< number >(LocalStorageService.KEYS.WORKING_TIME_LEFT);
-    if (savedTimeLeft !== null) {
-      this.workingTimeLeft.set(savedTimeLeft);
-    }
-
-    const savedEnergy = this.localStorageService.getItem< UserEnergyLevel >(LocalStorageService.KEYS.USER_ENERGY);
-    if (savedEnergy) {
-      this.userEnergy.set(savedEnergy);
-    }
+    this.loadInitialCache();
   }
 
-  // ------------------------------------------------------------------
-  // Public Business Methods
-  // ------------------------------------------------------------------
-
-  public setUserEnergy(energy: UserEnergyLevel): void {
-    this.userEnergy.set(energy);
-    this.localStorageService.setItem(LocalStorageService.KEYS.USER_ENERGY, energy);
+  protected override createStateProvider(): StateProvider<UserSettings | null> {
+    return new UserSettingsStateProvider();
   }
 
-  public changeWorkingTimeLeft(hours: number): void {
-    this.workingTimeLeft.set(hours);
-    this.localStorageService.setItem(LocalStorageService.KEYS.WORKING_TIME_LEFT, hours);
+  // ==========================================
+  // SIGNALS & GETTER FÜR DIE UI
+  // ==========================================
+
+  public get settings(): Signal<UserSettings | null> {
+    return this.getSignal() as Signal<UserSettings | null>;
   }
 
-  public changePrimeTimeStart(hour: number): void {
-    this.primeTimeStartHour.set(hour);
-    this.persistSettingsToBackend();
-  }
+  public userEnergy: Signal<UserEnergyLevel> = computed(() => {
+    return this.settings()?.userEnergy ?? 'MEDIUM';
+  });
 
-  public changePrimeTimeEnd(hour: number): void {
-    this.primeTimeEndHour.set(hour);
-    this.persistSettingsToBackend();
-  }
+  public workingTimeLeft: Signal<number> = computed(() => {
+    return this.settings()?.workingTimeLeft ?? 8;
+  });
 
-  public changeDefaultWorkingHours(hours: number): void {
-    this.workingHours.set(hours);
-    this.persistSettingsToBackend();
-  }
+  public workingHours: Signal<number> = computed(() => {
+    return this.settings()?.defaultWorkingHours ?? 8;
+  });
 
-  // ------------------------------------------------------------------
-  // Queue & Persistence Logic
-  // ------------------------------------------------------------------
+  public primeTimeStartHour: Signal<number> = computed(() => {
+    return this.settings()?.primeTimeStartHour ?? 10;
+  });
 
-  private persistSettingsToBackend(): void {
+  public primeTimeEndHour: Signal<number> = computed(() => {
+    return this.settings()?.primeTimeEndHour ?? 18;
+  });
+
+  // ==========================================
+  // PUBLIC ACTIONS FOR UI
+  // ==========================================
+
+  public updateSettings(changes: Partial<UserSettings>): void {
     const userId = this.authContext.getCurrentUserId();
     if (!userId) return;
 
-    const settings: PlannerSettingsDto = {
-      userId,
-      defaultWorkingHours: this.workingHours(),
-      primeTimeStartHour: this.primeTimeStartHour(),
-      primeTimeEndHour: this.primeTimeEndHour()
-    };
+    // 📸 1. Snapshot des ALTE ZUSTANDES vor der Änderung holen
+    const snapshot = this.stateProvider.createSnapshot();
 
+    // ⚡ 2. StateProvider aktualisieren (cloneWith/merge passiert intern im Provider)
+    this.stateProvider.applyActionPayload('UPDATE_SETTINGS', { userId, changes });
+
+    // 📦 3. Das VOLLSTÄNDIGE neue UserSettings-Objekt direkt aus dem Provider holen
+    const updatedSettings = this.stateProvider.getState() as UserSettings;
+
+    // 📥 4. Kompaktes, vollständiges Payload an die Queue übergeben
     const payload: UserSettingsPayload = {
       id: userId,
       userId,
-      settings
+      settings: updatedSettings,
+      snapshot: snapshot || undefined
     };
 
     this.queueService.enqueue(this.serviceName, 'UPDATE_SETTINGS', payload);
   }
 
-  // ------------------------------------------------------------------
-  // Framework Implementation (BaseQueueDataManager)
-  // ------------------------------------------------------------------
+  // Convenience-Methoden fürs UI:
+  public setUserEnergy(energy: UserEnergyLevel): void {
+    this.updateSettings({ userEnergy: energy });
+  }
 
-  public executeQueueItem(item: QueueItem): Observable< any > {
+  public setWorkingTimeLeft(hours: number): void {
+    this.updateSettings({ workingTimeLeft: hours });
+  }
+
+  public changeWorkingTimeLeft(hours: number): void {
+    this.setWorkingTimeLeft(hours);
+  }
+
+  public changeDefaultWorkingHours(hours: number): void {
+    this.updateSettings({ defaultWorkingHours: hours });
+  }
+
+  public changePrimeTimeStart(hour: number): void {
+    this.updateSettings({ primeTimeStartHour: hour });
+  }
+
+  public changePrimeTimeEnd(hour: number): void {
+    this.updateSettings({ primeTimeEndHour: hour });
+  }
+
+  // ==========================================
+  // QUEUE EXECUTION & FETCH
+  // ==========================================
+
+  public override executeQueueItem(item: QueueItem): Observable<any> {
     if (item.action === 'UPDATE_SETTINGS') {
       const payload = item.payload as UserSettingsPayload;
       const userId = payload?.userId || this.authContext.getCurrentUserId();
 
-      if (!userId) {
-        console.error('🛑 [UserSettingsDataManager] Keine validierte UserId für Update vorhanden.');
-        return of(false);
-      }
+      if (!userId) return of(false);
 
-      return this.userRepository.updateSettings(userId, payload.settings);
+      const currentState = this.stateProvider.getState() as UserSettings;
+
+      // Domain Model -> DTO für Repository
+      const dto: PlannerSettingsDto = {
+        userId,
+        defaultWorkingHours: currentState?.defaultWorkingHours ?? 8,
+        primeTimeStartHour: currentState?.primeTimeStartHour ?? 10,
+        primeTimeEndHour: currentState?.primeTimeEndHour ?? 18
+      };
+
+      return this.userRepository.updateSettings(userId, dto);
     }
     return of(true);
   }
 
-  public override resetState(snapshot: any): void {
-    if (snapshot) {
-      if (snapshot.primeTimeStartHour !== undefined) this.primeTimeStartHour.set(snapshot.primeTimeStartHour);
-      if (snapshot.primeTimeEndHour !== undefined) this.primeTimeEndHour.set(snapshot.primeTimeEndHour);
-      if (snapshot.defaultWorkingHours !== undefined) this.workingHours.set(snapshot.defaultWorkingHours);
-    }
-  }
-
-  protected override onEntityCreated(tempId: string, response: any): void {
-    // Settings erzeugen keine neuen Entitäten
-  }
-
-  protected override fetchFromServer(userId: string): Observable< void > {
+  protected override fetchFromServer(userId: string): Observable<void> {
     return this.userRepository.getSettings(userId).pipe(
-      tap((settings) => {
-        this.primeTimeStartHour.set(settings.primeTimeStartHour);
-        this.primeTimeEndHour.set(settings.primeTimeEndHour);
-        this.workingHours.set(settings.defaultWorkingHours);
+      tap((dto: PlannerSettingsDto) => {
+        // Current state behalten für lokale Felder wie workingTimeLeft / energy
+        const current = this.stateProvider.getState() as UserSettings | null;
 
-        if (this.localStorageService.getItem(LocalStorageService.KEYS.WORKING_TIME_LEFT) === null) {
-          this.workingTimeLeft.set(settings.defaultWorkingHours);
-        }
+        // DTO -> Domain Model Mapper
+        const settings = new UserSettings(
+          userId,
+          dto.defaultWorkingHours,
+          dto.primeTimeStartHour,
+          dto.primeTimeEndHour,
+          current?.workingTimeLeft ?? dto.defaultWorkingHours,
+          current?.userEnergy ?? 'MEDIUM'
+        );
+
+        this.stateProvider.applyActionPayload('SET_SETTINGS', { settings });
       }),
       map(() => void 0)
     );
-  }
-
-  public override resetData(): void {
-    this.primeTimeStartHour.set(10);
-    this.primeTimeEndHour.set(18);
-    this.workingHours.set(8);
-    this.workingTimeLeft.set(8);
-    this.userEnergy.set('MEDIUM');
   }
 }

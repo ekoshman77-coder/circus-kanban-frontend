@@ -1,4 +1,4 @@
-import { inject, Injectable, signal, computed, effect } from '@angular/core';
+import { inject, Injectable, signal, computed, effect, Signal } from '@angular/core';
 import { Note } from '../../models/note';
 import { NoteDataManagerService } from './note-data-manager-service';
 import { UserService } from '../user/user-service';
@@ -15,8 +15,7 @@ export class NoteService extends BaseDataManager {
   private userService = inject(UserService);
   private masterDataService = inject(MasterDataService);
 
-  private notesSignal = this.dataManager.notesSignal;
-  public readonly notesList = this.notesSignal.asReadonly();
+  public readonly notesList = this.dataManager.notesSignal;
 
   private readonly DRAFT_KEY = 'draft_note';
   

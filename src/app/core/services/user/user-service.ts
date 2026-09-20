@@ -1,10 +1,11 @@
 import { Injectable, inject, signal, computed, effect } from '@angular/core';
-import { UserRepository, IUser } from '../../repositories/user-repository';
+import { UserRepository } from '../../repositories/user-repository';
 import { LocalStorageService } from './local-storage-service';
 import { GamificationResult } from '../../models/gamification';
 import { catchError, map, Observable, of, Subject, switchMap, tap } from 'rxjs';
 import { UserModel } from '../../models/user-model';
 import { IAuthContext } from './auth-context';
+import { IUser } from '../../repositories/dto/user-dto';
 
 @Injectable({
   providedIn: 'root',

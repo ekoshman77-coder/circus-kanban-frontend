@@ -2,6 +2,8 @@ import { SnapshotPayload } from "./queue-item";
 import { INoteJson } from "../../repositories/dto/note-json";
 import { Note } from "../note";
 
+export type NoteQueueAction = 'SET_NOTES' | 'CREATE' | 'UPDATE' | 'PROMOTE' | 'REVERT' | 'STATUS_CHANGE' | 'DELETE';
+
 // 1. Gemeinsame Basis für alle Note-Payloads (Snapshot ist stets ITNoteJson[])
 export interface NoteSnapshotPayload extends SnapshotPayload< INoteJson> {}
 

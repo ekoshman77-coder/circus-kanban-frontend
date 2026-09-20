@@ -1,5 +1,5 @@
+import { PlannerSettingsDto } from '../../repositories/dto/planner-settings-dto';
 import { SnapshotPayload } from './queue-item';
-import { PlannerSettingsDto } from '../../repositories/user-repository';
 
 // UserSettings nutzen PlannerSettingsDto als Snapshot-Typ
 export interface UserSettingsPayload extends SnapshotPayload< PlannerSettingsDto> {

@@ -1,4 +1,4 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { inject, Injectable, Signal } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { ProjectRepository } from '../../repositories/project-repository';
@@ -8,28 +8,25 @@ import { MILESTONE_TEMPLATES } from '../../shared/constants/milestone-template';
 import { UnifiedSuggestion } from '../../models/unified-suggestion';
 import { MilestoneSuggestionsModel } from '../../models/milestone-suggestions-model';
 import { ProjectDashboardStatsDTO } from '../../repositories/dto/project-dashboard-stats-dto';
-import { BaseQueueDataManager } from '../central-queue/base-queue-data-manager';
 import { ProjectMapper } from '../../models/project-mapper';
 import { IProjectJSON } from '../../repositories/dto/project-json';
 import { QueueItem } from '../../models/queue-items/queue-item';
-import { AddMemberPayload, DeleteProjectPayload, ProjectPayload, RemoveMemberPayload } from '../../models/queue-items/project-queue-item';
-import { ProjectMember } from '../../models/project-member';
+import {
+  AddMemberPayload,
+  DeleteProjectPayload,
+  ProjectAction,
+  ProjectPayload,
+  RemoveMemberPayload,
+  TrackMilestoneIgnorancePayload,
+  TrackMilestonePayload
+} from '../../models/queue-items/project-queue-item';
 import { ProjectRole, UserModel } from '../../models/user-model';
 import { UserSummary } from '../../models/user-summary';
 import { TeamRepository } from '../../repositories/team-repository';
 import { generateLocalId, isLocalId } from '../../shared/constants/id-const';
-import { TrackMilestoneIgnorancePayload, TrackMilestonePayload } from '../../models/queue-items/track-milestone-selection-payload';
 import { ConnectionService } from '../connection/connection-service';
-
-export type ProjectAction =
-  | 'CREATE'
-  | 'UPDATE'
-  | 'DELETE'
-  | 'ADD_MEMBER'
-  | 'REMOVE_MEMBER'
-  | 'TRACK_SELECTION'
-  | 'TRACK_DEGRADATION'
-  | 'TRACK_IGNORANCE';
+import { IdReplacement, ProjectStateProvider } from './project-state-provider';
+import { BaseQueueDataManager } from '../central-queue/base-queue-data-manager';
 
 @Injectable({
   providedIn: 'root'
@@ -40,13 +37,17 @@ export class ProjectDataManagerService extends BaseQueueDataManager {
   private aiRepository = inject(AiRepository);
   private connectionService = inject(ConnectionService);
 
-  private readonly GLOBAL_POOL_KEY = 'local_projects_global_pool';
-
-  public allProjectsPool = signal<Project[]>([]);
-
   constructor() {
     super('ProjectDataManagerService');
-    this.loadProjectsFromStorage();
+    (this.stateProvider as ProjectStateProvider).loadFromCache();
+  }
+
+  protected override createStateProvider(): ProjectStateProvider {
+    return new ProjectStateProvider();
+  }
+
+  public get allProjectsPool(): Signal<Project[]> {
+    return this.getSignal() as Signal<Project[]>;
   }
 
   // ==========================================
@@ -60,7 +61,6 @@ export class ProjectDataManagerService extends BaseQueueDataManager {
     switch (action) {
       case 'CREATE': {
         const createPayload = payload as ProjectPayload;
-        // 🛡️ Security: Backend erzeugt eigene ID -> Local-ID entfernen
         const projectToSend = new Project({
           ...createPayload.project,
           id: undefined
@@ -115,61 +115,67 @@ export class ProjectDataManagerService extends BaseQueueDataManager {
     }
   }
 
-  public override resetState(snapshot: IProjectJSON[]): void {
-    if (Array.isArray(snapshot)) {
-      const restored = snapshot.map((json: IProjectJSON) => ProjectMapper.toDomain(json));
-      this.allProjectsPool.set(restored);
-      this.saveListInLocalStorage(restored);
-    }
-  }
+  protected override handleSuccessResult(item: QueueItem, response: any): void {
+    // 1. Basisklasse tauscht die Haupt-Projekt-ID in der Queue & ruft standardmäßig replaceId auf
+    super.handleSuccessResult(item, response);
 
-  protected override onEntityCreated(tempId: string, response: unknown): void {
-    const serverProjectJson = response as IProjectJSON;
-    const realProject = ProjectMapper.toDomain(serverProjectJson);
+    if (item.action === 'CREATE' && response) {
+      const localProject = (item.payload as ProjectPayload)?.project;
+      const serverProjectJson = response as IProjectJSON;
+      const serverProject = ProjectMapper.toDomain(serverProjectJson);
 
-    // 1. Wir holen uns das alte Projekt aus unserem Pool, solange es noch die lokalen Meilenstein-IDs hat!
-    const oldProject = this.allProjectsPool().find(p => p.id === tempId);
+      if (localProject?.milestones && serverProject?.milestones) {
+        const milestoneReplacements: IdReplacement[] = [];
 
-    if (oldProject && oldProject.milestones && realProject.milestones) {
-      // 2. Wir gehen alle Meilensteine durch und mappen die lokale ID auf die Server-ID
-      oldProject.milestones.forEach((oldMilestone, index) => {
-        const realMilestone = realProject.milestones[index];
-        if (oldMilestone.id && realMilestone && realMilestone.id) {
-          // Hier triggern wir den globalen ID-Austausch in der Queue für jeden einzelnen Meilenstein!
-          this.queueService.updateEntityIdInQueue(oldMilestone.id, realMilestone.id);
+        // Zuordnung direkt aus Payload vs. Response (z. B. über Index oder Title)
+        localProject.milestones.forEach((localMs, index) => {
+          const serverMs = serverProject.milestones[index]; // oder match per title/orderIndex
+
+          if (localMs?.id && serverMs?.id && localMs.id !== serverMs.id) {
+            // A) Queue informieren
+            this.queueService.updateEntityIdInQueue(localMs.id, serverMs.id);
+
+            // B) Für Bulk-Ersetzung vormerken
+            milestoneReplacements.push({
+              localId: localMs.id,
+              serverId: serverMs.id
+            });
+          }
+        });
+
+        // 2. Ersetzung im Provider mit den gesammelten Paaren anstoßen
+        if (milestoneReplacements.length > 0) {
+          (this.stateProvider as ProjectStateProvider).replaceIdsBulk(
+            { localId: localProject.id, serverId: serverProject.id },
+            milestoneReplacements
+          );
         }
-      });
+      }
     }
-
-    // 3. Ganz normal das Projekt im Pool aktualisieren
-    const updatedList = this.allProjectsPool().map((p) => (p.id === tempId ? realProject : p));
-    this.allProjectsPool.set(updatedList);
-    this.saveListInLocalStorage(updatedList);
   }
 
   // ==========================================
-  // 🔄 REHYDRATION PATTERN (BaseQueueDataManager)
+  // 🔄 REHYDRATION PATTERN
   // ==========================================
 
   protected override fetchFromServer(userId: string): Observable<void> {
     return this.projectRepository.getAllProjects().pipe(
       map((backendProjectsJson: IProjectJSON[]): void => {
         const liveProjects = backendProjectsJson.map((json) => ProjectMapper.toDomain(json));
-        this.saveListInLocalStorage(liveProjects);
-        this.allProjectsPool.set(liveProjects);
+        this.stateProvider.applyActionPayload('SET_PROJECTS', { projects: liveProjects });
       })
     );
   }
 
   public override checkAndReplaceIds(item: QueueItem, localId: string, serverId: string): void {
+    super.checkAndReplaceIds(item, localId, serverId);
+
     const payload = item.payload;
     if (!payload) return;
 
-    // Prüfen, ob das Payload ein Projekt enthält (CREATE oder UPDATE)
     if ('project' in payload && payload.project) {
       const projPayload = payload as ProjectPayload;
 
-      // 1. Äußere Relationen prüfen
       if (projPayload.project.ideaId === localId) {
         projPayload.project.ideaId = serverId;
       }
@@ -177,7 +183,6 @@ export class ProjectDataManagerService extends BaseQueueDataManager {
         projPayload.project.departmentId = serverId;
       }
 
-      // Auch im verschachtelten Milestones-Array nachfühlen!
       if (projPayload.project.milestones && Array.isArray(projPayload.project.milestones)) {
         projPayload.project.milestones.forEach((milestone) => {
           if (milestone.id === localId) {
@@ -189,15 +194,13 @@ export class ProjectDataManagerService extends BaseQueueDataManager {
   }
 
   // ==========================================
-  // 📝 PUBLIC API METHODEN (mit Snapshots)
+  // 📝 PUBLIC API METHODEN
   // ==========================================
 
   public createProject(project: Project): void {
-    const snapshot = this.getSnapshotJson();
-    const updatedList = [...this.allProjectsPool(), project];
+    const snapshot = this.stateProvider.createSnapshot();
 
-    this.allProjectsPool.set(updatedList);
-    this.saveListInLocalStorage(updatedList);
+    this.stateProvider.applyActionPayload('CREATE', { project });
 
     const payload: ProjectPayload = {
       id: project.id,
@@ -208,11 +211,9 @@ export class ProjectDataManagerService extends BaseQueueDataManager {
   }
 
   public updateProject(project: Project): void {
-    const snapshot = this.getSnapshotJson();
-    const updatedList = this.allProjectsPool().map((p) => (p.id === project.id ? project : p));
+    const snapshot = this.stateProvider.createSnapshot();
 
-    this.allProjectsPool.set(updatedList);
-    this.saveListInLocalStorage(updatedList);
+    this.stateProvider.applyActionPayload('UPDATE', { project });
 
     const payload: ProjectPayload = {
       id: project.id,
@@ -223,11 +224,9 @@ export class ProjectDataManagerService extends BaseQueueDataManager {
   }
 
   public deleteProject(id: string): void {
-    const snapshot = this.getSnapshotJson();
-    const newGlobalList = this.allProjectsPool().filter((p) => p.id !== id);
+    const snapshot = this.stateProvider.createSnapshot();
 
-    this.allProjectsPool.set(newGlobalList);
-    this.saveListInLocalStorage(newGlobalList);
+    this.stateProvider.applyActionPayload('DELETE', { id });
 
     const deletePayload: DeleteProjectPayload = {
       id,
@@ -238,26 +237,11 @@ export class ProjectDataManagerService extends BaseQueueDataManager {
   }
 
   public addMemberToProject(projectId: string, user: UserModel | UserSummary, projectRole: ProjectRole): void {
-    if (isLocalId(projectId)) {
-      return;
-    }
+    if (isLocalId(projectId)) return;
 
-    const snapshot = this.getSnapshotJson();
-    const project = this.allProjectsPool().find((p) => p.id === projectId);
-    if (!project) {
-      return;
-    }
+    const snapshot = this.stateProvider.createSnapshot();
 
-    const newMemberBinding = new ProjectMember(user, projectRole);
-    const filteredMembers = project.teamMembers.filter((memb) => memb.user.id !== user.id);
-    const updatedProjectTeam = [...filteredMembers, newMemberBinding];
-    const updatedProject = new Project({
-      ...project,
-      teamMembers: updatedProjectTeam
-    });
-
-    this.allProjectsPool.update((value) => value.map((proj) => (proj.id !== projectId ? proj : updatedProject)));
-    this.saveListInLocalStorage(this.allProjectsPool());
+    this.stateProvider.applyActionPayload('ADD_MEMBER', { projectId, user, role: projectRole });
 
     const payload: AddMemberPayload = {
       id: projectId,
@@ -270,24 +254,11 @@ export class ProjectDataManagerService extends BaseQueueDataManager {
   }
 
   public removeMemberFromProject(projectId: string, userId: string): void {
-    if (isLocalId(projectId)) {
-      return;
-    }
+    if (isLocalId(projectId)) return;
 
-    const snapshot = this.getSnapshotJson();
-    const targetProject = this.allProjectsPool().find((p) => p.id === projectId);
-    if (!targetProject) {
-      return;
-    }
+    const snapshot = this.stateProvider.createSnapshot();
 
-    const targetTeam = targetProject.teamMembers.filter((member) => member.user.id !== userId);
-    const updatedProject = new Project({
-      ...targetProject,
-      teamMembers: targetTeam
-    });
-
-    this.allProjectsPool.update((value) => value.map((project) => (project.id !== projectId ? project : updatedProject)));
-    this.saveListInLocalStorage(this.allProjectsPool());
+    this.stateProvider.applyActionPayload('REMOVE_MEMBER', { projectId, userId });
 
     const payload: RemoveMemberPayload = {
       id: projectId,
@@ -296,6 +267,41 @@ export class ProjectDataManagerService extends BaseQueueDataManager {
     };
 
     this.queueService.enqueue(this.serviceName, 'REMOVE_MEMBER', payload);
+  }
+
+  // ==========================================
+  // 🔗 DEPENDENCY & CHAIN EXTRACTION
+  // ==========================================
+
+  public override extractEntityIds(item: QueueItem): string[] {
+    const ids = super.extractEntityIds(item);
+    const payload = item.payload;
+    if (!payload) return ids;
+
+    if ('project' in payload && payload.project) {
+      const proj = payload.project as Project;
+      
+      // 1. Idee-Abhängigkeit
+      if (proj.ideaId) {
+        ids.push(proj.ideaId);
+      }
+
+      // 2. Department-Abhängigkeit
+      if (proj.departmentId) {
+        ids.push(proj.departmentId);
+      }
+
+      // 3. Meilenstein-IDs sammeln
+      if (proj.milestones && Array.isArray(proj.milestones)) {
+        proj.milestones.forEach((m) => {
+          if (m.id) {
+            ids.push(m.id);
+          }
+        });
+      }
+    }
+
+    return ids;
   }
 
   // ==========================================================================
@@ -361,7 +367,6 @@ export class ProjectDataManagerService extends BaseQueueDataManager {
       milestoneTitle,
       userId
     };
-
     this.queueService.enqueue(this.serviceName, 'TRACK_SELECTION', payload);
   }
 
@@ -373,7 +378,6 @@ export class ProjectDataManagerService extends BaseQueueDataManager {
       milestoneTitle,
       userId
     };
-
     this.queueService.enqueue(this.serviceName, 'TRACK_DEGRADATION', payload);
   }
 
@@ -385,7 +389,6 @@ export class ProjectDataManagerService extends BaseQueueDataManager {
       milestoneTitles,
       userId
     };
-
     this.queueService.enqueue(this.serviceName, 'TRACK_IGNORANCE', payload);
   }
 
@@ -396,31 +399,7 @@ export class ProjectDataManagerService extends BaseQueueDataManager {
     return this.projectRepository.getDashboardStatistics(userId);
   }
 
-  // ==========================================================================
-  // 🛠️ PRIVATE HELPER & CACHE
-  // ==========================================================================
-
-  private saveListInLocalStorage(updatedList: Project[]): void {
-    const cachePayload = updatedList.map((p) => ProjectMapper.toJson(p));
-    this.localStorageService.setItem(this.GLOBAL_POOL_KEY, cachePayload);
-  }
-
-  private loadProjectsFromStorage(): void {
-    const jsonList = this.localStorageService.getItem<IProjectJSON[]>(this.GLOBAL_POOL_KEY);
-    const projects = jsonList ? jsonList.map((json) => ProjectMapper.toDomain(json)) : [];
-    this.allProjectsPool.set(projects);
-  }
-
-  private getSnapshotJson(): IProjectJSON[] {
-    return this.allProjectsPool().map((pr) => ProjectMapper.toJson(pr));
-  }
-
   public override checkUnsavedData(): string | null {
     return null;
-  }
-
-  public override resetData(): void {
-    this.localStorageService.removeItem(this.GLOBAL_POOL_KEY);
-    this.allProjectsPool.set([]);
   }
 }

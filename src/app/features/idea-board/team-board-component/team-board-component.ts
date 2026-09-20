@@ -227,7 +227,7 @@ public onTodoDropped(event: CdkDragDrop<any>): void {
   if (!movedViewModel) return;
 
   // 1. Eine saubere Kopie erstellen, um Seiteneffekte zu vermeiden
-  const updatedTodo = Todo.fromTodo(movedViewModel.todo);
+  const updatedTodo = movedViewModel.todo.cloneWith({});
   const targetColumnId = event.container.id;
 
   console.log("-----------------------------------------");

@@ -2,6 +2,8 @@ import { Permission } from "../permission";
 import { PermissionJson } from "../../repositories/dto/permission-json";
 import { SnapshotPayload } from "./queue-item";
 
+export type PermissionQueueAction = 'SET_PERMISSIONS' | 'CREATE' | 'UPDATE' | 'DELETE' | 'BATCH';
+
 // 1. Gemeinsame Basis für alle Permission-Payloads
 export interface PermissionSnapshotPayload extends SnapshotPayload<PermissionJson> {}
 

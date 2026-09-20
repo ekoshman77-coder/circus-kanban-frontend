@@ -6,16 +6,16 @@
     <label class="group-label">Wie ist deine Energie gerade?</label>
     <div class="energy-buttons">
       <button 
-        [class.active]="userSettingsDataManager.userEnergy() === 'LOW'" 
-        (click)="userSettingsDataManager.userEnergy.set('LOW')" 
+        [class.active]="userEnergy() === 'LOW'" 
+        (click)="onEnergyChange('LOW')" 
         class="energy-btn low">🥱 Schläfrig / Müde</button>
       <button 
-        [class.active]="userSettingsDataManager.userEnergy() === 'MEDIUM'" 
-        (click)="userSettingsDataManager.userEnergy.set('MEDIUM')" 
+        [class.active]="userEnergy() === 'MEDIUM'" 
+        (click)="onEnergyChange('MEDIUM')" 
         class="energy-btn normal">😐 Normal</button>
       <button 
-        [class.active]="userSettingsDataManager.userEnergy() === 'HIGH'" 
-        (click)="userSettingsDataManager.userEnergy.set('HIGH')" 
+        [class.active]="userEnergy() === 'HIGH'" 
+        (click)="onEnergyChange('HIGH')" 
         class="energy-btn high">⚡ Klarer Kopf / Fokus</button>
     </div>
   </div>
@@ -59,7 +59,7 @@
       <input 
         type="range" min="0" max="23" step="any"
         [value]="sliderPrimeStart()" 
-        (input)= "onPrimeStartInput($event)"
+        (input)="onPrimeStartInput($event)"
         (change)="onPrimeTimeStartChange()"
         class="time-slider prime-accent"
       >

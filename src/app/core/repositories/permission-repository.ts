@@ -17,7 +17,7 @@ export class PermissionRepository {
   }
 
   public createPermission(permission: Permission): Observable< PermissionJson> {
-    const body = permission.mapToJson();
+    const body = permission.toJson();
     return this.http.post< PermissionJson>(PermissionUrl, body);
   }
 
@@ -28,7 +28,7 @@ export class PermissionRepository {
   }
 
   public updatePermission(permission: Permission): Observable< PermissionJson> {
-    const body = permission.mapToJson();
+    const body = permission.toJson();
     return this.http.put< PermissionJson>(PermissionUrl, body);
   }
 

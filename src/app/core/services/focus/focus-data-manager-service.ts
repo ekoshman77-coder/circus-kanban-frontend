@@ -8,6 +8,8 @@ import { BaseQueueDataManager } from '../central-queue/base-queue-data-manager';
 import { QueueItem } from '../../models/queue-items/queue-item';
 import { generateLocalId } from '../../shared/constants/id-const';
 import { FocusPomodoroPayload } from '../../models/queue-items/pomodoro-payload';
+import { StateProvider } from '../central-queue/state-providers/base-state-provider';
+import { EmptyStateProvider } from '../central-queue/state-providers/empty-state-provider';
 
 export type FocusQueueAction = 'RECORD_POMODORO';
 
@@ -15,13 +17,16 @@ export type FocusQueueAction = 'RECORD_POMODORO';
   providedIn: 'root'
 })
 export class FocusDataManagerService extends BaseQueueDataManager {
-
   private gamificationRepository = inject(GamificationRepository);
   private userService = inject(UserService);
   private loggerService = inject(LoggerService);
 
   constructor() {
     super('FocusDataManagerService');
+  }
+
+  protected override createStateProvider(): StateProvider<any> {
+    return new EmptyStateProvider();
   }
 
   // ==========================================
@@ -39,7 +44,7 @@ export class FocusDataManagerService extends BaseQueueDataManager {
         return this.gamificationRepository.sendPomodoroSession(userId, { todoId, count: 1 });
       }
       default:
-        return throwError((): Error => new Error(`[FocusDataManager] Unbekannte Action: ${item.action}`));
+        return throwError(() => new Error(`[FocusDataManager] Unbekannte Action: ${item.action}`));
     }
   }
 
@@ -56,25 +61,38 @@ export class FocusDataManagerService extends BaseQueueDataManager {
     }
   }
 
+  public override checkAndReplaceIds(item: QueueItem, localId: string, serverId: string): void {
+    if (item.action === 'RECORD_POMODORO') {
+      const payload = item.payload as FocusPomodoroPayload;
+      if (payload.todoId === localId) {
+        payload.todoId = serverId;
+      }
+    }
+  }
+
   // ==========================================
-  // 🔄 REHYDRATION PATTERN (BaseQueueDataManager)
+  // 🔗 DEPENDENCY & CHAIN EXTRACTION
+  // ==========================================
+
+  public override extractEntityIds(item: QueueItem): string[] {
+    const ids = super.extractEntityIds(item);
+
+    if (item.action === 'RECORD_POMODORO') {
+      const payload = item.payload as FocusPomodoroPayload;
+      if (payload.todoId) {
+        ids.push(payload.todoId);
+      }
+    }
+
+    return ids;
+  }
+  
+  // ==========================================
+  // 🔄 REHYDRATION PATTERN
   // ==========================================
 
   protected override fetchFromServer(userId: string): Observable<void> {
-    // Gamification hat keinen eigenständigen Sync-Cache im Manager
     return of(undefined);
-  }
-
-  public override resetState(snapshot: unknown): void {
-    // Kein lokaler Snapshot-State vorhanden
-  }
-
-  protected override onEntityCreated(tempId: string, response: unknown): void {
-    // Keine Entity-Erstellung
-  }
-
-  protected override handleWithoutSnapshot(item: QueueItem): void {
-    // Keine Snapshot-Restauration nötig
   }
 
   // ==========================================
@@ -96,21 +114,15 @@ export class FocusDataManagerService extends BaseQueueDataManager {
       todoId,
       count: 1
     };
-    
+
     // In die CentralQueue schieben (Handles Online & Offline vollautomatisch)
     this.queueService.enqueue(this.serviceName, 'RECORD_POMODORO', payload);
-
     this.loggerService.info('FocusDataManager', 'Pomodoro in die globale Queue eingereiht.');
   }
 
-  public override checkAndReplaceIds(item: QueueItem, localId: string, serverId: string): void {
-  if (item.action === 'RECORD_POMODORO') {
-    const payload = item.payload as FocusPomodoroPayload;
-    if (payload.todoId === localId) {
-      payload.todoId = serverId;
-    }
-  }
-}
+  // ==========================================
+  // 🧹 BASE DATA MANAGER OVERRIDES
+  // ==========================================
 
   public override resetData(): void {
     // Kein lokaler Storage-State vorhanden

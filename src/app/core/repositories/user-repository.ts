@@ -3,24 +3,11 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { catchError, Observable, tap, throwError } from 'rxjs';
 import { GamificationResult } from '../models/gamification';
 import { gamificationApiUrl, settingsApiUrl, userApiUrl } from './links';
-import { IDepartment } from './dto/deparment-json';
+import { IUser } from './dto/user-dto';
+import { PlannerSettingsDto } from './dto/planner-settings-dto';
 
-export interface IUser {
-  id: string;
-  username: string;
-  firstName: string;
-  lastName: string;
-  department?: IDepartment | null;  // Kommt jetzt sauber mit!
-  isApproved: boolean;          // Kommt jetzt sauber mit!
-}
 
 // 📋 Das passende Interface für dein Kotlin-DTO
-export interface PlannerSettingsDto {
-  userId: string;
-  defaultWorkingHours: number;
-  primeTimeStartHour: number;
-  primeTimeEndHour: number;
-}
 
 @Injectable({
   providedIn: 'root',

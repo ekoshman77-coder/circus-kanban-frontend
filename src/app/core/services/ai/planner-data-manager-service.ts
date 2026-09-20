@@ -2,7 +2,11 @@ import { inject, Injectable } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
 import { BaseQueueDataManager } from '../central-queue/base-queue-data-manager';
 import { QueueItem } from '../../models/queue-items/queue-item';
-import { AiRepository, PlannerFeedbackPayload, RejectedTodoFeedback, SnoozePayload } from '../../repositories/ai-repository';
+import { StateProvider } from '../central-queue/state-providers/base-state-provider';
+import { EmptyStateProvider } from '../central-queue/state-providers/empty-state-provider';
+import { AiRepository, RejectedTodoFeedback } from '../../repositories/ai-repository';
+import { PlannerFeedbackPayload, SnoozePayload } from '../../models/queue-items/planner-queue-payload';
+
 
 export type PlannerQueueAction = 'SEND_FEEDBACK' | 'SNOOZE_TODO';
 
@@ -10,25 +14,28 @@ export type PlannerQueueAction = 'SEND_FEEDBACK' | 'SNOOZE_TODO';
   providedIn: 'root'
 })
 export class PlannerDataManagerService extends BaseQueueDataManager {
-
   private aiRepository = inject(AiRepository);
+
+  constructor() {
+    super('PlannerDataManagerService');
+  }
+
+  protected override createStateProvider(): StateProvider<any> {
+    return new EmptyStateProvider();
+  }
 
   // ==========================================
   // 🚀 QUEUE HANDLER IMPLEMENTIERUNG
   // ==========================================
 
-  constructor() {
-    super('PlannerDataManagerService')
-  }
-  
   public override executeQueueItem(item: QueueItem): Observable<any> {
     const action = item.action as PlannerQueueAction;
-    
+
     switch (action) {
       case 'SEND_FEEDBACK': {
-        const payload = item.payload as PlannerFeedbackPayload; 
+        const payload = item.payload as PlannerFeedbackPayload;
         return this.aiRepository.sendPlannerFeedback({
-          id: "", // Strippen der ID für Backend-Konsistenz
+          id: '',
           userId: payload.userId,
           roundId: payload.roundId,
           acceptedTodoId: payload.acceptedTodoId,
@@ -48,29 +55,16 @@ export class PlannerDataManagerService extends BaseQueueDataManager {
       }
 
       default:
-        return throwError((): Error => new Error(`[PlannerDataManager] Unbekannte Action: ${item.action}`));
+        return throwError(() => new Error(`[PlannerDataManager] Unbekannte Action: ${item.action}`));
     }
   }
 
   // ==========================================
-  // 🔄 REHYDRATION PATTERN (BaseQueueDataManager)
+  // 🔄 REHYDRATION PATTERN
   // ==========================================
 
   protected override fetchFromServer(userId: string): Observable<void> {
-    // KI-Feedback speichert keinen eigenen lokalen Server-State im Manager
     return of(undefined);
-  }
-
-  public override resetState(snapshot: unknown): void {
-    // Kein lokaler State vorhanden, der zurückgesetzt werden müsste
-  }
-
-  protected override onEntityCreated(tempId: string, response: unknown): void {
-    // Keine Entity-Erstellung im PlannerDataManager
-  }
-
-  protected override handleWithoutSnapshot(item: QueueItem): void {
-    // Keine Snapshot-Restauration nötig
   }
 
   // ==========================================
@@ -78,7 +72,7 @@ export class PlannerDataManagerService extends BaseQueueDataManager {
   // ==========================================
 
   public queueFeedback(userId: string, roundId: string, acceptedTodoId: string | null, rejectedTodos: RejectedTodoFeedback[]): void {
-    const payload = {
+    const payload: PlannerFeedbackPayload = {
       id: roundId,
       userId,
       roundId,
@@ -90,13 +84,17 @@ export class PlannerDataManagerService extends BaseQueueDataManager {
   }
 
   public queueSnooze(todoId: string, durationInMin: number): void {
-    const payload = {
+    const payload: SnoozePayload = {
       id: todoId,
       durationInMin
     };
 
     this.queueService.enqueue(this.serviceName, 'SNOOZE_TODO', payload);
   }
+
+  // ==========================================
+  // 🧹 BASE DATA MANAGER OVERRIDES
+  // ==========================================
 
   public override resetData(): void {
     // Kein lokaler Cache zu bereinigen

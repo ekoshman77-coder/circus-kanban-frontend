@@ -1,37 +1,49 @@
 import { inject } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { tap, map, catchError, finalize } from 'rxjs/operators';
+import { tap, map, catchError } from 'rxjs/operators';
 import { QueueItem } from '../../models/queue-items/queue-item';
 import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 import { IQueueHandler } from './queue-handler-interface';
 import { CentralQueueService } from './central-queue-service';
 import { NotificationService } from '../notification/notification-service';
+import { StateProvider } from './state-providers/base-state-provider';
 
 export abstract class BaseQueueDataManager extends BaseDataManager implements IQueueHandler {
   protected queueService = inject(CentralQueueService);
   protected notificationService = inject(NotificationService);
 
   serviceName: string;
+  protected stateProvider: StateProvider<any>;
 
   private lastFetchTimestamp = 0;
-  private readonly FETCH_COOLDOWN_MS = 30000; // 30 Sekunden Schutzfenster
+  private readonly FETCH_COOLDOWN_MS = 30000;
 
   constructor(name: string) {
     super();
     this.serviceName = name;
+    this.stateProvider = this.createStateProvider();
     this.queueService.registerService(name, this);
   }
 
-  public abstract executeQueueItem(item: QueueItem): Observable<any>;
-  public abstract resetState(snapshot: any): void;
-  protected abstract onEntityCreated(tempId: string, response: any): void;
+  protected abstract createStateProvider(): StateProvider<any>;
 
-  /** Von konkreten DataManagern zu implementieren: Holt frische Daten vom Server & speichert sie im Signal/Cache */
+  public abstract executeQueueItem(item: QueueItem): Observable<any>;
   protected abstract fetchFromServer(userId: string): Observable<void>;
 
-  /**
-   * 🔄 Sequentielles Rehydration-Pattern mit Race-Condition-Protection
-   */
+  /** Lädt beim Start einmalig den Cache über den Provider */
+  public loadInitialCache(): void {
+    this.stateProvider.loadFromCache();
+  }
+
+  /** Erzwungener Fetch ohne Cooldown-Prüfung */
+  public forceFetchFromServer(userId: string = ''): Observable<void> {
+    return this.fetchFromServer(userId).pipe(
+      tap(() => {
+        this.lastFetchTimestamp = Date.now();
+      })
+    );
+  }
+
   public refreshDataIfStale(userId: string): Observable<boolean> {
     const now = Date.now();
 
@@ -41,14 +53,11 @@ export abstract class BaseQueueDataManager extends BaseDataManager implements IQ
 
     return this.fetchFromServer(userId).pipe(
       tap(() => {
-        // 🛡️ GUARD: Wenn die Queue nicht leer ist, verwerfen
         if (this.queueService.hasPendingItems()) {
           console.warn(`⚠️ [${this.serviceName}] Server-Antwort verworfen, da ungesendete Offline-Items vorliegen.`);
-          return of(false);
+          return;
         }
-
         this.lastFetchTimestamp = Date.now();
-        return of(true)
       }),
       map(() => true),
       catchError((err) => {
@@ -57,44 +66,96 @@ export abstract class BaseQueueDataManager extends BaseDataManager implements IQ
       })
     );
   }
-  /**
-   * 🎯 Zentrale Template-Methode für Queue-Ergebnisse
-   */
+
+  // ==========================================
+  // RESULT HANDLING (Aufgeteilt in Erfolgs- und Fehlerpfad)
+  // ==========================================
+
   public handleQueueResult(item: QueueItem, success: boolean, response: any): void {
+    if (success) {
+      this.handleSuccessResult(item, response);
+    } else {
+      this.handleErrorResult(item, response);
+    }
+  }
+
+  protected handleSuccessResult(item: QueueItem, response: any): void {
+    const payload = item.payload;
+    if (item.action.startsWith('CREATE') && response) {
+      const serverId = response.id || response;
+      this.checkAndReplaceIds(item, payload.id, serverId);
+      this.queueService.updateEntityIdInQueue(payload.id, serverId);
+    }
+  }
+
+  protected handleErrorResult(item: QueueItem, error: any): void {
     const payload = item.payload;
 
-    if (success) {
-      if (item.action.startsWith('CREATE') && response) {
-        this.onEntityCreated(payload.id, response);
-        this.queueService.updateEntityIdInQueue(payload.id, response.id || response);
-      }
-      return;
-    }
-
-    // 🛑 FEHLERFALL (4xx): Rollback durchführen!
-    console.warn(`🛑 [${this.serviceName}] Fehler bei "${item.action}". Starte Rollback für Entity: ${payload.id}`);
+    console.warn(`🛑 [${this.serviceName}] Fehler bei "${item.action}". Starte Rollback für Entity: ${payload?.id}`);
     this.notificationService.showNotification(
       'Änderung konnte nicht gespeichert werden. Der vorherige Zustand wurde wiederhergestellt.',
       'error'
     );
 
-    if (payload?.snapshot) {
-      this.resetState(payload.snapshot);
-    } else {
-      this.handleWithoutSnapshot(item);
-    }
+    this.rollbackItem(item);
 
-    if (item.action.startsWith('CREATE')) {
+    if (item.action.startsWith('CREATE') && payload?.id) {
       this.queueService.removeItemsForEntity(payload.id);
     }
   }
 
-  protected handleWithoutSnapshot(item: QueueItem): void {
-    // Standardmäßig leer, da Payloads Snapshots mitbringen. 
-    // Kann bei Bedarf in konkreten Klassen überschrieben werden.
+  // ==========================================
+  // RECOVERY & SHADOW MODE (Delegation an StateProvider)
+  // ==========================================
+
+  public enableShadowMode(active: boolean): void {
+    if (active) {
+      this.stateProvider.enterShadowMode();
+    } else {
+      this.stateProvider.exitShadowMode();
+    }
   }
 
+  public rollbackItem(item: QueueItem): void {
+    const snapshot = item.payload?.snapshot;
+
+    if (snapshot) {
+      this.stateProvider.restoreFromSnapshot(snapshot);
+    } else {
+      this.handleWithoutSnapshot(item);
+    }
+  }
+
+  public applyRollForward(item: QueueItem): void {
+    // Entkoppelt: Sendet nur Action und Payload an den Provider!
+    this.stateProvider.applyActionPayload(item.action, item.payload);
+  }
+
+  protected handleWithoutSnapshot(item: QueueItem): void {}
+
+  // ==========================================
+  // ENTITY & ID HELPER
+  // ==========================================
+
   public checkAndReplaceIds(item: QueueItem, localId: string, serverId: string): void {
-    // Standardmäßig tut sie nichts. Nur Manager, die Relationen haben, überschreiben sie.
+    this.stateProvider.replaceId(localId, serverId);
+  }
+
+  public extractEntityIds(item: QueueItem): string[] {
+    return item.payload?.id ? [item.payload.id] : [];
+  }
+
+  public dependsOnId(item: QueueItem, targetIds: Set<string>): boolean {
+    const itemIds = this.extractEntityIds(item);
+    return itemIds.some(id => targetIds.has(id));
+  }
+
+  public getSignal() {
+    return this.stateProvider.getSignal();
+  }
+
+  /** Setzt den lokalen Zustand & Cache über den StateProvider zurück (z.B. bei Logout) */
+  public resetData(): void {
+    this.stateProvider.resetState();
   }
 }

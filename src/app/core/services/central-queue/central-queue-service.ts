@@ -9,16 +9,20 @@ import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager
 import { BaseQueueDataManager } from './base-queue-data-manager';
 import { QueueItem, SnapshotPayload } from '../../models/queue-items/queue-item';
 import { AUTH_CONTEXT } from '../user/auth-context';
+import { Identifiable } from '../../models/identifable';
+import { MockDraftService } from '../draft-chains/draft-service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CentralQueueService extends BaseDataManager {
   private connectionService = inject(ConnectionService);
+  private draftService = inject(MockDraftService)
+
   private authContext = inject(AUTH_CONTEXT);
 
   private readonly QUEUE_KEY = 'global_central_offline_queue';
-  private registry = new Map();
+  private registry = new Map<string, IQueueHandler>();
   private isProcessing = false;
   private isFetchingData = false;
 
@@ -101,17 +105,57 @@ export class CentralQueueService extends BaseDataManager {
       },
       error: (err: any) => {
         if (err.status >= 400 && err.status < 500) {
-          console.warn(`🛑 [CentralQueueService] 4xx Fehler bei ${currentItem.action}. Storniere Item.`);
-          targetService.handleQueueResult(currentItem, false, err);
-          this.dequeue();
-          this.isProcessing = false;
-          this.processQueue();
+           this.handle4xxError(currentItem, targetService, err)
         } else {
           console.warn(`📡 [CentralQueueService] Netz/Serverfehler bei ${currentItem.action}. Pausiere Queue.`);
           this.isProcessing = false;
         }
       }
     });
+  }
+
+  private handle4xxError(
+    currentItem: QueueItem,
+    targetHandler: IQueueHandler,
+    err: any
+  ): void {
+    console.warn(`🛑 [CentralQueueService] 4xx Fehler bei ${currentItem.action}. Starte Backward-Rollback & Forward-Replay.`);
+
+    // 1. Shadow Mode GLOBAL auf allen registrierten Handlern aktivieren
+    this.registry.forEach((handler, key) => handler.enableShadowMode(true));
+
+    // 2. BACKWARD-ROLLBACK: Von hinten nach vorne die ganze Queue zurückspulen
+    for (let i = this.queue.length - 1; i >= 0; i--) {
+      const item = this.queue[i];
+      const handler = this.registry.get(item.serviceName);
+      if (handler) {
+        handler.rollbackItem(item);
+      }
+    }
+
+    // 3. LAWINEN-EXTRAKTION: Defekte Kette isolieren & aus Queue entfernen
+    const dependentChain = this.extractDependentChain();
+
+    // 4. In der Draft-Box sichern
+    if (dependentChain.length > 0) {
+      const errorMessage = err.error?.message || err.message || '4xx Fehler';
+      this.draftService.saveDraftChain(dependentChain, errorMessage);
+    }
+
+    // 5. FORWARD-REPLAY: Von vorne nach hinten nur die verbliebenen, unbetroffenen Items anwenden
+    for (const item of this.queue) {
+      const handler = this.registry.get(item.serviceName);
+      if (handler) {
+        handler.applyRollForward(item);
+      }
+    }
+
+    // 6. Shadow Mode GLOBAL deaktivieren -> BÄM! Sauberer UI-State
+    this.registry.forEach((handler, key) => handler.enableShadowMode(false));
+
+    // 7. Processing freigeben & Queue fortführen
+    this.isProcessing = false;
+    setTimeout(() => this.processQueue(), 0);
   }
 
   /**
@@ -162,8 +206,8 @@ export class CentralQueueService extends BaseDataManager {
       if (item.payload && item.payload.id === localId) {
         item.payload.id = serverId;
       }
-      const handler = this.registry.get(item.serviceName) as BaseQueueDataManager;
-      handler.checkAndReplaceIds(item, localId, serverId)
+      const handler = this.registry.get(item.serviceName);
+      handler!.checkAndReplaceIds(item, localId, serverId)
     });
     this.persistQueue();
   }
@@ -179,6 +223,45 @@ export class CentralQueueService extends BaseDataManager {
 
   private persistQueue(): void {
     this.localStorageService.setItem(this.QUEUE_KEY, this.queue);
+  }
+
+  public extractDependentChain(): QueueItem[] {
+    const chainIds = new Set<string>();
+    const connectedItems: QueueItem[] = [];
+    const remainingQueue: QueueItem[] = [];
+
+    // Wenn die Queue leer ist, direkt raus
+    if (this.queue.length === 0) {
+      return [];
+    }
+
+    // Start-ID des fehlgeschlagenen Items direkt in die Lawine werfen
+    chainIds.add(this.queue[0].payload.id);
+
+    // Der Loop wandert durch die gesamte Queue
+    for (const item of this.queue) {
+      const handler = this.registry.get(item.serviceName);
+      if (!handler) {
+        throw new Error(`💥 Kein Handler gefunden für: ${item.serviceName}`);
+      }
+
+      // Da das erste Item seine ID schon in chainIds hat, matcht es hier sofort!
+      const isConnected = handler.dependsOnId(item, chainIds);
+
+      if (isConnected) {
+        connectedItems.push(item);
+        // Neue IDs des erkannten Items einsammeln
+        handler.extractEntityIds(item).forEach(id => chainIds.add(id));
+      } else {
+        remainingQueue.push(item);
+      }
+    }
+
+    // Queue aktualisieren und speichern
+    this.queue = remainingQueue;
+    this.persistQueue();
+
+    return connectedItems;
   }
 
   public override resetData(): void {

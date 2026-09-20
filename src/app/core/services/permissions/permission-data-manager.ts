@@ -1,45 +1,49 @@
-import { inject, Injectable, signal } from '@angular/core';
-import { Observable, of, throwError, map } from 'rxjs';
+import { inject, Injectable, Signal } from '@angular/core';
+import { map, Observable, throwError } from 'rxjs';
 import { BaseQueueDataManager } from '../central-queue/base-queue-data-manager';
 import { PermissionRepository } from '../../repositories/permission-repository';
 import { Permission } from '../../models/permission';
 import { QueueItem } from '../../models/queue-items/queue-item';
 import { generateLocalId } from '../../shared/constants/id-const';
-import { PermissionJson } from '../../repositories/dto/permission-json';
 import {
+  PermissionQueueAction,
   PermissionPayload,
   DeletePermissionPayload,
   BatchCreatePermissionsPayload
 } from '../../models/queue-items/permission-queue-item';
-
-export type PermissionQueueAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'BATCH';
+import { PermissionStateProvider } from './permission-state-provider';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PermissionDataManager extends BaseQueueDataManager {
   private permissionRepository = inject(PermissionRepository);
-
-  public permissionsSignal = signal< Permission[]>([]);
   private readonly STORAGE_KEY = 'global_permissions_pool';
 
   constructor() {
     super('PermissionDataManager');
-    this.loadFromCache();
+    (this.stateProvider as PermissionStateProvider).loadFromCache();
+  }
+
+  protected override createStateProvider(): PermissionStateProvider {
+    return new PermissionStateProvider();
+  }
+
+  public get permissionsSignal(): Signal<Permission[]> {
+    return this.getSignal() as Signal<Permission[]>;
   }
 
   // ==========================================
   // 🚀 BASE QUEUE DATA MANAGER HOOKS
   // ==========================================
 
-  public override executeQueueItem(item: QueueItem): Observable< any> {
+  public override executeQueueItem(item: QueueItem): Observable<any> {
     const action = item.action as PermissionQueueAction;
     const payload = item.payload;
 
     switch (action) {
       case 'CREATE': {
         const createPayload = payload as PermissionPayload;
-        // 🛡️ Security: Backend soll eigene ID vergeben -> Local ID entfernen
         const permissionToSend = new Permission({
           ...createPayload.permission,
           id: undefined
@@ -59,45 +63,42 @@ export class PermissionDataManager extends BaseQueueDataManager {
         return this.permissionRepository.batchCreatePermissions(batchPayload);
       }
       default:
-        return throwError((): Error => new Error(`[PermissionDataManager] Unbekannte Action: ${item.action}`));
+        return throwError(() => new Error(`[PermissionDataManager] Unbekannte Action: ${item.action}`));
     }
   }
 
-  public override resetState(snapshot: PermissionJson[]): void {
-    if (Array.isArray(snapshot)) {
-      const restored = snapshot.map((json: PermissionJson) => Permission.fromJson(json));
-      this.permissionsSignal.set(restored);
-      this.saveToCache(restored);
+  protected override handleSuccessResult(item: QueueItem, response: any): void {
+    // 1. Basisklasse für einfache CREATE-IDs
+    super.handleSuccessResult(item, response);
+
+    // 2. Spezialfall BATCH: Server-Permissions direkt an den Provider übergeben
+    if (item.action === 'BATCH' && Array.isArray(response)) {
+      const serverPermissions = response.map((json) => Permission.fromJson(json));
+      const provider = this.stateProvider as PermissionStateProvider;
+
+      provider.replaceIdsByPermission(serverPermissions, (localId, serverId) => {
+        // Callback informiert die Queue für jedes gematchte Paar
+        this.queueService.updateEntityIdInQueue(localId, serverId);
+      });
     }
   }
 
-  protected override onEntityCreated(tempId: string, response: unknown): void {
-    const realPermission = Permission.fromJson(response);
-    const updated = this.permissionsSignal().map((p) => (p.id === tempId ? realPermission : p));
-    this.permissionsSignal.set(updated);
-    this.saveToCache(updated);
-  }
-
-  // ==========================================
-  // 🔄 REHYDRATION PATTERN (BaseQueueDataManager)
-  // ==========================================
-
-  protected override fetchFromServer(userId: string): Observable< void> {
+  protected override fetchFromServer(userId: string): Observable<void> {
     return this.permissionRepository.getPermissions().pipe(
-      map((serverPermissionsJson): void => {
+      map((serverPermissionsJson) => {
         const permissions = serverPermissionsJson.map((json) => Permission.fromJson(json));
-        this.permissionsSignal.set(permissions);
-        this.saveToCache(permissions);
+        this.stateProvider.applyActionPayload('SET_PERMISSIONS', permissions);
       })
     );
   }
 
   // ==========================================
-  // 📝 PUBLIC API METHODEN (mit Snapshots)
+  // 📝 PUBLIC API METHODEN (Opt. Updates über Provider)
   // ==========================================
 
   public createPermission(permission: Permission): void {
-    const snapshot = this.getSnapshotJson();
+    const provider = this.stateProvider as PermissionStateProvider;
+    const snapshot = provider.createSnapshot();
     const tempId = permission.id || generateLocalId();
 
     const newPermission = new Permission({
@@ -105,17 +106,43 @@ export class PermissionDataManager extends BaseQueueDataManager {
       id: tempId
     });
 
-    const updated = [...this.permissionsSignal(), newPermission];
-    this.permissionsSignal.set(updated);
-    this.saveToCache(updated);
-
     const payload: PermissionPayload = {
       id: tempId,
       permission: newPermission,
       snapshot
     };
 
+    provider.applyActionPayload('CREATE', payload);
     this.queueService.enqueue(this.serviceName, 'CREATE', payload);
+  }
+
+  public updatePermission(permission: Permission): void {
+    if (!permission.id) return;
+
+    const provider = this.stateProvider as PermissionStateProvider;
+    const snapshot = provider.createSnapshot();
+
+    const payload: PermissionPayload = {
+      id: permission.id,
+      permission,
+      snapshot
+    };
+
+    provider.applyActionPayload('UPDATE', payload);
+    this.queueService.enqueue(this.serviceName, 'UPDATE', payload);
+  }
+
+  public deletePermission(permissionId: string): void {
+    const provider = this.stateProvider as PermissionStateProvider;
+    const snapshot = provider.createSnapshot();
+
+    const payload: DeletePermissionPayload = {
+      id: permissionId,
+      snapshot
+    };
+
+    provider.applyActionPayload('DELETE', payload);
+    this.queueService.enqueue(this.serviceName, 'DELETE', payload);
   }
 
   public batchCreatePermissions(
@@ -125,27 +152,8 @@ export class PermissionDataManager extends BaseQueueDataManager {
     scope: string,
     specialization?: string
   ): void {
-    const snapshot = this.getSnapshotJson();
-    const updatedList = [...this.permissionsSignal()];
-
-    roles.forEach((role) => {
-      actions.forEach((action) => {
-        const permission = new Permission({
-          id: generateLocalId(),
-          role,
-          resource,
-          action,
-          targetScope: scope,
-          specialization
-        });
-        if (!updatedList.some((perm) => perm.isEqualPermission(permission))) {
-          updatedList.push(permission);
-        }
-      });
-    });
-
-    this.permissionsSignal.set(updatedList);
-    this.saveToCache(updatedList);
+    const provider = this.stateProvider as PermissionStateProvider;
+    const snapshot = provider.createSnapshot();
 
     const payload: BatchCreatePermissionsPayload = {
       id: generateLocalId(),
@@ -157,68 +165,8 @@ export class PermissionDataManager extends BaseQueueDataManager {
       snapshot
     };
 
+    provider.applyActionPayload('BATCH', payload);
     this.queueService.enqueue(this.serviceName, 'BATCH', payload);
-  }
-
-  public updatePermission(permission: Permission): void {
-    if (!permission.id) return;
-
-    const snapshot = this.getSnapshotJson();
-    const updated = this.permissionsSignal().map((p) => (p.id === permission.id ? permission : p));
-
-    this.permissionsSignal.set(updated);
-    this.saveToCache(updated);
-
-    const payload: PermissionPayload = {
-      id: permission.id,
-      permission,
-      snapshot
-    };
-
-    this.queueService.enqueue(this.serviceName, 'UPDATE', payload);
-  }
-
-  public deletePermission(permissionId: string): void {
-    const snapshot = this.getSnapshotJson();
-    const updated = this.permissionsSignal().filter((p) => p.id !== permissionId);
-
-    this.permissionsSignal.set(updated);
-    this.saveToCache(updated);
-
-    const payload: DeletePermissionPayload = {
-      id: permissionId,
-      snapshot
-    };
-
-    this.queueService.enqueue(this.serviceName, 'DELETE', payload);
-  }
-
-  // ==========================================
-  // 🛠️ PRIVATE CACHE HELPER
-  // ==========================================
-
-  private getSnapshotJson(): PermissionJson[] {
-    return this.permissionsSignal().map((p) => p.mapToJson());
-  }
-
-  private saveToCache(permissions: Permission[]): void {
-    const jsonArray = permissions.map((p) => p.mapToJson());
-    this.localStorageService.setItem(this.STORAGE_KEY, jsonArray);
-  }
-
-  private loadFromCache(): void {
-    const cached = this.localStorageService.getItem< PermissionJson[]>(this.STORAGE_KEY);
-    if (cached && Array.isArray(cached)) {
-      const restored = cached.map((json) => Permission.fromJson(json));
-      this.permissionsSignal.set(restored);
-    } else {
-      this.permissionsSignal.set([]);
-    }
-  }
-
-  public override resetData(): void {
-    this.localStorageService.removeItem(this.STORAGE_KEY);
-    this.permissionsSignal.set([]);
   }
 
   public override checkUnsavedData(): string | null {

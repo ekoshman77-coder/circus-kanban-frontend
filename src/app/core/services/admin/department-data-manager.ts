@@ -1,17 +1,12 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject, Signal } from '@angular/core';
 import { Observable, map, of } from 'rxjs';
 import { DepartmentRepository } from '../../repositories/department-repository';
 import { BaseQueueDataManager } from '../central-queue/base-queue-data-manager';
 import { QueueItem } from '../../models/queue-items/queue-item';
 import { Department } from '../../models/department';
-import { IDepartment } from '../../repositories/dto/deparment-json';
 import { generateLocalId } from '../../shared/constants/id-const';
-import {
-  DepartmentPayload,
-  DeleteDepartmentPayload
-} from '../../models/queue-items/department-queue-payload';
-
-export type DepartmentAction = 'CREATE_DEPARTMENT' | 'UPDATE_DEPARTMENT' | 'DELETE_DEPARTMENT';
+import { DepartmentDeletePayload, DepartmentPayload, DepartmentQueueAction } from '../../models/queue-items/department-queue-payload';
+import { DepartmentStateProvider } from './department-state-provider';
 
 @Injectable({
   providedIn: 'root'
@@ -19,12 +14,19 @@ export type DepartmentAction = 'CREATE_DEPARTMENT' | 'UPDATE_DEPARTMENT' | 'DELE
 export class DepartmentDataManager extends BaseQueueDataManager {
   private departmentRepo = inject(DepartmentRepository);
 
-  public departmentsSignal = signal<Department[]>([]);
   private static readonly DEPARTMENTS_CACHE_KEY = 'cached_departments';
 
   constructor() {
     super('DepartmentDataManager');
-    this.loadCache();
+    this.stateProvider.loadFromCache();
+  }
+
+  protected override createStateProvider(): DepartmentStateProvider {
+    return new DepartmentStateProvider();
+  }
+
+  public get departmentsSignal(): Signal<Department[]> {
+    return this.getSignal() as Signal<Department[]>;
   }
 
   // ==========================================================================
@@ -32,18 +34,17 @@ export class DepartmentDataManager extends BaseQueueDataManager {
   // ==========================================================================
 
   public override executeQueueItem(item: QueueItem): Observable<any> {
-    switch (item.action as DepartmentAction) {
-      case 'CREATE_DEPARTMENT': {
+    switch (item.action as DepartmentQueueAction) {
+      case 'CREATE': {
         const payload = item.payload as DepartmentPayload;
-        // 🛡️ Bereinigung: Wir senden KEINE temporäre ID an das Backend!
         return this.departmentRepo.create$(payload.department.name, payload.department.specialization);
       }
-      case 'UPDATE_DEPARTMENT': {
+      case 'UPDATE': {
         const payload = item.payload as DepartmentPayload;
         return this.departmentRepo.update$(payload.id, payload.department.name, payload.department.specialization);
       }
-      case 'DELETE_DEPARTMENT': {
-        const payload = item.payload as DeleteDepartmentPayload;
+      case 'DELETE': {
+        const payload = item.payload as DepartmentDeletePayload;
         return this.departmentRepo.delete$(payload.id);
       }
       default:
@@ -53,38 +54,17 @@ export class DepartmentDataManager extends BaseQueueDataManager {
 
   // ==========================================================================
   // 🔄 REHYDRATION PATTERN (BaseQueueDataManager)
+  // =================================================ONE
   // ==========================================================================
 
   protected override fetchFromServer(userId: string): Observable<void> {
     return this.departmentRepo.getAll$().pipe(
       map((departmentsJson) => {
         const departments = departmentsJson.map((d) => Department.fromJson(d));
-        this.departmentsSignal.set(departments);
-        this.saveCache(departments);
+        const provider = this.stateProvider as DepartmentStateProvider;
+        provider.applyActionPayload('SET_DEPARTMENTS', departments);
       })
     );
-  }
-
-  public override resetState(snapshot: IDepartment[]): void {
-    if (Array.isArray(snapshot)) {
-      const restoredList = snapshot.map((json) => Department.fromJson(json));
-      this.departmentsSignal.set(restoredList);
-      this.saveCache(restoredList);
-    }
-  }
-
-  protected override onEntityCreated(tempId: string, response: any): void {
-    const realId = response.id || response;
-    this.departmentsSignal.update((list) => {
-      const updated = list.map((dept) => {
-        if (dept.id === tempId) {
-          return new Department({ ...dept, id: realId });
-        }
-        return dept;
-      });
-      this.saveCache(updated);
-      return updated;
-    });
   }
 
   // ==========================================================================
@@ -92,19 +72,14 @@ export class DepartmentDataManager extends BaseQueueDataManager {
   // ==========================================================================
 
   public createDepartment(name: string, specialization?: string): void {
+    const provider = this.stateProvider as DepartmentStateProvider;
     const tempId = generateLocalId();
-    const snapshot = this.createSnapshot();
+    const snapshot = provider.createSnapshot();
 
     const newDept = new Department({
       id: tempId,
       name,
       specialization
-    });
-
-    this.departmentsSignal.update((current) => {
-      const updated = [...current, newDept];
-      this.saveCache(updated);
-      return updated;
     });
 
     const payload: DepartmentPayload = {
@@ -113,19 +88,15 @@ export class DepartmentDataManager extends BaseQueueDataManager {
       snapshot
     };
 
-    this.queueService.enqueue(this.serviceName, 'CREATE_DEPARTMENT' as DepartmentAction, payload);
+      provider.applyActionPayload('CREATE', payload);
+
+    this.queueService.enqueue(this.serviceName, 'CREATE' as DepartmentQueueAction, payload);
   }
 
   public updateDepartment(id: string, name: string, specialization?: string): void {
-    const snapshot = this.createSnapshot();
-
+    const provider = this.stateProvider as DepartmentStateProvider;
+    const snapshot = provider.createSnapshot();
     const updatedDept = new Department({ id, name, specialization });
-
-    this.departmentsSignal.update((current) => {
-      const updated = current.map((dept) => (dept.id === id ? updatedDept : dept));
-      this.saveCache(updated);
-      return updated;
-    });
 
     const payload: DepartmentPayload = {
       id,
@@ -133,52 +104,35 @@ export class DepartmentDataManager extends BaseQueueDataManager {
       snapshot
     };
 
-    this.queueService.enqueue(this.serviceName, 'UPDATE_DEPARTMENT' as DepartmentAction, payload);
+    provider.applyActionPayload('UPDATE', payload);
+
+    this.queueService.enqueue(this.serviceName, 'UPDATE' as DepartmentQueueAction, payload);
   }
 
   public deleteDepartment(id: string): void {
-    const snapshot = this.createSnapshot();
+    const provider = this.stateProvider as DepartmentStateProvider;
+    const snapshot = provider.createSnapshot();
 
-    this.departmentsSignal.update((current) => {
-      const updated = current.filter((dept) => dept.id !== id);
-      this.saveCache(updated);
-      return updated;
-    });
-
-    const payload: DeleteDepartmentPayload = {
+    
+    const payload: DepartmentDeletePayload = {
       id,
       snapshot
     };
 
-    this.queueService.enqueue(this.serviceName, 'DELETE_DEPARTMENT' as DepartmentAction, payload);
+    provider.applyActionPayload('DELETE', payload);
+
+    this.queueService.enqueue(this.serviceName, 'DELETE' as DepartmentQueueAction, payload);
   }
 
   // ==========================================================================
   // 🧹 HILFSMETHODEN & BASE DATA MANAGER OVERRIDES
   // ==========================================================================
 
-  private createSnapshot(): IDepartment[] {
-    return this.departmentsSignal().map((dept) => dept.toJson());
-  }
-
-  private saveCache(departments: Department[]): void {
-    const jsonList = departments.map((d) => d.toJson());
-    this.localStorageService.setItem(DepartmentDataManager.DEPARTMENTS_CACHE_KEY, jsonList);
-  }
-
-  private loadCache(): void {
-    const cached = this.localStorageService.getItem(DepartmentDataManager.DEPARTMENTS_CACHE_KEY);
-    if (cached && Array.isArray(cached)) {
-      this.departmentsSignal.set(cached.map((json) => Department.fromJson(json)));
-    }
-  }
-
   public override checkUnsavedData(): string | null {
     return null;
   }
 
   public override resetData(): void {
-    this.departmentsSignal.set([]);
-    this.localStorageService.removeItem(DepartmentDataManager.DEPARTMENTS_CACHE_KEY);
+    this.stateProvider.resetState()
   }
 }

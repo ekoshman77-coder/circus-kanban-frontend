@@ -1,4 +1,5 @@
-import { ITodoJSON, TodoSyncState } from "../repositories/dto/todo-json";
+import { Identifiable } from "./identifable";
+import { ITodoJSON } from "../repositories/dto/todo-json";
 import { generateLocalId } from "../shared/constants/id-const";
 
 export enum DateStatus {
@@ -16,7 +17,7 @@ export enum VisualStatus {
   DUE_TODAY = "due-today"
 }
 
-export class Todo {
+export class Todo implements Identifiable {
   id: string;
   task: string;
   description: string | null;
@@ -24,23 +25,20 @@ export class Todo {
   dueDate: number;
   completedAt: number | null;
   effort: number;
-  // 🤝 NEU: Reviewer-Splitting Felder
   reviewerId?: string | null;
   reviewerUsedEffort: number;
   usedEffort: number;
   createdAt: number;
   teamStatus: TeamStatus;
   userId: string;
-  syncState: 'fine' | 'dirty' | 'new'; // Direkt als Typ statt extra Interface!
+  syncState: 'fine' | 'dirty' | 'new';
   category: string | null;
   effortChangesCount: number | null;
   milestoneId: string | null;
   assignedUserId?: string | null;
   isStarted?: boolean;
-  // 🧠 UNSER NEUES TICKET-GEDÄCHTNIS (Synchron zum Kotlin-Backend!)
   lastDeveloperId?: string | null;
 
-  // 💡 DEIN NEUER ANSATZ: Nur das absolut Wichtigste (task) ist Pflicht. Alles andere optional (?)!
   constructor(init: {
     task: string;
     id?: string;
@@ -49,7 +47,6 @@ export class Todo {
     dueDate?: number;
     completedAt?: number | null;
     effort?: number;
-    // 🤝 NEU: Reviewer-Splitting Felder
     reviewerId?: string | null;
     reviewerUsedEffort?: number;
     usedEffort?: number;
@@ -64,19 +61,18 @@ export class Todo {
     isStarted?: boolean;
     lastDeveloperId?: string | null;
   }) {
-    // 🛡️ Wenn ein Wert im 'init' fehlt, greift automatisch das '??' mit dem Standardwert!
     this.task = init.task;
-    this.id = init.id ?? generateLocalId()
+    this.id = init.id ?? generateLocalId();
     this.description = init.description ?? null;
     this.done = init.done ?? false;
     this.dueDate = init.dueDate ?? Date.now();
     this.completedAt = init.completedAt ?? null;
-    this.effort = init.effort ?? 1; // Standardmäßig 1 Aufwandspunkt
+    this.effort = init.effort ?? 1;
     this.reviewerId = init.reviewerId ?? null;
     this.reviewerUsedEffort = init.reviewerUsedEffort ?? 0;
     this.usedEffort = init.usedEffort ?? 0;
     this.createdAt = init.createdAt ?? Date.now();
-    this.userId = init.userId ?? 'local-user'; // Phantastisch für Tests!
+    this.userId = init.userId ?? 'local-user';
     this.syncState = init.syncState ?? 'new';
     this.category = init.category ?? null;
     this.effortChangesCount = init.effortChangesCount ?? 0;
@@ -84,8 +80,9 @@ export class Todo {
     this.assignedUserId = init.assignedUserId ?? null;
     this.isStarted = init.isStarted ?? false;
     this.teamStatus = (init.teamStatus as TeamStatus) ?? 'BACKLOG';
-    this.lastDeveloperId = init.lastDeveloperId ?? null
+    this.lastDeveloperId = init.lastDeveloperId ?? null;
   }
+
   public toJson(): ITodoJSON {
     return {
       id: this.id ?? null,
@@ -95,7 +92,6 @@ export class Todo {
       dueDate: this.dueDate,
       completedAt: this.completedAt,
       effort: this.effort,
-      // 🤝 NEU: JSON-Export
       reviewerId: this.reviewerId ?? null,
       reviewerUsedEffort: this.reviewerUsedEffort ?? 0,
       usedEffort: this.usedEffort,
@@ -109,34 +105,7 @@ export class Todo {
       assignedUserId: this.assignedUserId ?? null,
       teamStatus: this.teamStatus,
       lastDeveloperId: this.lastDeveloperId ?? null
-    }
-  }
-
-  static fromTodo(oldTodo: Todo): Todo {
-    const copy = new Todo({
-      task: oldTodo.task,
-      description: oldTodo.description,
-      effort: oldTodo.effort,
-      dueDate: oldTodo.dueDate,
-      userId: oldTodo.userId,
-      // 🤝 NEU: Kopieren
-      reviewerId: oldTodo.reviewerId ?? null,
-      reviewerUsedEffort: oldTodo.reviewerUsedEffort,
-      usedEffort: oldTodo.usedEffort,
-      createdAt: oldTodo.createdAt,
-      id: oldTodo.id,
-      syncState: oldTodo.syncState,
-      done: oldTodo.done,
-      completedAt: oldTodo.completedAt,
-      category: oldTodo.category,
-      effortChangesCount: oldTodo.effortChangesCount,
-      milestoneId: oldTodo.milestoneId,
-      isStarted: oldTodo.isStarted ?? false,
-      assignedUserId: oldTodo.assignedUserId ?? null,
-      teamStatus: oldTodo.teamStatus,
-      lastDeveloperId: oldTodo.lastDeveloperId ?? null
-    });
-    return copy
+    };
   }
 
   static fromJson(json: ITodoJSON): Todo {
@@ -164,25 +133,28 @@ export class Todo {
     });
   }
 
+  public cloneWith(changes: Partial<Todo>): Todo {
+    return new Todo({
+      ...this,
+      ...changes
+    });
+  }
+
+  public static fromTodo(todo: Todo): Todo {
+    return todo.cloneWith({});
+  }
+
   toggleComplete() {
-    this.done = !this.done
-    if (this.done) {
-      this.completedAt = Date.now()
-    } else {
-      this.completedAt = null
-    }
+    this.done = !this.done;
+    this.completedAt = this.done ? Date.now() : null;
   }
 
   setDescription(text: string) {
-    this.description = text
+    this.description = text;
   }
 
   getTimeStamp(): number {
-    if (this.done && this.completedAt !== null) {
-      return this.completedAt
-    } else {
-      return this.dueDate
-    }
+    return this.done && this.completedAt !== null ? this.completedAt : this.dueDate;
   }
 
   getDateStatus(): DateStatus {
@@ -190,38 +162,31 @@ export class Todo {
   }
 
   public getVisualStatus(): VisualStatus {
-    // 1. FALL: Aufgabe ist ERLEDIGT ✅
     if (this.done) {
-      // Rechtzeitig erledigt? (Erledigt-Zeitstempel liegt vor oder auf der Deadline)
       return (this.completedAt !== null && this.completedAt <= this.dueDate)
         ? VisualStatus.ON_TIME
         : VisualStatus.COMPLETED;
     }
 
-    // 2. FALL: Aufgabe ist NOCH OFFEN ⏳
     const now = Date.now();
     const todayEnd = new Date().setHours(23, 59, 59, 999);
 
     if (this.dueDate < now) {
-      return VisualStatus.OVERDUE;     // Zu spät / überfällig 🚨
+      return VisualStatus.OVERDUE;
     } else if (this.dueDate <= todayEnd) {
-      return VisualStatus.DUE_TODAY;   // Muss heute erledigt werden 📅
+      return VisualStatus.DUE_TODAY;
     } else {
-      return VisualStatus.PENDING;     // Hat noch reichlich Zeit ☕
+      return VisualStatus.PENDING;
     }
   }
 
-  /**
-   * 👥 Gibt an, ob die Aufgabe bereits einem Teammitglied zugewiesen wurde
-   */
   public get isAssigned(): boolean {
-    return this.assignedUserId !== null && this.assignedUserId !== undefined && this.assignedUserId.trim() !== '';
+    return !!this.assignedUserId && this.assignedUserId.trim() !== '';
   }
 
   public get isExpress(): boolean {
     if (this.createdAt && this.completedAt) {
-      const timeDiffMs = Math.abs(this.completedAt - this.createdAt);
-      return timeDiffMs < 5 * 60 * 1000; // Unter 5 Minuten = Echter Spontan-Erfolg!
+      return Math.abs(this.completedAt - this.createdAt) < 5 * 60 * 1000;
     }
     return false;
   }

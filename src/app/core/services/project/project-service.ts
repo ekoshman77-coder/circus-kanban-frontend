@@ -310,6 +310,8 @@ export class ProjectService extends BaseDataManager {
     });
   }
 
+  
+
   public cleanSuggestions(): void {
     this._aiSuggestionsSignal.set({ recommended: [], degraded: [] });
     this.degradedMilestones.set([]);
@@ -317,7 +319,6 @@ export class ProjectService extends BaseDataManager {
   }
 
   public override resetData(): void {
-    this.allProjectsPool.set([]);
     this.dashboardStatsSignal.set(null);
     this.degradedMilestones.set([]);
     this.activeMilestoneIdSignal.set(null);

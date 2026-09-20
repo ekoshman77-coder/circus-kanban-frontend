@@ -1,4 +1,4 @@
-import { IUser } from "../user-repository";
+import { IUser } from "./user-dto";
 
 export interface IProjectMemberJSON {
   user: IUser;      // Das nackte, globale User-Modell

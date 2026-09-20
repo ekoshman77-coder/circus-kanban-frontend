@@ -41,9 +41,7 @@ export class Statistics {
 export class TodoService extends BaseDataManager {
   private dataManager = inject(TodoDataManagerService);
   private userService = inject(UserService);
-  private loggerService = inject(LoggerService);
   private todoRepository = inject(TodoRepository);
-  private todoQueryService = inject(TodoQueryService);
   private notificationService = inject(NotificationService);
 
   // --- REAKTIVER STATE (SIGNALS & GLOBAL POOL) ---
@@ -100,7 +98,7 @@ export class TodoService extends BaseDataManager {
 
     return this.allTodos().filter(t => {
       if (!t.milestoneId) return false;
-      
+
       // Von dir als Dev fertiggestellt
       return t.lastDeveloperId === currentUserId && (t.done || t.teamStatus === 'DONE');
     });
@@ -213,12 +211,8 @@ export class TodoService extends BaseDataManager {
   }
 
   public updateTodo(updatedTodo: Todo, isDragAndDrop: boolean = false): void {
-    if (isDragAndDrop) {
-      this.allTodosPool.update(todos =>
-        todos.map(t => t.id === updatedTodo.id ? updatedTodo : t)
-      );
-    }
-
+    // Das synchrone `.update(...)` entfällt, weil allTodosPool ein Readonly-Signal ist!
+    // Wir delegieren die Änderung direkt an den DataManager:
     const delay = isDragAndDrop ? 0 : 300;
 
     setTimeout(() => {
@@ -231,7 +225,7 @@ export class TodoService extends BaseDataManager {
     if (!todoToUpdate || todoToUpdate.done) return;
 
     const updated = new Todo({ ...todoToUpdate, effort: newEffort });
-    
+
     setTimeout(() => {
       this.dataManager.updateTodo(updated);
     }, 300);

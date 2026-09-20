@@ -1,7 +1,7 @@
 import { generateLocalId } from "../shared/constants/id-const";
 
 export class Permission{
-    id?: string;
+    id: string;
     role: string;
     resource: string;
     action: string;
@@ -34,7 +34,7 @@ export class Permission{
         })
     }
 
-    public mapToJson(): any {
+    public toJson(): any {
         return {
             id: this.id,
             role: this.role,

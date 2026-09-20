@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject, Signal, signal } from '@angular/core';
 import { Todo } from '../../models/todo';
 import { TodoRepository } from '../../repositories/todo-repository';
 import { combineLatest, Observable, of, throwError } from 'rxjs';
@@ -12,40 +12,33 @@ import { StreakRepository } from '../../repositories/streak-repository';
 import { BaseQueueDataManager } from '../central-queue/base-queue-data-manager';
 import { QueueItem } from '../../models/queue-items/queue-item';
 import { ConnectionService } from '../connection/connection-service';
-import { ITodoJSON } from '../../repositories/dto/todo-json';
-import { TodoBulkPayload, TodoDeletePayload, TodoPayload } from '../../models/queue-items/todo-queue-payload';
-
-export type TodoAction =
-  | 'CREATE'
-  | 'UPDATE'
-  | 'DELETE'
-  | 'BULK_DELETE_COMPLETED'
-  | 'BULK_DELETE_ALL';
+import { TodoAction, TodoBulkPayload, TodoDeletePayload, TodoPayload } from '../../models/queue-items/todo-queue-payload';
+import { TodoStateProvider } from './todo-data-provider';
+import { StateProvider } from '../central-queue/state-providers/base-state-provider';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TodoDataManagerService extends BaseQueueDataManager {
-
   private todoRepository = inject(TodoRepository);
   private userService = inject(UserService);
   private connectionService = inject(ConnectionService);
   private streakRepository = inject(StreakRepository);
 
-  private readonly CACHE_KEY = 'global_todos_pool';
   private readonly PREDICTIONS_ACTIVE_KEY = 'cached_predictions_active';
   private readonly PREDICTIONS_PAUSE_KEY = 'cached_predictions_pause';
 
-  // Fallbacks bei leerem Cache
   private readonly fallbackPauseTodos = ['Kaffee trinken', 'Dehnen', 'Wasser holen', 'Kurz lüften'];
   private readonly fallbackActiveTodos = ['Refactoring UI', 'Bugfix Service', 'Code Review', 'Doku schreiben'];
 
-  public allTodosPool = signal<Todo[]>([]);
   public gamificationSignal = signal<GamificationResult | null>(null);
   public streakSignal = signal<StreakInfoDto | null>(null);
 
   constructor() {
     super('TodoDataManagerService');
+
+    // Initialer Cache-Load über den Provider
+    this.loadInitialCache();
 
     // Streak-Sync bei aktivem Login & Online-Status
     combineLatest([
@@ -54,25 +47,74 @@ export class TodoDataManagerService extends BaseQueueDataManager {
     ])
       .pipe(
         filter(([user, status]) => user !== null && status === 'ONLINE'),
-        switchMap(([user, _]) => {
-          console.log(`🔋 [DataManager-Streak] Starte sicheren Initial-Sync für User ${user!.id}...`);
-          return this.streakRepository.syncAndGetStreakInfo(user!.id);
-        })
+        switchMap(([user]) => this.streakRepository.syncAndGetStreakInfo(user!.id))
       )
       .subscribe({
-        next: (streakInfo) => {
-          console.log('🔋 [DataManager-Streak] Batterie erfolgreich initialisiert:', streakInfo);
-          this.streakSignal.set(streakInfo);
-        },
-        error: (err) => {
-          console.error('🔋 [DataManager-Streak] Fehler beim Laden der Batterie:', err);
-        }
+        next: (streakInfo) => this.streakSignal.set(streakInfo),
+        error: (err) => console.error('🔋 [DataManager-Streak] Fehler:', err)
       });
   }
 
-  // ==========================================================================
-  // 🚀 BASE QUEUE DATA MANAGER HOOKS
-  // ==========================================================================
+  protected override createStateProvider(): StateProvider<Todo[]> {
+    return new TodoStateProvider();
+  }
+
+  public get allTodosPool(): Signal<Todo[]> {
+    return this.getSignal() as Signal<Todo[]>;
+  }
+
+  // ==========================================
+  // PUBLIC ACTIONS (Optimistic Updates + Queue)
+  // ==========================================
+
+  public createTodo(todo: Todo): void {
+    const snapshot = this.stateProvider.createSnapshot();
+
+    this.stateProvider.applyActionPayload('CREATE', { todo });
+
+    const payload: TodoPayload = { id: todo.id, todo, snapshot };
+    this.queueService.enqueue(this.serviceName, 'CREATE', payload);
+  }
+
+  public updateTodo(updatedTodo: Todo): void {
+    const snapshot = this.stateProvider.createSnapshot();
+
+    this.stateProvider.applyActionPayload('UPDATE', { todo: updatedTodo });
+
+    const payload: TodoPayload = { id: updatedTodo.id, todo: updatedTodo, snapshot };
+    this.queueService.enqueue(this.serviceName, 'UPDATE', payload);
+  }
+
+  public deleteTodo(id: string): void {
+    const snapshot = this.stateProvider.createSnapshot();
+
+    this.stateProvider.applyActionPayload('DELETE', { id });
+
+    const payload: TodoDeletePayload = { id, snapshot };
+    this.queueService.enqueue(this.serviceName, 'DELETE', payload);
+  }
+
+  public deleteCompleted(userId: string): void {
+    const snapshot = this.stateProvider.createSnapshot();
+
+    this.stateProvider.applyActionPayload('BULK_DELETE_COMPLETED', { userId });
+
+    const payload: TodoBulkPayload = { id: 'bulk-completed', userId, snapshot };
+    this.queueService.enqueue(this.serviceName, 'BULK_DELETE_COMPLETED', payload);
+  }
+
+  public deleteAll(userId: string): void {
+    const snapshot = this.stateProvider.createSnapshot();
+
+    this.stateProvider.applyActionPayload('BULK_DELETE_ALL', { userId });
+
+    const payload: TodoBulkPayload = { id: 'bulk-all', userId, snapshot };
+    this.queueService.enqueue(this.serviceName, 'BULK_DELETE_ALL', payload);
+  }
+
+  // ==========================================
+  // QUEUE EXECUTION & FETCH
+  // ==========================================
 
   public override executeQueueItem(item: QueueItem): Observable<any> {
     const action = item.action as TodoAction;
@@ -81,11 +123,7 @@ export class TodoDataManagerService extends BaseQueueDataManager {
     switch (action) {
       case 'CREATE': {
         const createPayload = payload as TodoPayload;
-        // 🛡️ Security: Backend erzeugt eigene ID -> Local-ID entfernen
-        const todoToSend = new Todo({
-          ...createPayload.todo,
-          id: undefined
-        });
+        const todoToSend = new Todo({ ...createPayload.todo, id: undefined });
         return this.todoRepository.createTodo(todoToSend);
       }
       case 'UPDATE': {
@@ -105,173 +143,62 @@ export class TodoDataManagerService extends BaseQueueDataManager {
         return this.todoRepository.deleteAll(bulkPayload.userId);
       }
       default:
-        return throwError((): Error => new Error(`[TodoDataManager] Unbekannte Action: ${item.action}`));
+        return throwError(() => new Error(`[TodoDataManager] Unbekannte Action: ${item.action}`));
     }
   }
 
   public override handleQueueResult(item: QueueItem, success: boolean, response: any): void {
-    // 🟢 Erst die Standard-Logik der Basisklasse ausführen (Rollbacks, Notifications, CREATE-Handling)
     super.handleQueueResult(item, success, response);
 
-    // 🟢 Nur Todo-spezifische Side-Effects für UPDATE ergänzen
     if (success && item.action === 'UPDATE' && response) {
       const resp = response as TodoUpdateResponse;
-      if (resp.gamificationResult) {
-        this.userService.updateGamification(resp.gamificationResult);
-      }
-      if (resp.streakInfo) {
-        this.streakSignal.set(resp.streakInfo);
-      }
+      if (resp.gamificationResult) this.userService.updateGamification(resp.gamificationResult);
+      if (resp.streakInfo) this.streakSignal.set(resp.streakInfo);
     }
   }
 
-  public override resetState(snapshot: unknown): void {
-    if (Array.isArray(snapshot)) {
-      // 🟢 Aus ITodoJSON[] wieder echte Todo-Klasseninstanzen erzeugen
-      const restored = (snapshot as ITodoJSON[]).map((json) => Todo.fromJson(json));
-      this.allTodosPool.set(restored);
-      this.saveToLocalStorage(restored);
-    }
-  }
-
-  protected override onEntityCreated(tempId: string, response: unknown): void {
-    const realServerId = (response as any)?.id || response;
-
-    // 🟢 Ersetzt die temporäre ID durch die echte Server-ID
-    const updatedList = this.allTodosPool().map((t) => {
-      if (t.id === tempId) {
-        return new Todo({ ...t, id: String(realServerId) });
-      }
-      return t;
-    });
-
-    this.allTodosPool.set(updatedList);
-    this.saveToLocalStorage(updatedList);
+  protected override fetchFromServer(userId: string): Observable<void> {
+    return this.todoRepository.getRelevantTodos(userId).pipe(
+      map((serverTodos: Todo[]): void => {
+        const mappedTodos = serverTodos.map((t) => new Todo(t));
+        this.stateProvider.applyActionPayload('SET_TODOS', { todos: mappedTodos });
+      })
+    );
   }
 
   public override checkAndReplaceIds(item: QueueItem, localId: string, serverId: string): void {
+    super.checkAndReplaceIds(item, localId, serverId);
     const payload = item.payload;
-    if (!payload) return;
-
-    // Prüfen, ob das Payload ein Todo enthält (z.B. CREATE oder UPDATE)
-    if ('todo' in payload && payload.todo) {
+    if (payload && 'todo' in payload && payload.todo) {
       const todoPayload = payload as TodoPayload;
       if (todoPayload.todo.milestoneId === localId) {
         todoPayload.todo.milestoneId = serverId;
       }
     }
   }
-  
-  // ==========================================================================
-  // 🔄 REHYDRATION PATTERN (BaseQueueDataManager)
-  // ==========================================================================
 
-  protected override fetchFromServer(userId: string): Observable<void> {
-    return this.todoRepository.getRelevantTodos(userId).pipe(
-      map((serverTodos: Todo[]): void => {
-        const mappedTodos = serverTodos.map((t) => new Todo(t));
-        this.saveToLocalStorage(mappedTodos);
-        this.allTodosPool.set(mappedTodos);
-      })
-    );
-  }
+  public override extractEntityIds(item: QueueItem): string[] {
+    const ids = super.extractEntityIds(item);
+    const payload = item.payload;
+    if (!payload) return ids;
 
-  // ==========================================================================
-  // 📋 PUBLIC CRUD METHODS
-  // ==========================================================================
+    if ('todo' in payload && payload.todo) {
+      const todo = payload.todo as Todo;
 
-  public createTodo(todo: Todo): void {
-    const snapshot = this.createSnapshotJson();
-    const neueListe = [...this.allTodosPool(), todo].map((t) => new Todo(t));
-
-    this.applyLocalStateUpdate(neueListe);
-
-    const payload: TodoPayload = {
-      id: todo.id,
-      todo,
-      snapshot
-    };
-
-    this.queueService.enqueue(this.serviceName, 'CREATE', payload);
-  }
-
-  public updateTodo(updatedTodo: Todo): void {
-    const snapshot = this.createSnapshotJson();
-    const updatedList = this.allTodosPool().map((todo) => {
-      if (todo.id === updatedTodo.id) {
-        return new Todo(updatedTodo);
+      // Nur Meilenstein-ID ist eine dynamisch erstelbare Abhängigkeit
+      if (todo.milestoneId) {
+        ids.push(todo.milestoneId);
       }
-      return new Todo(todo);
-    });
+    }
 
-    this.applyLocalStateUpdate(updatedList);
-
-    const payload: TodoPayload = {
-      id: updatedTodo.id,
-      todo: updatedTodo,
-      snapshot
-    };
-
-    this.queueService.enqueue(this.serviceName, 'UPDATE', payload);
+    return ids;
   }
-
-  public deleteTodo(id: string): void {
-    const snapshot = this.createSnapshotJson();
-    const gefilterteListe = this.allTodosPool().filter((t) => t.id !== id);
-
-    this.applyLocalStateUpdate(gefilterteListe);
-
-    const payload: TodoDeletePayload = {
-      id,
-      snapshot
-    };
-
-    this.queueService.enqueue(this.serviceName, 'DELETE', payload);
-  }
-
-  public deleteCompleted(userId: string): void {
-    const snapshot = this.createSnapshotJson();
-    const gefilterteListe = this.allTodosPool().filter((t) => !(t.done && !t.milestoneId));
-
-    this.applyLocalStateUpdate(gefilterteListe);
-
-    const payload: TodoBulkPayload = {
-      id: 'bulk-completed',
-      userId,
-      snapshot
-    };
-
-    this.queueService.enqueue(this.serviceName, 'BULK_DELETE_COMPLETED', payload);
-  }
-
-  public deleteAll(userId: string): void {
-    const snapshot = this.createSnapshotJson();
-    const gefilterteListe = this.allTodosPool().filter((t) => t.milestoneId);
-
-    this.applyLocalStateUpdate(gefilterteListe);
-
-    const payload: TodoBulkPayload = {
-      id: 'bulk-all',
-      userId,
-      snapshot
-    };
-
-    this.queueService.enqueue(this.serviceName, 'BULK_DELETE_ALL', payload);
-  }
-
-  // ==========================================================================
-  // 💡 PREDICTIONS & HELPER
-  // ==========================================================================
 
   public getQuickPredictions(modus: 'PAUSE' | 'ACTIVE'): Observable<string[]> {
     const getOfflineOrFallbackStrings = (): string[] => {
       const cacheKey = modus === 'PAUSE' ? this.PREDICTIONS_PAUSE_KEY : this.PREDICTIONS_ACTIVE_KEY;
       const cachedData = this.localStorageService.getItem<string[]>(cacheKey);
-
-      if (cachedData && cachedData.length > 0) {
-        return cachedData;
-      }
-      return modus === 'PAUSE' ? this.fallbackPauseTodos : this.fallbackActiveTodos;
+      return cachedData && cachedData.length > 0 ? cachedData : (modus === 'PAUSE' ? this.fallbackPauseTodos : this.fallbackActiveTodos);
     };
 
     if (this.connectionService.isOffline()) {
@@ -291,26 +218,8 @@ export class TodoDataManagerService extends BaseQueueDataManager {
     );
   }
 
-  private createSnapshotJson(): ITodoJSON[] {
-    return this.allTodosPool().map((todo) => todo.toJson());
-  }
-
-  private applyLocalStateUpdate(updatedList: Todo[]): void {
-    this.saveToLocalStorage(updatedList);
-    this.allTodosPool.set(updatedList);
-  }
-
-  private saveToLocalStorage(todos: Todo[]): void {
-    this.localStorageService.setItem(this.CACHE_KEY, todos);
-  }
-
-  public override checkUnsavedData(): string | null {
-    return null;
-  }
-
   public override resetData(): void {
-    this.allTodosPool.set([]);
-    this.localStorageService.removeItem(this.CACHE_KEY);
+    super.resetData();
     this.localStorageService.removeItem(this.PREDICTIONS_ACTIVE_KEY);
     this.localStorageService.removeItem(this.PREDICTIONS_PAUSE_KEY);
     this.streakSignal.set(null);

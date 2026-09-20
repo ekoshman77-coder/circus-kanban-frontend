@@ -1,5 +1,7 @@
-import { IUser } from "../../repositories/user-repository";
+import { IUser } from "../../repositories/dto/user-dto";
 import { SnapshotPayload } from "./queue-item";
+
+export type AdminQueueAction = 'SET_USERS' | 'APPROVE_USER' | 'DELETE_USER';
 
 // 1. Basis für alle User-Payloads mit IUserJSON-Snapshot
 export interface UserSnapshotPayload extends SnapshotPayload< IUser> {}

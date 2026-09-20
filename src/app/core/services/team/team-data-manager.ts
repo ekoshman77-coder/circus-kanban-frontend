@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject, Signal } from '@angular/core';
 import { Observable, throwError, map } from 'rxjs';
 import { UserModel } from '../../models/user-model';
 import { TeamRepository } from '../../repositories/team-repository';
@@ -8,37 +8,125 @@ import { UserService } from '../user/user-service';
 import { BaseQueueDataManager } from '../central-queue/base-queue-data-manager';
 import { QueueItem } from '../../models/queue-items/queue-item';
 import { generateLocalId } from '../../shared/constants/id-const';
-import {
-  CoffeePayload,
-  CreateMemberPayload,
-  DeleteMemberPayload,
-  ProfilePayload
-} from '../../models/queue-items/member-queue-payload';
-
-export type TeamAction = 'UPDATE_COFFEE' | 'UPDATE_PROFILE' | 'DELETE_MEMBER' | 'CREATE_MEMBER';
+import { CoffeePayload, CreateMemberPayload, DeleteMemberPayload, ProfilePayload, TeamAction } from '../../models/queue-items/member-queue-payload';
+import { StateProvider } from '../central-queue/state-providers/base-state-provider';
+import { TeamStateProvider } from './team-state-provider';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TeamDataManager extends BaseQueueDataManager {
-
   private teamRepository = inject(TeamRepository);
   private userRepository = inject(UserRepository);
   private userService = inject(UserService);
 
-  public globalMembersSignal = signal< ProjectMember[]>([]);
-  private readonly STORAGE_KEY_GLOBAL = 'offline_global_members';
-
   constructor() {
     super('TeamDataManager');
-    this.loadGlobalMembersFromCache();
+    this.loadInitialCache();
+  }
+
+  protected override createStateProvider(): StateProvider<ProjectMember[]> {
+    return new TeamStateProvider();
+  }
+
+  public get globalMembersSignal(): Signal<ProjectMember[]> {
+    return this.getSignal() as Signal<ProjectMember[]>;
   }
 
   // ==========================================================================
-  // 🚀 BASE QUEUE DATA MANAGER HOOKS
+  // 🌍 MEMBER ACTIONS FOR UI
   // ==========================================================================
 
-  public override executeQueueItem(item: QueueItem): Observable< any> {
+  public updateCoffeeAccount(userId: string, newBalance: number, role: string, emoji: string): void {
+    const currentMembers = this.stateProvider.getState() as ProjectMember[];
+    const updatedMember = currentMembers.find((m) => m.user.id === userId);
+    if (!updatedMember || updatedMember.isPending) return;
+
+    const snapshot = this.stateProvider.createSnapshot();
+
+    this.stateProvider.applyActionPayload('UPDATE_COFFEE', { id: userId, balance: newBalance, role, emoji });
+
+    const payload: CoffeePayload = {
+      id: userId,
+      balance: newBalance,
+      role,
+      emoji,
+      snapshot
+    };
+
+    this.queueService.enqueue(this.serviceName, 'UPDATE_COFFEE', payload);
+  }
+
+  public updateGlobalMember(updatedMember: UserModel): void {
+    const snapshot = this.stateProvider.createSnapshot();
+
+    this.stateProvider.applyActionPayload('UPDATE_PROFILE', { id: updatedMember.id, updatedUser: updatedMember });
+
+    const payload: ProfilePayload = {
+      id: updatedMember.id,
+      username: updatedMember.username,
+      firstName: updatedMember.firstName,
+      lastName: updatedMember.lastName,
+      snapshot
+    };
+
+    this.queueService.enqueue(this.serviceName, 'UPDATE_PROFILE', payload);
+  }
+
+  public deleteGlobalMember(memberId: string): void {
+    const currentMembers = this.stateProvider.getState() as ProjectMember[];
+    const member = currentMembers.find((m) => m.user.id === memberId);
+    const userName = member ? member.user.fullName : 'Mitarbeiter';
+
+    const snapshot = this.stateProvider.createSnapshot();
+
+    this.stateProvider.applyActionPayload('DELETE_MEMBER', { id: memberId });
+
+    const payload: DeleteMemberPayload = {
+      id: memberId,
+      snapshot
+    };
+
+    this.queueService.enqueue(this.serviceName, 'DELETE_MEMBER', payload);
+    this.notificationService.showNotification(`🗑️ ${userName} wurde entfernt.`, 'info');
+  }
+
+  public createMember(member: UserModel, password: string, onError?: (errorMessage?: string) => void): void {
+    const tempId = generateLocalId();
+    const snapshot = this.stateProvider.createSnapshot();
+
+    const newModel = new UserModel({
+      id: tempId,
+      username: member.username,
+      firstName: member.firstName,
+      lastName: member.lastName,
+      isApproved: null,
+      department: null,
+      projectIds: []
+    });
+
+    const newProjectMember = new ProjectMember(newModel, 'NONE');
+
+    this.stateProvider.applyActionPayload('CREATE_MEMBER', { member: newProjectMember });
+
+    const payload: CreateMemberPayload = {
+      id: tempId,
+      username: member.username,
+      firstName: member.firstName,
+      lastName: member.lastName,
+      password,
+      snapshot
+    };
+
+    this.queueService.enqueue(this.serviceName, 'CREATE_MEMBER', payload);
+    if (onError) onError();
+  }
+
+  // ==========================================================================
+  // 🚀 BASE QUEUE DATA MANAGER HOOKS & QUEUE EXECUTION
+  // ==========================================================================
+
+  public override executeQueueItem(item: QueueItem): Observable<any> {
     const action = item.action as TeamAction;
     const payload = item.payload;
 
@@ -75,180 +163,16 @@ export class TeamDataManager extends BaseQueueDataManager {
         });
       }
       default:
-        return throwError((): Error => new Error(`[TeamDataManager] Unbekannte Action: ${item.action}`));
+        return throwError(() => new Error(`[TeamDataManager] Unbekannte Action: ${item.action}`));
     }
   }
 
-  public override resetState(snapshot: unknown[]): void {
-    if (Array.isArray(snapshot)) {
-      const restored = snapshot.map(
-        (m: any) => new ProjectMember(UserModel.fromJson(m.user), m.projectRole)
-      );
-      this.globalMembersSignal.set(restored);
-      this.saveToCache(restored);
-    }
-  }
-
-  protected override onEntityCreated(tempId: string, response: unknown): void {
-    const serverUser = response as { id: string };
-    const updatedList = this.globalMembersSignal().map((m) => {
-      if (m.user.id === tempId) {
-        m.user.id = serverUser.id;
-      }
-      return m;
-    });
-
-    this.globalMembersSignal.set(updatedList);
-    this.saveToCache(updatedList);
-  }
-
-  // ==========================================================================
-  // 🔄 REHYDRATION PATTERN (BaseQueueDataManager)
-  // ==========================================================================
-
-  protected override fetchFromServer(userId: string): Observable< void> {
+  protected override fetchFromServer(userId: string): Observable<void> {
     const currentUserId = userId || this.userService.getCurrentUserId() || '';
     return this.teamRepository.getAllDepartmentUsers$(currentUserId).pipe(
       map((members: ProjectMember[]): void => {
-        this.globalMembersSignal.set(members);
-        this.saveToCache(members);
+        this.stateProvider.applyActionPayload('SET_MEMBERS', { members });
       })
     );
-  }
-
-  // ==========================================================================
-  // 🌍 MEMBER ACTIONS
-  // ==========================================================================
-
-  public updateCoffeeAccount(userId: string, newBalance: number, role: string, emoji: string): void {
-    const updatedMember = this.globalMembersSignal().find((user) => user.user.id === userId);
-    if (!updatedMember || updatedMember.isPending) return;
-
-    const snapshot = this.getSnapshotJson();
-    const updatedList = this.globalMembersSignal().map((m) => {
-      if (m.user.id === userId) {
-        m.user.coffeeAccount = { balance: newBalance, role, emoji };
-      }
-      return m;
-    });
-
-    this.globalMembersSignal.set(updatedList);
-    this.saveToCache(updatedList);
-
-    const payload: CoffeePayload = {
-      id: userId,
-      balance: newBalance,
-      role,
-      emoji,
-      snapshot
-    };
-
-    this.queueService.enqueue(this.serviceName, 'UPDATE_COFFEE', payload);
-  }
-
-  public updateGlobalMember(updatedMember: UserModel): void {
-    const snapshot = this.getSnapshotJson();
-    const updatedList = this.globalMembersSignal().map((m) => {
-      if (m.user.id === updatedMember.id) return new ProjectMember(updatedMember, m.projectRole);
-      return m;
-    });
-
-    this.globalMembersSignal.set(updatedList);
-    this.saveToCache(updatedList);
-
-    const payload: ProfilePayload = {
-      id: updatedMember.id,
-      username: updatedMember.username,
-      firstName: updatedMember.firstName,
-      lastName: updatedMember.lastName,
-      snapshot
-    };
-
-    this.queueService.enqueue(this.serviceName, 'UPDATE_PROFILE', payload);
-  }
-
-  public deleteGlobalMember(memberId: string): void {
-    const snapshot = this.getSnapshotJson();
-    const user = this.globalMembersSignal().map((m) => m.user).find((u) => u.id === memberId);
-    const userName = user ? `\({user.firstName}\){user.lastName}` : 'Mitarbeiter';
-
-    const updatedList = this.globalMembersSignal().filter((m) => m.user.id !== memberId);
-    this.globalMembersSignal.set(updatedList);
-    this.saveToCache(updatedList);
-
-    const payload: DeleteMemberPayload = {
-      id: memberId,
-      snapshot
-    };
-
-    this.queueService.enqueue(this.serviceName, 'DELETE_MEMBER', payload);
-    this.notificationService.showNotification(`🗑️ ${userName} wurde entfernt.`, 'info');
-  }
-
-  public createMember(member: UserModel, password: string, onError?: (errorMessage?: string) => void): void {
-    const tempId = generateLocalId();
-    const snapshot = this.getSnapshotJson();
-
-    const newModel = new UserModel({
-      id: tempId,
-      username: member.username,
-      firstName: member.firstName,
-      lastName: member.lastName,
-      isApproved: null,
-      department: null,
-      projectIds: []
-    });
-
-    const updatedList = [...this.globalMembersSignal(), new ProjectMember(newModel, 'NONE')];
-    this.globalMembersSignal.set(updatedList);
-    this.saveToCache(updatedList);
-
-    const payload: CreateMemberPayload = {
-      id: tempId,
-      username: member.username,
-      firstName: member.firstName,
-      lastName: member.lastName,
-      password,
-      snapshot
-    };
-
-    this.queueService.enqueue(this.serviceName, 'CREATE_MEMBER', payload);
-    if (onError) onError();
-  }
-
-  // ==========================================================================
-  // 🛠️ PRIVATE CACHE & SNAPSHOT HELPER
-  // ==========================================================================
-
-  private getSnapshotJson(): any[] {
-    return this.globalMembersSignal().map((m) => ({
-      user: m.user.toJson(),
-      projectRole: m.projectRole
-    }));
-  }
-
-  private saveToCache(members: ProjectMember[]): void {
-    const raw = members.map((m) => ({
-      user: m.user.toJson(),
-      projectRole: m.projectRole
-    }));
-    this.localStorageService.setItem(this.STORAGE_KEY_GLOBAL, raw);
-  }
-
-  private loadGlobalMembersFromCache(): void {
-    const cached = this.localStorageService.getItem< any[]>(this.STORAGE_KEY_GLOBAL);
-    if (cached && Array.isArray(cached)) {
-      const hydrated = cached.map((m) => new ProjectMember(UserModel.fromJson(m.user), m.projectRole));
-      this.globalMembersSignal.set(hydrated);
-    }
-  }
-
-  public override checkUnsavedData(): string | null {
-    return null;
-  }
-
-  public override resetData(): void {
-    this.globalMembersSignal.set([]);
-    this.localStorageService.removeItem(this.STORAGE_KEY_GLOBAL);
   }
 }
