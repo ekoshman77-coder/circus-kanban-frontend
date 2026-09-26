@@ -1,6 +1,11 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { UserService } from '../user/user-service';
-import { AiRepository, PlannerRecommendationDetail, PlannerRecommendationsResponse, RejectedTodoFeedback } from '../../repositories/ai-repository';
+import {
+  AiRepository,
+  PlannerRecommendationDetail,
+  PlannerRecommendationsResponse,
+  RejectedTodoFeedback
+} from '../../repositories/ai-repository';
 import { Todo } from '../../models/todo';
 import { ConnectionService } from '../connection/connection-service';
 import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
@@ -22,12 +27,12 @@ export class PlannerService extends BaseDataManager {
   private connectionService = inject(ConnectionService);
   private plannerDataManager = inject(PlannerDataManagerService);
 
-  public activeRoundId = signal<string | null>(null);
-  public recommendations = signal<RecommendedTodoItem[]>([]);
-  public isLoading = signal<boolean>(false);
+  public readonly activeRoundId = signal<string | null>(null);
+  public readonly recommendations = signal<RecommendedTodoItem[]>([]);
+  public readonly isLoading = signal<boolean>(false);
 
   /**
-   * Lädt die 2 Aufgabenempfehlungen (Nur Online sinnvoll)
+   * Lädt die Aufgabenempfehlungen der KI (Nur Online verfügbar)
    */
   public loadSmartRecommendation(energy: string, timeLeft: number): void {
     if (this.connectionService.isOffline()) {
@@ -39,57 +44,59 @@ export class PlannerService extends BaseDataManager {
     const currentUserId = this.userService.getCurrentUserId();
     this.isLoading.set(true);
 
-    this.aiRepository.getPlannerRecommendation({
-      userId: currentUserId ?? "",
-      userEnergy: energy,
-      workingTimeLeft: timeLeft
-    }).subscribe({
-      next: (response: PlannerRecommendationsResponse) => {
-        this.activeRoundId.set(response.roundId);
+    this.aiRepository
+      .getPlannerRecommendation({
+        userId: currentUserId ?? '',
+        userEnergy: energy,
+        workingTimeLeft: timeLeft
+      })
+      .subscribe({
+        next: (response: PlannerRecommendationsResponse) => {
+          this.activeRoundId.set(response.roundId);
 
-        const mappedItems: RecommendedTodoItem[] = response.recommendations
-          .filter(rec => rec.todo !== null)
-          .map(rec => ({
-            todo: new Todo(rec.todo!),
-            plannerDetails: rec.plannerDetails,
-            modeCode: rec.modeCode
-          }));
+          const mappedItems: RecommendedTodoItem[] = response.recommendations
+            .filter((rec) => rec.todo !== null)
+            .map((rec) => ({
+              todo: new Todo(rec.todo!),
+              plannerDetails: rec.plannerDetails,
+              modeCode: rec.modeCode
+            }));
 
-        this.recommendations.set(mappedItems);
-        this.isLoading.set(false);
-      },
-      error: (err) => {
-        console.error('Fehler beim Laden der KI-Empfehlungen:', err);
-        this.isLoading.set(false);
-      }
-    });
+          this.recommendations.set(mappedItems);
+          this.isLoading.set(false);
+        },
+        error: (err) => {
+          console.error('Fehler beim Laden der KI-Empfehlungen:', err);
+          this.isLoading.set(false);
+        }
+      });
   }
 
   /**
    * Sendet das Runden-Feedback (Optimistisch & Offline-Safe über DataManager)
    */
   public sendFeedback(feedback: RecommendationResult): void {
-    const currentUserId = this.userService.getCurrentUserId() ?? "";
-    const roundId = this.activeRoundId() ?? "";
+    const currentUserId = this.userService.getCurrentUserId() ?? '';
+    const roundId = this.activeRoundId() ?? '';
 
     this.isLoading.set(true);
 
     // 1. Snooze-Aktionen sofort lokal ausführen & in Queue schieben
     feedback.rejections
-      .filter(todo => todo.reason === 'snooze')
-      .forEach(it => {
-        this.snoozyrecommendedTodo(it.todoId, 30);
+      .filter((todo) => todo.reason === 'snooze')
+      .forEach((it) => {
+        this.snoozeRecommendedTodo(it.todoId, 30);
       });
 
     // 2. Ablehnungen filtern
     const rejectedTodos: RejectedTodoFeedback[] = feedback.rejections
       .filter((todo): todo is { todoId: string; reason: Exclude<RejectReason, 'snooze'> } => todo.reason !== 'snooze')
-      .map(reject => ({
+      .map((reject) => ({
         todoId: reject.todoId,
         rejectReason: reject.reason
       }));
 
-    // 3. Feedback in die Queue schieben (geht nie wieder verloren!)
+    // 3. Feedback in die Queue schieben
     this.plannerDataManager.queueFeedback(
       currentUserId,
       roundId,
@@ -106,12 +113,19 @@ export class PlannerService extends BaseDataManager {
   /**
    * Ein einzelnes Todo snoozen (Lokales UI-Update + Queue)
    */
-  public snoozyrecommendedTodo(todoId: string, durationInMin: number): void {
+  public snoozeRecommendedTodo(todoId: string, durationInMin: number): void {
     // 1. Sofort aus lokaler Ansicht entfernen
-    this.recommendations.update(list => list.filter(item => item.todo.id !== todoId));
+    this.recommendations.update((list) => list.filter((item) => item.todo.id !== todoId));
 
     // 2. Snooze in die Queue schieben
     this.plannerDataManager.queueSnooze(todoId, durationInMin);
+  }
+
+  /**
+   * Abwärtskompatible Alias-Methode für bestehenden Code
+   */
+  public snoozyrecommendedTodo(todoId: string, durationInMin: number): void {
+    this.snoozeRecommendedTodo(todoId, durationInMin);
   }
 
   public override resetData(): void {
@@ -122,5 +136,9 @@ export class PlannerService extends BaseDataManager {
 
   public clearRecommendations(): void {
     this.resetData();
+  }
+
+  public override checkUnsavedData(): string | null {
+    return null;
   }
 }

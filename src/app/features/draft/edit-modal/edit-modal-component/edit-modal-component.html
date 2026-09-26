@@ -1,0 +1,106 @@
+<div class="modal-backdrop" (click)="close()"></div >
+
+<div class="modal-dialog">
+  <header class="modal-header">
+    <div class="header-info">
+      <h2>Kette korrigieren: {{ chain().title }}</h2>
+      <span class="error-badge">⚠️ {{ chain().lastErrorReason }}</span>
+    </div>
+    <button class="btn-close" (click)="close()">✕</button>
+  </header>
+
+  <main class="modal-body">
+    
+    
+    <aside class="chain-timeline">
+      <h3 class="section-title">Ablauf-Kette ({{ chain().items.length }} Schritte)</h3>
+      
+      <div class="timeline-list">
+        @for (item of chain().items; track item.queueItem.id; let index = $index) {
+          <div 
+            class="timeline-item" 
+            [class.is-root]="item.isRootCause"
+            [class.is-selected]="selectedItemId() === item.queueItem.id"
+            (click)="selectItem(item)">
+            
+            <div class="timeline-status">
+              @if (item.isRootCause) {
+                <span class="status-icon root-icon" title="Ursache des Fehlers">💥</span>
+              } @else {
+                <span class="status-icon pause-icon" title="Pausiert">⏸️</span>
+              }
+              <span class="step-number">#{{ index + 1 }}</span>
+            </div>
+
+            <div class="timeline-details">
+              <strong class="item-action">{{ item.queueItem.action }}</strong>
+              <small class="item-service">{{ item.queueItem.serviceName }}</small>
+              <div class="item-context">
+                {{ item.queueItem.payload.displayInfo?.category }}: 
+                <span class="context-title">{{ item.queueItem.payload.displayInfo?.title }}</span>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </aside>
+
+    
+    <section class="editor-pane">
+      
+      
+      @if (rootItem(); as root) {
+        <div class="pane-header">
+          <h3>✏️ Schnelle Korrektur (Schritt #1: {{ root.queueItem.action }})</h3>
+        </div>
+
+        <form [formGroup]="activeForm()" class="item-form">
+          @for (controlName of formControlNames(); track $index) {
+            <div class="form-field">
+              <label [for]="controlName">{{ controlName | uppercase }}</label>
+              
+              @if (controlName === 'rawJson') {
+                <textarea [id]="controlName" [formControlName]="controlName" rows="4" class="code-editor"></textarea>
+              } @else if (isBooleanControl(controlName)) {
+                <input type="checkbox" [id]="controlName" [formControlName]="controlName">
+              } @else {
+                <input type="text" [id]="controlName" [formControlName]="controlName" class="form-input">
+              }
+            </div>
+          }
+        </form>
+      }
+
+      <hr class="pane-divider">
+
+      
+      @if (selectedItem(); as current) {
+        <div class="json-inspector-header">
+          <h4>
+            🔍 JSON-Payload Inspektor: Schritt #{{ chain().items.indexOf(current) + 1 }} ({{ current.queueItem.action }})
+            @if (current.isRootCause) {
+              <span class="root-tag">Fehler-Ursache</span>
+            } @else {
+              <span class="readonly-tag">Pausierter Folgeschritt</span>
+            }
+          </h4>
+        </div>
+
+        <div class="readonly-json-container">
+          <pre class="json-viewer"><code>{{ selectedItemJson() }}</code></pre>
+        </div>
+      }
+    </section>
+  </main>
+
+  <footer class="modal-footer">
+    <button type="button" class="btn-cancel" (click)="close()">Abbrechen</button>
+    <button 
+      type="button" 
+      class="btn-save" 
+      [disabled]="activeForm().invalid"
+      (click)="saveAndRetry()">
+      💾 Korrektur speichern & Kette neu starten
+    </button>
+  </footer>
+</div>

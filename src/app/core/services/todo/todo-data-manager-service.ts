@@ -15,6 +15,7 @@ import { ConnectionService } from '../connection/connection-service';
 import { TodoAction, TodoBulkPayload, TodoDeletePayload, TodoPayload } from '../../models/queue-items/todo-queue-payload';
 import { TodoStateProvider } from './todo-data-provider';
 import { StateProvider } from '../central-queue/state-providers/base-state-provider';
+import { QueueHandlerName } from '../../enums/queue-handler-name';
 
 @Injectable({
   providedIn: 'root'
@@ -34,8 +35,18 @@ export class TodoDataManagerService extends BaseQueueDataManager {
   public gamificationSignal = signal<GamificationResult | null>(null);
   public streakSignal = signal<StreakInfoDto | null>(null);
 
+    public get allTodosPool(): Signal<Todo[]> {
+    return this.getSignal() as Signal<Todo[]>;
+  }
+
+  // 🎯 Hilfsmethode: Holt die Aufgabenbezeichnung aus dem State (Fallback für ID-Only/Update operations)
+  private getTodoTaskById(id: string): string {
+    const todo = this.allTodosPool().find((t) => t.id === id);
+    return todo?.task || 'Unbenannte Aufgabe';
+  }
+
   constructor() {
-    super('TodoDataManagerService');
+    super(QueueHandlerName.TODO);
 
     // Initialer Cache-Load über den Provider
     this.loadInitialCache();
@@ -59,38 +70,60 @@ export class TodoDataManagerService extends BaseQueueDataManager {
     return new TodoStateProvider();
   }
 
-  public get allTodosPool(): Signal<Todo[]> {
-    return this.getSignal() as Signal<Todo[]>;
-  }
-
+  
   // ==========================================
   // PUBLIC ACTIONS (Optimistic Updates + Queue)
   // ==========================================
 
-  public createTodo(todo: Todo): void {
+public createTodo(todo: Todo): void {
     const snapshot = this.stateProvider.createSnapshot();
 
     this.stateProvider.applyActionPayload('CREATE', { todo });
 
-    const payload: TodoPayload = { id: todo.id, todo, snapshot };
+    const payload: TodoPayload = {
+      id: todo.id,
+      todo,
+      snapshot,
+      displayInfo: {
+        category: 'Aufgabe erstellen',
+        title: todo.task || 'Unbenannte Aufgabe'
+      }
+    };
     this.queueService.enqueue(this.serviceName, 'CREATE', payload);
   }
 
   public updateTodo(updatedTodo: Todo): void {
     const snapshot = this.stateProvider.createSnapshot();
+    const taskTitle = updatedTodo.task || this.getTodoTaskById(updatedTodo.id);
 
     this.stateProvider.applyActionPayload('UPDATE', { todo: updatedTodo });
 
-    const payload: TodoPayload = { id: updatedTodo.id, todo: updatedTodo, snapshot };
+    const payload: TodoPayload = {
+      id: updatedTodo.id,
+      todo: updatedTodo,
+      snapshot,
+      displayInfo: {
+        category: 'Aufgabe bearbeiten',
+        title: taskTitle
+      }
+    };
     this.queueService.enqueue(this.serviceName, 'UPDATE', payload);
   }
 
   public deleteTodo(id: string): void {
     const snapshot = this.stateProvider.createSnapshot();
+    const taskTitle = this.getTodoTaskById(id);
 
     this.stateProvider.applyActionPayload('DELETE', { id });
 
-    const payload: TodoDeletePayload = { id, snapshot };
+    const payload: TodoDeletePayload = {
+      id,
+      snapshot,
+      displayInfo: {
+        category: 'Aufgabe löschen',
+        title: taskTitle
+      }
+    };
     this.queueService.enqueue(this.serviceName, 'DELETE', payload);
   }
 
@@ -99,7 +132,15 @@ export class TodoDataManagerService extends BaseQueueDataManager {
 
     this.stateProvider.applyActionPayload('BULK_DELETE_COMPLETED', { userId });
 
-    const payload: TodoBulkPayload = { id: 'bulk-completed', userId, snapshot };
+    const payload: TodoBulkPayload = {
+      id: 'bulk-completed',
+      userId,
+      snapshot,
+      displayInfo: {
+        category: 'Massen-Aktion',
+        title: 'Erledigte Aufgaben löschen'
+      }
+    };
     this.queueService.enqueue(this.serviceName, 'BULK_DELETE_COMPLETED', payload);
   }
 
@@ -108,10 +149,18 @@ export class TodoDataManagerService extends BaseQueueDataManager {
 
     this.stateProvider.applyActionPayload('BULK_DELETE_ALL', { userId });
 
-    const payload: TodoBulkPayload = { id: 'bulk-all', userId, snapshot };
+    const payload: TodoBulkPayload = {
+      id: 'bulk-all',
+      userId,
+      snapshot,
+      displayInfo: {
+        category: 'Massen-Aktion',
+        title: 'Alle Aufgaben löschen'
+      }
+    };
     this.queueService.enqueue(this.serviceName, 'BULK_DELETE_ALL', payload);
   }
-
+  
   // ==========================================
   // QUEUE EXECUTION & FETCH
   // ==========================================

@@ -7,18 +7,19 @@ import { IQueueHandler } from './queue-handler-interface';
 import { CentralQueueService } from './central-queue-service';
 import { NotificationService } from '../notification/notification-service';
 import { StateProvider } from './state-providers/base-state-provider';
+import { QueueHandlerName } from '../../enums/queue-handler-name';
 
 export abstract class BaseQueueDataManager extends BaseDataManager implements IQueueHandler {
   protected queueService = inject(CentralQueueService);
   protected notificationService = inject(NotificationService);
 
-  serviceName: string;
+  serviceName: QueueHandlerName;
   protected stateProvider: StateProvider<any>;
 
   private lastFetchTimestamp = 0;
   private readonly FETCH_COOLDOWN_MS = 30000;
 
-  constructor(name: string) {
+  constructor(name: QueueHandlerName) {
     super();
     this.serviceName = name;
     this.stateProvider = this.createStateProvider();

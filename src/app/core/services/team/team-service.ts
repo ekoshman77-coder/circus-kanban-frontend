@@ -3,9 +3,9 @@ import { TeamDataManager } from './team-data-manager';
 import { UserModel } from '../../models/user-model';
 import { UserService } from '../user/user-service';
 import { ProjectMember } from '../../models/project-member';
-import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 import { PermissionService, UIActionIntent } from '../permissions/permission-service';
 import { ProjectService } from '../project/project-service';
+import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 
 @Injectable({
   providedIn: 'root',
@@ -19,7 +19,7 @@ export class TeamService extends BaseDataManager {
 
   public globalMembersSignal: Signal<ProjectMember[]> = this.dataManager.globalMembersSignal;
   
-  // Reicht das saubere Projektmitglieder-Signal direkt aus dem ProjectService durch!
+  // Reicht das Projektmitglieder-Signal direkt aus dem ProjectService durch
   public currentProjectMembersSignal: Signal<ProjectMember[]> = this.projectService.currentProjectMembersSignal;
 
   public setCurrentProject(projectId: string | null): void {
@@ -62,7 +62,7 @@ export class TeamService extends BaseDataManager {
     this.dataManager.createMember(member, password, onError);
   }
 
-  public override resetData(): void {
+  public resetData(): void {
     this.projectService.setActiveProjectId(null);
   }
 }

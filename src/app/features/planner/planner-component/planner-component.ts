@@ -10,7 +10,7 @@ import { PlannerSettingsComponent } from '../planner-settings-component/planner-
 import { TodoItemComponent } from '../../../core/shared/components/todo-item-component/todo-item-component';
 import { TodoViewModel } from '../../../core/viewmodel/todo-view-model';
 import { RecommendationResult } from '../../../core/models/recommendation-result';
-import { UserSettingsDataManager } from '../../../core/services/user/user-settings-data-manager';
+import { UserSettingsService } from '../../../core/services/user/user-settings-service';
 
 @Component({
   selector: 'app-planner',
@@ -27,7 +27,7 @@ import { UserSettingsDataManager } from '../../../core/services/user/user-settin
 })
 export class PlannerComponent {
   private todoService = inject(TodoService);
-  private userSettingsDataManager = inject(UserSettingsDataManager);
+  private userSettingsService = inject(UserSettingsService);
   private plannerService = inject(PlannerService);
 
   showAiRecommendation = signal<boolean>(false);
@@ -43,8 +43,8 @@ export class PlannerComponent {
     restZone: true
   });
 
-  readonly userEnergy = this.userSettingsDataManager.userEnergy;
-  readonly worlkingTimeLeft = this.userSettingsDataManager.workingTimeLeft; 
+  readonly userEnergy = this.userSettingsService.userEnergy;
+  readonly worlkingTimeLeft = this.userSettingsService.workingTimeLeft; 
   private openTodos = this.todoService.openTodosOnly;
 
   private isUrgent(todo: Todo): boolean {

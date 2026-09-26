@@ -6,7 +6,7 @@ import { StateProvider } from '../central-queue/state-providers/base-state-provi
 import { EmptyStateProvider } from '../central-queue/state-providers/empty-state-provider';
 import { AiRepository, RejectedTodoFeedback } from '../../repositories/ai-repository';
 import { PlannerFeedbackPayload, SnoozePayload } from '../../models/queue-items/planner-queue-payload';
-
+import { QueueHandlerName } from '../../enums/queue-handler-name';
 
 export type PlannerQueueAction = 'SEND_FEEDBACK' | 'SNOOZE_TODO';
 
@@ -17,7 +17,7 @@ export class PlannerDataManagerService extends BaseQueueDataManager {
   private aiRepository = inject(AiRepository);
 
   constructor() {
-    super('PlannerDataManagerService');
+    super(QueueHandlerName.PLANNER);
   }
 
   protected override createStateProvider(): StateProvider<any> {
@@ -39,7 +39,11 @@ export class PlannerDataManagerService extends BaseQueueDataManager {
           userId: payload.userId,
           roundId: payload.roundId,
           acceptedTodoId: payload.acceptedTodoId,
-          rejectedTodos: payload.rejectedTodos
+          rejectedTodos: payload.rejectedTodos,
+          displayInfo: {
+            category: 'KI-Planer',
+            title: 'Feedback zur Aufgabenplanung'
+          }
         });
       }
 
@@ -55,7 +59,7 @@ export class PlannerDataManagerService extends BaseQueueDataManager {
       }
 
       default:
-        return throwError(() => new Error(`[PlannerDataManager] Unbekannte Action: ${item.action}`));
+        return throwError((): Error => new Error(`[PlannerDataManager] Unbekannte Action: ${item.action}`));
     }
   }
 
@@ -71,26 +75,45 @@ export class PlannerDataManagerService extends BaseQueueDataManager {
   // 📝 QUEUE AKTIONEN SCHIEBEN
   // ==========================================
 
-  public queueFeedback(userId: string, roundId: string, acceptedTodoId: string | null, rejectedTodos: RejectedTodoFeedback[]): void {
+  public queueFeedback(
+    userId: string,
+    roundId: string,
+    acceptedTodoId: string | null,
+    rejectedTodos: RejectedTodoFeedback[]
+  ): void {
     const payload: PlannerFeedbackPayload = {
       id: roundId,
       userId,
       roundId,
       acceptedTodoId,
-      rejectedTodos
+      rejectedTodos,
+      displayInfo: {
+        category: 'KI-Planer',
+        title: 'Feedback zur Aufgabenplanung'
+      }
     };
 
     this.queueService.enqueue(this.serviceName, 'SEND_FEEDBACK', payload);
   }
 
-  public queueSnooze(todoId: string, durationInMin: number): void {
-    const payload: SnoozePayload = {
-      id: todoId,
-      durationInMin
-    };
+public queueSnooze(
+  todoId: string, 
+  durationInMin: number, 
+  todoTitle?: string // 💡 Optionaler Titel aus der UI
+): void {
+  const payload: SnoozePayload = {
+    id: todoId,
+    durationInMin,
+    displayInfo: {
+      category: 'Aufgabe verschieben',
+      title: todoTitle 
+        ? `"${todoTitle}" (${durationInMin} Min.)` 
+        : `Aufgabe für ${durationInMin} Min. pausieren`
+    }
+  };
 
-    this.queueService.enqueue(this.serviceName, 'SNOOZE_TODO', payload);
-  }
+  this.queueService.enqueue(this.serviceName, 'SNOOZE_TODO', payload);
+}
 
   // ==========================================
   // 🧹 BASE DATA MANAGER OVERRIDES

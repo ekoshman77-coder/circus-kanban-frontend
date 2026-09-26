@@ -1,0 +1,173 @@
+<div class="drawer-backdrop" (click)="closeDrawer()"></div>
+
+<aside class="draft-drawer">
+
+  <div class="draft-box-header">
+    <div class="header-title">
+      <p>Fehlgeschlagene Ketten</p>
+      <span class="count-badge">{{ count() }}</span>
+    </div>
+    <button class="close-btn" (click)="closeDrawer()" title="Schließen">✕</button>
+  </div>
+
+  <main class="drawer-content">
+    @if (count() > 0) {
+      <div class="chain-list">
+        @for (chain of chains(); track chain.id) {
+          
+          <article 
+            class="chain-card" 
+            [class.accent-amber]="chain.lastErrorCode === 403"
+            [class.accent-coral]="chain.lastErrorCode !== 403">
+            
+            <div class="card-header">
+              <h2 class="chain-title" (click)="toggleChainDetails(chain.id)">
+                {{ chain.title || 'Unbenannte Kette' }}
+              </h2>
+              <span class="chain-time">
+                 <strong class="time-value">{{ chain.createdAt | date:'dd.MM.yyyy, HH:mm' }}</strong>
+              </span>
+            </div>
+
+            <div class="card-body">
+              <span class="chain-text">
+                Fehler: <strong class="chain-error">{{ chain.lastErrorReason }}</strong>
+              </span>
+            </div>
+
+            @if (openedChain() === chain.id) {
+              <div class="card-details">
+                <small>Ketten-ID: {{ chain.id }}</small>
+              </div>
+            }
+
+            
+            @if (activeDelegatingChainId() === chain.id && currentStep() !== 'CLOSED') {
+              <div class="delegate-panel">
+                
+                
+                @if (draftUIService.favoriteUser(); as favorite) {
+                  <div class="favorite-section">
+                    <span class="section-label">⚡ Schnellauswahl:</span>
+                    <button type="button" class="favorite-chip" (click)="onUserSelected(favorite)">
+                      👤 {{ favorite.name }}
+                    </button>
+                  </div>
+                }
+
+                
+                @if (currentStep() === 'SELECT_TARGET') {
+                  <div class="interview-step">
+                    <p class="step-title">An wen soll die Kette übergeben werden?</p>
+                    <div class="target-grid">
+                      <button class="target-btn" (click)="onTargetSelected('DEPARTMENT')">
+                        🏢 Eigene Abteilung
+                      </button>
+                      <button class="target-btn" (click)="onTargetSelected('ADMINS')">
+                        👑 Admins / Support
+                      </button>
+                      <button class="target-btn" (click)="onTargetSelected('PROJECT')">
+                        📂 Projektmitglieder
+                      </button>
+                      <button class="target-btn" (click)="onTargetSelected('USER')">
+                        👤 Einzelner Kollege
+                      </button>
+                    </div>
+                  </div>
+                }
+
+                
+                @if (currentStep() === 'SELECT_PROJECT') {
+                  <div class="interview-step">
+                    <p class="step-title">Welches Projekt betrifft das?</p>
+                    <div class="project-list">
+                      @for (proj of draftUIService.userContext().projects; track proj.id) {
+                        <button class="project-btn" (click)="onProjectSelected(proj)">
+                          📁 {{ proj.name }}
+                        </button>
+                      }
+                    </div>
+                  </div>
+                }
+
+                
+                @if (currentStep() === 'SELECT_USER') {
+                  <div class="interview-step">
+                    <p class="step-title">Kollege auswählen:</p>
+                    
+                    @if (draftUIService.availableUsers().length > 6) {
+                      <div class="search-wrapper">
+                        <input 
+                          type="text" 
+                          class="user-search-input" 
+                          placeholder="🔍 Name tippen..." 
+                          [value]="searchQuery()" 
+                          (input)="onSearchInput($event)">
+                      </div>
+                    }
+
+                    <div class="user-scroll-list">
+                      @for (user of filteredUsers(); track user.id) {
+                        <button class="user-option-btn" (click)="onUserSelected(user)">
+                          <span>{{ user.name }}</span>
+                          @if (user.role) {
+                            <small class="user-role">{{ user.role }}</small>
+                          }
+                        </button>
+                      } @empty {
+                        <div class="empty-hint">Keine Personen gefunden.</div>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <div class="panel-actions">
+                  <button class="btn-cancel" (click)="cancelDelegation()">Abbrechen</button>
+                </div>
+
+              </div>
+            }
+
+            
+            <div class="chain-buttons">
+              <div class="secondary-buttons">
+                <button 
+                  class="chain-delete" 
+                  (click)="deleteChain(chain.id)" 
+                  title="Löschen">
+                  🗑️ Löschen
+                </button>
+                <button 
+                  class="chain-send" 
+                  (click)="startTargetSelect(chain.id)" 
+                  title="An Kollege senden">
+                  📤 An Kollege senden
+                </button>
+              </div>
+
+              <div class="primary-buttons">
+                <button 
+                  class="chain-edit" 
+                  (click)="openEditModal(chain.id)">
+                  ✏️ Korrigieren
+                </button>
+                <button 
+                  class="chain-start" 
+                  (click)="tryAgain(chain.id)">
+                  🔄 Erneut ausführen
+                </button>
+              </div>
+            </div>
+
+          </article>
+        }
+      </div>
+    } @else {
+      <div class="empty-state">
+        <span class="empty-icon">🎉</span>
+        <p>Keine chains vorhanden</p>
+      </div>
+    }
+  </main>
+
+</aside>

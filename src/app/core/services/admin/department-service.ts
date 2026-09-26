@@ -2,24 +2,25 @@ import { Injectable, inject, computed } from '@angular/core';
 import { DepartmentDataManager } from './department-data-manager';
 import { UserService } from '../user/user-service';
 import { ADMIN_DEPARTMENT_NAME } from '../../shared/constants/admin-constants';
+import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 
 @Injectable({
-  providedIn: 'root',
+  providedIn: 'root'
 })
-export class DepartmentService {
+export class DepartmentService extends BaseDataManager {
   private departmentDataManager = inject(DepartmentDataManager);
   private userService = inject(UserService);
 
-  public departments = computed(() => this.departmentDataManager.departmentsSignal());
+  public readonly departments = computed(() => this.departmentDataManager.departmentsSignal());
 
-  public isAdmin = computed(() => {
+  public readonly isAdmin = computed(() => {
     const currentDept = this.userService.currentUser()?.department;
     if (!currentDept) return false;
 
     return currentDept.name.toLowerCase() === ADMIN_DEPARTMENT_NAME.toLowerCase();
   });
 
-  public departmentsSorted = computed(() => {
+  public readonly departmentsSorted = computed(() => {
     return this.departments().toSorted((a, b) => {
       if (a.isAdmin()) return -1;
       if (b.isAdmin()) return 1;
@@ -37,5 +38,17 @@ export class DepartmentService {
 
   public deleteDepartment(id: string): void {
     this.departmentDataManager.deleteDepartment(id);
+  }
+
+  // ==========================================
+  // 🧹 BASE DATA MANAGER OVERRIDES
+  // ==========================================
+
+  public override checkUnsavedData(): string | null {
+    return null;
+  }
+
+  public override resetData(): void {
+    // UI-spezifischer Reset falls nötig
   }
 }

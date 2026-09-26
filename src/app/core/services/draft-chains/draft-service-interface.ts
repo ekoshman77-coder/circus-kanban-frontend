@@ -1,33 +1,29 @@
+import { Signal } from "@angular/core";
+import { Observable } from "rxjs";
+import { DraftChain } from "../../models/draft-chain";
 import { QueueItem } from "../../models/queue-items/queue-item";
 
-// Definition einer gespeicherten Entwurfs-Kette
-export interface DraftChain {
-  id: string;               // Eindeutige Draft-ID
-  name: string;             // Sprechender Name (z.B. aus dem Titel extrahiert)
-  items: QueueItem[];       // Die gesammelte Kette von Queue-Items
-  lastError: string;        // Der Grund des Scheiterns (z.B. "403 Forbidden")
-  lastAttemptTimestamp: number; // Wann das passiert ist
-}
 
-// Das Interface, das der CentralQueueService benötigt
 export interface IDraftService {
-  /**
-   * Speichert eine neu extrahierte Fehler-Kette in der Draft-Box
-   */
-  saveDraftChain(items: QueueItem[], errorReason: string, customName?: string): void;
+  /** Reactive Signals für die UI */
+  readonly draftChains: Signal<DraftChain[]>;
+  readonly draftCount: Signal<number>;
 
-  /**
-   * Lädt alle gespeicherten Entwürfe (für die UI / den Draft-Visualizer)
-   */
-  getAllDraftChains(): DraftChain[];
+  /** Speichert eine abgekoppelte Fehler-Kette */
+  saveDraftChain(items: QueueItem[], errorReason: string, errorCode: number, customTitle?: string): void;
 
-  /**
-   * Holt eine spezifische Kette zurück (für den Re-Inject)
-   */
+  /** Einzelnen Draft zur Einsicht/Bearbeitung holen */
   getDraftChain(id: string): DraftChain | null;
 
-  /**
-   * Löscht eine Kette endgültig (nach erfolgreichem Re-Inject oder manuellem Verwerfen)
-   */
+  /** Aktualisiert ein bestimmtes QueueItem innerhalb eines Drafts (Korrektur-Modus) */
+  updateDraftItemPayload(draftId: string, itemId: string, updatedPayload: any): void;
+
+  /** Stößt den Re-Inject an (feuert reInjectChain$ und entfernt den Draft) */
+  reinjectDraftChain(draftId: string): void;
+
+  /** Löscht einen Draft manuell (Verwerfen) */
   removeDraftChain(id: string): void;
+
+  /** Setzt alle Drafts zurück (z. B. bei Logout) */
+  clearAllDrafts(): void;
 }

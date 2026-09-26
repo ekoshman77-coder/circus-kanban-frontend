@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
 import { GamificationRepository } from '../../repositories/gamification-repsoitory';
 import { UserService } from '../user/user-service';
@@ -10,6 +10,7 @@ import { generateLocalId } from '../../shared/constants/id-const';
 import { FocusPomodoroPayload } from '../../models/queue-items/pomodoro-payload';
 import { StateProvider } from '../central-queue/state-providers/base-state-provider';
 import { EmptyStateProvider } from '../central-queue/state-providers/empty-state-provider';
+import { QueueHandlerName } from '../../enums/queue-handler-name';
 
 export type FocusQueueAction = 'RECORD_POMODORO';
 
@@ -22,7 +23,7 @@ export class FocusDataManagerService extends BaseQueueDataManager {
   private loggerService = inject(LoggerService);
 
   constructor() {
-    super('FocusDataManagerService');
+    super(QueueHandlerName.FOCUS);
   }
 
   protected override createStateProvider(): StateProvider<any> {
@@ -44,7 +45,7 @@ export class FocusDataManagerService extends BaseQueueDataManager {
         return this.gamificationRepository.sendPomodoroSession(userId, { todoId, count: 1 });
       }
       default:
-        return throwError(() => new Error(`[FocusDataManager] Unbekannte Action: ${item.action}`));
+        return throwError((): Error => new Error(`[FocusDataManager] Unbekannte Action: ${item.action}`));
     }
   }
 
@@ -64,7 +65,7 @@ export class FocusDataManagerService extends BaseQueueDataManager {
   public override checkAndReplaceIds(item: QueueItem, localId: string, serverId: string): void {
     if (item.action === 'RECORD_POMODORO') {
       const payload = item.payload as FocusPomodoroPayload;
-      if (payload.todoId === localId) {
+      if (payload && payload.todoId === localId) {
         payload.todoId = serverId;
       }
     }
@@ -79,14 +80,14 @@ export class FocusDataManagerService extends BaseQueueDataManager {
 
     if (item.action === 'RECORD_POMODORO') {
       const payload = item.payload as FocusPomodoroPayload;
-      if (payload.todoId) {
+      if (payload && payload.todoId) {
         ids.push(payload.todoId);
       }
     }
 
     return ids;
   }
-  
+
   // ==========================================
   // 🔄 REHYDRATION PATTERN
   // ==========================================
@@ -96,13 +97,13 @@ export class FocusDataManagerService extends BaseQueueDataManager {
   }
 
   // ==========================================
-  // 📝 PUBLIC API METHODEN (Für Timer/Pomodoro UI)
+  // 📝 PUBLIC API METHODEN (Für FocusService / Queue)
   // ==========================================
 
   /**
-   * Registriert ein Pomodoro-Intervall sofort optimistisch und schiebt es in die CentralQueue.
+   * Registriert ein Pomodoro-Intervall sofort in der CentralQueue.
    */
-  public recordCompletedPomodoro(todoId: string): void {
+  public recordCompletedPomodoro(todoId: string, todoTitle?: string): void {
     const userId = this.userService.getCurrentUserId();
     if (!userId) {
       return;
@@ -112,14 +113,16 @@ export class FocusDataManagerService extends BaseQueueDataManager {
       id: generateLocalId(),
       userId,
       todoId,
-      count: 1
+      count: 1,
+      displayInfo: {
+        category: 'Fokus-Session',
+        title: todoTitle ? `Pomodoro: "${todoTitle}"` : 'Fokus-Session abschließen'
+      }
     };
 
-    // In die CentralQueue schieben (Handles Online & Offline vollautomatisch)
     this.queueService.enqueue(this.serviceName, 'RECORD_POMODORO', payload);
     this.loggerService.info('FocusDataManager', 'Pomodoro in die globale Queue eingereiht.');
   }
-
   // ==========================================
   // 🧹 BASE DATA MANAGER OVERRIDES
   // ==========================================

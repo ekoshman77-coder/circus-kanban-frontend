@@ -12,16 +12,16 @@ import {
   BatchCreatePermissionsPayload
 } from '../../models/queue-items/permission-queue-item';
 import { PermissionStateProvider } from './permission-state-provider';
+import { QueueHandlerName } from '../../enums/queue-handler-name';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PermissionDataManager extends BaseQueueDataManager {
   private permissionRepository = inject(PermissionRepository);
-  private readonly STORAGE_KEY = 'global_permissions_pool';
 
   constructor() {
-    super('PermissionDataManager');
+    super(QueueHandlerName.PERMISSION);
     (this.stateProvider as PermissionStateProvider).loadFromCache();
   }
 
@@ -31,6 +31,20 @@ export class PermissionDataManager extends BaseQueueDataManager {
 
   public get permissionsSignal(): Signal<Permission[]> {
     return this.getSignal() as Signal<Permission[]>;
+  }
+
+  // 🎯 Formatiert Berechtigungen in lesbare Strings (z.B. "ADMIN: READ -> USER")
+  private formatPermissionTitle(perm: Permission): string {
+    const role = perm.role || 'Rolle';
+    const action = perm.action || 'Aktion';
+    const resource = perm.resource || 'Ressource';
+    return `${role} (${action} -> ${resource})`;
+  }
+
+  // 🎯 Holt Berechtigung aus Signal für Lösch-Operationen
+  private getPermissionTitleById(id: string): string {
+    const perm = this.permissionsSignal().find((p) => p.id === id);
+    return perm ? this.formatPermissionTitle(perm) : 'Berechtigung';
   }
 
   // ==========================================
@@ -68,16 +82,13 @@ export class PermissionDataManager extends BaseQueueDataManager {
   }
 
   protected override handleSuccessResult(item: QueueItem, response: any): void {
-    // 1. Basisklasse für einfache CREATE-IDs
     super.handleSuccessResult(item, response);
 
-    // 2. Spezialfall BATCH: Server-Permissions direkt an den Provider übergeben
     if (item.action === 'BATCH' && Array.isArray(response)) {
       const serverPermissions = response.map((json) => Permission.fromJson(json));
       const provider = this.stateProvider as PermissionStateProvider;
 
       provider.replaceIdsByPermission(serverPermissions, (localId, serverId) => {
-        // Callback informiert die Queue für jedes gematchte Paar
         this.queueService.updateEntityIdInQueue(localId, serverId);
       });
     }
@@ -96,7 +107,7 @@ export class PermissionDataManager extends BaseQueueDataManager {
   // 📝 PUBLIC API METHODEN (Opt. Updates über Provider)
   // ==========================================
 
-  public createPermission(permission: Permission): void {
+public createPermission(permission: Permission): void {
     const provider = this.stateProvider as PermissionStateProvider;
     const snapshot = provider.createSnapshot();
     const tempId = permission.id || generateLocalId();
@@ -109,7 +120,11 @@ export class PermissionDataManager extends BaseQueueDataManager {
     const payload: PermissionPayload = {
       id: tempId,
       permission: newPermission,
-      snapshot
+      snapshot,
+      displayInfo: {
+        category: 'Berechtigung anlegen',
+        title: this.formatPermissionTitle(newPermission)
+      }
     };
 
     provider.applyActionPayload('CREATE', payload);
@@ -125,7 +140,11 @@ export class PermissionDataManager extends BaseQueueDataManager {
     const payload: PermissionPayload = {
       id: permission.id,
       permission,
-      snapshot
+      snapshot,
+      displayInfo: {
+        category: 'Berechtigung anpassen',
+        title: this.formatPermissionTitle(permission)
+      }
     };
 
     provider.applyActionPayload('UPDATE', payload);
@@ -138,7 +157,11 @@ export class PermissionDataManager extends BaseQueueDataManager {
 
     const payload: DeletePermissionPayload = {
       id: permissionId,
-      snapshot
+      snapshot,
+      displayInfo: {
+        category: 'Berechtigung löschen',
+        title: this.getPermissionTitleById(permissionId)
+      }
     };
 
     provider.applyActionPayload('DELETE', payload);
@@ -162,7 +185,11 @@ export class PermissionDataManager extends BaseQueueDataManager {
       actions,
       scope,
       specialization,
-      snapshot
+      snapshot,
+      displayInfo: {
+        category: 'Massen-Berechtigung',
+        title: `${resource} (${roles.length} Rollen, ${actions.length} Aktionen)`
+      }
     };
 
     provider.applyActionPayload('BATCH', payload);

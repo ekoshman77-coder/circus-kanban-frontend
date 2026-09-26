@@ -96,3 +96,16 @@
 </div>
 
 <app-streak-panel [streakData]="todoService.streakState()"></app-streak-panel>
+
+<app-draft-floating-button-component></app-draft-floating-button-component>
+
+@if (draftUIService.isDraftBoxOpen()) {
+  <app-draft-box-component></app-draft-box-component>
+}
+@if (draftUIService.editingChain(); as editingChain) {
+  <app-edit-modal-component
+    [chain]="editingChain"
+    (closed)="draftUIService.closeEditModal()"
+    (saved)="draftUIService.saveEditedChain($event)">
+  </app-edit-modal-component >
+}

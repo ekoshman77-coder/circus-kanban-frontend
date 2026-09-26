@@ -1,28 +1,34 @@
 import { effect, inject, Injectable } from '@angular/core';
-import { from, of } from 'rxjs';
+import { from, of, Subject } from 'rxjs';
 import { concatMap, finalize } from 'rxjs/operators';
 import { ConnectionService } from '../connection/connection-service';
 import { IQueueHandler } from './queue-handler-interface';
 import { generateLocalId } from '../../shared/constants/id-const';
-import { UserService } from '../user/user-service';
 import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 import { BaseQueueDataManager } from './base-queue-data-manager';
 import { QueueItem, SnapshotPayload } from '../../models/queue-items/queue-item';
 import { AUTH_CONTEXT } from '../user/auth-context';
-import { Identifiable } from '../../models/identifable';
-import { MockDraftService } from '../draft-chains/draft-service';
+import { QueueHandlerName } from '../../enums/queue-handler-name';
+
+export interface QueueFailurePayload {
+  items: QueueItem[];
+  error: string;
+  errorCode: number;
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class CentralQueueService extends BaseDataManager {
   private connectionService = inject(ConnectionService);
-  private draftService = inject(MockDraftService)
 
   private authContext = inject(AUTH_CONTEXT);
 
+  private queueFailedSubject = new Subject<QueueFailurePayload>()
+  public queueFailed$ = this.queueFailedSubject.asObservable()
+
   private readonly QUEUE_KEY = 'global_central_offline_queue';
-  private registry = new Map<string, IQueueHandler>();
+  private registry = new Map<QueueHandlerName, IQueueHandler>();
   private isProcessing = false;
   private isFetchingData = false;
 
@@ -39,14 +45,14 @@ export class CentralQueueService extends BaseDataManager {
     });
   }
 
-  public registerService(name: string, handler: IQueueHandler): void {
+  public registerService(name: QueueHandlerName, handler: IQueueHandler): void {
     if (!this.registry.has(name)) {
       this.registry.set(name, handler);
       console.log(`🔌 [CentralQueueService] Handler erfolgreich registriert: "${name}"`);
     }
   }
 
-  public enqueue(serviceName: string, action: string, payload: SnapshotPayload): QueueItem {
+  public enqueue(serviceName: QueueHandlerName, action: string, payload: SnapshotPayload): QueueItem {
     const newItem: QueueItem = {
       id: generateLocalId(),
       serviceName,
@@ -104,8 +110,8 @@ export class CentralQueueService extends BaseDataManager {
         this.processQueue();
       },
       error: (err: any) => {
-        if (err.status >= 400 && err.status < 500) {
-           this.handle4xxError(currentItem, targetService, err)
+        if (err.status >= 400 && err.status < 500 && err.status != 401) {
+          this.handle4xxError(currentItem, targetService, err, err.status)
         } else {
           console.warn(`📡 [CentralQueueService] Netz/Serverfehler bei ${currentItem.action}. Pausiere Queue.`);
           this.isProcessing = false;
@@ -117,7 +123,8 @@ export class CentralQueueService extends BaseDataManager {
   private handle4xxError(
     currentItem: QueueItem,
     targetHandler: IQueueHandler,
-    err: any
+    err: any, 
+    errorCode: number
   ): void {
     console.warn(`🛑 [CentralQueueService] 4xx Fehler bei ${currentItem.action}. Starte Backward-Rollback & Forward-Replay.`);
 
@@ -139,7 +146,12 @@ export class CentralQueueService extends BaseDataManager {
     // 4. In der Draft-Box sichern
     if (dependentChain.length > 0) {
       const errorMessage = err.error?.message || err.message || '4xx Fehler';
-      this.draftService.saveDraftChain(dependentChain, errorMessage);
+      const failure: QueueFailurePayload = ({
+        error: errorMessage,
+        items: dependentChain,
+        errorCode
+      })
+      this.queueFailedSubject.next(failure)
     }
 
     // 5. FORWARD-REPLAY: Von vorne nach hinten nur die verbliebenen, unbetroffenen Items anwenden

@@ -1,12 +1,17 @@
 import { Injectable, inject, Signal } from '@angular/core';
-import { Observable, map, of } from 'rxjs';
+import { Observable, map, throwError } from 'rxjs';
 import { DepartmentRepository } from '../../repositories/department-repository';
 import { BaseQueueDataManager } from '../central-queue/base-queue-data-manager';
 import { QueueItem } from '../../models/queue-items/queue-item';
 import { Department } from '../../models/department';
 import { generateLocalId } from '../../shared/constants/id-const';
-import { DepartmentDeletePayload, DepartmentPayload, DepartmentQueueAction } from '../../models/queue-items/department-queue-payload';
+import {
+  DepartmentDeletePayload,
+  DepartmentPayload,
+  DepartmentQueueAction
+} from '../../models/queue-items/department-queue-payload';
 import { DepartmentStateProvider } from './department-state-provider';
+import { QueueHandlerName } from '../../enums/queue-handler-name';
 
 @Injectable({
   providedIn: 'root'
@@ -14,10 +19,8 @@ import { DepartmentStateProvider } from './department-state-provider';
 export class DepartmentDataManager extends BaseQueueDataManager {
   private departmentRepo = inject(DepartmentRepository);
 
-  private static readonly DEPARTMENTS_CACHE_KEY = 'cached_departments';
-
   constructor() {
-    super('DepartmentDataManager');
+    super(QueueHandlerName.DEPARTMENT);
     this.stateProvider.loadFromCache();
   }
 
@@ -29,12 +32,19 @@ export class DepartmentDataManager extends BaseQueueDataManager {
     return this.getSignal() as Signal<Department[]>;
   }
 
+  private getDepartmentNameById(id: string): string {
+    const department = this.departmentsSignal().find(dep => dep.id === id) ?? null;
+    return department ? department.name : 'Unbenannte Abteilung';
+  }
+
   // ==========================================================================
   // ⚙️ QUEUE HANDLER IMPLEMENTIERUNG
   // ==========================================================================
 
   public override executeQueueItem(item: QueueItem): Observable<any> {
-    switch (item.action as DepartmentQueueAction) {
+    const action = item.action as DepartmentQueueAction;
+
+    switch (action) {
       case 'CREATE': {
         const payload = item.payload as DepartmentPayload;
         return this.departmentRepo.create$(payload.department.name, payload.department.specialization);
@@ -48,18 +58,17 @@ export class DepartmentDataManager extends BaseQueueDataManager {
         return this.departmentRepo.delete$(payload.id);
       }
       default:
-        return of(null);
+        return throwError((): Error => new Error(`[DepartmentDataManager] Unbekannte Action: ${item.action}`));
     }
   }
 
   // ==========================================================================
   // 🔄 REHYDRATION PATTERN (BaseQueueDataManager)
-  // =================================================ONE
   // ==========================================================================
 
   protected override fetchFromServer(userId: string): Observable<void> {
     return this.departmentRepo.getAll$().pipe(
-      map((departmentsJson) => {
+      map((departmentsJson): void => {
         const departments = departmentsJson.map((d) => Department.fromJson(d));
         const provider = this.stateProvider as DepartmentStateProvider;
         provider.applyActionPayload('SET_DEPARTMENTS', departments);
@@ -85,10 +94,14 @@ export class DepartmentDataManager extends BaseQueueDataManager {
     const payload: DepartmentPayload = {
       id: tempId,
       department: newDept,
-      snapshot
+      snapshot,
+      displayInfo: {
+        category: 'Abteilung erzeugen',
+        title: name // z. B. "Max Mustermann" statt einer hässlichen UUID!
+      }
     };
 
-      provider.applyActionPayload('CREATE', payload);
+    provider.applyActionPayload('CREATE', payload);
 
     this.queueService.enqueue(this.serviceName, 'CREATE' as DepartmentQueueAction, payload);
   }
@@ -101,11 +114,14 @@ export class DepartmentDataManager extends BaseQueueDataManager {
     const payload: DepartmentPayload = {
       id,
       department: updatedDept,
-      snapshot
+      snapshot,
+      displayInfo: {
+        category: 'Abteilung bearbeiten', // 🎯 Sauber vereinheitlicht
+        title: name
+      }
     };
 
     provider.applyActionPayload('UPDATE', payload);
-
     this.queueService.enqueue(this.serviceName, 'UPDATE' as DepartmentQueueAction, payload);
   }
 
@@ -113,10 +129,13 @@ export class DepartmentDataManager extends BaseQueueDataManager {
     const provider = this.stateProvider as DepartmentStateProvider;
     const snapshot = provider.createSnapshot();
 
-    
     const payload: DepartmentDeletePayload = {
       id,
-      snapshot
+      snapshot,
+      displayInfo: {
+        category: 'Abteilung löschen',
+        title: this.getDepartmentNameById(id)
+      }
     };
 
     provider.applyActionPayload('DELETE', payload);
@@ -133,6 +152,6 @@ export class DepartmentDataManager extends BaseQueueDataManager {
   }
 
   public override resetData(): void {
-    this.stateProvider.resetState()
+    this.stateProvider.resetState();
   }
 }

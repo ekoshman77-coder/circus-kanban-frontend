@@ -11,6 +11,7 @@ import { generateLocalId } from '../../shared/constants/id-const';
 import { CoffeePayload, CreateMemberPayload, DeleteMemberPayload, ProfilePayload, TeamAction } from '../../models/queue-items/member-queue-payload';
 import { StateProvider } from '../central-queue/state-providers/base-state-provider';
 import { TeamStateProvider } from './team-state-provider';
+import { QueueHandlerName } from '../../enums/queue-handler-name';
 
 @Injectable({
   providedIn: 'root'
@@ -21,7 +22,7 @@ export class TeamDataManager extends BaseQueueDataManager {
   private userService = inject(UserService);
 
   constructor() {
-    super('TeamDataManager');
+    super(QueueHandlerName.TEAM);
     this.loadInitialCache();
   }
 
@@ -33,16 +34,23 @@ export class TeamDataManager extends BaseQueueDataManager {
     return this.getSignal() as Signal<ProjectMember[]>;
   }
 
+  // 🎯 Hilfsmethode: Holt den vollständigen Namen eines Mitglieds aus dem Signal
+  private getMemberNameById(userId: string): string {
+    const member = this.globalMembersSignal().find((m) => m.user.id === userId);
+    return member?.user.fullName || 'Mitarbeiter';
+  }
+
   // ==========================================================================
   // 🌍 MEMBER ACTIONS FOR UI
   // ==========================================================================
 
-  public updateCoffeeAccount(userId: string, newBalance: number, role: string, emoji: string): void {
-    const currentMembers = this.stateProvider.getState() as ProjectMember[];
+public updateCoffeeAccount(userId: string, newBalance: number, role: string, emoji: string): void {
+    const currentMembers = this.globalMembersSignal();
     const updatedMember = currentMembers.find((m) => m.user.id === userId);
     if (!updatedMember || updatedMember.isPending) return;
 
     const snapshot = this.stateProvider.createSnapshot();
+    const memberName = updatedMember.user.fullName;
 
     this.stateProvider.applyActionPayload('UPDATE_COFFEE', { id: userId, balance: newBalance, role, emoji });
 
@@ -51,7 +59,11 @@ export class TeamDataManager extends BaseQueueDataManager {
       balance: newBalance,
       role,
       emoji,
-      snapshot
+      snapshot,
+      displayInfo: {
+        category: 'Kaffeekasse',
+        title: `\({memberName} (\){newBalance}€)`
+      }
     };
 
     this.queueService.enqueue(this.serviceName, 'UPDATE_COFFEE', payload);
@@ -59,6 +71,7 @@ export class TeamDataManager extends BaseQueueDataManager {
 
   public updateGlobalMember(updatedMember: UserModel): void {
     const snapshot = this.stateProvider.createSnapshot();
+    const memberName = updatedMember.fullName || `\({updatedMember.firstName}\){updatedMember.lastName}`.trim() || updatedMember.username;
 
     this.stateProvider.applyActionPayload('UPDATE_PROFILE', { id: updatedMember.id, updatedUser: updatedMember });
 
@@ -67,24 +80,29 @@ export class TeamDataManager extends BaseQueueDataManager {
       username: updatedMember.username,
       firstName: updatedMember.firstName,
       lastName: updatedMember.lastName,
-      snapshot
+      snapshot,
+      displayInfo: {
+        category: 'Profil bearbeiten',
+        title: memberName
+      }
     };
 
     this.queueService.enqueue(this.serviceName, 'UPDATE_PROFILE', payload);
   }
 
   public deleteGlobalMember(memberId: string): void {
-    const currentMembers = this.stateProvider.getState() as ProjectMember[];
-    const member = currentMembers.find((m) => m.user.id === memberId);
-    const userName = member ? member.user.fullName : 'Mitarbeiter';
-
+    const userName = this.getMemberNameById(memberId);
     const snapshot = this.stateProvider.createSnapshot();
 
     this.stateProvider.applyActionPayload('DELETE_MEMBER', { id: memberId });
 
     const payload: DeleteMemberPayload = {
       id: memberId,
-      snapshot
+      snapshot,
+      displayInfo: {
+        category: 'Mitglied entfernen',
+        title: userName
+      }
     };
 
     this.queueService.enqueue(this.serviceName, 'DELETE_MEMBER', payload);
@@ -94,6 +112,7 @@ export class TeamDataManager extends BaseQueueDataManager {
   public createMember(member: UserModel, password: string, onError?: (errorMessage?: string) => void): void {
     const tempId = generateLocalId();
     const snapshot = this.stateProvider.createSnapshot();
+    const memberName = `\({member.firstName}\){member.lastName}`.trim() || member.username;
 
     const newModel = new UserModel({
       id: tempId,
@@ -115,13 +134,17 @@ export class TeamDataManager extends BaseQueueDataManager {
       firstName: member.firstName,
       lastName: member.lastName,
       password,
-      snapshot
+      snapshot,
+      displayInfo: {
+        category: 'Mitglied anlegen',
+        title: memberName
+      }
     };
 
     this.queueService.enqueue(this.serviceName, 'CREATE_MEMBER', payload);
     if (onError) onError();
   }
-
+  
   // ==========================================================================
   // 🚀 BASE QUEUE DATA MANAGER HOOKS & QUEUE EXECUTION
   // ==========================================================================

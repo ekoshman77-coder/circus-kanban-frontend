@@ -1,0 +1,79 @@
+:host {
+  /* Stellt sicher, dass die Host-Komponente selbst keine Platzhalter im Fluss hinterlässt */
+  display: block;
+}
+
+.draft-fab {
+  /* 📍 Die Magie der Positionierung */
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 999; /* Garantiert, dass der Button über Listen und Inhalten schwebt */
+
+  /* Flexbox für zentrierten Inhalt */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  /* Form & Abstände (Pillen-Design) */
+  min-width: 24px;
+  height: 24px;
+  padding: 0 2px;
+  border-radius: 22px;
+
+  /* Glassmorphic Amber Design - farblich abgestimmt auf die Header-Badge */
+  background: hsla(217, 33%, 17%, 0.551);
+  border: 1px solid rgba(245, 158, 11, 0.6);
+  color: #fbbf24;
+  
+  /* Typografie */
+  font-size: 14px;
+  font-weight: 700;
+  
+  /* Interaktion & Schatten */
+  cursor: pointer;
+  user-select: none;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+
+  animation: draftPulse 2s infinite ease-in-out;
+  /* Seidenweiche Animationen beim Hover/Klick */
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), 
+              background-color 0.2s ease, 
+              box-shadow 0.2s ease;
+}
+
+/* 🌟 Keyframes für das feine Blinken/Atmen */
+@keyframes draftPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 10px 4px rgba(245, 158, 11, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+  }
+}
+
+/* Hover-Effekt: Der Button hebt sich sanft an */
+.draft-fab:hover {
+  transform: translateY(-3px) scale(1.05);
+  background: rgba(30, 41, 59, 0.95);
+  border-color: rgba(245, 158, 11, 0.9);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
+}
+
+/* Klick-Effekt: Feedback beim Drücken */
+.draft-fab:active {
+  transform: translateY(-1px) scale(0.97);
+}
+
+.fab-icon {
+  font-size: 15px;
+}
+
+.fab-count {
+  line-height: 1;
+}

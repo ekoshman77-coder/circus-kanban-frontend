@@ -13,6 +13,7 @@ import {
   NoteQueueAction
 } from '../../models/queue-items/note-queue-payload';
 import { NoteStateProvider } from './note-state-provider';
+import { QueueHandlerName } from '../../enums/queue-handler-name';
 
 @Injectable({
   providedIn: 'root'
@@ -21,7 +22,7 @@ export class NoteDataManagerService extends BaseQueueDataManager {
   private noteRepository = inject(NoteRepository);
 
   constructor() {
-    super('NoteDataManagerService');
+    super(QueueHandlerName.NOTE);
     (this.stateProvider as NoteStateProvider).loadFromCache();
   }
 
@@ -31,6 +32,11 @@ export class NoteDataManagerService extends BaseQueueDataManager {
 
   public get notesSignal(): Signal<Note[]> {
     return this.getSignal() as Signal<Note[]>;
+  }
+
+  private getNoteTitleById(id: string): string {
+    const note = this.notesSignal().find((n) => n.id === id);
+    return note && note.title ? note.title : 'Unbenannte Notiz';
   }
 
   // ==========================================
@@ -59,13 +65,16 @@ export class NoteDataManagerService extends BaseQueueDataManager {
         return this.noteRepository.revertNote(payload.id);
       }
       case 'STATUS_CHANGE': {
-        return this.noteRepository.changeStatus(payload.id, (payload as NoteStatusChangePayload).isInCalculation);
+        return this.noteRepository.changeStatus(
+          payload.id,
+          (payload as NoteStatusChangePayload).isInCalculation
+        );
       }
       case 'DELETE': {
         return this.noteRepository.deleteNote(payload.id);
       }
       default:
-        return throwError(() => new Error(`[NoteDataManager] Unbekannte Action: ${item.action}`));
+        return throwError((): Error => new Error(`[NoteDataManager] Unbekannte Action: ${item.action}`));
     }
   }
 
@@ -111,13 +120,21 @@ export class NoteDataManagerService extends BaseQueueDataManager {
   // 📝 PUBLIC API METHODEN
   // ==========================================
 
+  // ==========================================
+  // 📝 PUBLIC API METHODEN
+  // ==========================================
+
   public createNote(newNote: Note): void {
     const snapshot = this.stateProvider.createSnapshot();
 
     const payload: NotePayload = {
       id: newNote.id,
       note: newNote,
-      snapshot
+      snapshot,
+      displayInfo: {
+        category: 'Notiz erzeugen',
+        title: newNote.title || 'Unbenannte Notiz'
+      }
     };
 
     this.stateProvider.applyActionPayload('CREATE', payload);
@@ -126,16 +143,31 @@ export class NoteDataManagerService extends BaseQueueDataManager {
 
   public updateNote(updatedNote: Note, updateAction?: NoteUpdateOption): void {
     const snapshot = this.stateProvider.createSnapshot();
+    const noteTitle = updatedNote.title || this.getNoteTitleById(updatedNote.id);
 
     switch (updateAction) {
       case 'promote': {
-        const payload: NoteActionPayload = { id: updatedNote.id, snapshot };
+        const payload: NoteActionPayload = {
+          id: updatedNote.id,
+          snapshot,
+          displayInfo: {
+            category: 'Notiz befördern',
+            title: noteTitle
+          }
+        };
         this.stateProvider.applyActionPayload('PROMOTE', payload);
         this.queueService.enqueue(this.serviceName, 'PROMOTE', payload);
         return;
       }
       case 'revert': {
-        const payload: NoteActionPayload = { id: updatedNote.id, snapshot };
+        const payload: NoteActionPayload = {
+          id: updatedNote.id,
+          snapshot,
+          displayInfo: {
+            category: 'Notiz zurücksetzen',
+            title: noteTitle
+          }
+        };
         this.stateProvider.applyActionPayload('REVERT', payload);
         this.queueService.enqueue(this.serviceName, 'REVERT', payload);
         return;
@@ -144,7 +176,11 @@ export class NoteDataManagerService extends BaseQueueDataManager {
         const payload: NoteStatusChangePayload = {
           id: updatedNote.id,
           isInCalculation: updatedNote.isInCalculation ?? false,
-          snapshot
+          snapshot,
+          displayInfo: {
+            category: 'Notiz-Status ändern',
+            title: noteTitle
+          }
         };
         this.stateProvider.applyActionPayload('STATUS_CHANGE', payload);
         this.queueService.enqueue(this.serviceName, 'STATUS_CHANGE', payload);
@@ -154,7 +190,11 @@ export class NoteDataManagerService extends BaseQueueDataManager {
         const payload: NotePayload = {
           id: updatedNote.id,
           note: updatedNote,
-          snapshot
+          snapshot,
+          displayInfo: {
+            category: 'Notiz bearbeiten',
+            title: noteTitle
+          }
         };
         this.stateProvider.applyActionPayload('UPDATE', payload);
         this.queueService.enqueue(this.serviceName, 'UPDATE', payload);
@@ -168,18 +208,14 @@ export class NoteDataManagerService extends BaseQueueDataManager {
 
     const payload: NoteActionPayload = {
       id,
-      snapshot
+      snapshot,
+      displayInfo: {
+        category: 'Notiz löschen',
+        title: this.getNoteTitleById(id) // 🎯 Liest den Titel aus dem notesSignal vor dem Löschen!
+      }
     };
 
     this.stateProvider.applyActionPayload('DELETE', payload);
     this.queueService.enqueue(this.serviceName, 'DELETE', payload);
-  }
-
-  public override resetData(): void {
-    this.stateProvider.resetState();
-  }
-
-  public override checkUnsavedData(): string | null {
-    return null;
   }
 }

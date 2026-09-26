@@ -2,7 +2,6 @@ import { TestBed, ComponentFixture, fakeAsync, tick } from '@angular/core/testin
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { FocusTimerComponent } from './focus-timer-component';
 import { TodoService } from '../../../core/services/todo/todo-service';
-import { FocusDataManagerService } from '../../../core/services/focus/focus-data-manager-service';
 import { of } from 'rxjs';
 import { Todo } from '../../../core/models/todo';
 import { signal } from '@angular/core';
@@ -31,7 +30,7 @@ beforeEach(() => {
     imports: [FocusTimerComponent],
     providers: [
       { provide: TodoService, useValue: todoServiceMock },
-      { provide: FocusDataManagerService, useValue: focusDataManagerMock },
+      { provide: FocusService, useValue: focusDataManagerMock },
       // 🔥 DAS HIER SCHALTET DIE SCHULDIGE ZONE AUS:
     ]
   });

@@ -39,7 +39,7 @@ export interface RemoveMemberPayload extends ProjectSnapshotPayload {
 }
 
 // 6. TRACKING: Einzelner ausgewählter / herabgestufter Meilenstein
-export interface TrackMilestonePayload extends Identifiable {
+export interface TrackMilestonePayload extends SnapshotPayload {
   projectTitle: string;
   projectArea: string;
   milestoneTitle: string;
@@ -47,7 +47,7 @@ export interface TrackMilestonePayload extends Identifiable {
 }
 
 // 7. TRACKING: Ignorierte Meilensteine (Bulk-Kette)
-export interface TrackMilestoneIgnorancePayload extends Identifiable {
+export interface TrackMilestoneIgnorancePayload extends SnapshotPayload {
   projectTitle: string;
   projectArea: string;
   milestoneTitles: string[];

@@ -1,7 +1,7 @@
 import { Component, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { UserSettingsDataManager } from '../../../core/services/user/user-settings-data-manager';
 import { UserEnergyLevel } from '../../../core/models/user.settings';
+import { UserSettingsService } from '../../../core/services/user/user-settings-service';
 
 @Component({
   selector: 'app-planner-settings',
@@ -11,7 +11,7 @@ import { UserEnergyLevel } from '../../../core/models/user.settings';
   styleUrl: './planner-settings-component.css'
 })
 export class PlannerSettingsComponent {
-  private userSettingsDataManager = inject(UserSettingsDataManager);
+  private userSettingsService = inject(UserSettingsService);
 
   // 1️⃣ LOKALE UI-SIGNALS (Komponente besitzt ihren eigenen State)
   public userEnergy = signal<UserEnergyLevel>('MEDIUM');
@@ -31,7 +31,7 @@ export class PlannerSettingsComponent {
   constructor() {
     // Synchronisiere den DataManager-State in die lokalen Komponentensignals
     effect(() => {
-      const settings = this.userSettingsDataManager.settings();
+      const settings = this.userSettingsService.settings();
       if (!settings) return;
 
       this.userEnergy.set(settings.userEnergy);
@@ -53,7 +53,7 @@ export class PlannerSettingsComponent {
   // ⚡ ENERGIE LEVEL ÄNDERN
   public onEnergyChange(level: UserEnergyLevel): void {
     this.userEnergy.set(level);
-    this.userSettingsDataManager.setUserEnergy(level);
+    this.userSettingsService.setUserEnergy(level);
   }
 
   // 🏃‍♂️ INPUT-EVENTS (während des Slidens)
@@ -83,18 +83,18 @@ export class PlannerSettingsComponent {
 
   // 💾 CHANGE-EVENTS (beim Loslassen des Sliders -> ab in die Queue!)
   public onWorkingTimeLeftChange(): void {
-    this.userSettingsDataManager.changeWorkingTimeLeft(this.displayWorkingTimeLeft());
+    this.userSettingsService.setWorkingTimeLeft(this.displayWorkingTimeLeft());
   }
 
   public onWorkingHoursChange(): void {
-    this.userSettingsDataManager.changeDefaultWorkingHours(this.displayWorkingHours());
+    this.userSettingsService.changeDefaultWorkingHours(this.displayWorkingHours());
   }
 
   public onPrimeTimeStartChange(): void {
-    this.userSettingsDataManager.changePrimeTimeStart(this.displayPrimeStart());
+    this.userSettingsService.changePrimeTimeStart(this.displayPrimeStart());
   }
 
   public onPrimeTimeEndChange(): void {
-    this.userSettingsDataManager.changePrimeTimeEnd(this.displayPrimeEnd());
+    this.userSettingsService.changePrimeTimeEnd(this.displayPrimeEnd());
   }
 }

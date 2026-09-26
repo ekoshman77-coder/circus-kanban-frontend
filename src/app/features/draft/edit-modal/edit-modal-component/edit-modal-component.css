@@ -1,0 +1,209 @@
+/* Backdrop & Overlay */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 1100;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.modal-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 820px;
+  max-width: 92vw;
+  height: 640px;
+  max-height: 88vh;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
+  z-index: 1101;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Header */
+.modal-header {
+  padding: 16px 20px;
+  background: #fafafa;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-info h2 {
+  margin: 0 0 4px 0;
+  font-size: 1.05rem;
+  color: #0f172a;
+}
+
+.error-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #991b1b;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.btn-close {
+  background: transparent;
+  border: none;
+  font-size: 1.1rem;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+/* Body: Split View (Timeline links, Editor rechts) */
+.modal-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Timeline Panel */
+.chain-timeline {
+  width: 280px;
+  background: #f8fafc;
+  border-right: 1px solid #e2e8f0;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.section-title {
+  margin: 0 0 12px 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.timeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.timeline-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.timeline-item:hover {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
+}
+
+/* Visuelle Hervorhebung des Fehler-Ursprungs */
+.timeline-item.is-root {
+  border-color: #fca5a5;
+  background: #fff5f5;
+}
+
+.timeline-item.is-selected {
+  border-color: #a855f7;
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.15);
+}
+
+.item-action {
+  display: block;
+  font-size: 0.8rem;
+  color: #1e293b;
+}
+
+.item-service {
+  font-size: 0.7rem;
+  color: #64748b;
+}
+
+/* Editor Pane */
+.editor-pane {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  background: linear-gradient(135deg, hsl(270, 100%, 100%) 0%, hsl(269, 100%, 98%) 100%);
+}
+
+.pane-header h3 {
+  margin: 0 0 16px 0;
+  font-size: 0.95rem;
+  color: #581c87;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.root-tag {
+  background: #fee2e2;
+  color: #991b1b;
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.form-field {
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-field label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.form-input {
+  padding: 8px 10px;
+  border: 1px solid #d8b4fe;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.code-editor {
+  font-family: monospace;
+  font-size: 0.8rem;
+  border: 1px solid #d8b4fe;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+/* Footer */
+.modal-footer {
+  padding: 12px 20px;
+  background: #fafafa;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.btn-save {
+  background: #10b981;
+  border: 1px solid #059669;
+  color: #ffffff;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.btn-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

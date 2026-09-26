@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { TodoService } from '../../../core/services/todo/todo-service'; // Pfad prüfen!
 import { Todo } from '../../../core/models/todo';
 import { FocusDataManagerService } from '../../../core/services/focus/focus-data-manager-service';
+import { FocusService } from '../../../core/services/focus/focus-service';
 
 /**
  * FocusTimerComponent steuert die Logik des Pomodoro-Timers.
@@ -19,7 +20,7 @@ import { FocusDataManagerService } from '../../../core/services/focus/focus-data
 })
 export class FocusTimerComponent implements OnDestroy {
   private todoService = inject(TodoService);
-  private focusDataManager = inject(FocusDataManagerService);
+  private focusService = inject(FocusService);
 
   // Alle offenen To-Dos für das Dropdown aus deinem reaktiven Service-Signal
   protected openTodos = this.todoService.openTodosOnly;
@@ -114,7 +115,7 @@ private handleTimerFinished(): void {
     
     if (todo) {
       // 🚀 Rein in die Queue, völlig ohne Subscribe/Callback!
-      this.focusDataManager.recordCompletedPomodoro(todo.id);
+      this.focusService.recordCompletedPomodoro(todo.id);
       
       // 🎉 Sofortiges Zero-Latency Feedback für die UI
       this.showSuccessCelebration.set(true);

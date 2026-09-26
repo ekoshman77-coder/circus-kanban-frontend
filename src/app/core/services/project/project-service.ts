@@ -1,6 +1,5 @@
-import { computed, effect, inject, Injectable, Signal, signal } from '@angular/core';
+import { computed, inject, Injectable, Signal, signal } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
 import { Project } from '../../models/project';
 import { ProjectDataManagerService } from './project-data-manager-service';
 import { UserService } from '../user/user-service';
@@ -33,10 +32,6 @@ export class ProjectService extends BaseDataManager {
 
   // 👁️ Merkt sich, ob die "Strafbank" (der Keller) in dieser Session geöffnet wurde
   private degradedWereShownSignal = signal<boolean>(false);
-
-  public setDegradedWereShown(): void {
-    this.degradedWereShownSignal.set(true);
-  }
 
   private dashboardStatsSignal = signal<ProjectDashboardStatsDTO | null>(null);
   public readonly dashboardStats = this.dashboardStatsSignal.asReadonly();
@@ -90,6 +85,10 @@ export class ProjectService extends BaseDataManager {
       degraded: filterList(rawSuggestions.degraded)
     };
   });
+
+  public setDegradedWereShown(): void {
+    this.degradedWereShownSignal.set(true);
+  }
 
   public setActiveProjectId(id: string | null): void {
     this.activeProjectIdSignal.set(id);
@@ -310,14 +309,13 @@ export class ProjectService extends BaseDataManager {
     });
   }
 
-  
-
   public cleanSuggestions(): void {
     this._aiSuggestionsSignal.set({ recommended: [], degraded: [] });
     this.degradedMilestones.set([]);
     this.degradedWereShownSignal.set(false);
   }
 
+  // Reset-Hook für Ausloggen / Auth-Reset
   public override resetData(): void {
     this.dashboardStatsSignal.set(null);
     this.degradedMilestones.set([]);

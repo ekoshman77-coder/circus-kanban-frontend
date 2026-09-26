@@ -9,6 +9,7 @@ import { UserRepository } from '../../repositories/user-repository';
 import { UserEnergyLevel, UserSettings } from '../../models/user.settings';
 import { PlannerSettingsDto } from '../../repositories/dto/planner-settings-dto';
 import { UserSettingsPayload } from '../../models/queue-items/user-settings-payload';
+import { QueueHandlerName } from '../../enums/queue-handler-name';
 
 @Injectable({
   providedIn: 'root'
@@ -18,7 +19,7 @@ export class UserSettingsDataManager extends BaseQueueDataManager {
   private authContext = inject(AUTH_CONTEXT);
 
   constructor() {
-    super('UserSettingsDataManager');
+    super(QueueHandlerName.USER_SETTINGS);
     this.loadInitialCache();
   }
 
@@ -54,16 +55,28 @@ export class UserSettingsDataManager extends BaseQueueDataManager {
     return this.settings()?.primeTimeEndHour ?? 18;
   });
 
+  // 🎯 Hilfsmethode zur dynamischen Titel-Generierung anhand der geänderten Keys
+  private getSettingsChangeTitle(changes: Partial<UserSettings>): string {
+    const parts: string[] = [];
+    if (changes.userEnergy !== undefined) parts.push(`Energielevel (${changes.userEnergy})`);
+    if (changes.workingTimeLeft !== undefined) parts.push(`Restzeit (${changes.workingTimeLeft}h)`);
+    if (changes.defaultWorkingHours !== undefined) parts.push(`Arbeitszeit (${changes.defaultWorkingHours}h)`);
+    if (changes.primeTimeStartHour !== undefined || changes.primeTimeEndHour !== undefined) parts.push('Fokuszeit');
+
+    return parts.length > 0 ? parts.join(', ') : 'Allgemeine Einstellungen';
+  }
+
   // ==========================================
   // PUBLIC ACTIONS FOR UI
   // ==========================================
 
-  public updateSettings(changes: Partial<UserSettings>): void {
+public updateSettings(changes: Partial<UserSettings>): void {
     const userId = this.authContext.getCurrentUserId();
     if (!userId) return;
 
     // 📸 1. Snapshot des ALTE ZUSTANDES vor der Änderung holen
     const snapshot = this.stateProvider.createSnapshot();
+    const changeTitle = this.getSettingsChangeTitle(changes);
 
     // ⚡ 2. StateProvider aktualisieren (cloneWith/merge passiert intern im Provider)
     this.stateProvider.applyActionPayload('UPDATE_SETTINGS', { userId, changes });
@@ -76,7 +89,11 @@ export class UserSettingsDataManager extends BaseQueueDataManager {
       id: userId,
       userId,
       settings: updatedSettings,
-      snapshot: snapshot || undefined
+      snapshot: snapshot || undefined,
+      displayInfo: {
+        category: 'Einstellungen',
+        title: changeTitle
+      }
     };
 
     this.queueService.enqueue(this.serviceName, 'UPDATE_SETTINGS', payload);

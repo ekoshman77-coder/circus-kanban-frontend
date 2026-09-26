@@ -3,11 +3,12 @@ import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { UserService } from '../../core/services/user/user-service'; // Pfad zu deinem UserService prüfen!
 import { ConnectionService } from '../../core/services/connection/connection-service';
+import { DraftBadgeComponent } from '../draft/draft-badge-component/draft-badge-component';
 
 @Component({
   selector: 'app-apptitle',
   standalone: true,
-  imports: [CommonModule], // CommonModule für reaktives HTML aktivieren
+  imports: [CommonModule, DraftBadgeComponent], 
   templateUrl: './apptitle.html',
   styleUrl: './apptitle.css',
 })

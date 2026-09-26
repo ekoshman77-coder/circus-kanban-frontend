@@ -27,6 +27,7 @@ import { generateLocalId, isLocalId } from '../../shared/constants/id-const';
 import { ConnectionService } from '../connection/connection-service';
 import { IdReplacement, ProjectStateProvider } from './project-state-provider';
 import { BaseQueueDataManager } from '../central-queue/base-queue-data-manager';
+import { QueueHandlerName } from '../../enums/queue-handler-name';
 
 @Injectable({
   providedIn: 'root'
@@ -38,7 +39,7 @@ export class ProjectDataManagerService extends BaseQueueDataManager {
   private connectionService = inject(ConnectionService);
 
   constructor() {
-    super('ProjectDataManagerService');
+    super(QueueHandlerName.PROJECT);
     (this.stateProvider as ProjectStateProvider).loadFromCache();
   }
 
@@ -50,11 +51,17 @@ export class ProjectDataManagerService extends BaseQueueDataManager {
     return this.getSignal() as Signal<Project[]>;
   }
 
+  // 🎯 Hilfsmethode: Holt Projekttitel über Signal vor Lösch- oder Mitglied-Aktionen
+  private getProjectTitleById(id: string): string {
+    const project = this.allProjectsPool().find((p) => p.id === id);
+    return project?.title || 'Unbenanntes Projekt';
+  }
+
   // ==========================================
   // 🚀 BASE QUEUE DATA MANAGER HOOKS
   // ==========================================
 
-  public override executeQueueItem(item: QueueItem): Observable<any> {
+public override executeQueueItem(item: QueueItem): Observable<any> {
     const action = item.action as ProjectAction;
     const payload = item.payload;
 
@@ -197,7 +204,7 @@ export class ProjectDataManagerService extends BaseQueueDataManager {
   // 📝 PUBLIC API METHODEN
   // ==========================================
 
-  public createProject(project: Project): void {
+public createProject(project: Project): void {
     const snapshot = this.stateProvider.createSnapshot();
 
     this.stateProvider.applyActionPayload('CREATE', { project });
@@ -205,7 +212,11 @@ export class ProjectDataManagerService extends BaseQueueDataManager {
     const payload: ProjectPayload = {
       id: project.id,
       project,
-      snapshot
+      snapshot,
+      displayInfo: {
+        category: 'Projekt erstellen',
+        title: project.title || 'Unbenanntes Projekt'
+      }
     };
     this.queueService.enqueue(this.serviceName, 'CREATE', payload);
   }
@@ -218,19 +229,28 @@ export class ProjectDataManagerService extends BaseQueueDataManager {
     const payload: ProjectPayload = {
       id: project.id,
       project,
-      snapshot
+      snapshot,
+      displayInfo: {
+        category: 'Projekt bearbeiten',
+        title: project.title || this.getProjectTitleById(project.id)
+      }
     };
     this.queueService.enqueue(this.serviceName, 'UPDATE', payload);
   }
 
   public deleteProject(id: string): void {
     const snapshot = this.stateProvider.createSnapshot();
+    const projectTitle = this.getProjectTitleById(id);
 
     this.stateProvider.applyActionPayload('DELETE', { id });
 
     const deletePayload: DeleteProjectPayload = {
       id,
-      snapshot
+      snapshot,
+      displayInfo: {
+        category: 'Projekt löschen',
+        title: projectTitle
+      }
     };
 
     this.queueService.enqueue(this.serviceName, 'DELETE', deletePayload);
@@ -240,6 +260,8 @@ export class ProjectDataManagerService extends BaseQueueDataManager {
     if (isLocalId(projectId)) return;
 
     const snapshot = this.stateProvider.createSnapshot();
+    const projectTitle = this.getProjectTitleById(projectId);
+    const userName = user.fullName;
 
     this.stateProvider.applyActionPayload('ADD_MEMBER', { projectId, user, role: projectRole });
 
@@ -247,7 +269,11 @@ export class ProjectDataManagerService extends BaseQueueDataManager {
       id: projectId,
       userId: user.id,
       role: projectRole,
-      snapshot
+      snapshot,
+      displayInfo: {
+        category: 'Projektmitglied hinzufügen',
+        title: `${userName} ->${projectTitle}`
+      }
     };
 
     this.queueService.enqueue(this.serviceName, 'ADD_MEMBER', payload);
@@ -257,13 +283,18 @@ export class ProjectDataManagerService extends BaseQueueDataManager {
     if (isLocalId(projectId)) return;
 
     const snapshot = this.stateProvider.createSnapshot();
+    const projectTitle = this.getProjectTitleById(projectId);
 
     this.stateProvider.applyActionPayload('REMOVE_MEMBER', { projectId, userId });
 
     const payload: RemoveMemberPayload = {
       id: projectId,
       userId,
-      snapshot
+      snapshot,
+      displayInfo: {
+        category: 'Projektmitglied entfernen',
+        title: `Mitglied (${userId}) -> ${projectTitle}`
+      }
     };
 
     this.queueService.enqueue(this.serviceName, 'REMOVE_MEMBER', payload);
@@ -359,13 +390,17 @@ export class ProjectDataManagerService extends BaseQueueDataManager {
   // 📊 TRACKING & ANALYTICS
   // ==========================================================================
 
-  public trackMilestoneSelection(projectTitle: string, projectArea: string, milestoneTitle: string, userId: string): void {
+public trackMilestoneSelection(projectTitle: string, projectArea: string, milestoneTitle: string, userId: string): void {
     const payload: TrackMilestonePayload = {
       id: generateLocalId(),
       projectTitle,
       projectArea,
       milestoneTitle,
-      userId
+      userId,
+      displayInfo: {
+        category: 'Analytics',
+        title: `Meilenstein gewählt: ${milestoneTitle}`
+      }
     };
     this.queueService.enqueue(this.serviceName, 'TRACK_SELECTION', payload);
   }
@@ -376,7 +411,11 @@ export class ProjectDataManagerService extends BaseQueueDataManager {
       projectTitle,
       projectArea,
       milestoneTitle,
-      userId
+      userId,
+      displayInfo: {
+        category: 'Analytics',
+        title: `Meilenstein abgewertet: ${milestoneTitle}`
+      }
     };
     this.queueService.enqueue(this.serviceName, 'TRACK_DEGRADATION', payload);
   }
@@ -387,7 +426,11 @@ export class ProjectDataManagerService extends BaseQueueDataManager {
       projectTitle,
       projectArea,
       milestoneTitles,
-      userId
+      userId,
+      displayInfo: {
+        category: 'Analytics',
+        title: `Meilensteine ignoriert (${milestoneTitles.length})`
+      }
     };
     this.queueService.enqueue(this.serviceName, 'TRACK_IGNORANCE', payload);
   }

@@ -12,16 +12,17 @@ import {
   DeleteUserPayload
 } from '../../models/queue-items/users-queue-payloads';
 import { AdminStateProvider } from './admin-state-provider';
+import { QueueHandlerName } from '../../enums/queue-handler-name';
 
 @Injectable({
   providedIn: 'root'
 })
-export class AdminDataManager extends BaseQueueDataManager {
+export class AdminTeamManager extends BaseQueueDataManager {
   private teamRepository = inject(TeamRepository);
   private userRepository = inject(UserRepository);
 
   constructor() {
-    super('AdminDataManager');
+    super(QueueHandlerName.ADMIN_TEAM);
     this.stateProvider.loadFromCache();
   }
 
@@ -50,14 +51,14 @@ export class AdminDataManager extends BaseQueueDataManager {
         return this.userRepository.deleteGlobalUser$(payload.id);
       }
       default:
-        return throwError(() => new Error(`[AdminDataManager] Unbekannte Action: ${item.action}`));
+        return throwError((): Error => new Error(`[AdminDataManager] Unbekannte Action: ${item.action}`));
     }
   }
 
   public override checkAndReplaceIds(item: QueueItem, localId: string, serverId: string): void {
     if (item.action === 'APPROVE_USER') {
       const payload = item.payload as ApproveUserPayload;
-      if (payload.departmentId === localId) {
+      if (payload && payload.departmentId === localId) {
         payload.departmentId = serverId;
       }
     }
@@ -76,18 +77,29 @@ export class AdminDataManager extends BaseQueueDataManager {
     );
   }
 
+  private getUserNameById(id: string): string {
+     const user = this.adminUsersSignal().find(user => user.id === id)?? null
+     return user ? user.fullName || user.username : 'Benutzer';
+  }
+
   // ==========================================================================
   // 🔄 AKTIONEN (Optimistic UI + Queue)
   // ==========================================================================
 
   public approveMember(userId: string, department: Department, role: string): void {
     const snapshot = this.stateProvider.createSnapshot();
+    // 🎯 User-Name aus dem State auslesen
+    const userName = this.getUserNameById(userId);
 
     const payload: ApproveUserPayload = {
       id: userId,
       departmentId: department.id,
       role: role,
-      snapshot
+      snapshot,
+      displayInfo: {
+        category: 'Benutzer freischalten',
+        title: `${userName} (${department.name})` // z. B. "Max Mustermann (Marketing)"
+      }
     };
 
     this.stateProvider.applyActionPayload('APPROVE_USER', payload);
@@ -99,7 +111,11 @@ export class AdminDataManager extends BaseQueueDataManager {
 
     const payload: DeleteUserPayload = {
       id: memberId,
-      snapshot
+      snapshot,
+      displayInfo: {
+        category: 'Benutzer löschen',
+        title: this.getUserNameById(memberId)
+      }
     };
 
     this.stateProvider.applyActionPayload('DELETE_USER', payload);
@@ -127,7 +143,7 @@ export class AdminDataManager extends BaseQueueDataManager {
 
     if (item.action === 'APPROVE_USER') {
       const payload = item.payload as ApproveUserPayload;
-      if (payload.departmentId) {
+      if (payload && payload.departmentId) {
         ids.push(payload.departmentId);
       }
     }
