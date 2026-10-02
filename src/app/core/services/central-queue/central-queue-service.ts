@@ -123,7 +123,7 @@ export class CentralQueueService extends BaseDataManager {
   private handle4xxError(
     currentItem: QueueItem,
     targetHandler: IQueueHandler,
-    err: any, 
+    err: any,
     errorCode: number
   ): void {
     console.warn(`🛑 [CentralQueueService] 4xx Fehler bei ${currentItem.action}. Starte Backward-Rollback & Forward-Replay.`);
@@ -274,6 +274,37 @@ export class CentralQueueService extends BaseDataManager {
     this.persistQueue();
 
     return connectedItems;
+  }
+
+  // In CentralQueueService (central-queue-service.ts)
+
+  public reinjectChain(items: QueueItem[]): void {
+    if (!items || items.length === 0) return;
+
+    console.log(`🔄 [CentralQueueService] Re-injecting ${items.length} items into active queue...`);
+
+    // 1. Shadow Mode aktivieren
+    this.registry.forEach(handler => handler.enableShadowMode(true));
+
+    // 2. OPTIMISTIC UPDATE: Roll-Forward für alle neu eingereihten Items auf den DataManagern anwenden
+    for (const item of items) {
+      const handler = this.registry.get(item.serviceName);
+      if (handler) {
+        handler.applyRollForward(item);
+      }
+    }
+
+    // 3. Shadow Mode beenden -> UI spiegelt sofort die neuen Daten wider!
+    this.registry.forEach(handler => handler.enableShadowMode(false));
+
+    // 4. Items an die aktive Queue anhängen und im LocalStorage sichern
+    this.queue.push(...items);
+    this.persistQueue();
+
+    // 5. Queue-Verarbeitung sofort wieder starten
+    if (this.connectionService.isOnline() && this.authContext.isLoggedIn()) {
+      this.processQueue();
+    }
   }
 
   public override resetData(): void {

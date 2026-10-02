@@ -21,6 +21,7 @@ import { ProjectDataManagerService } from './core/services/project/project-data-
 import { TeamDataManager } from './core/services/team/team-data-manager';
 import { TodoDataManagerService } from './core/services/todo/todo-data-manager-service';
 import { DraftService } from './core/services/draft-chains/draft-service';
+import { DraftQueueDataManager } from './core/services/draft-chains/draft-data-manager';
 
 const DATA_MANAGER_REGISTRY: Record<QueueHandlerName, Type<IQueueHandler>> = {
 [QueueHandlerName.ADMIN_TEAM]: AdminTeamManager,
@@ -33,6 +34,7 @@ const DATA_MANAGER_REGISTRY: Record<QueueHandlerName, Type<IQueueHandler>> = {
   [QueueHandlerName.PROJECT]: ProjectDataManagerService,
   [QueueHandlerName.TEAM]: TeamDataManager,
   [QueueHandlerName.TODO]: TodoDataManagerService,
+  [QueueHandlerName.DRAFT]: DraftQueueDataManager
 };
 
 export const appConfig: ApplicationConfig = {

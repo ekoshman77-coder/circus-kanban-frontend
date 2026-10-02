@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { DelegateUser, DelegationTargetType, DraftUIService, UserProject } from '../draft-ui-service';
+import { DelegateUser, DraftUIService, UserProject } from '../draft-ui-service';
 import { DatePipe } from '@angular/common';
+import { DelegationTarget, DelegationTargetType } from '../../../core/models/queue-items/draft-queue-payload';
 
 @Component({
   selector: 'app-draft-box-component',
@@ -12,13 +13,13 @@ export class DraftBoxComponent {
   public draftUIService = inject(DraftUIService);
 
   public count = this.draftUIService.chainsCount;
-  public chains = this.draftUIService.failureChains;
+  public chains = this.draftUIService.filteredChains;
   public openedChain = signal<string | null>(null);
 
   // 🎯 LOKALER UI-STATE FOR INTERVIEW
   public activeDelegatingChainId = signal<string | null>(null);
   public currentStep = signal('CLOSED');
-  
+
   public selectedTargetType = signal<DelegationTargetType | null>(null);
   public selectedProject = signal<UserProject | null>(null);
   public searchQuery = signal<string>('');
@@ -27,7 +28,7 @@ export class DraftBoxComponent {
   public filteredUsers = computed(() => {
     const query = this.searchQuery().toLowerCase().trim();
     const list = [...this.draftUIService.availableUsers()].sort((a, b) => a.name.localeCompare(b.name));
-    
+
     if (!query) return list;
     return list.filter(u => u.name.toLowerCase().includes(query));
   });
@@ -59,7 +60,7 @@ export class DraftBoxComponent {
 
   public startProjectSelect(): void {
     const projects = this.draftUIService.userContext().projects;
-    
+
     if (projects.length === 1) {
       this.onProjectSelected(projects[0]);
     } else {
@@ -73,7 +74,7 @@ export class DraftBoxComponent {
     this.executeDelegation({
       targetType: 'PROJECT',
       targetId: project.id,
-      projectId: project.id
+    
     });
   }
 
@@ -83,25 +84,25 @@ export class DraftBoxComponent {
 
   public onUserSelected(user: DelegateUser): void {
     this.draftUIService.setFavoriteUser(user);
-    
+
     this.executeDelegation({
       targetType: this.selectedTargetType()!,
       targetId: user.id,
-      projectId: this.selectedProject()?.id
+      
     });
   }
 
-  private executeDelegation(payload: { targetType: DelegationTargetType; targetId?: string; projectId?: string }): void {
+  private executeDelegation(payload: { targetType: DelegationTargetType; targetId?: string }): void {
     const chainId = this.activeDelegatingChainId();
     if (!chainId) return;
 
-    this.draftUIService.packAndSend(
-      chainId, 
-      payload.targetId || payload.targetType, 
-      payload.targetType, 
-      payload.projectId
-    );
-    
+    const target: DelegationTarget = {
+      type: payload.targetType,
+      id: payload.targetId ?? ''
+    };
+
+    // ✅ Nur 2 Argumente: Welche Kette (String-ID) und welches Ziel (DelegationTarget)
+    this.draftUIService.delegateChain(chainId, target);
     this.cancelDelegation();
   }
 
@@ -117,19 +118,19 @@ export class DraftBoxComponent {
   }
 
   public tryAgain(chainId: string) {
-    this.draftUIService.startAgain(chainId);
+    this.draftUIService.retryChain(chainId);
   }
 
   public openEditModal(chainId: string) {
-  // Das Modal direkt im Service öffnen ohne Umwege über Accordion-Toggles
-    this.draftUIService.openEditModal(chainId);    
+    // Das Modal direkt im Service öffnen ohne Umwege über Accordion-Toggles
+    this.draftUIService.openEditModal(chainId);
   }
 
   public deleteChain(chainId: string) {
     if (this.openedChain() === chainId) {
       this.openedChain.set(null)
     }
-    this.draftUIService.delete(chainId);
+    this.draftUIService.discardChain(chainId);
   }
 
   public toggleChainDetails(chainId: string) {

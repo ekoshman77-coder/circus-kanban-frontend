@@ -82,6 +82,9 @@ export class EditModalComponent {
     const internalKeys = ['id', 'snapshot', 'displayInfo'];
     const domainKeys = Object.keys(payload).filter(key => !internalKeys.includes(key));
 
+    console.log('🔍 Alle Keys im Payload:', Object.keys(payload));
+    console.log('🎯 Übrig gebliebene Domain-Keys:', domainKeys);
+    
     if (domainKeys.length === 1) {
       return JSON.stringify(payload[domainKeys[0]], null, 2);
     }
@@ -110,34 +113,45 @@ export class EditModalComponent {
     return typeof control?.value === 'boolean';
   }
 
+// ✅ Korrigierte saveAndRetry() in edit-modal-component.ts
 public saveAndRetry(): void {
-    if (this.activeForm().invalid) return;
+  if (this.activeForm().invalid) return;
 
-    const root = this.rootItem();
-    if (!root) return;
+  const root = this.rootItem();
+  if (!root) return;
 
-    // 🎯 Tiefen-Update für den Root-Payload beim Speichern
-    const updatedPayload = this.getUpdatedPayload(root);
+  const updatedPayload = this.getUpdatedPayload(root);
 
-    const updatedItems: DraftChainItem[] = this.chain().items.map(item => {
-      if (item.queueItem.id === root.queueItem.id) {
-        return {
-          ...item,
-          queueItem: {
-            ...item.queueItem,
-            payload: updatedPayload
-          }
-        };
-      }
-      return item;
-    });
+  const updatedItems: DraftChainItem[] = this.chain().items.map(item => {
+    if (item.queueItem.id === root.queueItem.id) {
+      return {
+        ...item,
+        queueItem: {
+          ...item.queueItem,
+          payload: updatedPayload
+        }
+      };
+    }
+    return item;
+  });
 
-    this.saved.emit({
-      ...this.chain(),
-      items: updatedItems
-    });
-  }
+  const current = this.chain();
+  const updatedChain = new DraftChain(
+    current.id,
+    current.title,
+    updatedItems,
+    current.createdAt,
+    current.origin,
+    current.createdByUserId,
+    current.lastErrorReason,
+    current.lastErrorCode,
+    current.target,
+    current.delegatedByUserId,
+    current.note
+  );
 
+  this.saved.emit(updatedChain);
+}
   public close(): void {
     this.closed.emit();
   }

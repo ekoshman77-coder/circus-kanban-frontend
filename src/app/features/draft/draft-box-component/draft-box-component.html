@@ -11,6 +11,29 @@
   </div>
 
   <main class="drawer-content">
+    <div class="filter-bar">
+      <button 
+        class="filter-tab" 
+        [class.active]="draftUIService.activeFilter() === 'ALL'"
+        (click)="draftUIService.setFilter('ALL')">
+        Alle ({{ draftUIService.chainsCount() }})
+      </button>
+
+      <button 
+        class="filter-tab" 
+        [class.active]="draftUIService.activeFilter() === 'LOCAL'"
+        (click)="draftUIService.setFilter('LOCAL')">
+        💻 Lokal ({{ draftUIService.localCount() }})
+      </button>
+
+      <button 
+        class="filter-tab" 
+        [class.active]="draftUIService.activeFilter() === 'REMOTE'"
+        (click)="draftUIService.setFilter('REMOTE')">
+        📥 Empfangen ({{ draftUIService.remoteCount() }})
+      </button>
+    </div>
+
     @if (count() > 0) {
       <div class="chain-list">
         @for (chain of chains(); track chain.id) {
@@ -110,9 +133,6 @@
                       @for (user of filteredUsers(); track user.id) {
                         <button class="user-option-btn" (click)="onUserSelected(user)">
                           <span>{{ user.name }}</span>
-                          @if (user.role) {
-                            <small class="user-role">{{ user.role }}</small>
-                          }
                         </button>
                       } @empty {
                         <div class="empty-hint">Keine Personen gefunden.</div>

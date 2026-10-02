@@ -30,6 +30,18 @@ export class ProjectService extends BaseDataManager {
 
   public readonly allProjectsPool = this.dataManager.allProjectsPool;
 
+  // 👥 Signal: Nur die Projekte, in denen der aktuell angemeldete User ein Teammitglied ist
+  public readonly myProjectsList = computed(() => {
+    const rawProjects = this.allProjectsPool(); 
+    const currentUserId = this.userService.getCurrentUserId();
+
+    if (!currentUserId) return [];
+
+    return rawProjects.filter(project =>
+      project.teamMembers.some(member => member.user.id === currentUserId)
+    );
+  });
+
   // 👁️ Merkt sich, ob die "Strafbank" (der Keller) in dieser Session geöffnet wurde
   private degradedWereShownSignal = signal<boolean>(false);
 

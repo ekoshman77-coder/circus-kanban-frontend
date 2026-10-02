@@ -8,5 +8,6 @@ export enum QueueHandlerName {
   PERMISSION = 'Permission',
   PROJECT = 'Project',
   TEAM = 'Team',
-  TODO = 'Todo'
+  TODO = 'Todo',
+  DRAFT = 'draft' 
 }
