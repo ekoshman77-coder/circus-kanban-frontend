@@ -15,6 +15,8 @@ import { Note } from '../../../core/models/note';
 import { HttpErrorResponse } from '@angular/common/http';
 import { of, throwError } from 'rxjs';
 import { describe, beforeEach, it, expect, vi } from 'vitest';
+import { getCoreTestProviders } from '@tests/helpers/test-providers';
+import { PermissionService } from '../../../core/services/permissions/permission-service';
 
 describe('ProjectCalculatorComponent (Vitest Edition)', () => {
     let component: ProjectCalculatorComponent;
@@ -23,16 +25,16 @@ describe('ProjectCalculatorComponent (Vitest Edition)', () => {
     const sampleProject = new Project({
         id: 'proj-123',
         title: 'App-Redesign',
-    userId: 'user-master',
-    departmentId: 'dep-it-01',
-    scope: 'DEPARTMENT', // 👈 Scope explizit übergeben
-    ideaId: 'idea-99',
-    area: 'Frontend',
-    milestones: [
-        new Milestone({ id: 'ms-1', title: 'Design-Mockups', duration: 3, usedDuration: 1 }),
-        new Milestone({ id: 'ms-2', title: 'Coding & Testing', duration: 7, usedDuration: 0 })
-    ]
-});
+        userId: 'user-master',
+        departmentId: 'dep-it-01',
+        scope: 'DEPARTMENT', // 👈 Scope explizit übergeben
+        ideaId: 'idea-99',
+        area: 'Frontend',
+        milestones: [
+            new Milestone({ id: 'ms-1', title: 'Design-Mockups', duration: 3, usedDuration: 1 }),
+            new Milestone({ id: 'ms-2', title: 'Coding & Testing', duration: 7, usedDuration: 0 })
+        ]
+    });
     const sampleNote = new Note({
         id: 'idea-99',
         title: 'Cooles Redesign für App',
@@ -47,6 +49,10 @@ describe('ProjectCalculatorComponent (Vitest Edition)', () => {
 
     const mockNotificationService = {
         showNotification: vi.fn()
+    };
+
+    const mockPermissionService = {
+        hasPermission: vi.fn().mockReturnValue(true)
     };
 
     const mockProjectService = {
@@ -140,7 +146,8 @@ describe('ProjectCalculatorComponent (Vitest Edition)', () => {
                 { provide: UserService, useValue: mockUserService },
                 { provide: ProjectDraftService, useValue: mockProjectDraftService },
                 { provide: NotificationService, useValue: mockNotificationService },
-                { provide: TeamService, useValue: mockTeamService }
+                { provide: TeamService, useValue: mockTeamService },
+                { provide: PermissionService, useValue: mockPermissionService }
             ]
         }).compileComponents();
 
@@ -160,7 +167,7 @@ describe('ProjectCalculatorComponent (Vitest Edition)', () => {
         it('sollte die Bearbeitung einer Phase initialisieren', () => {
             const milestone = sampleProject.milestones[0];
             const compAny = component as any;
-            
+
             compAny.startEditMilestone(milestone);
 
             expect(compAny.editingMilestoneId).toBe(milestone.id);
@@ -182,8 +189,8 @@ describe('ProjectCalculatorComponent (Vitest Edition)', () => {
     describe('3-Projekt-Zustände & Speicherung auf Server', () => {
         it('Fall 1: sollte beim Speichern eines echten neuen Idee-Drafts (nicht in DB) saveCalculatedProject triggern', () => {
             // Projekt liegt NICHT in projectsList -> echte Neu-Kalkulation
-            mockProjectService.projectsList.set([]); 
-            
+            mockProjectService.projectsList.set([]);
+
             const newIdeaDraft = new Project({
                 title: 'Neuer Entwurf aus Idee',
                 userId: 'user-master',
@@ -219,13 +226,17 @@ describe('ProjectCalculatorComponent (Vitest Edition)', () => {
         it('sollte Fehlerbehandlung des Servers (HttpErrorResponse) abfangen und dem User präsentieren', () => {
             // Projekt ist neu
             mockProjectService.projectsList.set([]);
-            
+
             const errorResponse = new HttpErrorResponse({
                 error: { message: 'Der Projektname ist leider unzulässig!' },
                 status: 400,
                 statusText: 'Bad Request'
             });
-            mockProjectService.saveCalculatedProject.mockReturnValue(throwError(() => errorResponse));
+
+            // 🟢 Synchronen Error werfen, statt ein Observable zurückzugeben
+            mockProjectService.saveCalculatedProject.mockImplementation(() => {
+                throw errorResponse;
+            });
 
             component.handleAutoSaveConfirm();
 
@@ -235,42 +246,43 @@ describe('ProjectCalculatorComponent (Vitest Edition)', () => {
             );
         });
     });
+
     it('Fall 2 (Company-Scope): sollte ein von Admin erzeugtes Company-Stub-Projekt laden, TeamService synchronisieren und updateCalculatedProject aufrufen', () => {
-    // 1. Admin erstellt Company-Projekt ohne Meilensteine
-    const companyAdminStub = new Project({
-        id: 'proj-company-stub',
-        title: 'Unternehmensweite KI-Initiative',
-        userId: 'admin-user',
-        departmentId: 'dep-global',
-        scope: 'COMPANY', // 👈 Unternehmensebene
-        area: 'Strategie',
-        ideaId: '',
-        milestones: [] // Leeres DB-Projekt / Stub
-    });
-
-    // Projekt existiert in der DB-Liste
-    mockProjectService.projectsList.set([companyAdminStub]);
-
-    // Navigations-State simulieren (PM öffnet das Admin-Projekt)
-    const compAny = component as any;
-    compAny.handleNavigationStateChange({ type: 'project', id: 'proj-company-stub' }, 'pm-user-123');
-
-    // Assert: Zustand & TeamService-Sync
-    expect(component['isBrandNewDraft']()).toBe(true); // UI zeigt Draft/Kalkulationsmodus
-    expect(component.isExistingDbProject()).toBe(true); // DB-Erkennung muss greifen!
-    expect(mockTeamService.setCurrentProject).toHaveBeenCalledWith('proj-company-stub');
-
-    // 2. PM fügt im Calculator erste Meilensteine hinzu & speichert
-    component.onMilestoneAdded('Initiales Audit & Kickoff', 5);
-    component.handleAutoSaveConfirm();
-
-    // Assert: Es darf KEIN neues Projekt erzeugt werden (POST), sondern ein Update (PUT)
-    expect(mockProjectService.updateCalculatedProject).toHaveBeenCalledWith(
-        expect.objectContaining({
+        // 1. Admin erstellt Company-Projekt ohne Meilensteine
+        const companyAdminStub = new Project({
             id: 'proj-company-stub',
-            scope: 'COMPANY'
-        })
-    );
-    expect(mockProjectService.saveCalculatedProject).not.toHaveBeenCalled();
-});
+            title: 'Unternehmensweite KI-Initiative',
+            userId: 'admin-user',
+            departmentId: 'dep-global',
+            scope: 'COMPANY', // 👈 Unternehmensebene
+            area: 'Strategie',
+            ideaId: '',
+            milestones: [] // Leeres DB-Projekt / Stub
+        });
+
+        // Projekt existiert in der DB-Liste
+        mockProjectService.projectsList.set([companyAdminStub]);
+
+        // Navigations-State simulieren (PM öffnet das Admin-Projekt)
+        const compAny = component as any;
+        compAny.handleNavigationStateChange({ type: 'project', id: 'proj-company-stub' }, 'pm-user-123');
+
+        // Assert: Zustand & TeamService-Sync
+        expect(component['isBrandNewDraft']()).toBe(true); // UI zeigt Draft/Kalkulationsmodus
+        expect(component.isExistingDbProject()).toBe(true); // DB-Erkennung muss greifen!
+        expect(mockTeamService.setCurrentProject).toHaveBeenCalledWith('proj-company-stub');
+
+        // 2. PM fügt im Calculator erste Meilensteine hinzu & speichert
+        component.onMilestoneAdded('Initiales Audit & Kickoff', 5);
+        component.handleAutoSaveConfirm();
+
+        // Assert: Es darf KEIN neues Projekt erzeugt werden (POST), sondern ein Update (PUT)
+        expect(mockProjectService.updateCalculatedProject).toHaveBeenCalledWith(
+            expect.objectContaining({
+                id: 'proj-company-stub',
+                scope: 'COMPANY'
+            })
+        );
+        expect(mockProjectService.saveCalculatedProject).not.toHaveBeenCalled();
+    });
 });

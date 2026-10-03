@@ -1,12 +1,15 @@
 import { TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { firstValueFrom, of, Subject } from 'rxjs';
 import { TodoDataManagerService } from './todo-data-manager-service';
 import { TodoRepository } from '../../repositories/todo-repository';
 import { ConnectionService } from '../connection/connection-service';
 import { UserService } from '../user/user-service';
-import { signal } from '@angular/core'; 
+import { signal } from '@angular/core';
 import { Todo } from '../../models/todo';
+import { of, Subject } from 'rxjs';
+import { getCoreTestProviders } from '@tests/helpers/test-providers';
+import { StreakRepository } from '../../repositories/streak-repository';
+
 
 if (typeof window !== 'undefined' && !window.localStorage) {
   (window as any).localStorage = {
@@ -26,10 +29,11 @@ vi.stubGlobal('localStorage', {
 
 describe('TodoDataManagerService (TDD Offline-Sperren mit Vitest)', () => {
   let service: TodoDataManagerService;
-  
+
   let mockTodoRepository: any;
   let mockConnectionService: any;
-  let mockUserService: any; 
+  let mockUserService: any;
+  let mockStreakRepository: any;
 
   // Ein steuerbares Signal für die Standard-Tests
   let globalConnectionSignal = signal<'UNKNOWN' | 'ONLINE' | 'OFFLINE'>('ONLINE');
@@ -37,21 +41,25 @@ describe('TodoDataManagerService (TDD Offline-Sperren mit Vitest)', () => {
   beforeEach(() => {
     globalConnectionSignal.set('ONLINE');
 
+    mockStreakRepository = {
+      syncAndGetStreakInfo: vi.fn().mockReturnValue(of(null))
+    };
+
     mockTodoRepository = {
-      createTodo: vi.fn(), 
-      syncBulkTodos: vi.fn(() => of({ liste: [], gamificationResult: null })), 
-      updateTodoStatus: () => ({ pipe: () => {} }),
-      deleteTodo: () => ({ pipe: () => {} }),
-      updateTodo: () => ({ pipe: () => {} }),
-      deleteCompleted: () => ({ pipe: () => {} }),
-      deleteAll: () => ({ pipe: () => {} }),
+      createTodo: vi.fn(),
+      syncBulkTodos: vi.fn(() => of({ liste: [], gamificationResult: null })),
+      updateTodoStatus: () => ({ pipe: () => { } }),
+      deleteTodo: () => ({ pipe: () => { } }),
+      updateTodo: () => ({ pipe: () => { } }),
+      deleteCompleted: () => ({ pipe: () => { } }),
+      deleteAll: () => ({ pipe: () => { } }),
       getRelevantTodos: vi.fn(() => of([]))
     };
 
     // status ist jetzt ein echtes steuerbares Signal
     mockConnectionService = {
       status: globalConnectionSignal,
-      checkRealConnection: () => ({ pipe: () => {} })
+      checkRealConnection: () => ({ pipe: () => { } })
     };
 
     mockUserService = {
@@ -63,15 +71,17 @@ describe('TodoDataManagerService (TDD Offline-Sperren mit Vitest)', () => {
 
     TestBed.configureTestingModule({
       providers: [
+        ...getCoreTestProviders(),
         TodoDataManagerService,
         { provide: TodoRepository, useValue: mockTodoRepository },
         { provide: ConnectionService, useValue: mockConnectionService },
-        { provide: UserService, useValue: mockUserService }
+        { provide: UserService, useValue: mockUserService },
+        { provide: StreakRepository, useValue: mockStreakRepository }
       ]
     });
 
     service = TestBed.inject(TodoDataManagerService);
-    
+
     // 🛡️ Da localStorageService in der Klasse nicht injiziert ist, patchen wir einen Fallback auf das Objekt,
     // um die unvollständige Instanzierung zur Laufzeit abzufangen:
     (service as any).localStorageService = {
@@ -86,30 +96,36 @@ describe('TodoDataManagerService (TDD Offline-Sperren mit Vitest)', () => {
   // ==========================================
 
   describe('Race Condition Schutz im Constructor-Effect', () => {
-    
+
     function setupIsolatedRaceConditionTest(initialStatus: 'UNKNOWN' | 'ONLINE' | 'OFFLINE') {
       const localSignal = signal(initialStatus);
       const localUserSignal = signal<{ id: string; username: string } | null>({ id: 'user-123', username: 'TestUser' });
-      
+
       const localConnectionMock = {
         status: localSignal,
-        checkRealConnection: () => ({ pipe: () => {} })
+        checkRealConnection: () => ({ pipe: () => { } })
       };
 
       const localUserMock = {
         currentUser: localUserSignal,
         getCurrentUserId: () => localUserSignal()?.id || null,
-        isLoggedIn: vi.fn(() => !!localUserSignal()), // 🟢 NEU: True wenn User da ist, sonst False
-        onLogout$: new Subject<void>()
+        isLoggedIn: vi.fn(() => !!localUserSignal()),
+        onLogout$: new Subject()
+      };
+
+      const localStreakRepoMock = {
+        syncAndGetStreakInfo: vi.fn().mockReturnValue(of(null))
       };
 
       TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         providers: [
+          ...getCoreTestProviders(),
           TodoDataManagerService,
           { provide: TodoRepository, useValue: mockTodoRepository },
           { provide: ConnectionService, useValue: localConnectionMock },
-          { provide: UserService, useValue: localUserMock }
+          { provide: UserService, useValue: localUserMock },
+          { provide: StreakRepository, useValue: localStreakRepoMock }
         ]
       });
 
@@ -119,39 +135,36 @@ describe('TodoDataManagerService (TDD Offline-Sperren mit Vitest)', () => {
         setItem: vi.fn(),
         removeItem: vi.fn()
       };
-      
-      return { localService, localSignal, localUserSignal }; 
+
+      return { localService, localSignal, localUserSignal, localStreakRepoMock };
     }
 
-    it('sollte triggerBulkSync NICHT aufrufen, wenn der Status UNKNOWN ist', () => {
-      const { localService } = setupIsolatedRaceConditionTest('UNKNOWN');
-      const bulkSyncSpy = vi.spyOn(localService as any, 'triggerBulkSync');
+    it('sollte Streak-Sync NICHT aufrufen, wenn der Status UNKNOWN ist', () => {
+      const { localStreakRepoMock } = setupIsolatedRaceConditionTest('UNKNOWN');
 
       TestBed.flushEffects();
-      expect(bulkSyncSpy).not.toHaveBeenCalled();
+      expect(localStreakRepoMock.syncAndGetStreakInfo).not.toHaveBeenCalled();
     });
 
-    it('sollte triggerBulkSync aufrufen, sobald der Status von UNKNOWN auf ONLINE wechselt', () => {
-      const { localService, localSignal } = setupIsolatedRaceConditionTest('UNKNOWN');
-      const bulkSyncSpy = vi.spyOn(localService as any, 'triggerBulkSync');
+    it('sollte Streak-Sync aufrufen, sobald der Status von UNKNOWN auf ONLINE wechselt', () => {
+      const { localSignal, localStreakRepoMock } = setupIsolatedRaceConditionTest('UNKNOWN');
 
       TestBed.flushEffects();
-      expect(bulkSyncSpy).not.toHaveBeenCalled();
+      expect(localStreakRepoMock.syncAndGetStreakInfo).not.toHaveBeenCalled();
 
       localSignal.set('ONLINE');
       TestBed.flushEffects();
 
-      expect(bulkSyncSpy).toHaveBeenCalledWith('user-123');
+      expect(localStreakRepoMock.syncAndGetStreakInfo).toHaveBeenCalledWith('user-123');
     });
 
-    it('sollte triggerBulkSync NICHT aufrufen, wenn ONLINE schaltet aber kein User angemeldet ist', () => {
-      const { localService, localUserSignal } = setupIsolatedRaceConditionTest('ONLINE');
-      
-      localUserSignal.set(null); 
-      const bulkSyncSpy = vi.spyOn(localService as any, 'triggerBulkSync');
-      
+    it('sollte Streak-Sync NICHT aufrufen, wenn ONLINE schaltet aber kein User angemeldet ist', () => {
+      const { localUserSignal, localStreakRepoMock } = setupIsolatedRaceConditionTest('ONLINE');
+
+      localUserSignal.set(null);
+
       TestBed.flushEffects();
-      expect(bulkSyncSpy).not.toHaveBeenCalled();
+      expect(localStreakRepoMock.syncAndGetStreakInfo).not.toHaveBeenCalled();
     });
   });
 
@@ -164,8 +177,8 @@ describe('TodoDataManagerService (TDD Offline-Sperren mit Vitest)', () => {
       globalConnectionSignal.set('ONLINE');
 
       const neuesTodo = new Todo({
-        task: 'Online Task', 
-        description: null, 
+        task: 'Online Task',
+        description: null,
         effort: 3,
         dueDate: Date.now(),
         userId: 'user1',
@@ -179,14 +192,18 @@ describe('TodoDataManagerService (TDD Offline-Sperren mit Vitest)', () => {
 
       mockTodoRepository.createTodo.mockReturnValue(of(dbErgebnisTodo));
 
-      const ergebnisListe = await firstValueFrom(
-        service.createTodo(neuesTodo, aktuelleListe)
-      );
+      service.createTodo(neuesTodo);
 
-      expect(mockTodoRepository.createTodo).toHaveBeenCalledWith(neuesTodo);
+      // 2. Das Todo muss sofort im reaktiven Signal lesbar sein
+      const ergebnisListe = service.allTodosPool();
+
       expect(ergebnisListe.length).toBe(1);
-      expect(ergebnisListe[0].id).toBe('datenbank-id-123');
-      expect(ergebnisListe[0].syncState).toBe('fine');
+
+      expect(ergebnisListe[0].id).toBeDefined();
+      expect(ergebnisListe[0].id.length).toBeGreaterThan(0);
+      
+      expect(ergebnisListe[0].task).toBe('Online Task');
     });
   });
 });
+

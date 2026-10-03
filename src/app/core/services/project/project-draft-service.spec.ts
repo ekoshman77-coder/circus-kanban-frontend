@@ -66,8 +66,8 @@ describe('ProjectDraftService', () => {
         expect(service.degradedMilestones()).toEqual([]);
     });
 
-    it('should initialize draft from an idea (Note)', () => {
-        const mockIdea: Note = {
+it('should initialize draft from an idea (Note)', () => {
+        const mockIdea = new Note({
             id: 'note_99',
             title: 'Test-Idee',
             tag: 'IT',
@@ -76,7 +76,7 @@ describe('ProjectDraftService', () => {
             content: 'Das ist eine Test-Beschreibung',
             scope: "department",
             departmentId: "dept 1"
-        };
+        });
 
         service.initDraftFromIdea(mockIdea);
 
@@ -87,7 +87,7 @@ describe('ProjectDraftService', () => {
         expect(current?.status).toBe('Calculation');
         expect(current?.userId).toBe(mockUserId);
     });
-
+    
     it('should detect if a draft exists in storage', () => {
         const storageKey = `local_project_draft_${mockUserId}`;
 

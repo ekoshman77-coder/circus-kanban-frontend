@@ -4,53 +4,38 @@ import { ConnectionService } from '../connection/connection-service';
 import { GamificationRepository } from '../../repositories/gamification-repsoitory';
 import { UserService } from '../user/user-service';
 import { LoggerService } from '../logger/logger-service';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { of, throwError } from 'rxjs';
+import { CentralQueueService } from '../central-queue/central-queue-service';
+import { QueueItem } from '../../models/queue-items/queue-item';
+import { FocusPomodoroPayload } from '../../models/queue-items/pomodoro-payload';
+import { QueueHandlerName } from '../../enums/queue-handler-name';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { of } from 'rxjs';
 import { signal } from '@angular/core';
 
 describe('FocusDataManagerService', () => {
   let service: FocusDataManagerService;
 
-  // Mocks
-  let mockConnectionService: any;
-  let mockGamificationRepository: any;
-  let mockUserService: any;
-  let mockLoggerService: any;
-  let connectionStatusSignal: any;
-  let currentUserSignal: any;
+  // Typsichere Mocks
+  let mockConnectionService: Partial< ConnectionService >;
+  let mockGamificationRepository: Partial< GamificationRepository >;
+  let mockUserService: Partial< UserService >;
+  let mockLoggerService: Partial< LoggerService >;
+  let mockQueueService: Partial< CentralQueueService >;
 
-  // Dynamischer Key passend zur Implementierung
   const TEST_USER_ID = 'user-777';
-  const TARGET_STORAGE_KEY = `offline_pomodoro_queue_${TEST_USER_ID}`;
-
-  // In-Memory LocalStorage Mock
-  let store: Record<string, string> = {};
 
   beforeEach(() => {
-    store = {};
-    vi.stubGlobal('localStorage', {
-      getItem: (key: string) => store[key] || null,
-      setItem: (key: string, value: string) => { store[key] = value; },
-      removeItem: (key: string) => { delete store[key]; },
-      clear: () => { store = {}; }
-    });
-
-    // Wir starten im OFFLINE-Zustand
-    connectionStatusSignal = signal<'ONLINE' | 'OFFLINE'>('OFFLINE');
     mockConnectionService = {
-      status: connectionStatusSignal
+      isOffline: signal< boolean >(false),
+      isOnline: signal< boolean >(true)
     };
 
     mockGamificationRepository = {
-      sendPomodoroSession: vi.fn().mockReturnValue(of({ xp: 100, level: 2 })),
-      sendPomodoroBulk: vi.fn().mockReturnValue(of({ xp: 250, level: 3 }))
+      sendPomodoroSession: vi.fn().mockReturnValue(of({ xp: 100, level: 2 }))
     };
 
-    // 🛡️ REPARATUR: currentUser-Signal hinzufügen, damit der Wächter-Effekt nicht crasht!
-    currentUserSignal = signal<{ id: string; username: string } | null>({ id: TEST_USER_ID, username: 'TestUser' });
-    
     mockUserService = {
-      currentUser: currentUserSignal,
+      currentUser: signal({ id: TEST_USER_ID, username: 'TestUser' } as any),
       getCurrentUserId: vi.fn().mockReturnValue(TEST_USER_ID),
       updateGamification: vi.fn()
     };
@@ -61,17 +46,27 @@ describe('FocusDataManagerService', () => {
       error: vi.fn()
     };
 
+    mockQueueService = {
+      enqueue: vi.fn(),
+      registerService: vi.fn()
+    };
+
     TestBed.configureTestingModule({
       providers: [
         FocusDataManagerService,
         { provide: ConnectionService, useValue: mockConnectionService },
         { provide: GamificationRepository, useValue: mockGamificationRepository },
         { provide: UserService, useValue: mockUserService },
-        { provide: LoggerService, useValue: mockLoggerService }
+        { provide: LoggerService, useValue: mockLoggerService },
+        { provide: CentralQueueService, useValue: mockQueueService }
       ]
     });
 
     service = TestBed.inject(FocusDataManagerService);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
   });
 
   it('sollte den Service erfolgreich instanziieren', () => {
@@ -79,75 +74,91 @@ describe('FocusDataManagerService', () => {
   });
 
   describe('recordCompletedPomodoro (Sitzung aufzeichnen)', () => {
-    it('sollte im OFFLINE-Modus die Session in die lokale Queue schreiben und nicht ans Backend funken', () => {
-      connectionStatusSignal.set('OFFLINE');
+    it('sollte eine RECORD_POMODORO Action in die Queue reihen', () => {
+      service.recordCompletedPomodoro('todo-abc', 'Mein Todo');
 
-      service.recordCompletedPomodoro('todo-abc').subscribe((result) => {
-        expect(result).toBeNull();
-      });
-        
-      // 🛡️ REPARATUR: TARGET_STORAGE_KEY statt hartcodiertem String nutzen
-      const queueRaw = localStorage.getItem(TARGET_STORAGE_KEY);
-      expect(queueRaw).toBeTruthy();
-      
-      const queue = JSON.parse(queueRaw!);
-      expect(queue.length).toBe(1);
-      expect(queue[0].todoId).toBe('todo-abc');
-
-      expect(mockGamificationRepository.sendPomodoroSession).not.toHaveBeenCalled();
-      expect(mockLoggerService.info).toHaveBeenCalledWith('FocusDataManager', expect.stringContaining('offline im Speicher gesichert'));
+      expect(mockQueueService.enqueue).toHaveBeenCalledWith(
+        QueueHandlerName.FOCUS,
+        'RECORD_POMODORO',
+        expect.objectContaining({
+          userId: TEST_USER_ID,
+          todoId: 'todo-abc',
+          count: 1,
+          displayInfo: {
+            category: 'Fokus-Session',
+            title: 'Pomodoro: "Mein Todo"'
+          }
+        })
+      );
+      expect(mockLoggerService.info).toHaveBeenCalledWith('FocusDataManager', 'Pomodoro in die globale Queue eingereiht.');
     });
 
-    it('sollte im ONLINE-Modus direkt an das Repository senden und Gamification aktualisieren', () => {
-      connectionStatusSignal.set('ONLINE');
+    it('sollte abbrechen, wenn kein User eingeloggt ist', () => {
+      vi.mocked(mockUserService.getCurrentUserId!).mockReturnValue(null);
 
-      service.recordCompletedPomodoro('todo-xyz').subscribe((result) => {
-        expect(result).toEqual({ xp: 100, level: 2 });
-      });
+      service.recordCompletedPomodoro('todo-xyz');
 
-      expect(mockGamificationRepository.sendPomodoroSession).toHaveBeenCalledWith(TEST_USER_ID, { todoId: 'todo-xyz', count: 1 });
-      expect(mockUserService.updateGamification).toHaveBeenCalledWith({ xp: 100, level: 2 });
-    });
-
-    it('sollte bei einem Backend-Fehler im ONLINE-Modus auf die Offline-Queue zurückgreifen', () => {
-      connectionStatusSignal.set('ONLINE');
-      mockGamificationRepository.sendPomodoroSession.mockReturnValue(throwError(() => new Error('Server-Absturz')));
-
-      service.recordCompletedPomodoro('todo-error').subscribe({
-        error: (err) => {
-          expect(err.message).toBe('Server-Absturz');
-        }
-      });
-          
-      // 🛡️ REPARATUR: TARGET_STORAGE_KEY nutzen
-      const queueRaw = localStorage.getItem(TARGET_STORAGE_KEY);
-      const queue = JSON.parse(queueRaw!);
-      expect(queue.length).toBe(1);
-      expect(queue[0].todoId).toBe('todo-error');
-      
-      expect(mockLoggerService.warn).toHaveBeenCalled();
+      expect(mockQueueService.enqueue).not.toHaveBeenCalled();
     });
   });
 
-  describe('Automatischer Sync über ConnectionService Signal-Wechsel', () => {
-    it('sollte die Offline-Warteschlange synchronisieren, sobald wir ONLINE gehen', () => {
-      // 1. Wir starten offline und befüllen die Warteschlange vorab mit dem korrekten Key
-      const localQueue = [
-        { todoId: 'todo-1', timestamp: 12345 },
-        { todoId: 'todo-2', timestamp: 67890 }
-      ];
-      localStorage.setItem(TARGET_STORAGE_KEY, JSON.stringify(localQueue));
+  describe('executeQueueItem & handleQueueResult (Queue Handler)', () => {
+    it('sollte bei executeQueueItem das Backend über das Repository aufrufen', () => {
+      const mockPayload: FocusPomodoroPayload = {
+        id: 'p-1',
+        userId: TEST_USER_ID,
+        todoId: 'todo-abc',
+        count: 1,
+        displayInfo: {
+          category: 'Fokus-Session',
+          title: 'Pomodoro Test'
+        }
+      };
 
-      // 2. Verbindung reaktiv auf ONLINE schalten
-      connectionStatusSignal.set('ONLINE');
+      const mockItem: QueueItem< FocusPomodoroPayload > = {
+        id: 'q-1',
+        serviceName: QueueHandlerName.FOCUS,
+        action: 'RECORD_POMODORO',
+        payload: mockPayload,
+        timestamp: Date.now()
+      };
 
-      // ⚡ Alle ausstehenden Signals-Effekte abarbeiten!
-      TestBed.flushEffects();
+      service.executeQueueItem(mockItem).subscribe((result) => {
+        expect(result).toEqual({ xp: 100, level: 2 });
+      });
 
-      // 3. Verifizieren, dass der Bulk-Sync jetzt erfolgreich gelaufen ist
-      expect(mockGamificationRepository.sendPomodoroBulk).toHaveBeenCalledWith(TEST_USER_ID, localQueue);
-      expect(mockUserService.updateGamification).toHaveBeenCalledWith({ xp: 250, level: 3 });
-      expect(localStorage.getItem(TARGET_STORAGE_KEY)).toBeNull(); 
+      expect(mockGamificationRepository.sendPomodoroSession).toHaveBeenCalledWith(TEST_USER_ID, {
+        todoId: 'todo-abc',
+        count: 1
+      });
+    });
+
+    it('sollte bei erfolgreichem handleQueueResult die Gamification des Users aktualisieren', () => {
+      const mockPayload: FocusPomodoroPayload = {
+        id: 'p-1',
+        userId: TEST_USER_ID,
+        todoId: 'todo-abc',
+        count: 1,
+        displayInfo: {
+          category: 'Fokus-Session',
+          title: 'Pomodoro Test'
+        }
+      };
+
+      const mockItem: QueueItem< FocusPomodoroPayload > = {
+        id: 'q-1',
+        serviceName: QueueHandlerName.FOCUS,
+        action: 'RECORD_POMODORO',
+        payload: mockPayload,
+        timestamp: Date.now()
+      };
+
+      const gamificationResult = { xp: 100, level: 2 } as any;
+
+      service.handleQueueResult(mockItem, true, gamificationResult);
+
+      expect(mockUserService.updateGamification).toHaveBeenCalledWith(gamificationResult);
+      expect(mockLoggerService.info).toHaveBeenCalledWith('FocusDataManager', 'Pomodoro verbucht. XP & Level im State aktualisiert!');
     });
   });
 });

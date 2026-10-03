@@ -11,12 +11,12 @@ describe('IdeaSortingService (Vitest - Strictly Typed)', () => {
   let service: IdeaSortingService;
 
   // Typsichere Mocks
-  let mockUserService: Partial<UserService>;
-  let mockNoteService: Partial<NoteService>;
-  let currentUserSignal: WritableSignal<UserModel | null>;
+  let mockUserService: Partial< UserService >;
+  let mockNoteService: Partial< NoteService >;
+  let currentUserSignal: WritableSignal< UserModel | null >;
 
   // Helper zum Erstellen eines Test-Users
-  const createTestUser = (overrides: Partial<IUserInit> = {}): UserModel => {
+  const createTestUser = (overrides: Partial< IUserInit > = {}): UserModel => {
     return new UserModel({
       id: 'user-42',
       username: 'zaphod',
@@ -30,7 +30,7 @@ describe('IdeaSortingService (Vitest - Strictly Typed)', () => {
   };
 
   // LocalStorage Mock-Store
-  let store: Record<string, string> = {};
+  let store: Record< string, string > = {};
 
   beforeEach(() => {
     store = {};
@@ -41,7 +41,7 @@ describe('IdeaSortingService (Vitest - Strictly Typed)', () => {
       clear: () => { store = {}; }
     });
 
-    currentUserSignal = signal<UserModel | null>(null);
+    currentUserSignal = signal< UserModel | null >(null);
 
     mockUserService = {
       currentUser: currentUserSignal,
@@ -52,7 +52,7 @@ describe('IdeaSortingService (Vitest - Strictly Typed)', () => {
     };
 
     mockNoteService = {
-      loadNotes: vi.fn()
+      notesList: signal([])
     };
 
     TestBed.configureTestingModule({
@@ -73,22 +73,6 @@ describe('IdeaSortingService (Vitest - Strictly Typed)', () => {
 
   it('sollte den Service erfolgreich instanziieren', () => {
     expect(service).toBeTruthy();
-  });
-
-  describe('Reaktive Initialisierung über den User-Wechsel (effect)', () => {
-    it('sollte bei nicht-eingeloggtem User keine Notizen laden', () => {
-      currentUserSignal.set(null);
-      TestBed.flushEffects();
-
-      expect(mockNoteService.loadNotes).not.toHaveBeenCalled();
-    });
-
-    it('sollte beim Einloggen eines Users loadNotes triggern', () => {
-      currentUserSignal.set(createTestUser({ id: 'user-42' }));
-      TestBed.flushEffects();
-
-      expect(mockNoteService.loadNotes).toHaveBeenCalled();
-    });
   });
 
   describe('loadSorting & saveSorting (Context-basiert)', () => {
@@ -112,7 +96,6 @@ describe('IdeaSortingService (Vitest - Strictly Typed)', () => {
 
     it('sollte die Sortierung im LocalStorage speichern und wieder laden', () => {
       currentUserSignal.set(createTestUser({ id: 'user-42' }));
-      TestBed.flushEffects();
 
       // Korrekte NoteSortOrder-Struktur
       const orders: NoteSortOrder[] = [

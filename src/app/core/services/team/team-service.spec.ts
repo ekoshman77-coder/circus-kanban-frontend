@@ -1,18 +1,18 @@
 import { TestBed } from '@angular/core/testing';
-import { signal, WritableSignal } from '@angular/core';
+import { signal, WritableSignal, computed } from '@angular/core';
 import { TeamService } from './team-service';
 import { TeamDataManager } from './team-data-manager';
 import { UserService } from '../user/user-service';
-import { PermissionService } from '../permissions/permission-service';
+import { PermissionService, UIActionIntent } from '../permissions/permission-service';
+import { ProjectService } from '../project/project-service';
 import { IUserInit, UserModel } from '../../models/user-model';
 import { ProjectMember } from '../../models/project-member';
-import { ProjectAction } from '../../enums/project-action-enum';
 import { describe, beforeEach, it, expect, vi } from 'vitest';
 
 describe('TeamService (Vitest - Strict Typing)', () => {
   let service: TeamService;
 
-  const createTestUser = (overrides: Partial<IUserInit> = {}): UserModel => {
+  const createTestUser = (overrides: Partial< IUserInit > = {}): UserModel => {
     return new UserModel({
       id: 'user-active',
       username: 'testuser',
@@ -26,46 +26,50 @@ describe('TeamService (Vitest - Strict Typing)', () => {
   };
   
   // 🛡️ Typisierte Signals & Mocks
-  let globalMembersSignalMock: WritableSignal<ProjectMember[]>;
-  let currentProjectMembersSignalMock: WritableSignal<ProjectMember[]>;
+  let globalMembersSignalMock: WritableSignal< ProjectMember[] >;
+  let currentProjectMembersSignalMock: WritableSignal< ProjectMember[] >;
+  let projectsListSignalMock: WritableSignal< any[] >;
+  let currentUserSignalMock: WritableSignal< UserModel | null >;
 
-  // Interfaces statt `any`
-  let dataManagerMock: Partial<TeamDataManager>;
-  let userServiceMock: Partial<UserService>;
-  let permissionServiceMock: Partial<PermissionService>;
+  let dataManagerMock: Partial< TeamDataManager >;
+  let userServiceMock: Partial< UserService >;
+  let permissionServiceMock: Partial< PermissionService >;
+  let projectServiceMock: Partial< ProjectService >;
 
   beforeEach(() => {
-    globalMembersSignalMock = signal<ProjectMember[]>([]);
-    currentProjectMembersSignalMock = signal<ProjectMember[]>([]);
+    globalMembersSignalMock = signal< ProjectMember[] >([]);
+    currentProjectMembersSignalMock = signal< ProjectMember[] >([]);
+    projectsListSignalMock = signal< any[] >([]);
+    currentUserSignalMock = signal< UserModel | null >(createTestUser());
 
-    // 🎯 Typsicherer DataManager-Mock
+    // 🎯 Angepasster DataManager-Mock ohne veraltete Methoden
     dataManagerMock = {
       globalMembersSignal: globalMembersSignalMock,
-      currentProjectMembersSignal: currentProjectMembersSignalMock,
-      loadProjectMembers: vi.fn(),
-      loadGlobalMembers: vi.fn(),
-      addMemberToProject: vi.fn(),
-      removeMemberFromProject: vi.fn(),
       updateGlobalMember: vi.fn(),
       updateCoffeeAccount: vi.fn(),
       deleteGlobalMember: vi.fn(),
       createMember: vi.fn()
     };
 
-    // 🎯 Typsicherer UserService-Mock
+    // 🎯 Korrigierter UserService-Mock mit echtem Signal für currentUser
     userServiceMock = {
-      getCurrentUserId: vi.fn().mockReturnValue('user-active')
+      getCurrentUserId: vi.fn().mockReturnValue('user-active'),
+      currentUser: computed(() => currentUserSignalMock())
     };
 
-    // 🎯 Typsicherer PermissionService-Mock
     permissionServiceMock = {
-      allPermissions: signal([]),
-      hasPermission: vi.fn((role: string, action: ProjectAction) => {
-        if (role === 'OWNER') return true;
-        if (role === 'DEVELOPER' && action === 'TODO_CREATE') return true;
-        if (role === 'DEVELOPER' && action === 'PROJECT_DELETE') return false;
+      canUserPerformAction: vi.fn((action: UIActionIntent, context: any) => {
+        if (context.isOwner) return true;
+        if (context.contextRole === 'DEVELOPER' && action === 'TODO_CREATE') return true;
+        if (context.contextRole === 'DEVELOPER' && action === 'PROJECT_DELETE') return false;
         return false;
       })
+    };
+
+    projectServiceMock = {
+      currentProjectMembersSignal: currentProjectMembersSignalMock,
+      projectsList: projectsListSignalMock,
+      setActiveProjectId: vi.fn()
     };
 
     TestBed.configureTestingModule({
@@ -73,7 +77,8 @@ describe('TeamService (Vitest - Strict Typing)', () => {
         TeamService,
         { provide: TeamDataManager, useValue: dataManagerMock },
         { provide: UserService, useValue: userServiceMock },
-        { provide: PermissionService, useValue: permissionServiceMock }
+        { provide: PermissionService, useValue: permissionServiceMock },
+        { provide: ProjectService, useValue: projectServiceMock }
       ]
     });
 
@@ -81,67 +86,46 @@ describe('TeamService (Vitest - Strict Typing)', () => {
     
     globalMembersSignalMock.set([]);
     currentProjectMembersSignalMock.set([]);
+    projectsListSignalMock.set([]);
+    currentUserSignalMock.set(createTestUser());
   });
 
-  it('sollte bei setCurrentProject die ID setzen und den DataManager zum Laden triggern', () => {
+  it('sollte bei setCurrentProject die ID an den ProjectService weiterleiten', () => {
     const projectId = 'project-123';
 
     service.setCurrentProject(projectId);
 
-    expect(service.currentProjectId()).toBe(projectId);
-    expect(dataManagerMock.loadProjectMembers).toHaveBeenCalledWith(projectId);
+    expect(projectServiceMock.setActiveProjectId).toHaveBeenCalledWith(projectId);
   }); 
 
   describe('Rechteprüfung (hasPermission)', () => {
-    it('sollte false zurückgeben, wenn keine Projektmitglieder geladen sind', () => {
-      expect(service.hasPermission('project-123', 'PROJECT_EDIT' as ProjectAction)).toBe(false);
+    it('sollte false zurückgeben, wenn das Projekt nicht gefunden wird', () => {
+      expect(service.hasPermission('project-123', 'PROJECT_EDIT' as UIActionIntent)).toBe(false);
     });
 
     it('sollte true zurückgeben, wenn ein OWNER das Projekt löschen möchte', () => {
+      projectsListSignalMock.set([{ id: 'project-123', userId: 'user-active' }]);
+      
       const activeUser = createTestUser({ id: 'user-active', username: 'elena', firstName: 'E', lastName: 'L', projectIds: ['project-123'] });
       currentProjectMembersSignalMock.set([
         new ProjectMember(activeUser, 'OWNER')
       ]);
 
-      expect(service.hasPermission('project-123', 'PROJECT_DELETE' as ProjectAction)).toBe(true);
-      expect(service.hasPermission('project-123', 'MILESTONE_CREATE' as ProjectAction)).toBe(true);
+      expect(service.hasPermission('project-123', 'PROJECT_DELETE' as UIActionIntent)).toBe(true);
+      expect(service.hasPermission('project-123', 'MILESTONE_CREATE' as UIActionIntent)).toBe(true);
     });
 
-    it('sollte false zurückgeben, wenn ein DESIGNER versucht ein Projekt zu löschen', () => {
+    it('sollte false zurückgeben, wenn ein DEVELOPER versucht ein Projekt zu löschen', () => {
+      projectsListSignalMock.set([{ id: 'project-123', userId: 'other-owner' }]);
+
       const activeUser = createTestUser({ id: 'user-active', username: 'designer-guy', firstName: 'D', lastName: 'G', projectIds: ['project-123'] });
       currentProjectMembersSignalMock.set([
         new ProjectMember(activeUser, 'DEVELOPER')
       ]);
 
-      expect(service.hasPermission('project-123', 'PROJECT_DELETE' as ProjectAction)).toBe(false);
-      expect(service.hasPermission('project-123', 'TODO_CREATE' as ProjectAction)).toBe(true);
+      expect(service.hasPermission('project-123', 'PROJECT_DELETE' as UIActionIntent)).toBe(false);
+      expect(service.hasPermission('project-123', 'TODO_CREATE' as UIActionIntent)).toBe(true);
     });
-  });
-
-  it('sollte addMemberToProject transparent an den DataManager weiterreichen', () => {
-    const projectId = 'proj-99';
-    const fakeUser = createTestUser({ id: 'u-9', username: 'test', firstName: 'A', lastName: 'B', projectIds: [] });
-
-    service.addMemberToProject(projectId, fakeUser, 'DEVELOPER');
-
-    expect(dataManagerMock.addMemberToProject).toHaveBeenCalledWith(projectId, fakeUser, 'DEVELOPER');
-  });
-
-  it('sollte getProjectUsersSignal ein reaktives Signal mit reinen UserModels liefern', () => {
-    const user1 = createTestUser({ id: '1', username: 'u1', firstName: 'A', lastName: 'B', projectIds: [] });
-    const user2 = createTestUser({ id: '2', username: 'u2', firstName: 'C', lastName: 'D', projectIds: [] });
-    
-    currentProjectMembersSignalMock.set([
-      new ProjectMember(user1, 'DEVELOPER'),
-      new ProjectMember(user2, 'DEVELOPER')
-    ]);
-
-    const usersSignal = service.getProjectUsersSignal('any-project');
-    const userList = usersSignal();
-
-    expect(userList.length).toBe(2);
-    expect(userList[0]).toBe(user1);
-    expect(userList[1]).toBe(user2);
   });
 
   it('sollte updateCoffeeAccount transparent an den DataManager weiterreichen', () => {

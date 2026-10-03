@@ -4,6 +4,7 @@ import { TodoService } from '../../../services/todo/todo-service';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { signal } from '@angular/core';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { getCoreTestProviders } from '@tests/helpers/test-providers';
 
 describe('TodoPlanningModalComponent 🎪', () => {
   let component: TodoPlanningModalComponent;
@@ -33,6 +34,7 @@ beforeEach(async () => {
         FormsModule
       ],
       providers: [
+          ...getCoreTestProviders(),
         { provide: TodoService, useValue: mockTodoService }
       ]
     }).compileComponents();

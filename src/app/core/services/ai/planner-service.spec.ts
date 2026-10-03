@@ -2,15 +2,20 @@ import { TestBed } from '@angular/core/testing';
 import { PlannerService } from './planner-service';
 import { UserService } from '../user/user-service';
 import { AiRepository } from '../../repositories/ai-repository';
+import { ConnectionService } from '../connection/connection-service';
+import { PlannerDataManagerService } from './planner-data-manager-service';
 import { Todo } from '../../models/todo';
 import { RecommendationResult } from '../../models/recommendation-result';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { of } from 'rxjs';
+import { signal } from '@angular/core';
 
 describe('PlannerService (Vitest - Strictly Typed)', () => {
   let service: PlannerService;
-  let mockUserService: Partial<UserService>;
-  let mockAiRepository: Partial<AiRepository>;
+  let mockUserService: Partial< UserService >;
+  let mockAiRepository: Partial< AiRepository >;
+  let mockConnectionService: Partial< ConnectionService >;
+  let mockPlannerDataManager: Partial< PlannerDataManagerService >;
 
   const rawServerTodo = {
     id: 'todo-123',
@@ -22,10 +27,13 @@ describe('PlannerService (Vitest - Strictly Typed)', () => {
   };
 
   beforeEach(() => {
-    vi.useFakeTimers();
-
     mockUserService = {
       getCurrentUserId: vi.fn().mockReturnValue('user-999')
+    };
+
+    mockConnectionService = {
+      isOffline: signal< boolean >(false),
+      isOnline: signal< boolean >(true)
     };
 
     mockAiRepository = {
@@ -38,16 +46,21 @@ describe('PlannerService (Vitest - Strictly Typed)', () => {
             modeCode: 'STANDARD'
           }
         ]
-      })),
-      sendPlannerFeedback: vi.fn().mockReturnValue(of(null)),
-      snoozyTodo: vi.fn().mockReturnValue(of(undefined))
+      }))
+    };
+
+    mockPlannerDataManager = {
+      queueFeedback: vi.fn(),
+      queueSnooze: vi.fn()
     };
 
     TestBed.configureTestingModule({
       providers: [
         PlannerService,
         { provide: UserService, useValue: mockUserService },
-        { provide: AiRepository, useValue: mockAiRepository }
+        { provide: ConnectionService, useValue: mockConnectionService },
+        { provide: AiRepository, useValue: mockAiRepository },
+        { provide: PlannerDataManagerService, useValue: mockPlannerDataManager }
       ]
     });
 
@@ -55,7 +68,6 @@ describe('PlannerService (Vitest - Strictly Typed)', () => {
   });
 
   afterEach(() => {
-    vi.useRealTimers();
     vi.clearAllMocks();
   });
 
@@ -81,7 +93,7 @@ describe('PlannerService (Vitest - Strictly Typed)', () => {
   });
 
   describe('sendFeedback', () => {
-    it('sollte Snooze-Aktionen sofort ausführen und danach Runden-Feedback absenden', async () => {
+    it('sollte Snooze-Aktionen in die Queue stellen und Runden-Feedback absenden', () => {
       service.activeRoundId.set('round-abc');
 
       const feedback: RecommendationResult = {
@@ -92,26 +104,20 @@ describe('PlannerService (Vitest - Strictly Typed)', () => {
         ]
       };
 
-      // Aufruf ist void
       service.sendFeedback(feedback);
 
-      // Verify immediate Snooze
-      expect(mockAiRepository.snoozyTodo).toHaveBeenCalledWith('todo-123', 30);
+      // Verify queueSnooze was called
+      expect(mockPlannerDataManager.queueSnooze).toHaveBeenCalledWith('todo-123', 30);
 
-      // Virtuelle Zeit vorspulen (delay(800) im Service)
-      await vi.advanceTimersByTimeAsync(800);
+      // Verify Feedback Payload in Queue
+      expect(mockPlannerDataManager.queueFeedback).toHaveBeenCalledWith(
+        'user-999',
+        'round-abc',
+        'todo-999',
+        [{ todoId: 'todo-456', rejectReason: 'too_heavy' }]
+      );
 
-      // Verify Feedback Payload
-      expect(mockAiRepository.sendPlannerFeedback).toHaveBeenCalledWith({
-        userId: 'user-999',
-        roundId: 'round-abc',
-        acceptedTodoId: 'todo-999',
-        rejectedTodos: [
-          { todoId: 'todo-456', rejectReason: 'too_heavy' }
-        ]
-      });
-
-      // Verification of cleared state
+      // Verification of cleared state (Zero Latency)
       expect(service.recommendations()).toEqual([]);
       expect(service.activeRoundId()).toBeNull();
       expect(service.isLoading()).toBe(false);
@@ -119,7 +125,7 @@ describe('PlannerService (Vitest - Strictly Typed)', () => {
   });
 
   describe('snoozyrecommendedTodo', () => {
-    it('sollte das Snoozing an das Repository melden und lokal aus dem Signal entfernen', () => {
+    it('sollte das Snoozing in die Queue einreihen und lokal aus dem Signal entfernen', () => {
       const todo1 = new Todo({ task: 'Task 1', id: 'todo-1' });
       const todo2 = new Todo({ task: 'Task 2', id: 'todo-2' });
 
@@ -128,9 +134,10 @@ describe('PlannerService (Vitest - Strictly Typed)', () => {
         { todo: todo2, plannerDetails: [], modeCode: 'STANDARD' }
       ]);
 
-      service.snoozyrecommendedTodo('todo-1', 15).subscribe();
+      // Aufruf ist void, kein .subscribe()
+      service.snoozyrecommendedTodo('todo-1', 15);
 
-      expect(mockAiRepository.snoozyTodo).toHaveBeenCalledWith('todo-1', 15);
+      expect(mockPlannerDataManager.queueSnooze).toHaveBeenCalledWith('todo-1', 15);
       expect(service.recommendations().length).toBe(1);
       expect(service.recommendations()[0].todo.id).toBe('todo-2');
     });

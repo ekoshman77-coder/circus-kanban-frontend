@@ -5,6 +5,7 @@ import { TodoService } from '../../../core/services/todo/todo-service';
 import { of } from 'rxjs';
 import { Todo } from '../../../core/models/todo';
 import { signal } from '@angular/core';
+import { FocusService } from '../../../core/services/focus/focus-service';
 
 describe('FocusTimerComponent', () => {
   let component: FocusTimerComponent;

@@ -17,34 +17,32 @@ describe('UserService', () => {
       getItem: vi.fn().mockReturnValue(null), 
       setItem: vi.fn(),
       clearAllSessionData: vi.fn(),
-      collectUnsavedDataWarnings: vi.fn().mockReturnValue(null) // 🌟 NEU: Verhindert Crash beim Logout
+      collectUnsavedDataWarnings: vi.fn().mockReturnValue(null)
     };
 
-    // 🛡️ REPARATUR: Die statischen KEYS an den Mock heften, damit der Constructor nicht crasht!
+    // Statische KEYS an den Mock heften
     (mockStorageService as any).KEYS = {
       USER_SESSION: 'user_session',
-      GAMIFICATION: 'gamification',
-      USER_ENERGY: 'user_energy',
-      WORKING_TIME_LEFT: 'working_time_left'
+      GAMIFICATION: 'gamification'
     };
 
-    // Wir patchen auch die originale Klasse (falls Angular den Typ prüft)
     (LocalStorageService as any).KEYS = {
       USER_SESSION: 'user_session',
-      GAMIFICATION: 'gamification',
-      USER_ENERGY: 'user_energy',
-      WORKING_TIME_LEFT: 'working_time_left'
+      GAMIFICATION: 'gamification'
     };
 
     // 2. Definition des Mock-Verhaltens für das Repository
     mockUserRepository = {
-      getSettings: vi.fn().mockReturnValue(of({
-        primeTimeStartHour: 9,
-        primeTimeEndHour: 17,
-        defaultWorkingHours: 8
+      getUserStatus: vi.fn().mockReturnValue(of(null)),
+      getGamification: vi.fn().mockReturnValue(of({
+        currentXp: 0,
+        currentLevel: 0,
+        levelUp: false,
+        levelTitle: 'To-Do-Lehrling',
+        levelIcon: '👶',
+        currentLevelXpStart: 0,
+        nextLevelXpRequired: 100
       })),
-      updateSettings: vi.fn(),
-      getGamification: vi.fn(),
       logout: vi.fn().mockReturnValue(of(true))
     };
 
@@ -59,7 +57,6 @@ describe('UserService', () => {
 
     service = TestBed.inject(UserService);
     
-    // 🌟 WICHTIG FÜR SIGNALS: Den initialen Constructor-Effekt ausführen lassen
     TestBed.flushEffects();
   });
 
@@ -72,20 +69,12 @@ describe('UserService', () => {
     expect(service.currentUser()).toBeNull();
   });
 
-  it('sollte die verbleibende Arbeitszeit ändern können', () => {
-    service.changeWorkingTimeLeft(6);
-    expect(service.workingTimeLeft()).toBe(6);
-  });
-
   it('sollte beim Logout alle Session-Daten löschen', () => {
-    // Sicherstellen, dass keine ungespeicherten Daten-Warnungen vorliegen
     mockStorageService.collectUnsavedDataWarnings.mockReturnValue(null);
 
     service.logout();
     
-    // Prüfen, ob der StorageService angewiesen wurde, alles zu leeren
     expect(mockStorageService.clearAllSessionData).toHaveBeenCalled();
-    // Prüfen, ob der Zustand zurückgesetzt wurde
     expect(service.currentUser()).toBeNull();
   });
 });

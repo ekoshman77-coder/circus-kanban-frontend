@@ -5,53 +5,52 @@ import { IdeaSortingService } from '../../../core/services/note/idea-sorting-ser
 import { TabNavigationService, BoardTab } from '../tab-navigation-service';
 import { FilterService } from '../../../core/services/filter/filter-service';
 import { UserService } from '../../../core/services/user/user-service';
+import { ProjectService } from '../../../core/services/project/project-service';
+import { TeamService } from '../../../core/services/team/team-service';
+import { NotificationService } from '../../../core/services/notification/notification-service';
+import { TodoService } from '../../../core/services/todo/todo-service'; // 👈 Neu
 import { computed, signal } from '@angular/core';
 import { Note } from '../../../core/models/note';
 import { NoteViewModel } from '../../../core/viewmodel/note-view-model';
 import { describe, beforeEach, it, expect, vi } from 'vitest';
 import { Subject } from 'rxjs';
+import { setupLocalStorageMock } from '@tests/helpers/local-storage-mock';
 
-// 🌐 GLOBALER LOCALSTORAGE-MOCK FÜR VITEST
-vi.stubGlobal('localStorage', {
-    getItem: vi.fn().mockReturnValue(null),
-    setItem: vi.fn(),
-    removeItem: vi.fn(),
-    clear: vi.fn(),
-    length: 0,
-    key: vi.fn()
-});
 
 describe('IdeaBoardComponent (Vitest Edition)', () => {
     let component: IdeaBoardComponent;
     let fixture: ComponentFixture<IdeaBoardComponent>;
 
-    // 1. Mocks für alle injizierten Services vorbereiten
+    // 🌐 LOCALSTORAGE MOCK EINRICHTEN
+    setupLocalStorageMock();
+
+    // 1. Mocks für ALLE injizierten Services vorbereiten
     const mockNoteService = {
-        notesList: signal<Note[]>([
+        notesList: signal([
             new Note({ id: '1', title: 'Erste Idee', content: 'Inhalt 1', colorType: 'note-yellow', tag: 'Tech', userId: 'user-123' }),
             new Note({ id: '2', title: 'Zweite Idee', content: 'Inhalt 2', colorType: 'note-blue', tag: 'Design', userId: 'user-123' })
         ]),
         addNote: vi.fn(),
         updateNote: vi.fn(),
-        removeNote: vi.fn()
+        removeNote: vi.fn(),
+        promoteToCompany: vi.fn(),
+        revertToDepartment: vi.fn()
     };
 
     const mockBoardStateService = {
-        currentSortOrders: signal<any[]>([]),
-        loadSorting: vi.fn().mockReturnValue([]), // 🟢 HINZUGEFÜGT!
+        currentSortOrders: signal([]),
+        loadSorting: vi.fn().mockReturnValue([]),
         saveSorting: vi.fn()
     };
 
-    // Erzeuge ein Test-User-Signal, das wir im computed Mock auslesen können
-    const mockUserSignal = signal<any>({ id: 'user-123', name: 'Test User' });
+    const mockUserSignal = signal({ id: 'user-123', name: 'Test User' });
 
     const mockUserService = {
         currentUser: computed(() => mockUserSignal()),
         getCurrentUserId: vi.fn().mockReturnValue('user-123'),
-        onLogout$: new Subject<void>(),
+        onLogout$: new Subject(),
         isAdmin: vi.fn().mockReturnValue(false),
         isLoggedIn: vi.fn().mockReturnValue(true)
-
     };
 
     const mockTabService = {
@@ -60,8 +59,29 @@ describe('IdeaBoardComponent (Vitest Edition)', () => {
 
     const mockFilterService = {
         setInitialCategory: vi.fn(),
-        searchTerm: signal<string>(''),
+        searchTerm: signal(''),
         resetData: vi.fn()
+    };
+
+    const mockProjectService = {
+        saveCalculatedProject: vi.fn(),
+        addMemberToProject: vi.fn()
+    };
+
+    const mockTeamService = {
+        globalMembersSignal: signal([])
+    };
+
+    const mockNotificationService = {
+        showNotification: vi.fn()
+    };
+
+    // 🟢 Der entscheidende Mock, der den CentralQueueService vom Todo-Board fernhält
+    const mockTodoService = {
+        todosSignal: signal([]),
+        addTodo: vi.fn(),
+        updateTodo: vi.fn(),
+        removeTodo: vi.fn()
     };
 
     beforeEach(async () => {
@@ -74,7 +94,11 @@ describe('IdeaBoardComponent (Vitest Edition)', () => {
                 { provide: IdeaSortingService, useValue: mockBoardStateService },
                 { provide: UserService, useValue: mockUserService },
                 { provide: TabNavigationService, useValue: mockTabService },
-                { provide: FilterService, useValue: mockFilterService }
+                { provide: FilterService, useValue: mockFilterService },
+                { provide: ProjectService, useValue: mockProjectService },
+                { provide: TeamService, useValue: mockTeamService },
+                { provide: NotificationService, useValue: mockNotificationService },
+                { provide: TodoService, useValue: mockTodoService } // 🟢
             ]
         }).compileComponents();
 
@@ -105,14 +129,12 @@ describe('IdeaBoardComponent (Vitest Edition)', () => {
 
         it('sollte dynamisch verfügbare Tags berechnen', () => {
             const tags = component.availableTags();
-            // Wir prüfen, ob die Pipeline funktionstüchtig ist und Elemente liefert
             expect(tags).toBeDefined();
             expect(tags.length).toBeGreaterThan(0);
         });
 
         it('sollte dynamisch verfügbare Farben berechnen', () => {
             const colors = component.availableColors();
-            // Wir prüfen, ob die Farben aus den existierenden Notizen extrahiert wurden
             expect(colors).toBeDefined();
             expect(colors.length).toBeGreaterThan(0);
         });

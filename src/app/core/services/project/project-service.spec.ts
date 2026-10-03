@@ -18,7 +18,7 @@ describe('ProjectService (Vitest - Strictly Typed)', () => {
   let service: ProjectService;
   
   // 🏭 Helper-Factory für UserModel
-  const createTestUser = (overrides: Partial<IUserInit> = {}): UserModel => {
+  const createTestUser = (overrides: Partial< IUserInit > = {}): UserModel => {
     return new UserModel({
       id: 'user-123',
       username: 'testuser',
@@ -32,22 +32,24 @@ describe('ProjectService (Vitest - Strictly Typed)', () => {
   };
 
   // Typsichere Mocks
-  let dataManagerMock: Partial<ProjectDataManagerService>;
-  let userServiceMock: Partial<UserService>;
-  let noteServiceMock: Partial<NoteService>;
-  let notificationServiceMock: Partial<NotificationService>;
-  let draftServiceMock: Partial<ProjectDraftService>;
+  let dataManagerMock: Partial< ProjectDataManagerService >;
+  let userServiceMock: Partial< UserService >;
+  let noteServiceMock: Partial< NoteService >;
+  let notificationServiceMock: Partial< NotificationService >;
+  let draftServiceMock: Partial< ProjectDraftService >;
 
   // Reaktive Signals für Mocks
-  let currentUserSignal: WritableSignal<UserModel | null>;
-  let currentDraftSignal: WritableSignal<Project | null>;
+  let currentUserSignal: WritableSignal< UserModel | null >;
+  let currentDraftSignal: WritableSignal< Project | null >;
+  let allProjectsPoolSignal: WritableSignal< Project[] >;
 
   beforeEach(() => {
-    currentUserSignal = signal<UserModel | null>(null);
-    currentDraftSignal = signal<Project | null>(null);
+    currentUserSignal = signal< UserModel | null >(null);
+    currentDraftSignal = signal< Project | null >(null);
+    allProjectsPoolSignal = signal< Project[] >([]);
 
     dataManagerMock = {
-      getProjects: vi.fn().mockReturnValue(of([])),
+      allProjectsPool: allProjectsPoolSignal,
       updateProject: vi.fn(),
       createProject: vi.fn(),
       deleteProject: vi.fn(),
@@ -92,6 +94,7 @@ describe('ProjectService (Vitest - Strictly Typed)', () => {
   afterEach(() => {
     currentUserSignal.set(null);
     currentDraftSignal.set(null);
+    allProjectsPoolSignal.set([]);
     vi.clearAllMocks();
   });
 
@@ -136,9 +139,9 @@ describe('ProjectService (Vitest - Strictly Typed)', () => {
   // 2. SIGNALS & KI-FILTERUNG
   // ==========================================
   describe('Signals & KI-Filterung', () => {
-it('sollte Vorschläge herausfiltern, die bereits im Entwurf (Draft) existieren', () => {
+    it('sollte Vorschläge herausfiltern, die bereits im Entwurf (Draft) existieren', () => {
       // 1. Setup: Draft mit einem vollständigen Project-Objekt erstellen
-currentDraftSignal.set(new Project({
+      currentDraftSignal.set(new Project({
         id: 'p1',
         title: 'Mein Projekt',
         area: 'Tech',
@@ -189,11 +192,12 @@ currentDraftSignal.set(new Project({
     it('sollte beim Speichern eines Projekts die Notiz via NoteService sperren/aktualisieren', () => {
       const mockProject = new Project({ id: 'p2', title: 'Vitest App', ideaId: 'note-99', userId: 'user-123', area: 'Tech', departmentId: "dept" });
       vi.mocked(userServiceMock.getCurrentUserId!).mockReturnValue('user-123');
-      vi.mocked(dataManagerMock.createProject!).mockReturnValue(of(mockProject));
 
-      service.saveCalculatedProject(mockProject).subscribe(() => {
-        expect(noteServiceMock.updateNoteStatus).toHaveBeenCalledWith('note-99', true);
-      });
+      // Aufruf ist jetzt synchron (void)
+      service.saveCalculatedProject(mockProject);
+
+      expect(dataManagerMock.createProject).toHaveBeenCalledWith(mockProject);
+      expect(noteServiceMock.updateNoteStatus).toHaveBeenCalledWith('note-99', true);
     });
 
     it('sollte bei einer Offline-Fehlermeldung die passende Benachrichtigung anzeigen', () => {
