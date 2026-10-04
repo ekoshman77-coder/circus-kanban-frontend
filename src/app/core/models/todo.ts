@@ -1,6 +1,7 @@
 import { Identifiable } from "./identifable";
 import { ITodoJSON } from "../repositories/dto/todo-json";
 import { generateLocalId } from "../shared/constants/id-const";
+import { DomainModel } from "./domain-model";
 
 export enum DateStatus {
   DUE = "due",
@@ -17,7 +18,7 @@ export enum VisualStatus {
   DUE_TODAY = "due-today"
 }
 
-export class Todo implements Identifiable {
+export class Todo implements Identifiable, DomainModel<Todo> {
   id: string;
   task: string;
   description: string | null;

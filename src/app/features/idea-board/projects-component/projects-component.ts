@@ -98,7 +98,7 @@ export class ProjectsComponent implements OnInit {
     if (!projectId) {
       return false;
     }
-    return this.teamService.hasPermission(projectId, 'PROJECT_DELETE');
+    return this.projectService.hasPermission(projectId, 'PROJECT_DELETE');
   }
 
   /**

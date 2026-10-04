@@ -1,14 +1,14 @@
 import { QueueItem } from '../models/queue-items/queue-item';
 import { DraftChainDto, DraftOrigin } from '../repositories/dto/draft-chain-dto';
 import { DelegationTarget } from './queue-items/draft-queue-payload';
-import { Serializable } from './serialisable-interface';
+import { DomainModel } from './domain-model';
 
 export interface DraftChainItem {
   queueItem: QueueItem;
   isRootCause: boolean;       // true = Das Element, das den Abbruch verursacht hat
 }
 
-export class DraftChain implements Serializable< DraftChainDto > {
+export class DraftChain implements DomainModel< DraftChain > {
   constructor(
     public id: string,
     public title: string,
@@ -23,12 +23,28 @@ export class DraftChain implements Serializable< DraftChainDto > {
     public note?: string
   ) {}
 
+  public cloneWith(changes: Partial< DraftChain >): DraftChain {
+    return new DraftChain(
+      changes.id ?? this.id,
+      changes.title ?? this.title,
+      changes.items ?? this.items,
+      changes.createdAt ?? this.createdAt,
+      changes.origin ?? this.origin,
+      changes.createdByUserId ?? this.createdByUserId,
+      changes.lastErrorReason ?? this.lastErrorReason,
+      changes.lastErrorCode ?? this.lastErrorCode,
+      changes.target !== undefined ? changes.target : this.target,
+      changes.delegatedByUserId !== undefined ? changes.delegatedByUserId : this.delegatedByUserId,
+      changes.note !== undefined ? changes.note : this.note
+    );
+  }
+
   public toJson(): DraftChainDto {
     return {
       id: this.id,
       title: this.title,
       items: structuredClone(this.items),
-      createdAt: this.createdAt?? Date.now(),
+      createdAt: this.createdAt ?? Date.now(),
       createdByUserId: this.createdByUserId,
       target: this.target,
       delegatedByUserId: this.delegatedByUserId,
@@ -45,7 +61,7 @@ export class DraftChain implements Serializable< DraftChainDto > {
       dto.title || 'Unbenannter Entwurf',
       dto.items || [],
       dto.createdAt || Date.now(),
-      dto.origin?? "REMOTE",
+      dto.origin ?? "REMOTE",
       dto.createdByUserId || '',
       dto.lastErrorReason || '',
       dto.lastErrorCode || 500,

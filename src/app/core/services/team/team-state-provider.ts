@@ -1,24 +1,18 @@
 import { ProjectMember } from '../../models/project-member';
-import { IProjectMemberJSON } from '../../repositories/dto/project-member-json';
 import { ArrayStateProvider } from '../central-queue/state-providers/array-state-provider';
 import { TeamAction } from '../../models/queue-items/member-queue-payload';
 
-export class TeamStateProvider extends ArrayStateProvider<ProjectMember> {
-    protected storageKey = 'offline_global_members';
+export class TeamStateProvider extends ArrayStateProvider< ProjectMember > {
+    protected override storageKey = 'offline_global_members';
+
+    // 🎯 Registriert ProjectMember für automatische Snapshot/Cache-Deserialisierung
+    protected modelStatic = ProjectMember;
 
     constructor() {
         super([]);
     }
 
-    public override loadFromCache(): void {
-        const cached = this.localStorageService.getItem<IProjectMemberJSON[]>(this.storageKey);
-        if (cached && Array.isArray(cached)) {
-            const restored = cached.map((m) => ProjectMember.fromJson(m));
-            this.setRawState(restored);
-        }
-    }
-
-    // 🛡️ standardisierte Schnittstelle der Basisklasse
+    // 🛡️ Standardisierte Schnittstelle der Basisklasse
     public override applyActionPayload(action: string, payload: any): void {
         switch (action as TeamAction | 'SET_MEMBERS') {
             case 'SET_MEMBERS': {
@@ -38,7 +32,11 @@ export class TeamStateProvider extends ArrayStateProvider<ProjectMember> {
             case 'UPDATE_PROFILE': {
                 if (payload?.id && payload?.updatedUser) {
                     this.applyAction((items) =>
-                        items.map((m) => (m.user.id === payload.id ? new ProjectMember(payload.updatedUser, m.projectRole) : m))
+                        items.map((m) => 
+                            m.user.id === payload.id 
+                                ? m.cloneWith({ user: payload.updatedUser }) 
+                                : m
+                        )
                     );
                 }
                 break;
@@ -48,13 +46,15 @@ export class TeamStateProvider extends ArrayStateProvider<ProjectMember> {
                     this.applyAction((items) =>
                         items.map((m) => {
                             if (m.user.id === payload.id) {
-                                // Erstelle eine frische UserModel-Instanz oder weise ein neues Objekt zu
-                                m.user.coffeeAccount = {
-                                    balance: payload.balance,
-                                    role: payload.role,
-                                    emoji: payload.emoji
-                                };
-                                return new ProjectMember(m.user, m.projectRole);
+                                // 🛡️ Prototyp-sicheres Klonen über cloneWith
+                                const updatedUser = m.user.cloneWith({
+                                    coffeeAccount: {
+                                        balance: payload.balance,
+                                        role: payload.role,
+                                        emoji: payload.emoji
+                                    }
+                                });
+                                return m.cloneWith({ user: updatedUser });
                             }
                             return m;
                         })
@@ -68,13 +68,6 @@ export class TeamStateProvider extends ArrayStateProvider<ProjectMember> {
                 }
                 break;
             }
-        }
-    }
-
-    public override restoreFromSnapshot(snapshot: unknown): void {
-        if (Array.isArray(snapshot)) {
-            const restored = (snapshot as IProjectMemberJSON[]).map((m) => ProjectMember.fromJson(m));
-            this.setRawState(restored);
         }
     }
 }

@@ -1,50 +1,53 @@
 import { Permission } from '../../models/permission';
 import { ArrayStateProvider } from '../central-queue/state-providers/array-state-provider';
 import {
-  BatchCreatePermissionsPayload,
-  DeletePermissionPayload,
-  PermissionPayload,
-  PermissionQueueAction
+  BatchCreatePermissionsPayload, DeletePermissionPayload, PermissionPayload, PermissionQueueAction 
 } from '../../models/queue-items/permission-queue-item';
-import { generateLocalId } from '../../shared/constants/id-const';
+import { generateLocalId, isLocalId } from '../../shared/constants/id-const';
 
-export class PermissionStateProvider extends ArrayStateProvider<Permission> {
-  
-  protected storageKey: string = 'global_permissions_pool'
+export class PermissionStateProvider extends ArrayStateProvider< Permission > {
+  protected override storageKey: string = 'global_permissions_pool';
+
+  // 🎯 Statische Modell-Referenz für generisches Deserialisieren & Cache-Laden
+  protected modelStatic = Permission;
 
   constructor() {
     super([]);
-  }
-
-  public override loadFromCache(): void {
-    const cached = this.localStorageService.getItem<Permission[]>(this.storageKey);
-    if (cached) {
-      this.setRawState(cached.map((p) => Permission.fromJson(p)));
-    }
   }
 
   // 🚀 Einzige Schnittstelle für State-Änderungen über reine Action-Namen & Payloads
   public override applyActionPayload(action: string, payload: any): void {
     switch (action as PermissionQueueAction) {
       case 'SET_PERMISSIONS': {
-         const permissions = (payload as Permission[]).map(permission => Permission.fromJson(permission));
-         this.setRawState(permissions);
-         break;
+        const permissions = Array.isArray(payload)
+          ? payload.map((p: any) => p instanceof Permission ? p : Permission.fromJson(p))
+          : [];
+        this.setRawState(permissions);
+        break;
       }
       case 'CREATE':
       case 'UPDATE': {
         const createPayload = payload as PermissionPayload;
-        this.addOrUpdateItem(createPayload.permission);
+        if (createPayload?.permission) {
+          const permInstance = createPayload.permission instanceof Permission
+            ? createPayload.permission
+            : Permission.fromJson(createPayload.permission);
+          this.addOrUpdateItem(permInstance);
+        }
         break;
       }
       case 'DELETE': {
         const deletePayload = payload as DeletePermissionPayload;
-        this.removeItemById(deletePayload.id);
+        if (deletePayload?.id) {
+          this.removeItemById(deletePayload.id);
+        }
         break;
       }
       case 'BATCH': {
         const batchPayload = payload as BatchCreatePermissionsPayload;
-        this.applyBatchCreate(batchPayload);
+        if (batchPayload) {
+          this.applyBatchCreate(batchPayload);
+        }
         break;
       }
     }
@@ -57,23 +60,18 @@ export class PermissionStateProvider extends ArrayStateProvider<Permission> {
   public replaceIdsByPermission(serverPermissions: Permission[], onMatch?: (localId: string, serverId: string) => void): void {
     this.applyAction((currentPermissions) =>
       currentPermissions.map((localPerm) => {
-        // Nur temporäre Objekte prüfen
-        if (!localPerm.id.startsWith('local-')) {
+        if (!isLocalId(localPerm.id)) {
           return localPerm;
         }
 
-        // Finde das fachlich passende Server-Objekt
         const matchingServer = serverPermissions.find((serverPerm) => localPerm.isEqualPermission(serverPerm));
 
         if (matchingServer) {
-          // Callback für den QueueService (falls übergeben)
           if (onMatch) {
             onMatch(localPerm.id, matchingServer.id);
           }
-          return new Permission({
-            ...localPerm,
-            id: matchingServer.id
-          });
+          // 🛡️ Klonen ohne Prototyp-Verlust via cloneWith
+          return localPerm.cloneWith({ id: matchingServer.id });
         }
 
         return localPerm;
@@ -102,12 +100,5 @@ export class PermissionStateProvider extends ArrayStateProvider<Permission> {
     });
 
     this.applyAction(() => updatedList);
-  }
-
-  public override restoreFromSnapshot(snapshot: unknown): void {
-    if (Array.isArray(snapshot)) {
-      const restoredPermissions = snapshot.map((json) => Permission.fromJson(json));
-      this.setRawState(restoredPermissions);
-    }
   }
 }

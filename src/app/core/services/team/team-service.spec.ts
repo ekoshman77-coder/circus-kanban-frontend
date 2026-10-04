@@ -90,44 +90,6 @@ describe('TeamService (Vitest - Strict Typing)', () => {
     currentUserSignalMock.set(createTestUser());
   });
 
-  it('sollte bei setCurrentProject die ID an den ProjectService weiterleiten', () => {
-    const projectId = 'project-123';
-
-    service.setCurrentProject(projectId);
-
-    expect(projectServiceMock.setActiveProjectId).toHaveBeenCalledWith(projectId);
-  }); 
-
-  describe('Rechteprüfung (hasPermission)', () => {
-    it('sollte false zurückgeben, wenn das Projekt nicht gefunden wird', () => {
-      expect(service.hasPermission('project-123', 'PROJECT_EDIT' as UIActionIntent)).toBe(false);
-    });
-
-    it('sollte true zurückgeben, wenn ein OWNER das Projekt löschen möchte', () => {
-      projectsListSignalMock.set([{ id: 'project-123', userId: 'user-active' }]);
-      
-      const activeUser = createTestUser({ id: 'user-active', username: 'elena', firstName: 'E', lastName: 'L', projectIds: ['project-123'] });
-      currentProjectMembersSignalMock.set([
-        new ProjectMember(activeUser, 'OWNER')
-      ]);
-
-      expect(service.hasPermission('project-123', 'PROJECT_DELETE' as UIActionIntent)).toBe(true);
-      expect(service.hasPermission('project-123', 'MILESTONE_CREATE' as UIActionIntent)).toBe(true);
-    });
-
-    it('sollte false zurückgeben, wenn ein DEVELOPER versucht ein Projekt zu löschen', () => {
-      projectsListSignalMock.set([{ id: 'project-123', userId: 'other-owner' }]);
-
-      const activeUser = createTestUser({ id: 'user-active', username: 'designer-guy', firstName: 'D', lastName: 'G', projectIds: ['project-123'] });
-      currentProjectMembersSignalMock.set([
-        new ProjectMember(activeUser, 'DEVELOPER')
-      ]);
-
-      expect(service.hasPermission('project-123', 'PROJECT_DELETE' as UIActionIntent)).toBe(false);
-      expect(service.hasPermission('project-123', 'TODO_CREATE' as UIActionIntent)).toBe(true);
-    });
-  });
-
   it('sollte updateCoffeeAccount transparent an den DataManager weiterreichen', () => {
     service.updateCoffeeAccount('user-1', 15.50, 'DEVELOPER', '☕');
 

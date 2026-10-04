@@ -158,7 +158,7 @@ export class DraftUIService extends BaseDataManager {
       : this.draftService.draftChains();
   });
 
-  public isDraftBoxOpen = signal<boolean>(true);
+  public isDraftBoxOpen = signal<boolean>(false);
   public chainsCount = computed(() => this.failureChains().length);
   public hasChains = computed(() => this.chainsCount() > 0);
   public showDraftHandle = this.hasChains;

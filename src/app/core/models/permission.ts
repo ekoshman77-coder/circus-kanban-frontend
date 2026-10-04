@@ -1,12 +1,14 @@
 import { generateLocalId } from "../shared/constants/id-const";
+import { DomainModel } from "./domain-model";
 
-export class Permission{
+export class Permission implements DomainModel< Permission > {
     id: string;
     role: string;
     resource: string;
     action: string;
     targetScope: string;
     specialization?: string;
+
     constructor(init: {
         id?: string,
         role: string,
@@ -15,12 +17,23 @@ export class Permission{
         targetScope: string,
         specialization?: string;
     }) {
-        this.id = init.id?? generateLocalId();
+        this.id = init.id ?? generateLocalId();
         this.role = init.role;
         this.resource = init.resource;
         this.action = init.action;
         this.targetScope = init.targetScope;
-        this.specialization = init.specialization
+        this.specialization = init.specialization;
+    }
+
+    public cloneWith(changes: Partial< Permission >): Permission {
+        return new Permission({
+            id: changes.id ?? this.id,
+            role: changes.role ?? this.role,
+            resource: changes.resource ?? this.resource,
+            action: changes.action ?? this.action,
+            targetScope: changes.targetScope ?? this.targetScope,
+            specialization: changes.specialization !== undefined ? changes.specialization : this.specialization
+        });
     }
 
     static fromJson(json: any): Permission {
@@ -31,7 +44,7 @@ export class Permission{
             action: json.action,
             targetScope: json.targetScope,
             specialization: json.specialization
-        })
+        });
     }
 
     public toJson(): any {
@@ -42,7 +55,7 @@ export class Permission{
             action: this.action,
             targetScope: this.targetScope,
             specialization: this.specialization
-        }
+        };
     }
 
     public isEqualPermission(permission: Permission): boolean {
@@ -50,7 +63,6 @@ export class Permission{
                && this.action === permission.action
                && this.resource === permission.resource
                && this.targetScope === permission.targetScope
-               && this.specialization === permission.specialization 
+               && this.specialization === permission.specialization;
     }
-
 }

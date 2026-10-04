@@ -2,21 +2,16 @@ import { SingleStateProvider } from '../central-queue/state-providers/single-sta
 import { UserSettings } from '../../models/user.settings';
 
 export class UserSettingsStateProvider extends SingleStateProvider<UserSettings> {
-  protected storageKey = 'user_planner_settings_cache';
+  protected override storageKey = 'user_planner_settings_cache';
+
+  // 🎯 Statische Modell-Referenz für generisches Deserialisieren & Cache-Laden
+  protected modelStatic = UserSettings;
 
   constructor() {
     super(null);
   }
 
-  // 1. CACHE LADEN
-  public override loadFromCache(): void {
-    const raw = this.localStorageService.getItem<any>(this.storageKey);
-    if (raw) {
-      this.setRawState(UserSettings.fromJson(raw));
-    }
-  }
-
-  // 2. FORWARD REPLAY (Optimistic Update)
+  // 🚀 FORWARD REPLAY (Optimistic Update)
   public override applyActionPayload(action: string, payload: any): void {
     if (action === 'SET_SETTINGS' && payload?.settings) {
       const newSettings = payload.settings instanceof UserSettings
@@ -31,20 +26,6 @@ export class UserSettingsStateProvider extends SingleStateProvider<UserSettings>
       const current = this.getState() || new UserSettings(payload.userId || '');
       const updated = current.cloneWith(payload.changes);
       this.setRawState(updated);
-    }
-  }
-
-  // 3. SNAPSHOTS (Verwendet automatisch toJson)
-  public override createSnapshot(): any {
-    const current = this.getState();
-    return current ? current.toJson() : null;
-  }
-
-  public override restoreFromSnapshot(snapshot: unknown): void {
-    if (snapshot) {
-      this.setRawState(UserSettings.fromJson(snapshot));
-    } else {
-      this.setRawState(null);
     }
   }
 }

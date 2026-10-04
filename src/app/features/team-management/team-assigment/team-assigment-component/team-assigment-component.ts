@@ -57,7 +57,7 @@ export class TeamAssigmentComponent {
   });
 
   public activeMembers = computed(() => {
-    return this.teamService.currentProjectMembersSignal();
+    return this.projectService.currentProjectMembersSignal();
   });
 
   public showRoleModal = signal<boolean>(false);
@@ -68,7 +68,7 @@ export class TeamAssigmentComponent {
     effect(() => {
       const projectId = this.selectedProjectId();
       console.log(`📂 [TeamAssignment] Dropdown gewechselt auf Projekt-ID: ${projectId}`);
-      this.teamService.setCurrentProject(projectId);
+      this.projectService.setActiveProjectId(projectId);
     });
   }
 
@@ -150,7 +150,7 @@ public onConfirmRoleAssignment(): void {
     this.selectedProjectId.set(projectId);
 
     if (projectId) {
-      this.teamService.setCurrentProject(projectId);
+      this.projectService.setActiveProjectId(projectId);
     }
   }
 

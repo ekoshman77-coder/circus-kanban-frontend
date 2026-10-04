@@ -4,8 +4,9 @@ import { ProjectRole, UserModel } from "./user-model";
 import { IProjectJSON } from "../repositories/dto/project-json";
 import { generateLocalId } from "../shared/constants/id-const";
 import { ProjectMember } from "./project-member";
+import { DomainModel } from "./domain-model";
 
-export class Project {
+export class Project implements DomainModel< Project > {
   public id: string;
   public userId: string;
   public ideaId: string;
@@ -18,7 +19,6 @@ export class Project {
   public scope: string;
   public teamMembers: ProjectMember[];
 
-  // 💡 INLINE-KONSTRUKTOR: Keine extra Interfaces mehr nötig!
   constructor(init: {
     ideaId: string;
     title: string;
@@ -37,40 +37,86 @@ export class Project {
     this.ideaId = init.ideaId;
     this.userId = init.userId;
     
-    // 🛡️ Sichere Defaults für alles Optionale
     this.id = init.id ?? generateLocalId();
     this.status = init.status ?? 'Calculation';
     this.content = init.content ?? "";
-    this.departmentId = init.departmentId
+    this.departmentId = init.departmentId;
     this.milestones = init.milestones ?? [];
     this.teamMembers = init.teamMembers ?? [];
-    this.scope = init.scope?? "DEPARTMENT"
+    this.scope = init.scope ?? "DEPARTMENT";
   }
 
-  // 🧮 Geplante Zeit (Soll)
+  // 🛡️ Typensicher klonen ohne Prototyp-Verlust
+  public cloneWith(changes: Partial< Project >): Project {
+    return new Project({
+      id: changes.id ?? this.id,
+      title: changes.title ?? this.title,
+      area: changes.area ?? this.area,
+      ideaId: changes.ideaId ?? this.ideaId,
+      userId: changes.userId ?? this.userId,
+      content: changes.content !== undefined ? changes.content : this.content,
+      departmentId: changes.departmentId ?? this.departmentId,
+      status: changes.status ?? this.status,
+      scope: changes.scope ?? this.scope,
+      milestones: changes.milestones ?? this.milestones,
+      teamMembers: changes.teamMembers ?? this.teamMembers
+    });
+  }
+
+  // 📥 Server-DTO ➔ Domain Model
+  public static fromJson(json: IProjectJSON): Project {
+    return new Project({
+      id: json.id,
+      title: json.title,
+      area: json.area,
+      ideaId: json.ideaId,
+      userId: json.userId,
+      content: json.content || '',
+      departmentId: json.departmentId,
+      status: json.status,
+      scope: json.scope,
+      milestones: (json.milestones ?? []).map(m => Milestone.fromJson(m)),
+      teamMembers: (json.teamMembers ?? []).map(m => ProjectMember.fromJson(m))
+    });
+  }
+
+  // 📤 Domain Model ➔ Server-DTO
+  public toJson(): IProjectJSON {
+    return {
+      id: this.id,
+      title: this.title,
+      area: this.area,
+      ideaId: this.ideaId,
+      userId: this.userId,
+      content: this.content,
+      departmentId: this.departmentId,
+      status: this.status,
+      scope: this.scope,
+      milestones: this.milestones.map(m => m.toJson()),
+      teamMembers: this.teamMembers.map(m => m.toJson())
+    };
+  }
+
+  // 🧮 Domain-Logik
   public getTotalDuration(): number {
     return this.milestones.reduce((sum: number, m: Milestone) => sum + Number(m.duration), 0);
   }
 
-  // 📐 Berechnet reaktiv die Gesamtdauer aller Meilensteine.
-  // WICHTIG: Number() fängt HTML-String-Konvertierungen ab, damit nicht "1" + "2" = "12" passiert!
   public getTotalUsedDuration(): number {
     return this.milestones.reduce((sum, m) => sum + m.usedDuration, 0);
   }
 
-  // 📊 Fortschritt in Prozent
   public getProgressPercentage(): number {
     if (this.milestones.length === 0) return 0;
     const completed = this.milestones.filter(m => m.isCompleted()).length;
     return Math.round((completed / this.milestones.length) * 100);
   }
 
-  public isInCalculation = computed(() => this.status === 'Calculation' )
-
-  public isActive = computed(() => this.status === "Active")
+  public isInCalculation = computed(() => this.status === 'Calculation');
+  public isActive = computed(() => this.status === "Active");
 
   public getUserRole(userId: string): ProjectRole {
     const member = this.teamMembers.find(m => m.user.id === userId);
-    return member ? member.projectRole : 'DEVELOPER'; // Fallback, falls er kein Mitglied ist
+    return member ? member.projectRole : 'DEVELOPER';
   }
 }

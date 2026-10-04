@@ -1,30 +1,45 @@
+import { DomainModel, DomainModelStatic } from '../../../models/domain-model';
 import { StateProvider } from './base-state-provider';
 
-export abstract class SingleStateProvider<T> extends StateProvider<T | null> {
+export abstract class SingleStateProvider< T extends DomainModel< T > > extends StateProvider< T | null > {
+  protected abstract modelStatic: DomainModelStatic< T >;
+
   constructor(initialItem: T | null = null) {
     super(initialItem);
   }
 
-  /** Zuweisen eines neuen Einzel-Objekts oder null */
+  // 📦 Universelles Laden aus dem Cache für JEDEN SingleStateProvider!
+  public loadFromCache(): void {
+    if (!this.storageKey) return;
+    const cached = this.localStorageService.getItem< any >(this.storageKey);
+    if (cached) {
+      this.restoreFromSnapshot(cached);
+    }
+  }
+
   public setState(newItem: T | null): void {
     this.setRawState(newItem);
   }
 
-  /** Aktualisiert das bestehende Objekt partiell (Partial Update) */
-  public updateState(partial: Partial<T>): void {
+  public updateState(partial: Partial< T >): void {
     const current = this.getState();
-    if (current && typeof current === 'object') {
-      this.setRawState({ ...current, ...partial });
+    if (current) {
+      const updated = current.cloneWith(partial);
+      this.setRawState(updated);
     }
   }
 
-  // 📸 Snapshots für Einzel-Objekte (Garantierte JSON-Serialisierung)
   public override createSnapshot(): any {
     const state = this.getState();
-    if (!state) return null;
+    return state ? state.toJson() : null;
+  }
 
-    return typeof (state as any).toJson === 'function'
-      ? (state as any).toJson()
-      : JSON.parse(JSON.stringify(state));
+  public override restoreFromSnapshot(snapshot: unknown): void {
+    if (snapshot && typeof snapshot === 'object') {
+      const restored = this.modelStatic.fromJson(snapshot);
+      this.setRawState(restored);
+    } else {
+      this.setRawState(null);
+    }
   }
 }

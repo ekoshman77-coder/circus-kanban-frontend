@@ -8,7 +8,6 @@ import { MILESTONE_TEMPLATES } from '../../shared/constants/milestone-template';
 import { UnifiedSuggestion } from '../../models/unified-suggestion';
 import { MilestoneSuggestionsModel } from '../../models/milestone-suggestions-model';
 import { ProjectDashboardStatsDTO } from '../../repositories/dto/project-dashboard-stats-dto';
-import { ProjectMapper } from '../../models/project-mapper';
 import { IProjectJSON } from '../../repositories/dto/project-json';
 import { QueueItem } from '../../models/queue-items/queue-item';
 import {
@@ -72,11 +71,11 @@ public override executeQueueItem(item: QueueItem): Observable<any> {
           ...createPayload.project,
           id: undefined
         });
-        return this.projectRepository.createProject(ProjectMapper.toJson(projectToSend));
+        return this.projectRepository.createProject(projectToSend.toJson());
       }
       case 'UPDATE': {
         const updatePayload = payload as ProjectPayload;
-        return this.projectRepository.updateProject(ProjectMapper.toJson(updatePayload.project));
+        return this.projectRepository.updateProject(updatePayload.project.toJson());
       }
       case 'DELETE': {
         const deletePayload = payload as DeleteProjectPayload;
@@ -129,7 +128,7 @@ public override executeQueueItem(item: QueueItem): Observable<any> {
     if (item.action === 'CREATE' && response) {
       const localProject = (item.payload as ProjectPayload)?.project;
       const serverProjectJson = response as IProjectJSON;
-      const serverProject = ProjectMapper.toDomain(serverProjectJson);
+      const serverProject = Project.fromJson(serverProjectJson);
 
       if (localProject?.milestones && serverProject?.milestones) {
         const milestoneReplacements: IdReplacement[] = [];
@@ -168,7 +167,7 @@ public override executeQueueItem(item: QueueItem): Observable<any> {
   protected override fetchFromServer(userId: string): Observable<void> {
     return this.projectRepository.getAllProjects().pipe(
       map((backendProjectsJson: IProjectJSON[]): void => {
-        const liveProjects = backendProjectsJson.map((json) => ProjectMapper.toDomain(json));
+        const liveProjects = backendProjectsJson.map((json) => Project.fromJson(json));
         this.stateProvider.applyActionPayload('SET_PROJECTS', { projects: liveProjects });
       })
     );

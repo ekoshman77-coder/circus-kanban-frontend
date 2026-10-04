@@ -1,6 +1,6 @@
 import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormGroup } from '@angular/forms';
+import { ReactiveFormsModule, FormGroup, FormArray } from '@angular/forms';
 import { PayloadFormVisitor } from '../../payload-form-visior';
 import { DraftChain, DraftChainItem } from '../../../../core/models/draft-chain';
 
@@ -208,5 +208,14 @@ private getUpdatedPayload(item: DraftChainItem): any {
     const liveValues = this.formLiveValues();
     return this.deepUpdatePayload(originalPayload, liveValues);
   }
+
+  public isFormArray(controlName: string): boolean {
+  return this.activeForm().get(controlName) instanceof FormArray;
+}
+
+public getFormArrayControls(controlName: string): FormGroup[] {
+  const array = this.activeForm().get(controlName) as FormArray;
+  return (array?.controls || []) as FormGroup[];
+}
 
 }

@@ -1,24 +1,17 @@
 import { Todo } from "../../models/todo";
-import { ITodoJSON } from "../../repositories/dto/todo-json";
 import { ArrayStateProvider } from "../central-queue/state-providers/array-state-provider";
 
 export class TodoStateProvider extends ArrayStateProvider<Todo> {
-  protected storageKey = 'global_todos_pool';
+  protected override storageKey = 'global_todos_pool';
+
+  // 🎯 Statische Modell-Referenz für generisches Deserialisieren & Cache-Laden
+  protected modelStatic = Todo;
 
   constructor() {
     super([]);
   }
 
-  // 1. CACHE LADEN
-  public override loadFromCache(): void {
-    const cachedData = this.localStorageService.getItem<ITodoJSON[]>(this.storageKey);
-    if (cachedData && Array.isArray(cachedData)) {
-      const restored = cachedData.map((json) => Todo.fromJson(json));
-      this.setRawState(restored);
-    }
-  }
-
-  // 2. FORWARD REPLAY (Optimistic Updates für die Queue)
+  // 🚀 FORWARD REPLAY (Optimistic Updates für die Queue)
   public override applyActionPayload(action: string, payload: any): void {
     switch (action) {
       case 'SET_TODOS': {
@@ -56,14 +49,6 @@ export class TodoStateProvider extends ArrayStateProvider<Todo> {
         this.applyAction((items) => items.filter((t) => t.milestoneId));
         break;
       }
-    }
-  }
-
-  // 3. RESTORE FROM SNAPSHOT
-  public override restoreFromSnapshot(snapshot: unknown): void {
-    if (Array.isArray(snapshot)) {
-      const restored = (snapshot as ITodoJSON[]).map((json) => Todo.fromJson(json));
-      this.setRawState(restored);
     }
   }
 }

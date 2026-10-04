@@ -11,6 +11,7 @@ import { FocusPomodoroPayload } from '../../models/queue-items/pomodoro-payload'
 import { StateProvider } from '../central-queue/state-providers/base-state-provider';
 import { EmptyStateProvider } from '../central-queue/state-providers/empty-state-provider';
 import { QueueHandlerName } from '../../enums/queue-handler-name';
+import { Todo } from '../../models/todo';
 
 export type FocusQueueAction = 'RECORD_POMODORO';
 
@@ -103,7 +104,7 @@ export class FocusDataManagerService extends BaseQueueDataManager {
   /**
    * Registriert ein Pomodoro-Intervall sofort in der CentralQueue.
    */
-  public recordCompletedPomodoro(todoId: string, todoTitle?: string): void {
+  public recordCompletedPomodoro(todo: Todo, todoTitle?: string): void {
     const userId = this.userService.getCurrentUserId();
     if (!userId) {
       return;
@@ -112,11 +113,11 @@ export class FocusDataManagerService extends BaseQueueDataManager {
     const payload: FocusPomodoroPayload = {
       id: generateLocalId(),
       userId,
-      todoId,
+      todoId: todo.id,
       count: 1,
       displayInfo: {
         category: 'Fokus-Session',
-        title: todoTitle ? `Pomodoro: "${todoTitle}"` : 'Fokus-Session abschließen'
+        title: todo.task ? `Pomodoro: "${todo.task}"` : 'Fokus-Session abschließen'
       }
     };
 

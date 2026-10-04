@@ -7,6 +7,7 @@ import { NotePayload } from '../../core/models/queue-items/note-queue-payload';
 import { DepartmentPayload } from '../../core/models/queue-items/department-queue-payload';
 import { ProjectPayload } from '../../core/models/queue-items/project-queue-item';
 import { TodoPayload } from '../../core/models/queue-items/todo-queue-payload';
+import { Milestone } from '../../core/models/milestone';
 
 @Injectable({ providedIn: 'root' })
 export class PayloadFormVisitor {
@@ -127,8 +128,18 @@ export class PayloadFormVisitor {
 
   private visitProject(payload: ProjectPayload): FormGroup {
     const proj = payload?.project;
+
+    // 🟢 Nur den Meilenstein-Titel editierbar machen!
+    const milestoneGroups = (proj?.milestones || []).map((m: Milestone) =>
+      this.fb.group({
+        id: [m.id],
+        title: [m.title || '', [Validators.required]]
+      })
+    );
+
     return this.fb.group({
-      title: [proj?.title || '', [Validators.required, Validators.minLength(2)]]
+      title: [proj?.title || '', [Validators.required, Validators.minLength(2)]],
+      milestones: this.fb.array(milestoneGroups)
     });
   }
 

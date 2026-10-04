@@ -2,8 +2,9 @@ import { Identifiable } from "./identifable";
 import { ProjectRole, UserModel } from "./user-model";
 import { UserSummary } from "./user-summary";
 import { IProjectMemberJSON } from "../repositories/dto/project-member-json";
+import { DomainModel } from "./domain-model";
 
-export class ProjectMember implements Identifiable {
+export class ProjectMember implements Identifiable, DomainModel< ProjectMember > {
   public user: UserModel;
   public projectRole: ProjectRole;
   public isPending: boolean;
@@ -38,11 +39,10 @@ export class ProjectMember implements Identifiable {
     return new ProjectMember(UserModel.fromJson(json.user), json.projectRole as ProjectRole);
   }
 
-  public cloneWith(changes: 
-    { 
-      user?: UserModel; 
-      projectRole?: ProjectRole 
-    }): ProjectMember {
-    return new ProjectMember(changes.user ?? this.user, changes.projectRole ?? this.projectRole);
+  public cloneWith(changes: Partial< ProjectMember >): ProjectMember {
+    return new ProjectMember(
+      changes.user ?? this.user, 
+      changes.projectRole ?? this.projectRole
+    );
   }
 }

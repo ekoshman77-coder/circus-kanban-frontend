@@ -115,7 +115,7 @@ private handleTimerFinished(): void {
     
     if (todo) {
       // 🚀 Rein in die Queue, völlig ohne Subscribe/Callback!
-      this.focusService.recordCompletedPomodoro(todo.id);
+      this.focusService.recordCompletedPomodoro(todo);
       
       // 🎉 Sofortiges Zero-Latency Feedback für die UI
       this.showSuccessCelebration.set(true);

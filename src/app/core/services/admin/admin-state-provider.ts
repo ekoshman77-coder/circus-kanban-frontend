@@ -1,5 +1,4 @@
 import { UserModel } from "../../models/user-model";
-import { IUser } from "../../repositories/dto/user-dto";
 import { ArrayStateProvider } from "../central-queue/state-providers/array-state-provider";
 import {
   AdminQueueAction,
@@ -7,26 +6,23 @@ import {
   DeleteUserPayload
 } from "../../models/queue-items/users-queue-payloads";
 
-export class AdminStateProvider extends ArrayStateProvider<UserModel> {
+export class AdminStateProvider extends ArrayStateProvider< UserModel > {
   protected storageKey = 'offline_admin_all_users';
+
+  // 🎯 Registriert UserModel für automatische Snapshot/Cache-Deserialisierung
+  protected modelStatic = UserModel;
 
   constructor() {
     super([]);
-  }
-
-  public loadFromCache(): void {
-    const cached = this.localStorageService.getItem(this.storageKey);
-    if (cached && Array.isArray(cached)) {
-      const restored = (cached as IUser[]).map((json) => UserModel.fromJson(json));
-      this.setRawState(restored);
-    }
   }
 
   // 🚀 Einzige Schnittstelle für State-Änderungen
   public override applyActionPayload(action: string, payload: any): void {
     switch (action as AdminQueueAction) {
       case 'SET_USERS': {
-        const users = payload as UserModel[];
+        const users = Array.isArray(payload)
+          ? payload.map((u: any) => u instanceof UserModel ? u : UserModel.fromJson(u))
+          : [];
         this.setRawState(users);
         break;
       }
@@ -35,8 +31,8 @@ export class AdminStateProvider extends ArrayStateProvider<UserModel> {
         this.applyAction((users) =>
           users.map((user) => {
             if (user.id === approvePayload.id) {
-              return new UserModel({
-                ...user,
+              // 🛡️ Klonen via cloneWith statt new UserModel({ ...user })
+              return user.cloneWith({
                 isApproved: true,
                 departmentRole: approvePayload.role,
                 department: { id: approvePayload.departmentId } as any
@@ -52,13 +48,6 @@ export class AdminStateProvider extends ArrayStateProvider<UserModel> {
         this.removeItemById(deletePayload.id);
         break;
       }
-    }
-  }
-
-  public override restoreFromSnapshot(snapshot: unknown): void {
-    if (Array.isArray(snapshot)) {
-      const restored = (snapshot as IUser[]).map((json) => UserModel.fromJson(json));
-      this.setRawState(restored);
     }
   }
 }

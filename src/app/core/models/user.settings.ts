@@ -1,6 +1,8 @@
+import { DomainModel } from "./domain-model";
+
 export type UserEnergyLevel = 'LOW' | 'MEDIUM' | 'HIGH';
 
-export class UserSettings {
+export class UserSettings implements DomainModel< UserSettings > {
   constructor(
     public userId: string,
     public defaultWorkingHours: number = 8,
@@ -10,7 +12,10 @@ export class UserSettings {
     public userEnergy: UserEnergyLevel = 'MEDIUM'
   ) {}
 
-  /** Serialisiert das Objekt in ein reines JSON-Format für Snapshots & Cache */
+  public get id(): string {
+    return this.userId;
+  }
+
   public toJson(): Record<string, any> {
     return {
       userId: this.userId,
@@ -22,7 +27,6 @@ export class UserSettings {
     };
   }
 
-  /** Erzeugt eine neue UserSettings-Instanz aus einem rohen JSON-Objekt */
   public static fromJson(json: any): UserSettings {
     if (!json) {
       return new UserSettings('');
@@ -38,8 +42,7 @@ export class UserSettings {
     );
   }
 
-  /** Hilfsmethode für unveränderliche Kopien mit Teil-Updates */
-  public cloneWith(changes: Partial<UserSettings>): UserSettings {
+  public cloneWith(changes: Partial< UserSettings >): UserSettings {
     return new UserSettings(
       changes.userId ?? this.userId,
       changes.defaultWorkingHours ?? this.defaultWorkingHours,

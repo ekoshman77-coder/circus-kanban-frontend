@@ -1,5 +1,4 @@
 import { Note } from "../../models/note";
-import { INoteJson } from "../../repositories/dto/note-json";
 import { ArrayStateProvider } from "../central-queue/state-providers/array-state-provider";
 import {
   NotePayload,
@@ -8,65 +7,61 @@ import {
   NoteQueueAction
 } from "../../models/queue-items/note-queue-payload";
 
-export class NoteStateProvider extends ArrayStateProvider<Note> {
+export class NoteStateProvider extends ArrayStateProvider< Note > {
   protected override storageKey: string = 'global_notes_pool';
-;
+
+  // 🎯 Registriert Note für automatische Snapshot/Cache-Deserialisierung
+  protected modelStatic = Note;
+
   constructor() {
     super([]);
-  }
-
-  public loadFromCache(): void {
-    const cached = this.localStorageService.getItem(this.storageKey);
-    if (cached && Array.isArray(cached)) {
-      const restored = cached.map((json: INoteJson) => Note.fromJson(json));
-      this.setRawState(restored);
-    }
   }
 
   // 🚀 Die zentrale Schaltstelle für alle State-Aktionen
   public override applyActionPayload(action: string, payload: any): void {
     switch (action as NoteQueueAction) {
       case 'SET_NOTES': {
-        const notes = payload as Note[];
+        const notes = Array.isArray(payload)
+          ? payload.map((n: any) => n instanceof Note ? n : Note.fromJson(n))
+          : [];
         this.setRawState(notes);
         break;
       }
-      case 'CREATE': {
-        const createPayload = payload as NotePayload;
-        this.addOrUpdateItem(createPayload.note);
-        break;
-      }
+      case 'CREATE':
       case 'UPDATE': {
-        const updatePayload = payload as NotePayload;
-        this.addOrUpdateItem(updatePayload.note);
+        const notePayload = payload as NotePayload;
+        if (notePayload?.note) {
+          const noteInstance = notePayload.note instanceof Note 
+            ? notePayload.note 
+            : Note.fromJson(notePayload.note);
+          this.addOrUpdateItem(noteInstance);
+        }
         break;
       }
       case 'DELETE': {
         const deletePayload = payload as NoteActionPayload;
-        this.removeItemById(deletePayload.id);
+        if (deletePayload?.id) {
+          this.removeItemById(deletePayload.id);
+        }
         break;
       }
       case 'STATUS_CHANGE': {
         const statusPayload = payload as NoteStatusChangePayload;
-        this.applyAction((notes) =>
-          notes.map((n) =>
-            n.id === statusPayload.id
-              ? new Note({ ...n, isInCalculation: statusPayload.isInCalculation })
-              : n
-          )
-        );
+        if (statusPayload?.id) {
+          this.applyAction((notes) =>
+            notes.map((n) =>
+              n.id === statusPayload.id
+                ? n.cloneWith({ isInCalculation: statusPayload.isInCalculation })
+                : n
+            )
+          );
+        }
         break;
       }
       case 'PROMOTE':
       case 'REVERT': {
-        // Status-/Scope-Änderungen optimistisch im State abbilden (falls gewünscht)
         break;
       }
     }
   }
-
-    public override restoreFromSnapshot(snapshot: unknown): void {
-        const newState = (snapshot as INoteJson[]).map(note => Note.fromJson(note))
-        this.setRawState(newState)
-    }
 }

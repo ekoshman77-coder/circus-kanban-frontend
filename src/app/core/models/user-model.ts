@@ -1,14 +1,15 @@
 import { IDepartment } from "../repositories/dto/deparment-json";
 import { generateLocalId, isLocalId } from "../shared/constants/id-const";
 import { Department } from "./department";
+import { DomainModel } from "./domain-model";
 
-  export type ProjectRole = 'OWNER' | 'PROJECT_MANAGER' | 'DEVELOPER' | 'NONE';
+export type ProjectRole = 'OWNER' | 'PROJECT_MANAGER' | 'DEVELOPER' | 'NONE';
 
-  export interface CoffeeAccount {
-    balance: number;
-    role: string;   // z. B. "Teammitglied", "Barista", "Kaffee-Junkie"
-    emoji: string;  // z. B. "🦊"
-  }
+export interface CoffeeAccount {
+  balance: number;
+  role: string;
+  emoji: string;
+}
 
 export interface IUserInit {
   id: string;
@@ -16,28 +17,21 @@ export interface IUserInit {
   firstName: string;
   lastName: string;
   department: Department | IDepartment | null;
-  departmentRole?: string; // 👈 Die Abteilungsrolle (Org-Ebene)
+  departmentRole?: string;
   isApproved: boolean | null;
   projectIds: string[];
-  coffeeAccount?: CoffeeAccount; // 👈 Sauber gekapseltes Kaffeekonto!
+  coffeeAccount?: CoffeeAccount;
 }
 
-/**
- * Repräsentiert das User-Objekt innerhalb der Anwendung.
- * Verantwortlich für Datenmodellierung, Formatierung der Benutzerdaten 
- * und geschäftsspezifische Logik (wie Farb-Hashes oder Initialen).
- */
-export class UserModel {
+export class UserModel implements DomainModel< UserModel > {
   id: string;
   firstName: string;
   lastName: string;
   username: string;
   department: Department | null;
-  departmentRole: string; // 👈 Eindeutig Abteilungsrolle
+  departmentRole: string;
   isApproved: boolean | null;
   projectIds: string[];
-  
-  // ☕ Kaffeekonto sauber in einem Objekt isoliert!
   coffeeAccount: CoffeeAccount;
 
   constructor(data: IUserInit) {
@@ -58,7 +52,6 @@ export class UserModel {
     this.isApproved = data.isApproved ?? null;
     this.projectIds = data.projectIds || [];
 
-    // Init für das Kaffeekonto
     this.coffeeAccount = {
       balance: data.coffeeAccount?.balance ?? 0,
       role: data.coffeeAccount?.role ?? 'Teammitglied',
@@ -66,8 +59,22 @@ export class UserModel {
     };
   }
 
+  public cloneWith(changes: Partial< UserModel >): UserModel {
+    return new UserModel({
+      id: changes.id ?? this.id,
+      firstName: changes.firstName ?? this.firstName,
+      lastName: changes.lastName ?? this.lastName,
+      username: changes.username ?? this.username,
+      department: changes.department !== undefined ? changes.department : this.department,
+      departmentRole: changes.departmentRole ?? this.departmentRole,
+      isApproved: changes.isApproved !== undefined ? changes.isApproved : this.isApproved,
+      projectIds: changes.projectIds ?? this.projectIds,
+      coffeeAccount: changes.coffeeAccount ?? { ...this.coffeeAccount }
+    });
+  }
+
   get fullName(): string {
-    return `${this.firstName} ${this.lastName}`.trim();
+    return `\({this.firstName}\){this.lastName}`.trim();
   }
 
   getInitials(): string {
@@ -100,13 +107,8 @@ export class UserModel {
       username: json.username,
       isApproved: json.isApproved,
       department: json.department ? Department.fromJson(json.department) : null,
-      
-      // 🏷️ Abteilungsrolle aus dem Server-JSON lesen
       departmentRole: json.departmentRole || json.department_role || '',
-      
       projectIds: json.projectIds || [],
-      
-      // ☕ Kaffeekonto aus dem flachen oder tiefen JSON zusammenbauen:
       coffeeAccount: {
         balance: json.coffeeAccount?.balance ?? json.coffeeBalance ?? 0,
         role: json.coffeeAccount?.role ?? json.role ?? 'Teammitglied',
@@ -125,8 +127,6 @@ export class UserModel {
       departmentRole: this.departmentRole,
       isApproved: this.isApproved,
       projectIds: this.projectIds,
-      
-      // Für Rückwärtskompatibilität schicken wir es flach ODER geschachtelt mit
       coffeeBalance: this.coffeeAccount.balance,
       role: this.coffeeAccount.role,
       emoji: this.coffeeAccount.emoji,

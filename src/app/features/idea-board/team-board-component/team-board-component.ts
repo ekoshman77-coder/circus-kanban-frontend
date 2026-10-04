@@ -83,7 +83,7 @@ export class TeamBoardComponent implements OnInit {
     return (this.boardFilter().type === 'milestone') ? this.boardFilter().id : ""; 
   });
   
-  public readonly currentProjectMembers = this.teamService.currentProjectMembersSignal;
+  public readonly currentProjectMembers = this.projectService.currentProjectMembersSignal;
 
   /** Extrahiert die zuweisbaren User aus den aktuellen Projekt-Mitgliedern */
   public readonly assignableUsers = computed(() => {
@@ -126,7 +126,7 @@ effect(() => {
 
       // 2. Dem TeamService Bescheid geben, damit er die Teammitglieder für dieses Projekt lädt
       if (projectId) {
-        this.teamService.setCurrentProject(projectId);
+        this.projectService.setActiveProjectId(projectId);
       }
 
       this.currentProjectId.set(projectId);

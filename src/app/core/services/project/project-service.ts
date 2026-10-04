@@ -16,6 +16,7 @@ import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager
 import { ProjectRole, UserModel } from '../../models/user-model';
 import { UserSummary } from '../../models/user-summary';
 import { ProjectMember } from '../../models/project-member';
+import { PermissionService, UIActionIntent } from '../permissions/permission-service';
 
 @Injectable({
   providedIn: 'root'
@@ -27,12 +28,13 @@ export class ProjectService extends BaseDataManager {
   private noteService = inject(NoteService);
   private notificationService = inject(NotificationService);
   private draftService = inject(ProjectDraftService);
+  private permissionService = inject(PermissionService);
 
   public readonly allProjectsPool = this.dataManager.allProjectsPool;
 
   // 👥 Signal: Nur die Projekte, in denen der aktuell angemeldete User ein Teammitglied ist
   public readonly myProjectsList = computed(() => {
-    const rawProjects = this.allProjectsPool(); 
+    const rawProjects = this.allProjectsPool();
     const currentUserId = this.userService.getCurrentUserId();
 
     if (!currentUserId) return [];
@@ -327,6 +329,56 @@ export class ProjectService extends BaseDataManager {
     this.degradedWereShownSignal.set(false);
   }
 
+/** 🛡️️ Universelle Rechte-Prüfung für Projekte */
+/** 🛡 Universelle Rechte-Prüfung für Projekte (mit Diagnose) */
+  public hasPermission(projectId: string | null, action: UIActionIntent): boolean {
+    const currentUserId = this.userService.getCurrentUserId();
+    if (!currentUserId || !projectId) {
+      console.warn('🕵️‍♂️ [Permission Check] Abgebrochen: UserID oder ProjectID fehlt.', { currentUserId, projectId });
+      return false;
+    }
+
+    const currentProject = this.allProjectsPool().find(p => p.id === projectId);
+    if (!currentProject) {
+      console.warn('🕵️‍♂️ [Permission Check] Projekt im Pool nicht gefunden! ID:', projectId);
+      return false;
+    }
+
+    const members = currentProject.teamMembers || [];
+    const myBinding = members.find(m => {
+      const memberUserId = typeof m.user === 'object' ? m.user?.id : m.user;
+      return memberUserId === currentUserId;
+    });
+
+    const isOwner = currentProject.userId === currentUserId;
+    const systemRole = this.userService.currentUser()?.departmentRole ?? "";
+
+    // 🔍 INSPEKTION: Das verrät uns die Konsole im Browser:
+    console.log('🕵️‍♂️ [Permission Inspection]', {
+      projectId: currentProject.id,
+      projectTitle: currentProject.title,
+      projectOwnerId: currentProject.userId,
+      currentUserId: currentUserId,
+      isOwner: isOwner,
+      teamMembersCount: members.length,
+      allMembersRaw: members,
+      myFoundBinding: myBinding,
+      myProjectRole: myBinding?.projectRole,
+      systemRole: systemRole,
+      requestedAction: action
+    });
+
+    const result = this.permissionService.canUserPerformAction(action, {
+      isOwner: isOwner,
+      contextRole: myBinding?.projectRole,
+      systemRole: systemRole
+    });
+
+    console.log(`🛡 [Permission Result] Ist erlaubt für '${action}'? ->`, result);
+
+    return result;
+  }
+    
   // Reset-Hook für Ausloggen / Auth-Reset
   public override resetData(): void {
     this.dashboardStatsSignal.set(null);

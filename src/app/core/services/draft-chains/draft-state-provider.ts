@@ -3,30 +3,14 @@ import { DraftQueueActions } from '../../models/queue-items/draft-queue-payload'
 import { DraftChain } from '../../models/draft-chain';
 import { DraftChainDto } from '../../repositories/dto/draft-chain-dto';
 
-export class DraftStateProvider extends ArrayStateProvider<DraftChain> {
+export class DraftStateProvider extends ArrayStateProvider< DraftChain > {
   protected override storageKey = 'global_draft_chains_store';
+
+  // 🎯 Statische Modell-Referenz für generisches Deserialisieren & Cache-Laden
+  protected modelStatic = DraftChain;
 
   constructor() {
     super([]);
-  }
-
-  // ==========================================
-  // CACHE & SNAPSHOTS
-  // ==========================================
-
-  public override loadFromCache(): void {
-    const cached = this.localStorageService.getItem<DraftChainDto[]>(this.storageKey);
-    if (cached && Array.isArray(cached)) {
-      const instances = cached.map(dto => DraftChain.fromJson(dto));
-      this.setRawState(instances);
-    }
-  }
-
-  public override restoreFromSnapshot(snapshot: unknown): void {
-    if (Array.isArray(snapshot)) {
-      const newState = (snapshot as DraftChainDto[]).map(dto => DraftChain.fromJson(dto));
-      this.setRawState(newState);
-    }
   }
 
   // ==========================================
@@ -37,7 +21,10 @@ export class DraftStateProvider extends ArrayStateProvider<DraftChain> {
     switch (action as DraftQueueActions) {
       case 'SAVE_DRAFT_CHAIN':
         if (payload?.chain) {
-          this.addOrUpdateItem(payload.chain);
+          const chainInstance = payload.chain instanceof DraftChain
+            ? payload.chain
+            : DraftChain.fromJson(payload.chain);
+          this.addOrUpdateItem(chainInstance);
         }
         break;
 

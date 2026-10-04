@@ -1,6 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { FocusDataManagerService } from './focus-data-manager-service';
 import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
+import { Todo } from '../../models/todo';
 
 export type TimerState = 'idle' | 'running' | 'paused';
 
@@ -19,17 +20,21 @@ export class FocusService extends BaseDataManager {
   private timeRemainingSignal = signal<number>(this.DEFAULT_POMODORO_SECONDS);
   public readonly timeRemaining = this.timeRemainingSignal.asReadonly();
 
-  private activeTodoIdSignal = signal<string | null>(null);
-  public readonly activeTodoId = this.activeTodoIdSignal.asReadonly();
+  private activeTodoSignal = signal<Todo | null>(null);
+  public readonly activeTodo = this.activeTodoSignal.asReadonly();
 
+  // 2. Setter anpassen
+  public setActiveTodo(todo: Todo | null): void {
+    this.activeTodoSignal.set(todo);
+  }
   private timerInterval: any = null;
 
   public readonly isRunning = computed(() => this.timerStateSignal() === 'running');
   public readonly isPaused = computed(() => this.timerStateSignal() === 'paused');
 
-  public setActiveTodo(todoId: string | null): void {
-    this.activeTodoIdSignal.set(todoId);
-  }
+  // public setActiveTodo(todoId: string | null): void {
+  //   this.activeTodoIdSignal.set(todoId);
+  // }
 
   public startTimer(durationSeconds: number = this.DEFAULT_POMODORO_SECONDS): void {
     if (this.timerStateSignal() === 'idle') {
@@ -65,8 +70,8 @@ export class FocusService extends BaseDataManager {
   /**
    * Manuelles Verbuchen eines Pomodoros (z. B. aus der Komponente heraus)
    */
-  public recordCompletedPomodoro(todoId: string): void {
-    this.dataManager.recordCompletedPomodoro(todoId);
+  public recordCompletedPomodoro(todo: Todo): void {
+    this.dataManager.recordCompletedPomodoro(todo);
   }
 
   private completePomodoro(): void {
@@ -74,9 +79,9 @@ export class FocusService extends BaseDataManager {
     this.timerStateSignal.set('idle');
     this.timeRemainingSignal.set(this.DEFAULT_POMODORO_SECONDS);
 
-    const todoId = this.activeTodoIdSignal();
-    if (todoId) {
-      this.recordCompletedPomodoro(todoId);
+    const todo = this.activeTodoSignal();
+    if (todo) {
+      this.recordCompletedPomodoro(todo);
     }
   }
 
@@ -98,6 +103,6 @@ export class FocusService extends BaseDataManager {
     this.clearInterval();
     this.timerStateSignal.set('idle');
     this.timeRemainingSignal.set(this.DEFAULT_POMODORO_SECONDS);
-    this.activeTodoIdSignal.set(null);
+    this.activeTodoSignal.set(null);
   }
 }

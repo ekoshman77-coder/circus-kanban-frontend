@@ -11,23 +11,24 @@ import { QueueHandlerName } from '../../enums/queue-handler-name';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { of } from 'rxjs';
 import { signal } from '@angular/core';
+import { Todo } from '../../models/todo';
 
 describe('FocusDataManagerService', () => {
   let service: FocusDataManagerService;
 
   // Typsichere Mocks
-  let mockConnectionService: Partial< ConnectionService >;
-  let mockGamificationRepository: Partial< GamificationRepository >;
-  let mockUserService: Partial< UserService >;
-  let mockLoggerService: Partial< LoggerService >;
-  let mockQueueService: Partial< CentralQueueService >;
+  let mockConnectionService: Partial<ConnectionService>;
+  let mockGamificationRepository: Partial<GamificationRepository>;
+  let mockUserService: Partial<UserService>;
+  let mockLoggerService: Partial<LoggerService>;
+  let mockQueueService: Partial<CentralQueueService>;
 
   const TEST_USER_ID = 'user-777';
 
   beforeEach(() => {
     mockConnectionService = {
-      isOffline: signal< boolean >(false),
-      isOnline: signal< boolean >(true)
+      isOffline: signal<boolean>(false),
+      isOnline: signal<boolean>(true)
     };
 
     mockGamificationRepository = {
@@ -75,7 +76,9 @@ describe('FocusDataManagerService', () => {
 
   describe('recordCompletedPomodoro (Sitzung aufzeichnen)', () => {
     it('sollte eine RECORD_POMODORO Action in die Queue reihen', () => {
-      service.recordCompletedPomodoro('todo-abc', 'Mein Todo');
+      const mockTodo = new Todo({ id: 'todo-abc', task: 'Mein Todo' });
+
+      service.recordCompletedPomodoro(mockTodo);
 
       expect(mockQueueService.enqueue).toHaveBeenCalledWith(
         QueueHandlerName.FOCUS,
@@ -95,8 +98,9 @@ describe('FocusDataManagerService', () => {
 
     it('sollte abbrechen, wenn kein User eingeloggt ist', () => {
       vi.mocked(mockUserService.getCurrentUserId!).mockReturnValue(null);
+      const mockTodo = new Todo({ id: 'todo-xyz', task: 'Test Task' });
 
-      service.recordCompletedPomodoro('todo-xyz');
+      service.recordCompletedPomodoro(mockTodo);
 
       expect(mockQueueService.enqueue).not.toHaveBeenCalled();
     });
@@ -115,7 +119,7 @@ describe('FocusDataManagerService', () => {
         }
       };
 
-      const mockItem: QueueItem< FocusPomodoroPayload > = {
+      const mockItem: QueueItem<FocusPomodoroPayload> = {
         id: 'q-1',
         serviceName: QueueHandlerName.FOCUS,
         action: 'RECORD_POMODORO',
@@ -145,7 +149,7 @@ describe('FocusDataManagerService', () => {
         }
       };
 
-      const mockItem: QueueItem< FocusPomodoroPayload > = {
+      const mockItem: QueueItem<FocusPomodoroPayload> = {
         id: 'q-1',
         serviceName: QueueHandlerName.FOCUS,
         action: 'RECORD_POMODORO',

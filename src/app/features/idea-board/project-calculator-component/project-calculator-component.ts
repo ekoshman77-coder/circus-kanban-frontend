@@ -249,7 +249,7 @@ export class ProjectCalculatorComponent {
       const matchingProject = this.projectService.projectsList().find((p) => p.id === navState.id);
       if (matchingProject) {
         // 1. TeamService über das aktive Projekt informieren -> lädt die ProjectMembers & Berechtigungen
-        this.teamService.setCurrentProject(matchingProject.id);
+        this.projectService.setActiveProjectId(matchingProject.id);
 
         // 2. Altlasten im lokale Draft-Storage aufräumen
         this.projectDraftService.clearDraft();
@@ -539,7 +539,7 @@ export class ProjectCalculatorComponent {
     const project = this.activeProject();
     if (!project || !project.milestones || project.milestones.length === 0) return false;
     if (!this.isBrandNewDraft()) {
-      return this.teamService.hasPermission(project.id, 'PROJECT_EDIT');
+      return this.projectService.hasPermission(project.id, 'PROJECT_EDIT');
     }
     return true;
   }
@@ -577,7 +577,7 @@ export class ProjectCalculatorComponent {
     // Für bereits bestehende, gefüllte Projekte: Rechte-Prüfung
     if (!this.isBrandNewDraft()) {
       const currentUserId = this.userService.getCurrentUserId();
-      if (project.userId !== currentUserId && !this.teamService.hasPermission(project.id, 'PROJECT_EDIT')) {
+      if (project.userId !== currentUserId && !this.projectService.hasPermission(project.id, 'PROJECT_EDIT')) {
         this.notificationService.showNotification('Keine Berechtigung! 🛑', 'error');
         this.showSuccessPopup.set(false);
         return;

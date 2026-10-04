@@ -1,29 +1,33 @@
 import { IDepartment } from "../repositories/dto/deparment-json";
 import { ADMIN_DEPARTMENT_NAME } from "../shared/constants/admin-constants";
 import { generateLocalId } from "../shared/constants/id-const";
+import { DomainModel } from "./domain-model";
 
-export class Department {
+export class Department implements DomainModel< Department > {
   public id: string;
   public name: string;
   public specialization?: string;
 
   constructor(init: {name: string, id?: string, specialization?: string}) {
-    // Generiert eine temporäre UUID oder nutzt die Server-ID
     this.id = init.id ?? generateLocalId();
     this.name = init.name || '';
-    this.specialization = init.specialization
+    this.specialization = init.specialization;
   }
 
-  // 👑 Domänen-Logik direkt am Objekt!
+  // 🛡️ Neu für das DomainModel-Interface!
+  public cloneWith(changes: Partial< Department >): Department {
+    return new Department({
+      id: changes.id ?? this.id,
+      name: changes.name ?? this.name,
+      specialization: changes.specialization !== undefined ? changes.specialization : this.specialization
+    });
+  }
+
+  // 👑 Domänen-Logik
   public isAdmin(): boolean {
     return this.name.trim().toLowerCase() === ADMIN_DEPARTMENT_NAME.toLowerCase();
   }
 
-  /**
-   * Generiert 2 Initialen aus dem Abteilungsnamen.
-   * "Software Development" -> "SD"
-   * "Marketing" -> "MA"
-   */
   public getInitials(): string {
     const trimmed = this.name.trim();
     if (!trimmed) return '??';
@@ -35,9 +39,6 @@ export class Department {
     return trimmed.substring(0, 2).toUpperCase();
   }
 
-  /**
-   * Errechnet eine verlässliche Pastellfarbe basierend auf dem Namen.
-   */
   public getColorHash(): string {
     if (!this.name) return '#cbd5e1';
     let hash = 0;
@@ -46,16 +47,18 @@ export class Department {
       hash = (hash << 5) - hash + (this.name.charCodeAt(i) * 12345);
     }
     const h = Math.abs(hash * 777) % 360;
-    return `hsl(${h}, 65%, 85%)`; // Angenehme Pastellfarbe
+    return `hsl(${h}, 65%, 85%)`;
   }
 
   public static fromJson(department: IDepartment): Department {
-     return new Department(
-        department
-     )
+    return new Department(department);
   }
 
   public toJson(): IDepartment {
-    return {...this}
+    return {
+      id: this.id,
+      name: this.name,
+      specialization: this.specialization
+    };
   }
 }
