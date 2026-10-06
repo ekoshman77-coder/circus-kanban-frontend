@@ -18,12 +18,11 @@ import { QueueHandlerName } from '../../enums/queue-handler-name';
 @Injectable({
   providedIn: 'root'
 })
-export class NoteDataManagerService extends BaseQueueDataManager {
+export class NoteDataManagerService extends BaseQueueDataManager<NoteStateProvider> {
   private noteRepository = inject(NoteRepository);
 
   constructor() {
     super(QueueHandlerName.NOTE);
-    (this.stateProvider as NoteStateProvider).loadFromCache();
   }
 
   protected override createStateProvider(): NoteStateProvider {

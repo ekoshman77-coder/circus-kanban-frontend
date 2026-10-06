@@ -9,12 +9,13 @@ import { NotificationService } from '../notification/notification-service';
 import { StateProvider } from './state-providers/base-state-provider';
 import { QueueHandlerName } from '../../enums/queue-handler-name';
 
-export abstract class BaseQueueDataManager extends BaseDataManager implements IQueueHandler {
+export abstract class BaseQueueDataManager<TProvider extends StateProvider<any> = StateProvider<any> >
+                     extends BaseDataManager implements IQueueHandler {
   protected queueService = inject(CentralQueueService);
   protected notificationService = inject(NotificationService);
 
   serviceName: QueueHandlerName;
-  protected stateProvider: StateProvider<any>;
+  protected stateProvider: TProvider;
 
   private lastFetchTimestamp = 0;
   private readonly FETCH_COOLDOWN_MS = 30000;
@@ -23,10 +24,11 @@ export abstract class BaseQueueDataManager extends BaseDataManager implements IQ
     super();
     this.serviceName = name;
     this.stateProvider = this.createStateProvider();
+    this.stateProvider.loadFromCache()
     this.queueService.registerService(name, this);
   }
 
-  protected abstract createStateProvider(): StateProvider<any>;
+  protected abstract createStateProvider(): TProvider;
 
   public abstract executeQueueItem(item: QueueItem): Observable<any>;
   protected abstract fetchFromServer(userId: string): Observable<void>;

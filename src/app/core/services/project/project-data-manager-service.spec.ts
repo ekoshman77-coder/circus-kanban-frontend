@@ -4,7 +4,7 @@ import { ProjectRepository } from '../../repositories/project-repository';
 import { ConnectionService } from '../connection/connection-service';
 import { AiRepository } from '../../repositories/ai-repository';
 import { TeamRepository } from '../../repositories/team-repository';
-import { CentralQueueService } from '../central-queue/central-queue-service';
+import { CentralQueueService } from '../central-queue/live-central-queue-service';
 import { Project } from '../../models/project';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { of } from 'rxjs';

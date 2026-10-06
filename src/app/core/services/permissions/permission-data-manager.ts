@@ -17,12 +17,11 @@ import { QueueHandlerName } from '../../enums/queue-handler-name';
 @Injectable({
   providedIn: 'root'
 })
-export class PermissionDataManager extends BaseQueueDataManager {
+export class PermissionDataManager extends BaseQueueDataManager<PermissionStateProvider> {
   private permissionRepository = inject(PermissionRepository);
 
   constructor() {
     super(QueueHandlerName.PERMISSION);
-    (this.stateProvider as PermissionStateProvider).loadFromCache();
   }
 
   protected override createStateProvider(): PermissionStateProvider {
@@ -86,7 +85,7 @@ export class PermissionDataManager extends BaseQueueDataManager {
 
     if (item.action === 'BATCH' && Array.isArray(response)) {
       const serverPermissions = response.map((json) => Permission.fromJson(json));
-      const provider = this.stateProvider as PermissionStateProvider;
+      const provider = this.stateProvider;
 
       provider.replaceIdsByPermission(serverPermissions, (localId, serverId) => {
         this.queueService.updateEntityIdInQueue(localId, serverId);
@@ -108,7 +107,7 @@ export class PermissionDataManager extends BaseQueueDataManager {
   // ==========================================
 
 public createPermission(permission: Permission): void {
-    const provider = this.stateProvider as PermissionStateProvider;
+    const provider = this.stateProvider;
     const snapshot = provider.createSnapshot();
     const tempId = permission.id || generateLocalId();
 
@@ -134,7 +133,7 @@ public createPermission(permission: Permission): void {
   public updatePermission(permission: Permission): void {
     if (!permission.id) return;
 
-    const provider = this.stateProvider as PermissionStateProvider;
+    const provider = this.stateProvider;
     const snapshot = provider.createSnapshot();
 
     const payload: PermissionPayload = {
@@ -152,7 +151,7 @@ public createPermission(permission: Permission): void {
   }
 
   public deletePermission(permissionId: string): void {
-    const provider = this.stateProvider as PermissionStateProvider;
+    const provider = this.stateProvider;
     const snapshot = provider.createSnapshot();
 
     const payload: DeletePermissionPayload = {
@@ -175,7 +174,7 @@ public createPermission(permission: Permission): void {
     scope: string,
     specialization?: string
   ): void {
-    const provider = this.stateProvider as PermissionStateProvider;
+    const provider = this.stateProvider;
     const snapshot = provider.createSnapshot();
 
     const payload: BatchCreatePermissionsPayload = {

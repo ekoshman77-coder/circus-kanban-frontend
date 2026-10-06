@@ -2,7 +2,6 @@ import { inject, Injectable } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
 import { BaseQueueDataManager } from '../central-queue/base-queue-data-manager';
 import { QueueItem } from '../../models/queue-items/queue-item';
-import { StateProvider } from '../central-queue/state-providers/base-state-provider';
 import { EmptyStateProvider } from '../central-queue/state-providers/empty-state-provider';
 import { AiRepository, RejectedTodoFeedback } from '../../repositories/ai-repository';
 import { PlannerFeedbackPayload, SnoozePayload } from '../../models/queue-items/planner-queue-payload';
@@ -13,14 +12,14 @@ export type PlannerQueueAction = 'SEND_FEEDBACK' | 'SNOOZE_TODO';
 @Injectable({
   providedIn: 'root'
 })
-export class PlannerDataManagerService extends BaseQueueDataManager {
+export class PlannerDataManagerService extends BaseQueueDataManager<EmptyStateProvider> {
   private aiRepository = inject(AiRepository);
 
   constructor() {
     super(QueueHandlerName.PLANNER);
   }
 
-  protected override createStateProvider(): StateProvider<any> {
+  protected override createStateProvider(): EmptyStateProvider {
     return new EmptyStateProvider();
   }
 

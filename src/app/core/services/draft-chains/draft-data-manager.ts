@@ -14,9 +14,9 @@ import { UserService } from '../user/user-service';
 @Injectable({
     providedIn: 'root'
 })
-export class DraftQueueDataManager extends BaseQueueDataManager {
+export class DraftQueueDataManager extends BaseQueueDataManager<DraftStateProvider> {
     private draftRepository = inject(DraftRepository);
-    private userService = inject(UserService)
+    private userService = inject(UserService);
 
     public get draftChainsSignal(): Signal<DraftChain[]> {
         return this.getSignal() as Signal<DraftChain[]>;
@@ -24,11 +24,16 @@ export class DraftQueueDataManager extends BaseQueueDataManager {
 
     constructor() {
         super(QueueHandlerName.DRAFT);
-        (this.stateProvider as DraftStateProvider).loadFromCache();
 
-        // Reagiert auf fehlgeschlagene Queue-Aktionen
-        this.queueService.queueFailed$.subscribe(({ items, error, errorCode }) => {
-            this.createDraftFromFailedQueue(items, error, errorCode);
+        // 🎯 Ein einziger zentraler Stream für alle neu erzeugten Entwürfe
+        this.queueService.draftChainCreated$.subscribe((incomingChain: DraftChain) => {
+            if (incomingChain.origin === 'LABOR') {
+                // Platzhalter für die Intelligente Merging-Logik im nächsten Schritt
+                this.handleLaborDraftCreated(incomingChain);
+            } else {
+                // Normale Live-Fehler-Ketten direkt speichern
+                this.saveDraftChain(incomingChain);
+            }
         });
     }
 
@@ -36,20 +41,14 @@ export class DraftQueueDataManager extends BaseQueueDataManager {
         return new DraftStateProvider();
     }
 
-    private get draftState(): DraftStateProvider {
-        return this.stateProvider as DraftStateProvider;
-    }
-
     // ==========================================
     // BASE QUEUE DATA MANAGER EXECUTION
     // ==========================================
 
-    public override executeQueueItem(item: QueueItem): Observable<any> {
+    public override executeQueueItem(item: QueueItem): Observable<void> {
         switch (item.action) {
             case 'DELEGATE_DRAFT': {
                 const payload = item.payload as DelegateDraftPayload;
-
-                // 🎯 Immer sauber über fromJson in eine echte Domain-Instanz wandeln
                 const draftChain = DraftChain.fromJson(payload.draftChain as any);
 
                 const dto: DelegateDraftDto = {
@@ -59,20 +58,20 @@ export class DraftQueueDataManager extends BaseQueueDataManager {
 
                 return this.draftRepository.delegateDraft(dto);
             }
-            
+
             case 'DELETE_SERVER_DRAFT':
                 return this.draftRepository.deleteServerDraft((item.payload as DeleteDraftPayload).id);
 
             default:
                 console.warn(`⚠️ [DraftQueueDataManager] Unbekannte Aktion: ${item.action}`);
-                return of(true);
+                return of();
         }
     }
 
-    protected override fetchFromServer(_userId: string): Observable<void> {
+    protected override fetchFromServer(_userId: string): Observable<any> {
         return this.draftRepository.fetchAssignedDrafts().pipe(
             tap((remoteDrafts) => {
-                this.draftState.syncRemoteDrafts(remoteDrafts);
+                this.stateProvider.syncRemoteDrafts(remoteDrafts);
             }),
             map(() => void 0)
         );
@@ -83,36 +82,11 @@ export class DraftQueueDataManager extends BaseQueueDataManager {
     // ==========================================
 
     public saveDraftChain(chain: DraftChain): void {
-        this.draftState.applyActionPayload('SAVE_DRAFT_CHAIN', { chain });
+        this.stateProvider.applyActionPayload('SAVE_DRAFT_CHAIN', { chain });
     }
 
     public removeDraftChain(chainId: string): void {
-        this.draftState.applyActionPayload('REMOVE_DRAFT_CHAIN', { chainId });
-    }
-
-    public createDraftFromFailedQueue(items: QueueItem[], errorReason: string, errorCode: number): void {
-        if (!items || items.length === 0) return;
-
-        const draftItems: DraftChainItem[] = items.map((item, index) => ({
-            queueItem: structuredClone(item),
-            isRootCause: index === 0
-        }));
-
-        const title = items[0]?.payload?.displayInfo?.title || 'Fehlerhafte Operation';
-
-        // ✅ Korrekte Interpolation mit Backticks und $
-        const newDraft = new DraftChain(
-            `draft_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-            title,
-            draftItems,
-            Date.now(),
-            'LOCAL',
-            '',
-            errorReason,
-            errorCode
-        );
-
-        this.saveDraftChain(newDraft);
+        this.stateProvider.applyActionPayload('REMOVE_DRAFT_CHAIN', { chainId });
     }
 
     public reinjectDraftChain(draftId: string, updatedItems?: DraftChainItem[]): void {
@@ -129,14 +103,12 @@ export class DraftQueueDataManager extends BaseQueueDataManager {
         const draft = this.draftChainsSignal().find(d => d.id === chainId);
         if (!draft) return;
 
-        // Aktuellen User aus dem UserService / Context holen
         const currentUserId = this.userService.currentUser()?.id || '';
 
         draft.target = target;
         draft.note = note ?? '';
         draft.delegatedByUserId = currentUserId;
 
-        // Falls createdByUserId noch leer war, mit aktuellem User belegen
         if (!draft.createdByUserId) {
             draft.createdByUserId = currentUserId;
         }
@@ -144,7 +116,7 @@ export class DraftQueueDataManager extends BaseQueueDataManager {
         const payload: DelegateDraftPayload = {
             id: draft.id,
             draftChain: draft,
-            snapshot: this.draftState.createSnapshot(),
+            snapshot: this.stateProvider.createSnapshot(),
             displayInfo: {
                 category: 'Entwurf delegieren',
                 title: draft.title
@@ -153,5 +125,56 @@ export class DraftQueueDataManager extends BaseQueueDataManager {
 
         this.removeDraftChain(chainId);
         this.queueService.enqueue(this.serviceName, 'DELEGATE_DRAFT', payload);
+    }
+
+    // ==========================================
+    // LABOR MERGING-ROUTING 
+    // ==========================================
+    // Im DraftQueueDataManager:
+
+    private handleLaborDraftCreated(incomingChain: DraftChain): void {
+        const newItem = incomingChain.items[0]?.queueItem;
+        if (!newItem) {
+            this.saveDraftChain(incomingChain);
+            return;
+        }
+
+        const currentDrafts = this.stateProvider.getState();
+        const matchingChains = currentDrafts.filter(
+            chain => chain.origin === 'LABOR' && this.queueService.isItemDependentOnChain(newItem, chain.items)
+        );
+
+        // 1. Fall: Keine Abhängigkeiten -> Ganz normal als neue Kette ablegen
+        if (matchingChains.length === 0) {
+            this.saveDraftChain(incomingChain);
+            return;
+        }
+
+        // 2. Fall: Abhängigkeiten gefunden -> Ketten zusammenführen
+        const allItems: DraftChainItem[] = [];
+
+        // Items der bestehenden Ketten einsammeln und alte Ketten entfernen
+        matchingChains.forEach(chain => {
+            allItems.push(...chain.items);
+            this.removeDraftChain(chain.id);
+        });
+
+        // Neue Items hinzufügen
+        allItems.push(...incomingChain.items);
+
+        // Nach Timestamp sortieren (älteste Aktion zuerst)
+        allItems.sort((a, b) => a.queueItem.timestamp - b.queueItem.timestamp);
+
+        // Älteste Kette als Basis für ID und Titel wählen
+        const oldestChain = matchingChains.reduce((prev, curr) =>
+            prev.createdAt < curr.createdAt ? prev : curr
+        );
+
+        const mergedChain = oldestChain.cloneWith({
+            items: allItems,
+            // createdAt behalten wir von der ältesten Kette
+        });
+
+        this.saveDraftChain(mergedChain);
     }
 }

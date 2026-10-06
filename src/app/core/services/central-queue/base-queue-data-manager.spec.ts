@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs'; // 👈 WICHTIG: firstValueFrom importieren
-import { CentralQueueService } from './central-queue-service';
+import { CentralQueueService } from './live-central-queue-service';
 import { NotificationService } from '../notification/notification-service';
 import { LocalStorageService } from '../user/local-storage-service';
 import { QueueItem } from '../../models/queue-items/queue-item';

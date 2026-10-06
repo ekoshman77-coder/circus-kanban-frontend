@@ -1,6 +1,6 @@
 import { Provider, signal } from '@angular/core';
 import { vi } from 'vitest';
-import { CentralQueueService } from '../../src/app/core/services/central-queue/central-queue-service';
+import { CentralQueueService } from '../../src/app/core/services/central-queue/live-central-queue-service';
 import { NotificationService } from '../../src/app/core/services/notification/notification-service';
 import { LocalStorageService } from '../../src/app/core/services/user/local-storage-service';
 import { AUTH_CONTEXT } from '../../src/app/core/services/user/auth-context';

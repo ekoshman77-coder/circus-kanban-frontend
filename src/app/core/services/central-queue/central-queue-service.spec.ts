@@ -3,7 +3,6 @@ import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { Subject, of } from 'rxjs';
 
-import { CentralQueueService } from './central-queue-service';
 import { QueueHandlerName } from '../../enums/queue-handler-name';
 import { SnapshotPayload, QueueItem } from '../../models/queue-items/queue-item';
 import { DraftStateProvider } from '../draft-chains/draft-state-provider';
@@ -14,9 +13,10 @@ import { LocalStorageService } from '../user/local-storage-service';
 import { ConnectionService } from '../connection/connection-service';
 import { DraftRepository } from '../../repositories/draft-repository';
 import { UserService } from '../user/user-service';
+import { LiveCentralQueueService } from './live-central-queue-service';
 
 describe('CentralQueueService - Lawinen-Extraktion, Draft & Recovery (Vitest)', () => {
-  let queueService: CentralQueueService;
+  let queueService: LiveCentralQueueService;
   let draftProvider: DraftStateProvider;
   let draftManager: DraftQueueDataManager;
 
@@ -80,7 +80,7 @@ describe('CentralQueueService - Lawinen-Extraktion, Draft & Recovery (Vitest)', 
 
     TestBed.configureTestingModule({
       providers: [
-        CentralQueueService,
+        LiveCentralQueueService,
         DraftStateProvider,
         DraftQueueDataManager,
         { provide: LocalStorageService, useValue: mockLocalStorageService },
@@ -98,7 +98,7 @@ describe('CentralQueueService - Lawinen-Extraktion, Draft & Recovery (Vitest)', 
       ]
     });
 
-    queueService = TestBed.inject(CentralQueueService);
+    queueService = TestBed.inject(LiveCentralQueueService);
     draftManager = TestBed.inject(DraftQueueDataManager);
     draftProvider = (draftManager as any).draftState;
 

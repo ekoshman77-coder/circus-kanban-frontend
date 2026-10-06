@@ -17,13 +17,12 @@ import { QueueHandlerName } from '../../enums/queue-handler-name';
 @Injectable({
   providedIn: 'root'
 })
-export class AdminTeamManager extends BaseQueueDataManager {
+export class AdminTeamManager extends BaseQueueDataManager<AdminStateProvider> {
   private teamRepository = inject(TeamRepository);
   private userRepository = inject(UserRepository);
 
   constructor() {
     super(QueueHandlerName.ADMIN_TEAM);
-    this.stateProvider.loadFromCache();
   }
 
   protected override createStateProvider(): AdminStateProvider {

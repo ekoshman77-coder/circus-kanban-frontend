@@ -16,12 +16,11 @@ import { QueueHandlerName } from '../../enums/queue-handler-name';
 @Injectable({
   providedIn: 'root'
 })
-export class DepartmentDataManager extends BaseQueueDataManager {
+export class DepartmentDataManager extends BaseQueueDataManager<DepartmentStateProvider> {
   private departmentRepo = inject(DepartmentRepository);
 
   constructor() {
     super(QueueHandlerName.DEPARTMENT);
-    this.stateProvider.loadFromCache();
   }
 
   protected override createStateProvider(): DepartmentStateProvider {
@@ -29,7 +28,7 @@ export class DepartmentDataManager extends BaseQueueDataManager {
   }
 
   public get departmentsSignal(): Signal<Department[]> {
-    return this.getSignal() as Signal<Department[]>;
+    return this.getSignal();
   }
 
   private getDepartmentNameById(id: string): string {
@@ -70,7 +69,7 @@ export class DepartmentDataManager extends BaseQueueDataManager {
     return this.departmentRepo.getAll$().pipe(
       map((departmentsJson): void => {
         const departments = departmentsJson.map((d) => Department.fromJson(d));
-        const provider = this.stateProvider as DepartmentStateProvider;
+        const provider = this.stateProvider;
         provider.applyActionPayload('SET_DEPARTMENTS', departments);
       })
     );
@@ -81,7 +80,7 @@ export class DepartmentDataManager extends BaseQueueDataManager {
   // ==========================================================================
 
   public createDepartment(name: string, specialization?: string): void {
-    const provider = this.stateProvider as DepartmentStateProvider;
+    const provider = this.stateProvider;
     const tempId = generateLocalId();
     const snapshot = provider.createSnapshot();
 
@@ -107,7 +106,7 @@ export class DepartmentDataManager extends BaseQueueDataManager {
   }
 
   public updateDepartment(id: string, name: string, specialization?: string): void {
-    const provider = this.stateProvider as DepartmentStateProvider;
+    const provider = this.stateProvider;
     const snapshot = provider.createSnapshot();
     const updatedDept = new Department({ id, name, specialization });
 
@@ -126,7 +125,7 @@ export class DepartmentDataManager extends BaseQueueDataManager {
   }
 
   public deleteDepartment(id: string): void {
-    const provider = this.stateProvider as DepartmentStateProvider;
+    const provider = this.stateProvider;
     const snapshot = provider.createSnapshot();
 
     const payload: DepartmentDeletePayload = {

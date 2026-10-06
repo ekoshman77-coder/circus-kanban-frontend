@@ -14,13 +14,12 @@ import { QueueItem } from '../../models/queue-items/queue-item';
 import { ConnectionService } from '../connection/connection-service';
 import { TodoAction, TodoBulkPayload, TodoDeletePayload, TodoPayload } from '../../models/queue-items/todo-queue-payload';
 import { TodoStateProvider } from './todo-data-provider';
-import { StateProvider } from '../central-queue/state-providers/base-state-provider';
 import { QueueHandlerName } from '../../enums/queue-handler-name';
 
 @Injectable({
   providedIn: 'root'
 })
-export class TodoDataManagerService extends BaseQueueDataManager {
+export class TodoDataManagerService extends BaseQueueDataManager<TodoStateProvider> {
   private todoRepository = inject(TodoRepository);
   private userService = inject(UserService);
   private connectionService = inject(ConnectionService);
@@ -48,9 +47,6 @@ export class TodoDataManagerService extends BaseQueueDataManager {
   constructor() {
     super(QueueHandlerName.TODO);
 
-    // Initialer Cache-Load über den Provider
-    this.loadInitialCache();
-
     // Streak-Sync bei aktivem Login & Online-Status
     combineLatest([
       toObservable(this.userService.currentUser),
@@ -66,7 +62,7 @@ export class TodoDataManagerService extends BaseQueueDataManager {
       });
   }
 
-  protected override createStateProvider(): StateProvider<Todo[]> {
+  protected override createStateProvider(): TodoStateProvider {
     return new TodoStateProvider();
   }
 

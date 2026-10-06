@@ -4,7 +4,6 @@ import { BaseQueueDataManager } from '../central-queue/base-queue-data-manager';
 import { QueueItem } from '../../models/queue-items/queue-item';
 import { AUTH_CONTEXT } from './auth-context';
 import { UserSettingsStateProvider } from './user-settings-state-provider';
-import { StateProvider } from '../central-queue/state-providers/base-state-provider';
 import { UserRepository } from '../../repositories/user-repository';
 import { UserEnergyLevel, UserSettings } from '../../models/user.settings';
 import { PlannerSettingsDto } from '../../repositories/dto/planner-settings-dto';
@@ -14,16 +13,15 @@ import { QueueHandlerName } from '../../enums/queue-handler-name';
 @Injectable({
   providedIn: 'root'
 })
-export class UserSettingsDataManager extends BaseQueueDataManager {
+export class UserSettingsDataManager extends BaseQueueDataManager<UserSettingsStateProvider> {
   private userRepository = inject(UserRepository);
   private authContext = inject(AUTH_CONTEXT);
 
   constructor() {
     super(QueueHandlerName.USER_SETTINGS);
-    this.loadInitialCache();
   }
 
-  protected override createStateProvider(): StateProvider<UserSettings | null> {
+  protected override createStateProvider(): UserSettingsStateProvider {
     return new UserSettingsStateProvider();
   }
 
@@ -82,7 +80,7 @@ public updateSettings(changes: Partial<UserSettings>): void {
     this.stateProvider.applyActionPayload('UPDATE_SETTINGS', { userId, changes });
 
     // 📦 3. Das VOLLSTÄNDIGE neue UserSettings-Objekt direkt aus dem Provider holen
-    const updatedSettings = this.stateProvider.getState() as UserSettings;
+    const updatedSettings = this.stateProvider.getState();
 
     // 📥 4. Kompaktes, vollständiges Payload an die Queue übergeben
     const payload: UserSettingsPayload = {
@@ -135,7 +133,7 @@ public updateSettings(changes: Partial<UserSettings>): void {
 
       if (!userId) return of(false);
 
-      const currentState = this.stateProvider.getState() as UserSettings;
+      const currentState = this.stateProvider.getState();
 
       // Domain Model -> DTO für Repository
       const dto: PlannerSettingsDto = {
@@ -154,7 +152,7 @@ public updateSettings(changes: Partial<UserSettings>): void {
     return this.userRepository.getSettings(userId).pipe(
       tap((dto: PlannerSettingsDto) => {
         // Current state behalten für lokale Felder wie workingTimeLeft / energy
-        const current = this.stateProvider.getState() as UserSettings | null;
+        const current = this.stateProvider.getState();
 
         // DTO -> Domain Model Mapper
         const settings = new UserSettings(

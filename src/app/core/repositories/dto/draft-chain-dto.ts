@@ -1,7 +1,7 @@
 import { DraftChainItem } from "../../models/draft-chain";
 import { DelegationTarget } from "../../models/queue-items/draft-queue-payload";
 
-export type DraftOrigin = 'LOCAL' | 'REMOTE';
+export type DraftOrigin = 'LOCAL' | 'REMOTE' | 'LABOR';
 
 export interface DraftChainDto {
   id: string;

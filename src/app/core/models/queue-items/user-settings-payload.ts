@@ -4,5 +4,5 @@ import { SnapshotPayload } from './queue-item';
 // UserSettings nutzen PlannerSettingsDto als Snapshot-Typ
 export interface UserSettingsPayload extends SnapshotPayload< PlannerSettingsDto> {
   userId: string;
-  settings: PlannerSettingsDto;
+  settings: PlannerSettingsDto | null;
 }

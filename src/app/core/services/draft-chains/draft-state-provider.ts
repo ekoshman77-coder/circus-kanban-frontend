@@ -2,12 +2,20 @@ import { ArrayStateProvider } from '../central-queue/state-providers/array-state
 import { DraftQueueActions } from '../../models/queue-items/draft-queue-payload';
 import { DraftChain } from '../../models/draft-chain';
 import { DraftChainDto } from '../../repositories/dto/draft-chain-dto';
+import { QueueHandlerName } from '../../enums/queue-handler-name';
+import { inject } from '@angular/core';
+import { NotificationService } from '../notification/notification-service';
 
 export class DraftStateProvider extends ArrayStateProvider< DraftChain > {
+  private notificationService = inject(NotificationService)
+
   protected override storageKey = 'global_draft_chains_store';
 
   // 🎯 Statische Modell-Referenz für generisches Deserialisieren & Cache-Laden
   protected modelStatic = DraftChain;
+
+  private readonly knownHandlers = new Set(Object.values(QueueHandlerName));
+  
 
   constructor() {
     super([]);
@@ -84,5 +92,54 @@ export class DraftStateProvider extends ArrayStateProvider< DraftChain > {
 
   public removeDraftChain(chainId: string): void {
     this.applyActionPayload('REMOVE_DRAFT_CHAIN', { chainId });
+  }
+
+  // ==========================================
+  // CACHE LOADING & SANITIZING
+  // ==========================================
+
+  public override loadFromCache(): void {
+    // 1. Basis-Ladevorgang aus dem LocalStorage ausführen
+    super.loadFromCache();
+
+    const currentChains = this.getState();
+    if (!currentChains || currentChains.length === 0) return;
+
+    // 2. Ketten bereinigen & benachrichtigen
+    const sanitizedChains = currentChains
+      .map(chain => this.sanitizeDraftChain(chain))
+      .filter((chain): chain is DraftChain => chain !== null);
+
+    // 3. Nur wenn Veraltetes entfernt wurde, State neu setzen
+    if (sanitizedChains.length !== currentChains.length) {
+      this.setRawState(sanitizedChains);
+    }
+  }
+
+  private sanitizeDraftChain(chain: DraftChain): DraftChain | null {
+    const validItems = chain.items.filter(item => {
+      const isKnown = this.knownHandlers.has(item.queueItem.serviceName);
+
+      if (!isKnown) {
+        // 🎯 Benutzerfreundliche Toast-Benachrichtigung über displayInfo
+        const info = item.queueItem.payload?.displayInfo;
+        const contextTitle = info ? `"\({info.category}:\){info.title}"` : `"${chain.title}"`;
+
+        this.notificationService.showNotification(
+          `Der Entwurf ${contextTitle} konnte nicht geladen werden, da diese Funktion nicht mehr unterstützt wird.`,
+          'info'
+        );
+      }
+
+      return isKnown;
+    });
+
+    // Wenn die Kette nach der Bereinigung keine Items mehr hat -> verwerfen
+    if (validItems.length === 0) {
+      return null;
+    }
+
+    chain.items = validItems;
+    return chain;
   }
 }

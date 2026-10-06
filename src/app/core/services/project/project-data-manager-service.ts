@@ -31,7 +31,7 @@ import { QueueHandlerName } from '../../enums/queue-handler-name';
 @Injectable({
   providedIn: 'root'
 })
-export class ProjectDataManagerService extends BaseQueueDataManager {
+export class ProjectDataManagerService extends BaseQueueDataManager<ProjectStateProvider> {
   private projectRepository = inject(ProjectRepository);
   private teamRepository = inject(TeamRepository);
   private aiRepository = inject(AiRepository);
@@ -39,7 +39,6 @@ export class ProjectDataManagerService extends BaseQueueDataManager {
 
   constructor() {
     super(QueueHandlerName.PROJECT);
-    (this.stateProvider as ProjectStateProvider).loadFromCache();
   }
 
   protected override createStateProvider(): ProjectStateProvider {
@@ -151,7 +150,7 @@ public override executeQueueItem(item: QueueItem): Observable<any> {
 
         // 2. Ersetzung im Provider mit den gesammelten Paaren anstoßen
         if (milestoneReplacements.length > 0) {
-          (this.stateProvider as ProjectStateProvider).replaceIdsBulk(
+          this.stateProvider.replaceIdsBulk(
             { localId: localProject.id, serverId: serverProject.id },
             milestoneReplacements
           );

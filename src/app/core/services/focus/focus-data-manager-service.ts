@@ -8,7 +8,6 @@ import { BaseQueueDataManager } from '../central-queue/base-queue-data-manager';
 import { QueueItem } from '../../models/queue-items/queue-item';
 import { generateLocalId } from '../../shared/constants/id-const';
 import { FocusPomodoroPayload } from '../../models/queue-items/pomodoro-payload';
-import { StateProvider } from '../central-queue/state-providers/base-state-provider';
 import { EmptyStateProvider } from '../central-queue/state-providers/empty-state-provider';
 import { QueueHandlerName } from '../../enums/queue-handler-name';
 import { Todo } from '../../models/todo';
@@ -18,7 +17,7 @@ export type FocusQueueAction = 'RECORD_POMODORO';
 @Injectable({
   providedIn: 'root'
 })
-export class FocusDataManagerService extends BaseQueueDataManager {
+export class FocusDataManagerService extends BaseQueueDataManager<EmptyStateProvider> {
   private gamificationRepository = inject(GamificationRepository);
   private userService = inject(UserService);
   private loggerService = inject(LoggerService);
@@ -27,7 +26,7 @@ export class FocusDataManagerService extends BaseQueueDataManager {
     super(QueueHandlerName.FOCUS);
   }
 
-  protected override createStateProvider(): StateProvider<any> {
+  protected override createStateProvider(): EmptyStateProvider {
     return new EmptyStateProvider();
   }
 
