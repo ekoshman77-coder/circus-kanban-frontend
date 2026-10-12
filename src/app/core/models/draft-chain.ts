@@ -8,35 +8,61 @@ export interface DraftChainItem {
   isRootCause: boolean;       // true = Das Element, das den Abbruch verursacht hat
 }
 
-export class DraftChain implements DomainModel< DraftChain > {
-  constructor(
-    public id: string,
-    public title: string,
-    public items: DraftChainItem[],
-    public createdAt: number,
-    public origin: DraftOrigin,
-    public createdByUserId: string,
-    public lastErrorReason: string,
-    public lastErrorCode: number,
-    public target?: DelegationTarget,
-    public delegatedByUserId?: string,
-    public note?: string
-  ) {}
+export interface DraftChainParams {
+  id?: string;
+  title: string;
+  items: DraftChainItem[];
+  createdAt?: number;
+  origin: DraftOrigin;
+  createdByUserId?: string;
+  lastErrorReason?: string;
+  lastErrorCode?: number;
+  target?: DelegationTarget;
+  delegatedByUserId?: string;
+  note?: string;
+}
 
-  public cloneWith(changes: Partial< DraftChain >): DraftChain {
-    return new DraftChain(
-      changes.id ?? this.id,
-      changes.title ?? this.title,
-      changes.items ?? this.items,
-      changes.createdAt ?? this.createdAt,
-      changes.origin ?? this.origin,
-      changes.createdByUserId ?? this.createdByUserId,
-      changes.lastErrorReason ?? this.lastErrorReason,
-      changes.lastErrorCode ?? this.lastErrorCode,
-      changes.target !== undefined ? changes.target : this.target,
-      changes.delegatedByUserId !== undefined ? changes.delegatedByUserId : this.delegatedByUserId,
-      changes.note !== undefined ? changes.note : this.note
-    );
+export class DraftChain implements DomainModel<DraftChain> {
+  public id: string;
+  public title: string;
+  public items: DraftChainItem[];
+  public createdAt: number;
+  public origin: DraftOrigin;
+  public createdByUserId: string;
+  public lastErrorReason: string;
+  public lastErrorCode: number;
+  public target?: DelegationTarget;
+  public delegatedByUserId?: string;
+  public note?: string;
+
+  constructor(params: DraftChainParams) {
+    this.id = params.id ?? `draft_${params.origin.toLowerCase()}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    this.title = params.title;
+    this.items = params.items;
+    this.createdAt = params.createdAt ?? Date.now();
+    this.origin = params.origin;
+    this.createdByUserId = params.createdByUserId ?? '';
+    this.lastErrorReason = params.lastErrorReason ?? '';
+    this.lastErrorCode = params.lastErrorCode ?? 0;
+    this.target = params.target;
+    this.delegatedByUserId = params.delegatedByUserId;
+    this.note = params.note;
+  }
+
+  public cloneWith(changes: Partial<DraftChainParams>): DraftChain {
+    return new DraftChain({
+      id: changes.id ?? this.id,
+      title: changes.title ?? this.title,
+      items: changes.items ?? this.items,
+      createdAt: changes.createdAt ?? this.createdAt,
+      origin: changes.origin ?? this.origin,
+      createdByUserId: changes.createdByUserId ?? this.createdByUserId,
+      lastErrorReason: changes.lastErrorReason ?? this.lastErrorReason,
+      lastErrorCode: changes.lastErrorCode ?? this.lastErrorCode,
+      target: changes.target !== undefined ? changes.target : this.target,
+      delegatedByUserId: changes.delegatedByUserId !== undefined ? changes.delegatedByUserId : this.delegatedByUserId,
+      note: changes.note !== undefined ? changes.note : this.note
+    });
   }
 
   public toJson(): DraftChainDto {
@@ -44,7 +70,7 @@ export class DraftChain implements DomainModel< DraftChain > {
       id: this.id,
       title: this.title,
       items: structuredClone(this.items),
-      createdAt: this.createdAt ?? Date.now(),
+      createdAt: this.createdAt,
       createdByUserId: this.createdByUserId,
       target: this.target,
       delegatedByUserId: this.delegatedByUserId,
@@ -56,18 +82,18 @@ export class DraftChain implements DomainModel< DraftChain > {
   }
 
   public static fromJson(dto: DraftChainDto): DraftChain {
-    return new DraftChain(
-      dto.id,
-      dto.title || 'Unbenannter Entwurf',
-      dto.items || [],
-      dto.createdAt || Date.now(),
-      dto.origin ?? "REMOTE",
-      dto.createdByUserId || '',
-      dto.lastErrorReason || '',
-      dto.lastErrorCode || 500,
-      dto.target,
-      dto.delegatedByUserId,
-      dto.note
-    );
+    return new DraftChain({
+      id: dto.id,
+      title: dto.title || 'Unbenannter Entwurf',
+      items: dto.items || [],
+      createdAt: dto.createdAt || Date.now(),
+      origin: dto.origin ?? 'REMOTE',
+      createdByUserId: dto.createdByUserId || '',
+      lastErrorReason: dto.lastErrorReason || '',
+      lastErrorCode: dto.lastErrorCode ?? 0,
+      target: dto.target,
+      delegatedByUserId: dto.delegatedByUserId,
+      note: dto.note
+    });
   }
 }

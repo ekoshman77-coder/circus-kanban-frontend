@@ -18,4 +18,5 @@ export interface DeleteUserPayload extends UserSnapshotPayload {}
 export interface ApproveUserPayload extends UserSnapshotPayload {
   departmentId: string;
   role: string;
+  supervisorId?: string;
 }

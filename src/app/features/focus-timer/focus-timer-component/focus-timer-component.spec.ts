@@ -125,7 +125,7 @@ it('should trigger FocusDataManager and show celebration when timer reaches 0', 
   vi.advanceTimersByTime(1000);
   fixture.detectChanges();
   // A) Wurde die Server-Methode mit der richtigen Todo-ID aufgerufen?
-  expect(focusDataManagerMock.recordCompletedPomodoro).toHaveBeenCalledWith('todo_abc');
+  expect(focusDataManagerMock.recordCompletedPomodoro).toHaveBeenCalledWith(mockTodo);
 
   // B) Wurde das Erfolgs-Popup im Signal aktiviert?
   expect(component['showSuccessCelebration']()).toBe(true);

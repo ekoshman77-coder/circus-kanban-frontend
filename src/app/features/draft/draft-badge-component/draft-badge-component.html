@@ -1,5 +1,5 @@
 @if (showMe()) {
-<div class="draft-badge" (click)="toggleDraft()">
+<div class="draft-badge" [class.labor-mode]="isLaborMode()" (click)="toggleDraft()">
      {{chainsCount()}}
 </div>
 }

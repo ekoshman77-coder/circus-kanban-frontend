@@ -4,7 +4,7 @@ import { ConnectionService } from '../connection/connection-service';
 import { GamificationRepository } from '../../repositories/gamification-repsoitory';
 import { UserService } from '../user/user-service';
 import { LoggerService } from '../logger/logger-service';
-import { CentralQueueService } from '../central-queue/live-central-queue-service';
+import { CentralQueueService } from '../central-queue/central-queue-service';
 import { QueueItem } from '../../models/queue-items/queue-item';
 import { FocusPomodoroPayload } from '../../models/queue-items/pomodoro-payload';
 import { QueueHandlerName } from '../../enums/queue-handler-name';

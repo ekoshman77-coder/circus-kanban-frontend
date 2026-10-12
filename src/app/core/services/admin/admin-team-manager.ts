@@ -43,7 +43,7 @@ export class AdminTeamManager extends BaseQueueDataManager<AdminStateProvider> {
     switch (action) {
       case 'APPROVE_USER': {
         const payload = item.payload as ApproveUserPayload;
-        return this.userRepository.approveUser(payload.id, payload.departmentId, payload.role);
+        return this.userRepository.approveUser(payload.id, payload.departmentId, payload.role, payload.supervisorId);
       }
       case 'DELETE_USER': {
         const payload = item.payload as DeleteUserPayload;
@@ -85,7 +85,7 @@ export class AdminTeamManager extends BaseQueueDataManager<AdminStateProvider> {
   // 🔄 AKTIONEN (Optimistic UI + Queue)
   // ==========================================================================
 
-  public approveMember(userId: string, department: Department, role: string): void {
+  public approveMember(userId: string, department: Department, role: string, supervisorId?: string): void {
     const snapshot = this.stateProvider.createSnapshot();
     // 🎯 User-Name aus dem State auslesen
     const userName = this.getUserNameById(userId);
@@ -94,6 +94,7 @@ export class AdminTeamManager extends BaseQueueDataManager<AdminStateProvider> {
       id: userId,
       departmentId: department.id,
       role: role,
+      supervisorId: supervisorId,
       snapshot,
       displayInfo: {
         category: 'Benutzer freischalten',

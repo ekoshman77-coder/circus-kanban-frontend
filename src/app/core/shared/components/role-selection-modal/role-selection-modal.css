@@ -164,3 +164,131 @@
   from { transform: scale(0.95); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
+
+/* 🎓 BETREUER SEKTION STYLING */
+.supervisor-section {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px dashed #cbd5e1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.supervisor-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.required {
+  color: #ef4444;
+}
+
+.supervisor-select {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.875rem;
+  color: #334155;
+  background-color: #f8fafc;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.supervisor-select:focus {
+  border-color: #2563eb;
+  background-color: #ffffff;
+}
+
+.no-supervisors-hint {
+  margin: 4px 0 0 0;
+  font-size: 0.75rem;
+  color: #d97706;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 🎭 WEICHE ANIMATION FÜR BETREUER-BEREICH & FOOTER */
+.supervisor-section-wrapper,
+.modal-footer-wrapper {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.2s ease-in-out,
+              margin-top 0.25s ease-in-out;
+  overflow: hidden;
+  margin-top: 0;
+}
+
+.supervisor-section-wrapper.visible {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  margin-top: 16px;
+}
+
+.modal-footer-wrapper.visible {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+/* Der innere Container benötigt min-height: 0 für die Grid-Transition */
+.supervisor-section,
+.modal-footer {
+  min-height: 0;
+}
+
+.supervisor-section {
+  padding-top: 12px;
+  border-top: 1px dashed #cbd5e1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.supervisor-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.required {
+  color: #ef4444;
+}
+
+.supervisor-select {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.875rem;
+  color: #334155;
+  background-color: #f8fafc;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.supervisor-select:focus {
+  border-color: #2563eb;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.no-supervisors-hint {
+  margin: 4px 0 0 0;
+  font-size: 0.75rem;
+  color: #d97706;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

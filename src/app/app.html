@@ -15,12 +15,16 @@
 
     <!-- RECHTS: Suche + Haupt-Tabs + Tools-Dropdown -->
     <div class="nav-group right-group">
-      <div class="header-search-wrapper">
-        <app-search-center-component></app-search-center-component>
+      <div class="search-and-switch-stack">
+        <app-labor-switch-component></app-labor-switch-component>
+        <div class="header-search-wrapper">
+          <app-search-center-component></app-search-center-component>
+        </div>
       </div>
 
       <!-- 1. Haupt-Tab: Aufgaben -->
-      <button routerLink="/todopage" routerLinkActive="active-route" class="nav-tab icon-tab" data-tooltip="Aufgaben & Board">
+      <button routerLink="/todopage" routerLinkActive="active-route" class="nav-tab icon-tab"
+        data-tooltip="Aufgaben & Board">
         <span class="tab-icon">📋</span>
       </button>
 
@@ -30,7 +34,8 @@
       </button>
 
       <!-- 3. Haupt-Tab: Team -->
-      <button routerLink="/team" routerLinkActive="active-route" class="nav-tab icon-tab" data-tooltip="Team-Verwaltung">
+      <button routerLink="/team" routerLinkActive="active-route" class="nav-tab icon-tab"
+        data-tooltip="Team-Verwaltung">
         <span class="tab-icon">👥</span>
       </button>
 
@@ -64,11 +69,11 @@
           </a>
 
           @if (isAdmin()) {
-            <div class="dropdown-divider"></div>
-            <a routerLink="/admin" routerLinkActive="active-dropdown-item" class="dropdown-item admin-item">
-              <span class="item-icon">🛡️</span>
-              <span class="item-text">Admin-Board</span>
-            </a>
+          <div class="dropdown-divider"></div>
+          <a routerLink="/admin" routerLinkActive="active-dropdown-item" class="dropdown-item admin-item">
+            <span class="item-icon">🛡️</span>
+            <span class="item-text">Admin-Board</span>
+          </a>
           }
         </div>
       </div>
@@ -100,12 +105,13 @@
 <app-draft-floating-button-component></app-draft-floating-button-component>
 
 @if (draftUIService.isDraftBoxOpen()) {
-  <app-draft-box-component></app-draft-box-component>
+<app-draft-box-component></app-draft-box-component>
 }
 @if (draftUIService.editingChain(); as editingChain) {
-  <app-edit-modal-component
-    [chain]="editingChain"
-    (closed)="draftUIService.closeEditModal()"
-    (saved)="draftUIService.saveEditedChain($event)">
-  </app-edit-modal-component >
+<app-edit-modal-component [chain]="editingChain" (closed)="draftUIService.closeEditModal()"
+  (saved)="draftUIService.saveEditedChain($event)">
+</app-edit-modal-component>
+}
+@if (userStatusPollingService.graduationPending()) {
+  <app-graduation-modal></app-graduation-modal>
 }

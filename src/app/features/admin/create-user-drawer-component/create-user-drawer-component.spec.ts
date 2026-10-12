@@ -20,8 +20,8 @@ describe('CreateUserDrawerComponent', () => {
     showNotification: vi.fn()
   };
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
+  beforeEach(() => {
+    TestBed.configureTestingModule({
       imports: [CreateUserDrawerComponent],
       providers: [
         // 2. Mocks im TestBed registrieren
@@ -29,11 +29,11 @@ describe('CreateUserDrawerComponent', () => {
         { provide: NotificationService, useValue: mockNotificationService }
       ]
     })
-    .compileComponents();
+    
 
     fixture = TestBed.createComponent(CreateUserDrawerComponent);
     component = fixture.componentInstance;
-    await fixture.whenStable();
+    fixture.whenStable();
   });
 
   it('should create', () => {

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { UserModel, IUserInit } from './user-model';
+import { IUser } from '../repositories/dto/user-dto';
 
 describe('UserModel (Vitest - Strictly Typed)', () => {
   let defaultData: IUserInit;
@@ -101,16 +102,18 @@ describe('UserModel (Vitest - Strictly Typed)', () => {
 
   describe('JSON Konvertierung & Abteilungs-Logik', () => {
     it('sollte ein UserModel aus flachem JSON korrekt deserialisieren (fromJson)', () => {
-      const json = {
+      const json: IUser = {
         id: 'json-1',
         username: 'devguy',
         firstName: 'Erika',
         lastName: 'Musterfrau',
         isApproved: true,
-        department_role: 'Lead',
-        coffeeBalance: 10,
-        role: 'Barista',
-        emoji: '☕'
+        departmentRole: 'Lead',
+        coffeeAccount: {
+          balance: 10,
+          role: 'Barista',
+          emoji: '☕'
+        }
       };
 
       const user = UserModel.fromJson(json);
@@ -127,7 +130,7 @@ describe('UserModel (Vitest - Strictly Typed)', () => {
       const json = user.toJson();
 
       expect(json.id).toBe('user-123');
-      expect(json.coffeeBalance).toBe(5);
+      expect(json.coffeeAccount?.balance).toBe(5);
       expect(json.coffeeAccount).toEqual({
         balance: 5,
         role: 'Kaffee-Junkie',

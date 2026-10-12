@@ -521,3 +521,11 @@ html, body {
   position: relative;
   z-index: 1; /* 👈 Der Content-Bereich bleibt garantiert UNTER dem App-Header */
 }
+
+/* Stapelt den Labor-Switch sauber linksbündig über das Such-Feld */
+.search-and-switch-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* 👈 Linksbündig mit der Suchleiste */
+  gap: 3px;
+}

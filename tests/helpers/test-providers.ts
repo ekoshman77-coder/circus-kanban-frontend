@@ -1,11 +1,11 @@
 import { Provider, signal } from '@angular/core';
 import { vi } from 'vitest';
-import { CentralQueueService } from '../../src/app/core/services/central-queue/live-central-queue-service';
 import { NotificationService } from '../../src/app/core/services/notification/notification-service';
 import { LocalStorageService } from '../../src/app/core/services/user/local-storage-service';
 import { AUTH_CONTEXT } from '../../src/app/core/services/user/auth-context';
 import { Subject } from 'rxjs';
 import { UserService } from '../../src/app/core/services/user/user-service';
+import { CentralQueueService } from '../../src/app/core/services/central-queue/central-queue-service';
 
 export const mockAuthContext = {
   getCurrentUserId: vi.fn().mockReturnValue('test-user-123'),
@@ -31,8 +31,14 @@ export const mockLocalStorageService = {
   setItem: vi.fn(),
   removeItem: vi.fn(),
   addDataNotSaved: vi.fn(),
-  collectUnsavedDataWarnings: vi.fn().mockReturnValue([])
+  collectUnsavedDataWarnings: vi.fn().mockReturnValue([]),
 };
+
+export const mockConnectionService = {
+  isOnline: signal(true),
+  isOffline: signal(false)
+};
+
 
 export const mockUserService = {  
     currentUser: signal({ id: 'user-123', username: 'TestUser' }),

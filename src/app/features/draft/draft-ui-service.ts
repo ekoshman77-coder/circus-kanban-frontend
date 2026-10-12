@@ -8,6 +8,7 @@ import { DelegationTarget, DelegationTargetType } from "../../core/models/queue-
 import { ProjectService } from "../../core/services/project/project-service";
 import { TeamService } from "../../core/services/team/team-service";
 import { UserService } from "../../core/services/user/user-service";
+import { AppStateService } from "../../core/services/app-state/app-state-service";
 
 export type DraftFilterType = 'ALL' | 'LOCAL' | 'REMOTE';
 
@@ -38,6 +39,7 @@ export class DraftUIService extends BaseDataManager {
   private projectService = inject(ProjectService)
   private teamService = inject(TeamService)
   private userService = inject(UserService)
+  private appStateService = inject(AppStateService)
 
   private isMockMode = false; // Switchet zwischen Mock & Backend
 
@@ -52,6 +54,12 @@ export class DraftUIService extends BaseDataManager {
 
   // In der DraftUIService Klasse:
   public activeFilter = signal('ALL');
+
+  // Reicht das Signal direkt für die UI-Komponenten durch
+  public isLaborMode = this.appStateService.isLaborMode;
+
+  // Signal für erzwungenen Labor-Modus direkt durchreichen
+  public isLaborForced = this.appStateService.isLaborForced;
 
   /** Liefert die gefilterten Entwürfe basierend auf dem aktiven Tab */
   public filteredChains = computed(() => {
@@ -161,7 +169,13 @@ export class DraftUIService extends BaseDataManager {
   public isDraftBoxOpen = signal<boolean>(false);
   public chainsCount = computed(() => this.failureChains().length);
   public hasChains = computed(() => this.chainsCount() > 0);
-  public showDraftHandle = this.hasChains;
+  
+  public showDraftHandle = computed(() => {
+    if (this.isLaborForced()) {
+      return false;
+    }
+    return this.hasChains();
+  });
 
   // --- ACTIONS ---
   public toggleDraftBox() {
@@ -243,6 +257,28 @@ export class DraftUIService extends BaseDataManager {
     }
 
     this.closeEditModal();
+  }
+
+  /**
+  * 🧪 Spezialfall für den Labor-Modus: 
+  * Schickt den Entwurf direkt an den zugewiesenen Betreuer/Supervisor.
+  */
+  public sendDraftToSupervisor(chainId: string): void {
+    // Supervisor-ID z. B. aus dem UserService / UserContext oder AppState beziehen
+    const supervisorId = this.userService.currentUser()?.supervisorId;
+
+    if (!supervisorId) {
+      console.warn('Kein Supervisor für den aktuellen Praktikanten zugewiesen!');
+      return;
+    }
+
+    const target: DelegationTarget = {
+      type: 'USER',
+      id: supervisorId
+    };
+
+    // Wiederverwendung der bestehenden Delegations-Logik
+    this.delegateChain(chainId, target, 'Labor-Entwurf zur Durchsicht eingereicht');
   }
 
   public override resetData(): void {

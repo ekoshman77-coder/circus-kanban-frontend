@@ -466,3 +466,31 @@ button:active {
   cursor: pointer;
   text-decoration: underline;
 }
+
+/* Special Button for Labor Mode: Send to Supervisor */
+.labor-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.chain-send-supervisor {
+  background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
+  border: 1px solid #7e22ce;
+  color: #ffffff;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.25);
+}
+
+.chain-send-supervisor:hover {
+  background: linear-gradient(135deg, #9333ea 0%, #6b21a8 100%);
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.35);
+  transform: translateY(-1px);
+}
+
+.chain-send-supervisor:active {
+  transform: scale(0.96);
+}

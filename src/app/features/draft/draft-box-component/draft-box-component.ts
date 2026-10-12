@@ -78,6 +78,11 @@ export class DraftBoxComponent {
     });
   }
 
+  public sendToSupervisor(chainId: string): void {
+  // Übergibt die Entwurfskette gezielt an den zugewiesenen Betreuer/Mentor
+    this.draftUIService.sendDraftToSupervisor(chainId);
+  }
+
   public startUserSelect(): void {
     this.currentStep.set('SELECT_USER');
   }

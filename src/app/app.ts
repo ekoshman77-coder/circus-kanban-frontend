@@ -21,6 +21,9 @@ import { DraftFloatingButtonComponent } from './features/draft/draft-floating-bu
 import { DraftUIService } from './features/draft/draft-ui-service';
 import { DraftBoxComponent } from './features/draft/draft-box-component/draft-box-component';
 import { EditModalComponent } from './features/draft/edit-modal/edit-modal-component/edit-modal-component';
+import { LaborSwitchComponent } from './features/labor/labor-switch-component/labor-switch-component';
+import { GraduationModalComponent } from './features/graduation-modal/graduation-modal-component';
+import { UserStatusPollingService } from './core/services/admin/user-status-polling-service';
 
 @Component({
   selector: 'app-root',
@@ -34,7 +37,9 @@ import { EditModalComponent } from './features/draft/edit-modal/edit-modal-compo
     StreakPanelComponent, 
     DraftFloatingButtonComponent,
     DraftBoxComponent,
-    EditModalComponent
+    EditModalComponent, 
+    LaborSwitchComponent,
+    GraduationModalComponent
   ], // 'Home' und 'TodoPageComponent' fliegen hier raus, da sie über den Router geladen werden!
   templateUrl: './app.html',
   styleUrl: './app.css'
@@ -48,6 +53,7 @@ export class App implements OnInit {
   public departmentService = inject(DepartmentService)
   public masterDataService = inject(MasterDataService)
   public draftUIService = inject(DraftUIService);
+  public userStatusPollingService = inject(UserStatusPollingService)
 
   // 🎯 Das globale Signal, das unser HTML mit den frischen Level-Daten füttert
   protected globalLevelUpResult = signal<GamificationResult | null>(null);

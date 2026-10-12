@@ -1,15 +1,14 @@
 import { effect, inject, Injectable } from '@angular/core';
-import { from, of, Subject } from 'rxjs';
-import { concatMap, finalize } from 'rxjs/operators';
+import { from, Observable, of, Subject } from 'rxjs';
+import { catchError, concatMap, finalize, takeUntil } from 'rxjs/operators';
 import { ConnectionService } from '../connection/connection-service';
 import { IQueueHandler } from './queue-handler-interface';
 import { generateLocalId } from '../../shared/constants/id-const';
-import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 import { BaseQueueDataManager } from './base-queue-data-manager';
 import { QueueItem, SnapshotPayload } from '../../models/queue-items/queue-item';
-import { AUTH_CONTEXT } from '../user/auth-context';
 import { QueueHandlerName } from '../../enums/queue-handler-name';
 import { BaseCentralQueueService } from './base-central-queue-service';
+import { DraftChainItem } from '../../models/draft-chain';
 
 export interface QueueFailurePayload {
   items: QueueItem[];
@@ -33,12 +32,14 @@ export class LiveCentralQueueService extends BaseCentralQueueService {
 
   private queue: QueueItem[] = [];
 
-  constructor() {
-    super();
+  constructor(registry: Map<QueueHandlerName, IQueueHandler>) {
+    super(registry);
     this.queue = this.localStorageService.getItem(this.QUEUE_KEY) || [];
+    console.log(`⚙️ [LiveQueueInstance] Instanz erzeugt. Registry enthält ${this.registry.size} Handler.`);
 
     effect(() => {
       if (this.connectionService.isOnline() && this.authContext.isLoggedIn()) {
+        console.log(`⚙️ [LiveQueueInstance] effect process queue`);
         this.processQueue();
       }
     });
@@ -101,22 +102,25 @@ export class LiveCentralQueueService extends BaseCentralQueueService {
       return;
     }
 
-    targetService.executeQueueItem(currentItem).subscribe({
-      next: (response: any) => {
-        targetService.handleQueueResult(currentItem, true, response);
-        this.dequeue();
-        this.isProcessing = false;
-        this.processQueue();
-      },
-      error: (err: any) => {
-        if (err.status >= 400 && err.status < 500 && err.status != 401) {
-          this.handle4xxError(currentItem, targetService, err, err.status)
-        } else {
-          console.warn(`📡 [CentralQueueService] Netz/Serverfehler bei ${currentItem.action}. Pausiere Queue.`);
+    targetService.executeQueueItem(currentItem).pipe(
+      takeUntil(this.destroy$)
+    )
+      .subscribe({
+        next: (response: any) => {
+          targetService.handleQueueResult(currentItem, true, response);
+          this.dequeue();
           this.isProcessing = false;
+          this.processQueue();
+        },
+        error: (err: any) => {
+          if (err.status >= 400 && err.status < 500 && err.status != 401) {
+            this.handle4xxError(currentItem, targetService, err, err.status)
+          } else {
+            console.warn(`📡 [CentralQueueService] Netz/Serverfehler bei ${currentItem.action}. Pausiere Queue.`);
+            this.isProcessing = false;
+          }
         }
-      }
-    });
+      });
   }
 
   private handle4xxError(
@@ -128,43 +132,57 @@ export class LiveCentralQueueService extends BaseCentralQueueService {
     console.warn(`🛑 [CentralQueueService] 4xx Fehler bei ${currentItem.action}. Starte Backward-Rollback & Forward-Replay.`);
 
     // 1. Shadow Mode GLOBAL auf allen registrierten Handlern aktivieren
-    this.registry.forEach((handler, key) => handler.enableShadowMode(true));
+    this.registry.forEach((handler) => handler.enableShadowMode(true));
 
-    // 2. BACKWARD-ROLLBACK: Von hinten nach vorne die ganze Queue zurückspulen
+    // 2. BACKWARD-ROLLBACK
     for (let i = this.queue.length - 1; i >= 0; i--) {
       const item = this.queue[i];
       const handler = this.registry.get(item.serviceName);
-      if (handler) {
-        handler.rollbackItem(item);
-      }
+      if (handler) handler.rollbackItem(item);
     }
 
-    // 3. LAWINEN-EXTRAKTION: Defekte Kette isolieren & aus Queue entfernen
+    // 3. LAWINEN-EXTRAKTION
     const dependentChain = this.extractDependentChain();
 
-    // 4. In der Draft-Box sichern
+    // 4. In der Draft-Box sichern über den sauberen Base-Stream!
     if (dependentChain.length > 0) {
       const errorMessage = err.error?.message || err.message || '4xx Fehler';
-      const failure: QueueFailurePayload = ({
+
+      const chainItems: DraftChainItem[] = dependentChain.map((item, index) => ({
+        queueItem: item,
+        isRootCause: index === 0
+      }));
+
+      // 🟢 Nutzt die saubere Base-Methode: Erzeugt eine 'LOCAL'-DraftChain
+      const draftChain = this.createDraftChainInstance(
+        dependentChain[0]?.payload?.displayInfo?.title || 'Fehlerhafter Entwurf',
+        chainItems,
+        'LOCAL',
+        errorMessage,
+        errorCode
+      );
+
+      // 📢 Sendet die Kette direkt an den zentralen draftChainCreated$-Stream!
+      this.emitDraftChain(draftChain);
+
+      // Optional: Für spezielle Error-Logger zusätzlich das Event feuern
+      this.queueFailedSubject.next({
         error: errorMessage,
         items: dependentChain,
         errorCode
-      })
-      this.queueFailedSubject.next(failure)
+      });
     }
 
-    // 5. FORWARD-REPLAY: Von vorne nach hinten nur die verbliebenen, unbetroffenen Items anwenden
+    // 5. FORWARD-REPLAY
     for (const item of this.queue) {
       const handler = this.registry.get(item.serviceName);
-      if (handler) {
-        handler.applyRollForward(item);
-      }
+      if (handler) handler.applyRollForward(item);
     }
 
-    // 6. Shadow Mode GLOBAL deaktivieren -> BÄM! Sauberer UI-State
-    this.registry.forEach((handler, key) => handler.enableShadowMode(false));
+    // 6. Shadow Mode GLOBAL deaktivieren
+    this.registry.forEach((handler) => handler.enableShadowMode(false));
 
-    // 7. Processing freigeben & Queue fortführen
+    // 7. Processing freigeben
     this.isProcessing = false;
     setTimeout(() => this.processQueue(), 0);
   }
@@ -184,10 +202,7 @@ export class LiveCentralQueueService extends BaseCentralQueueService {
 
     from(handlers).pipe(
       concatMap(handler => {
-        if (handler instanceof BaseQueueDataManager) {
           return handler.refreshDataIfStale(userId);
-        }
-        return of(true);
       }),
       finalize(() => {
         // 🔓 2. Fetched-Status auf FALSE setzen & wartende Queue sofort aufwecken!
@@ -304,6 +319,11 @@ export class LiveCentralQueueService extends BaseCentralQueueService {
     if (this.connectionService.isOnline() && this.authContext.isLoggedIn()) {
       this.processQueue();
     }
+  }
+
+  public override destroy(): void {
+    console.log('💥 [LiveQueueInstance] destroy() aufgerufen -> breche laufende HTTP-Calls ab!');
+    super.destroy();
   }
 
   public override resetData(): void {

@@ -1,7 +1,8 @@
 import { IDepartment } from "../repositories/dto/deparment-json";
-import { generateLocalId, isLocalId } from "../shared/constants/id-const";
+import { generateLocalId } from "../shared/constants/id-const";
 import { Department } from "./department";
 import { DomainModel } from "./domain-model";
+import { IUser } from "../repositories/dto/user-dto";
 
 export type ProjectRole = 'OWNER' | 'PROJECT_MANAGER' | 'DEVELOPER' | 'NONE';
 
@@ -18,18 +19,22 @@ export interface IUserInit {
   lastName: string;
   department: Department | IDepartment | null;
   departmentRole?: string;
+  supervisorId?: string | null;
+  supervisorName?: string | null;
   isApproved: boolean | null;
   projectIds: string[];
   coffeeAccount?: CoffeeAccount;
 }
 
-export class UserModel implements DomainModel< UserModel > {
+export class UserModel implements DomainModel<UserModel> {
   id: string;
   firstName: string;
   lastName: string;
   username: string;
   department: Department | null;
   departmentRole: string;
+  supervisorId: string | null;
+  supervisorName: string | null;
   isApproved: boolean | null;
   projectIds: string[];
   coffeeAccount: CoffeeAccount;
@@ -49,6 +54,8 @@ export class UserModel implements DomainModel< UserModel > {
     }
 
     this.departmentRole = data.departmentRole || '';
+    this.supervisorId = data.supervisorId ?? null;
+    this.supervisorName = data.supervisorName ?? null;
     this.isApproved = data.isApproved ?? null;
     this.projectIds = data.projectIds || [];
 
@@ -59,7 +66,7 @@ export class UserModel implements DomainModel< UserModel > {
     };
   }
 
-  public cloneWith(changes: Partial< UserModel >): UserModel {
+  public cloneWith(changes: Partial<UserModel>): UserModel {
     return new UserModel({
       id: changes.id ?? this.id,
       firstName: changes.firstName ?? this.firstName,
@@ -67,6 +74,8 @@ export class UserModel implements DomainModel< UserModel > {
       username: changes.username ?? this.username,
       department: changes.department !== undefined ? changes.department : this.department,
       departmentRole: changes.departmentRole ?? this.departmentRole,
+      supervisorId: changes.supervisorId !== undefined ? changes.supervisorId : this.supervisorId,
+      supervisorName: changes.supervisorName !== undefined ? changes.supervisorName : this.supervisorName,
       isApproved: changes.isApproved !== undefined ? changes.isApproved : this.isApproved,
       projectIds: changes.projectIds ?? this.projectIds,
       coffeeAccount: changes.coffeeAccount ?? { ...this.coffeeAccount }
@@ -74,7 +83,7 @@ export class UserModel implements DomainModel< UserModel > {
   }
 
   get fullName(): string {
-    return `\({this.firstName}\){this.lastName}`.trim();
+    return `${this.firstName} ${this.lastName}`.trim();
   }
 
   getInitials(): string {
@@ -99,7 +108,13 @@ export class UserModel implements DomainModel< UserModel > {
     return this.department?.isAdmin() ?? false;
   }
 
-  public static fromJson(json: any): UserModel {
+  /** 🧪 Prüft, ob der User gezwungen im Labor-Modus ist */
+  public isLaborForced(): boolean {
+    const role = this.departmentRole.toUpperCase();
+    return role === 'INTERN' || role === 'GUEST' || role === 'PRAKTIKANT';
+  }
+
+  public static fromJson(json: IUser): UserModel {
     return new UserModel({
       id: json.id,
       firstName: json.firstName,
@@ -107,17 +122,19 @@ export class UserModel implements DomainModel< UserModel > {
       username: json.username,
       isApproved: json.isApproved,
       department: json.department ? Department.fromJson(json.department) : null,
-      departmentRole: json.departmentRole || json.department_role || '',
+      departmentRole: json.departmentRole || '',
+      supervisorId: json.supervisorId || null,
+      supervisorName: json.supervisorName || null,
       projectIds: json.projectIds || [],
       coffeeAccount: {
-        balance: json.coffeeAccount?.balance ?? json.coffeeBalance ?? 0,
-        role: json.coffeeAccount?.role ?? json.role ?? 'Teammitglied',
-        emoji: json.coffeeAccount?.emoji ?? json.emoji ?? '🦊'
+        balance: json.coffeeAccount?.balance ?? 0,
+        role: json.coffeeAccount?.role ?? 'Teammitglied',
+        emoji: json.coffeeAccount?.emoji ?? '🦊'
       }
     });
   }
 
-  public toJson(): any {
+  public toJson(): IUser {
     return {
       id: this.id,
       firstName: this.firstName,
@@ -125,11 +142,10 @@ export class UserModel implements DomainModel< UserModel > {
       username: this.username,
       department: this.department ? this.department.toJson() : null,
       departmentRole: this.departmentRole,
-      isApproved: this.isApproved,
+      supervisorId: this.supervisorId,
+      supervisorName: this.supervisorName,
+      isApproved: this.isApproved ?? false,
       projectIds: this.projectIds,
-      coffeeBalance: this.coffeeAccount.balance,
-      role: this.coffeeAccount.role,
-      emoji: this.coffeeAccount.emoji,
       coffeeAccount: this.coffeeAccount
     };
   } 

@@ -27,4 +27,5 @@ export interface ICentralQueueService {
   resetData(): void;
   checkUnsavedData(): string | null;
   isItemDependentOnChain(newItem: QueueItem, chainItems: DraftChainItem[]): boolean;
+  flushLaborItemsAndSwitchMode(laborItems: QueueItem[]): void;
 }

@@ -80,12 +80,13 @@ export class UserRepository {
     return this.http.post<IUser>(userApiUrl, user);
   }
 
-  public approveUser(userId: string, departmentId: string, role: string): Observable<IUser> {
+  public approveUser(userId: string, departmentId: string, role: string, supervisorId?: string): Observable<IUser> {
     console.log('📡 [UserRepo] approve user abgefeuert für ID:', userId);
 
     const payload = {
       departmentId: departmentId,
-      departmentRole: role
+      departmentRole: role,
+      supervisorId: supervisorId
     }
     return this.http.post<IUser>(`${userApiUrl}/${userId}/approve`, payload).pipe(
       tap(() => console.log(`📥 [UserRepo] approving vom Server bestätigt für User-ID: ${userId}`))

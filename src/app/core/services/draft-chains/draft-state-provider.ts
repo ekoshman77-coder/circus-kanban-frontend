@@ -1,24 +1,37 @@
-import { ArrayStateProvider } from '../central-queue/state-providers/array-state-provider';
-import { DraftQueueActions } from '../../models/queue-items/draft-queue-payload';
-import { DraftChain } from '../../models/draft-chain';
-import { DraftChainDto } from '../../repositories/dto/draft-chain-dto';
-import { QueueHandlerName } from '../../enums/queue-handler-name';
 import { inject } from '@angular/core';
-import { NotificationService } from '../notification/notification-service';
+import { ArrayStateProvider } from '../central-queue/state-providers/array-state-provider';
+import { DelegationTarget, DraftQueueActions } from '../../models/queue-items/draft-queue-payload';
+import { DraftChain, DraftChainItem } from '../../models/draft-chain';
+import { DraftChainDto } from '../../repositories/dto/draft-chain-dto';
+import { UserService } from '../user/user-service';
 
-export class DraftStateProvider extends ArrayStateProvider< DraftChain > {
-  private notificationService = inject(NotificationService)
+export class DraftStateProvider extends ArrayStateProvider<DraftChain> {
+  private userService = inject(UserService);
 
-  protected override storageKey = 'global_draft_chains_store';
+  // 🎯 User-isolierter Key für Multi-User-Sicherheit am selben PC
+  protected override get storageKey(): string {
+    const userId = this.userService.currentUser()?.id;
+    return userId ? `sandbox_drafts_${userId}` : 'global_draft_chains_store';
+  }
 
-  // 🎯 Statische Modell-Referenz für generisches Deserialisieren & Cache-Laden
   protected modelStatic = DraftChain;
-
-  private readonly knownHandlers = new Set(Object.values(QueueHandlerName));
-  
 
   constructor() {
     super([]);
+  }
+
+  // ==========================================
+  // STORAGE & RESET MANAGEMENT
+  // ==========================================
+
+  /**
+   * Löscht nur den Speicher des aktuellen Users
+   */
+  public clearUserDrafts(): void {
+    this.setRawState([]);
+    if (this.storageKey) {
+      this.localStorageService.removeItem(this.storageKey);
+    }
   }
 
   // ==========================================
@@ -51,9 +64,75 @@ export class DraftStateProvider extends ArrayStateProvider< DraftChain > {
   }
 
   // ==========================================
-  // REMOTE & LOCAL STATE MANAGEMENT
+  // ATOMIC MERGING & STATE SYNC
   // ==========================================
 
+  /**
+   * Löscht alte abhängige Ketten und fügt die zusammengefügte Kette atomar ein (ein einzelnes UI-Signal-Update)
+   */
+  public mergeDraftChains(idsToRemove: string[], mergedChain: DraftChain): void {
+    const removeSet = new Set(idsToRemove);
+
+    this.applyAction((currentItems) => {
+      const filtered = currentItems.filter(item => !removeSet.has(item.id));
+      const index = filtered.findIndex(item => item.id === mergedChain.id);
+
+      if (index >= 0) {
+        const copy = [...filtered];
+        copy[index] = mergedChain;
+        return copy;
+      }
+      return [...filtered, mergedChain];
+    });
+  }
+
+  /**
+   * 📦 Bündelt alle 'LABOR'-Entwürfe atomar zu einer einzigen Gesamt-DraftChain
+   * und entfernt die ursprünglichen Einzelketten aus dem State.
+   */
+  public bundleAllLaborDrafts(
+    target: DelegationTarget, 
+    note: string, 
+    currentUserId: string
+  ): DraftChain | null {
+    const currentList = this.getState();
+    const laborDrafts = currentList.filter(d => d.origin === 'LABOR');
+
+    if (laborDrafts.length === 0) return null;
+
+    // 1. Alle items aus allen Labor-Ketten sammeln
+    const allItems: DraftChainItem[] = [];
+    laborDrafts.forEach(chain => allItems.push(...chain.items));
+
+    // 2. Chronologisch nach Timestamp sortieren
+    allItems.sort((a, b) => a.queueItem.timestamp - b.queueItem.timestamp);
+
+    // 3. Markieren: Nur das allererste Item ist Root-Cause
+    const sanitizedItems = allItems.map((item, index) => ({
+      ...item,
+      isRootCause: index === 0
+    }));
+
+    // 4. Einziges Paket erzeugen
+    const packageChain = new DraftChain({
+      id: `draft_package_labor_${Date.now()}`,
+      title: `Praktikanten-Entwurfspaket (${sanitizedItems.length} Aktionen)`,
+      items: sanitizedItems,
+      createdAt: Date.now(),
+      origin: 'LABOR',
+      createdByUserId: currentUserId,
+      target,
+      delegatedByUserId: currentUserId,
+      note
+    });
+
+    // 5. ATOMARES UPDATE: Entferne alle alten Labor-Ketten & füge das Paket nicht ein (oder ersetze es)
+    const removeSet = new Set(laborDrafts.map(d => d.id));
+    this.applyAction((items) => items.filter(item => !removeSet.has(item.id)));
+
+    return packageChain;
+  }
+  
   public syncRemoteDrafts(fetchedRemoteDrafts: DraftChainDto[]): void {
     const currentList = this.getState();
 
@@ -82,7 +161,6 @@ export class DraftStateProvider extends ArrayStateProvider< DraftChain > {
       DraftChain.fromJson(dto)
     );
 
-    // 5. State setzen
     this.setRawState([...purelyLocalDrafts, ...preparedRemoteDrafts]);
   }
 
@@ -94,52 +172,4 @@ export class DraftStateProvider extends ArrayStateProvider< DraftChain > {
     this.applyActionPayload('REMOVE_DRAFT_CHAIN', { chainId });
   }
 
-  // ==========================================
-  // CACHE LOADING & SANITIZING
-  // ==========================================
-
-  public override loadFromCache(): void {
-    // 1. Basis-Ladevorgang aus dem LocalStorage ausführen
-    super.loadFromCache();
-
-    const currentChains = this.getState();
-    if (!currentChains || currentChains.length === 0) return;
-
-    // 2. Ketten bereinigen & benachrichtigen
-    const sanitizedChains = currentChains
-      .map(chain => this.sanitizeDraftChain(chain))
-      .filter((chain): chain is DraftChain => chain !== null);
-
-    // 3. Nur wenn Veraltetes entfernt wurde, State neu setzen
-    if (sanitizedChains.length !== currentChains.length) {
-      this.setRawState(sanitizedChains);
-    }
-  }
-
-  private sanitizeDraftChain(chain: DraftChain): DraftChain | null {
-    const validItems = chain.items.filter(item => {
-      const isKnown = this.knownHandlers.has(item.queueItem.serviceName);
-
-      if (!isKnown) {
-        // 🎯 Benutzerfreundliche Toast-Benachrichtigung über displayInfo
-        const info = item.queueItem.payload?.displayInfo;
-        const contextTitle = info ? `"\({info.category}:\){info.title}"` : `"${chain.title}"`;
-
-        this.notificationService.showNotification(
-          `Der Entwurf ${contextTitle} konnte nicht geladen werden, da diese Funktion nicht mehr unterstützt wird.`,
-          'info'
-        );
-      }
-
-      return isKnown;
-    });
-
-    // Wenn die Kette nach der Bereinigung keine Items mehr hat -> verwerfen
-    if (validItems.length === 0) {
-      return null;
-    }
-
-    chain.items = validItems;
-    return chain;
-  }
 }

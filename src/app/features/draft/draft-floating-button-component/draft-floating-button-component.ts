@@ -13,6 +13,7 @@ export class DraftFloatingButtonComponent {
   
   public isDraftOpen = this.draftUIService.isDraftBoxOpen
   public isScrolledDown = signal<boolean>(false)
+  public isLaborMode = this.draftUIService.isLaborMode
 
   public count = this.draftUIService.chainsCount
   public showMe = computed(() => this.draftUIService.showDraftHandle() && this.isScrolledDown())

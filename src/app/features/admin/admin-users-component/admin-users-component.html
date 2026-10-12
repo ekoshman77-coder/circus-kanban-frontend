@@ -110,11 +110,15 @@
     </main>
 
 </div>
-<app-role-selection-modal [(isOpen)]="isRoleModalOpen" [title]="'Rolle zuweisen (' + selectedDepartment()?.name + ')'"
-    [message]="'Welche Rolle soll ' + pendingUser()?.firstName + ' erhalten?'" [options]="filteredRoles()"
-    (confirmed)="onRoleConfirmed($any($event))" (cancelled)="onRoleCancelled()">
+<app-role-selection-modal 
+    [(isOpen)]="isRoleModalOpen" 
+    [title]="'Rolle zuweisen (' + selectedDepartment()?.name + ')'"
+    [message]="'Welche Rolle soll ' + pendingUser()?.firstName + ' erhalten?'" 
+    [options]="filteredRoles()"
+    [supervisors]="getUsersForDept(selectedDepartment()?.id || '')"
+    (confirmed)="onRoleConfirmed($event)" 
+    (cancelled)="onRoleCancelled()">
 </app-role-selection-modal>
-
 
 
 <!-- 🛷 DIE SEPARATE DRAWER-KOMPONENTE -->

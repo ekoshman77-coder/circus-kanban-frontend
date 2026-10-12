@@ -6,12 +6,12 @@ import { UserRepository } from '../../repositories/user-repository';
 import { ConnectionService } from '../connection/connection-service';
 import { UserService } from '../user/user-service';
 import { NotificationService } from '../notification/notification-service';
-import { CentralQueueService } from '../central-queue/live-central-queue-service';
 import { IUserInit, UserModel } from '../../models/user-model';
 import { ProjectMember } from '../../models/project-member';
 import { of } from 'rxjs';
 import { setupLocalStorageMock } from '../../../../../tests/helpers/local-storage-mock';
 import { describe, beforeEach, it, expect, vi } from 'vitest';
+import { CentralQueueService } from '../central-queue/central-queue-service';
 
 describe('TeamDataManager (Vitest - Strictly Typed)', () => {
   let manager: TeamDataManager;

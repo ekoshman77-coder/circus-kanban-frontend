@@ -37,17 +37,17 @@ describe('EditModalComponent', () => {
     id: 'user_123'
   };
 
-  const mockChain = new DraftChain(
-    'chain-1',
-    'Test Chain',
-    [mockRootItem],
-    Date.now(),
-    mockOrigin,
-    'user-1',
-    'Error Reason',
-    500,
-    mockTarget
-  );
+  const mockChain = new DraftChain({
+    id: 'chain-1',
+    title: 'Test Chain',
+    items: [mockRootItem],
+    createdAt: Date.now(),
+    origin: mockOrigin,
+    createdByUserId: 'user-1',
+    lastErrorReason: 'Error Reason',
+    lastErrorCode: 500,
+    target: mockTarget
+  });
 
   beforeEach(async () => {
     mockPayloadFormVisitor = {

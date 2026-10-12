@@ -24,17 +24,22 @@ import { DraftService } from './core/services/draft-chains/draft-service';
 import { DraftQueueDataManager } from './core/services/draft-chains/draft-data-manager';
 
 const DATA_MANAGER_REGISTRY: Record<QueueHandlerName, Type<IQueueHandler>> = {
-[QueueHandlerName.ADMIN_TEAM]: AdminTeamManager,
-  [QueueHandlerName.DEPARTMENT]: DepartmentDataManager,
-  [QueueHandlerName.PLANNER]: PlannerDataManagerService,
-  [QueueHandlerName.NOTE]: NoteDataManagerService,
-  [QueueHandlerName.USER_SETTINGS]: UserSettingsDataManager,
-  [QueueHandlerName.FOCUS]: FocusDataManagerService,
-  [QueueHandlerName.PERMISSION]: PermissionDataManager,
-  [QueueHandlerName.PROJECT]: ProjectDataManagerService,
-  [QueueHandlerName.TEAM]: TeamDataManager,
+  // 1. Höchste Priorität: Hauptfunktionalitäten
   [QueueHandlerName.TODO]: TodoDataManagerService,
-  [QueueHandlerName.DRAFT]: DraftQueueDataManager
+  [QueueHandlerName.NOTE]: NoteDataManagerService,
+  [QueueHandlerName.PROJECT]: ProjectDataManagerService,
+  
+  // 2. Mittlere Priorität: Täglicher Arbeitskontext
+  [QueueHandlerName.USER_SETTINGS]: UserSettingsDataManager,
+  [QueueHandlerName.PLANNER]: PlannerDataManagerService,
+  [QueueHandlerName.FOCUS]: FocusDataManagerService,
+  [QueueHandlerName.DRAFT]: DraftQueueDataManager,
+  
+  // 3. Nachgelagerte Stammdaten & Berechtigungen
+  [QueueHandlerName.TEAM]: TeamDataManager,
+  [QueueHandlerName.DEPARTMENT]: DepartmentDataManager,
+  [QueueHandlerName.PERMISSION]: PermissionDataManager,
+  [QueueHandlerName.ADMIN_TEAM]: AdminTeamManager
 };
 
 export const appConfig: ApplicationConfig = {

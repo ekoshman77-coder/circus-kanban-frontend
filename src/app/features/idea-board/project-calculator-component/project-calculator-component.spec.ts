@@ -62,7 +62,9 @@ describe('ProjectCalculatorComponent (Vitest Edition)', () => {
         addProjectFromCalculation: vi.fn(),
         updateProjectFromCalculation: vi.fn(),
         saveCalculatedProject: vi.fn(),
-        updateCalculatedProject: vi.fn(), // 🟢 JETZT VORHANDEN!
+        setActiveProjectId: vi.fn(),
+        setCurrentProject: vi.fn(),
+        updateCalculatedProject: vi.fn(), 
         degradeSuggestion: vi.fn(),
         loadDashboardStatistics: vi.fn(),
         _aiSuggestionsSignal: signal<any>(null),
@@ -270,7 +272,7 @@ describe('ProjectCalculatorComponent (Vitest Edition)', () => {
         // Assert: Zustand & TeamService-Sync
         expect(component['isBrandNewDraft']()).toBe(true); // UI zeigt Draft/Kalkulationsmodus
         expect(component.isExistingDbProject()).toBe(true); // DB-Erkennung muss greifen!
-        expect(mockTeamService.setCurrentProject).toHaveBeenCalledWith('proj-company-stub');
+        expect(mockProjectService.setActiveProjectId).toHaveBeenCalledWith('proj-company-stub');
 
         // 2. PM fügt im Calculator erste Meilensteine hinzu & speichert
         component.onMilestoneAdded('Initiales Audit & Kickoff', 5);

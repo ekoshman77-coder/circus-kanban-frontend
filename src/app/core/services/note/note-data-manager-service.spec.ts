@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { NoteDataManagerService } from './note-data-manager-service';
 import { ConnectionService } from '../connection/connection-service';
 import { NoteRepository } from '../../repositories/note-repository';
-import { CentralQueueService } from '../central-queue/live-central-queue-service';
+import { CentralQueueService } from '../central-queue/central-queue-service';
 import { Note } from '../../models/note';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { of } from 'rxjs';

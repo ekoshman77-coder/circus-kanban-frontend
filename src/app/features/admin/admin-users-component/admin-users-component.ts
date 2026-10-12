@@ -8,7 +8,7 @@ import { UserModel } from '../../../core/models/user-model';
 import { AdminTeamService } from '../../../core/services/admin/admin-team-service';
 import { MasterDataService } from '../../../core/services/admin/master-data-service';
 import { Department } from '../../../core/models/department';
-import { RoleSelectionModalComponent } from '../../../core/shared/components/role-selection-modal/role-selection-modal';
+import { RoleApprovalResult, RoleSelectionModalComponent } from '../../../core/shared/components/role-selection-modal/role-selection-modal';
 import { CreateUserDrawerComponent } from '../create-user-drawer-component/create-user-drawer-component';
 import { UniversalPopupComponent } from '../../../core/shared/components/universal-popup-component/universal-popup-component';
 
@@ -143,23 +143,23 @@ public filteredRoles = computed(() => {
   }
 
   // ✅ Wird aufgerufen, wenn im Modal eine Rolle angeklickt wurde
-public onRoleConfirmed(selectedRole: string) {
-  console.log('2️⃣ [PARENT] RoleConfirmed empfangen:', selectedRole);
+  public onRoleConfirmed(result: RoleApprovalResult) {
+    console.log('2️⃣ [PARENT] RoleConfirmed empfangen:', result);
 
-  const user = this.pendingUser();
-  const dept = this.selectedDepartment();
+    const user = this.pendingUser();
+    const dept = this.selectedDepartment();
 
-  console.log('3️⃣ [PARENT] User:', user?.username, 'Abteilung:', dept?.name);
+    console.log('3️⃣ [PARENT] User:', user?.username, 'Abteilung:', dept?.name, 'Supervisor:', result.supervisorId);
 
-  if (user && dept) {
-    console.log('4️⃣ [PARENT] Sendet an approveMember:', user.id, dept.name, selectedRole);
-    this.adminTeamService.approveMember(user.id, dept, selectedRole);
-  } else {
-    console.warn('⚠️ [PARENT] User oder Department ist NULL!', { user, dept });
+    if (user && dept) {
+      // 🚀 Übergibt role AND supervisorId an den Service
+      this.adminTeamService.approveMember(user.id, dept, result.role, result.supervisorId?? undefined);
+    } else {
+      console.warn('⚠️ [PARENT] User oder Department ist NULL!', { user, dept });
+    }
+
+    this.resetPendingState();
   }
-
-  this.resetPendingState();
-}
 
   // ❌ Wird aufgerufen, wenn im Modal abgebrochen wurde
   public onRoleCancelled() {

@@ -14,9 +14,18 @@ export abstract class BaseCentralQueueService extends BaseDataManager implements
     protected authContext = inject(AUTH_CONTEXT);
     protected registry = new Map<QueueHandlerName, IQueueHandler>();
 
+    protected readonly LIVE_QUEUE_KEY = 'global_central_offline_queue';
+
+    protected destroy$ = new Subject<void>();
+
     private draftChainSubject = new Subject<DraftChain>();
     draftChainCreated$: Observable<DraftChain> = this.draftChainSubject.asObservable();
 
+    constructor(registry: Map<QueueHandlerName, IQueueHandler>) {
+        super();
+        this.registry = registry;
+    }
+    
     public registerService(name: QueueHandlerName, handler: IQueueHandler): void {
         if (!this.registry.has(name)) {
             this.registry.set(name, handler);
@@ -24,6 +33,12 @@ export abstract class BaseCentralQueueService extends BaseDataManager implements
         }
     }
 
+    public appendItemsToLiveQueueStorage(items: QueueItem[]): void {
+        if (!items || items.length === 0) return;
+        const existingQueue = this.localStorageService.getItem<QueueItem[]>(this.LIVE_QUEUE_KEY) || [];
+        const mergedQueue = [...existingQueue, ...items];
+        this.localStorageService.setItem(this.LIVE_QUEUE_KEY, mergedQueue);
+    }
     /**
      * Helper zum einheitlichen Erzeugen einer DraftChain
      */
@@ -34,16 +49,16 @@ export abstract class BaseCentralQueueService extends BaseDataManager implements
         errorReason = '',
         errorCode = 0
     ): DraftChain {
-        return new DraftChain(
-            `draft_${origin.toLowerCase()}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        return new DraftChain({
+            id: `draft_${origin.toLowerCase()}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
             title,
             items,
-            Date.now(),
+            createdAt: Date.now(),
             origin,
-            this.authContext.getCurrentUserId() || '',
-            errorReason,
-            errorCode
-        );
+            createdByUserId: this.authContext.getCurrentUserId() || '',
+            lastErrorReason: errorReason,
+            lastErrorCode: errorCode
+        });
     }
 
     /**
@@ -82,7 +97,16 @@ export abstract class BaseCentralQueueService extends BaseDataManager implements
             return itemHandler.dependsOnId(chainItem.queueItem, newItemIds);
         });
     }
-    
+
+    /**
+     * 🧹 Teardown-Methode: Wird aufgerufen, bevor die Instanz verworfen wird
+     */
+    public destroy(): void {
+        this.destroy$.next();
+        this.destroy$.complete();
+        console.log(`🧹 [${this.constructor.name}] Subscriptions & Streams erfolgreich beendet.`);
+    }
+
     // --- Gemeinsame abstrakte & Standard-Methoden ---
     public abstract enqueue(serviceName: QueueHandlerName, action: string, payload: SnapshotPayload): QueueItem;
     public abstract processQueue(): Promise<void>;
@@ -95,4 +119,6 @@ export abstract class BaseCentralQueueService extends BaseDataManager implements
     public extractDependentChain(): QueueItem[] { return []; }
     public setFetchingState(isFetching: boolean): void { }
     public isFetching(): boolean { return false; }
+    // central-queue-service.ts
+    public flushLaborItemsAndSwitchMode(laborItems: QueueItem[]): void {}
 }

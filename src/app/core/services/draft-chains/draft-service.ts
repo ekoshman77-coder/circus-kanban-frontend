@@ -4,21 +4,84 @@ import { DraftChain, DraftChainItem } from '../../models/draft-chain';
 import { DelegationTarget } from '../../models/queue-items/draft-queue-payload';
 import { SnapshotPayload } from '../../models/queue-items/queue-item';
 import { DraftQueueDataManager } from './draft-data-manager';
+import { QueueHandlerName } from '../../enums/queue-handler-name';
+import { Observable, of } from 'rxjs';
+import { UserService } from '../user/user-service';
+
+export interface SandboxSummary {
+  totalChains: number;
+  notesCount: number;
+  todosCount: number;
+  projectsCount: number;
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class DraftService extends BaseDataManager {
   private dataManager = inject(DraftQueueDataManager);
+  private userService = inject(UserService)
 
   /** Holt das rohe Signal aus dem DataManager */
   public readonly draftChains = this.dataManager.draftChainsSignal;
 
+// ==========================================
+  // 🎓 GRADUATION & SANDBOX COMPUTEDS
+  // ==========================================
 
+  /** Alle un-synchronisierten Entwürfe aus der Labor-Zeit */
+  public readonly laborDrafts = computed(() =>
+    this.draftChains().filter(chain => chain.origin === 'LABOR')
+  );
+
+  /** Berechnete Zusammenfassung für die UI (z. B. Graduation Modal) */
+  public readonly sandboxSummary = computed<SandboxSummary>(() => {
+    const drafts = this.laborDrafts();
+    let notesCount = 0;
+    let todosCount = 0;
+    let projectsCount = 0;
+
+    drafts.forEach(chain => {
+      chain.items.forEach(item => {
+        const service = item.queueItem.serviceName;
+        if (service === QueueHandlerName.NOTE) notesCount++;
+        if (service === QueueHandlerName.TODO) todosCount++;
+        if (service === QueueHandlerName.PROJECT) projectsCount++
+      });
+    });
+
+    return {
+      totalChains: drafts.length,
+      notesCount,
+      todosCount,
+      projectsCount
+    };
+  });
 
   // ==========================================
   // 🚀 ACTIONS (Reine Delegation an DataManager)
   // ==========================================
+
+  public promoteLaborDraftsToRealWorld(): void {
+    this.dataManager.promoteLaborDraftsToRealWorld();
+  }
+
+  public delegateAllLaborDraftsToSupervisor(note?: string): Observable<boolean> {
+    if (this.laborDrafts().length === 0) {
+      return of(true);
+    }
+
+    console.log(`🎓 [DraftService] Bündele ${this.laborDrafts().length} Entwurfsketten zu EINEM Gesamt-Paket...`);
+    
+    const target: DelegationTarget = {
+      type: 'USER',
+      id: this.userService.currentUser()?.supervisorId?? ""
+    }
+
+    this.dataManager.delegateAllLaborDraftsAsSinglePackage(target, note);
+    
+    return of(true);
+  }
 
   public getDraftChain(id: string): DraftChain | null {
     return this.draftChains().find(chain => chain.id === id) || null;
@@ -51,19 +114,19 @@ export class DraftService extends BaseDataManager {
       };
     });
 
-    const updatedDraft = new DraftChain(
-      draft.id,
-      draft.title,
-      updatedItems,
-      draft.createdAt,
-      draft.origin,
-      draft.createdByUserId,
-      draft.lastErrorReason,
-      draft.lastErrorCode,
-      draft.target,
-      draft.delegatedByUserId,
-      draft.note
-    );
+    const updatedDraft = new DraftChain({
+      id: draft.id,
+      title: draft.title,
+      items: updatedItems,
+      createdAt: draft.createdAt,
+      origin: draft.origin,
+      createdByUserId: draft.createdByUserId,
+      lastErrorReason: draft.lastErrorReason,
+      lastErrorCode: draft.lastErrorCode,
+      target: draft.target,
+      delegatedByUserId: draft.delegatedByUserId,
+      note: draft.note
+  });
 
     // Sauber über den DataManager speichern!
     this.dataManager.saveDraftChain(updatedDraft);

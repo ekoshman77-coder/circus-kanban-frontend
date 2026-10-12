@@ -159,6 +159,7 @@ export abstract class BaseQueueDataManager<TProvider extends StateProvider<any> 
 
   /** Setzt den lokalen Zustand & Cache über den StateProvider zurück (z.B. bei Logout) */
   public resetData(): void {
+    this.lastFetchTimestamp = 0
     this.stateProvider.resetState();
   }
 }

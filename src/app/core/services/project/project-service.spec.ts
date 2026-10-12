@@ -13,6 +13,9 @@ import { TodoViewModel } from '../../viewmodel/todo-view-model';
 import { UnifiedSuggestion } from '../../models/unified-suggestion';
 import { IUserInit, UserModel } from '../../models/user-model';
 import { Milestone } from '../../models/milestone';
+import { LocalStorageService } from '../user/local-storage-service';
+import { mockLocalStorageService } from '@tests/helpers/test-providers';
+import { PermissionService } from '../permissions/permission-service';
 
 describe('ProjectService (Vitest - Strictly Typed)', () => {
   let service: ProjectService;
@@ -47,6 +50,12 @@ describe('ProjectService (Vitest - Strictly Typed)', () => {
     currentUserSignal = signal< UserModel | null >(null);
     currentDraftSignal = signal< Project | null >(null);
     allProjectsPoolSignal = signal< Project[] >([]);
+
+    const permissionServiceMock = {
+      canUserPerformAction: vi.fn().mockReturnValue(true),
+      allPermissions: signal([]),
+      hasPermission: vi.fn().mockReturnValue(true)
+    };
 
     dataManagerMock = {
       allProjectsPool: allProjectsPoolSignal,
@@ -84,7 +93,9 @@ describe('ProjectService (Vitest - Strictly Typed)', () => {
         { provide: UserService, useValue: userServiceMock },
         { provide: NoteService, useValue: noteServiceMock },
         { provide: NotificationService, useValue: notificationServiceMock },
-        { provide: ProjectDraftService, useValue: draftServiceMock }
+        { provide: ProjectDraftService, useValue: draftServiceMock },
+        { provide: LocalStorageService, useValue: mockLocalStorageService},
+        { provide: PermissionService, useValue: permissionServiceMock}
       ]
     });
 

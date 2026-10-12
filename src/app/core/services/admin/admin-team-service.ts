@@ -12,8 +12,8 @@ export class AdminTeamService extends BaseDataManager {
 
   public readonly adminUsersSignal: Signal<UserModel[]> = this.adminDataManager.adminUsersSignal;
 
-  public approveMember(userId: string, department: Department, role: string): void {
-    this.adminDataManager.approveMember(userId, department, role);
+  public approveMember(userId: string, department: Department, role: string, supervisorId?: string): void {
+    this.adminDataManager.approveMember(userId, department, role, supervisorId);
   }
 
   public deleteMember(userId: string): void {

@@ -14,10 +14,54 @@
 
       <div class="role-options-group">
         @for (role of options(); track role) {
-        <div class="role-option-card" (click)="selectRole(role, $event)">
+        <div 
+          class="role-option-card" 
+          [class.selected]="selectedRole() === role"
+          (click)="selectRole(role, $event)">
           <span class="role-title">{{ role }}</span>
         </div>
         }
+      </div>
+
+      <!-- 🤝 ANIMIERTER BETREUER-BEREICH -->
+      <div 
+        class="supervisor-section-wrapper" 
+        [class.visible]="isLaborRole(selectedRole())">
+        <div class="supervisor-section">
+          <label class="supervisor-label">
+            🎓 Mentor / Betreuer zuweisen <span class="required">*</span>
+          </label>
+          <select class="supervisor-select" [(ngModel)]="selectedSupervisorId">
+            <option [ngValue]="null" disabled>-- Bitte Betreuer auswählen --</option>
+            @for (supervisor of supervisors(); track supervisor.id) {
+              <option [value]="supervisor.id">
+                {{ supervisor.fullName }} (@{{ supervisor.username }})
+              </option>
+            }
+          </select>
+
+          @if (supervisors().length === 0) {
+            <p class="no-supervisors-hint">
+              ⚠️ Keine aktiven Mitarbeiter in dieser Abteilung als Betreuer vorhanden.
+            </p>
+          }
+        </div>
+      </div>
+
+    </div>
+
+    <!-- FOOTER (Erscheint ebenfalls weich bei Betreuer-Wahl) -->
+    <div 
+      class="modal-footer-wrapper" 
+      [class.visible]="isLaborRole(selectedRole())">
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="onCancel()">Abbrechen</button>
+        <button 
+          class="btn btn-primary" 
+          [disabled]="!selectedSupervisorId()" 
+          (click)="confirmSelection()">
+          Zuweisen & Genehmigen
+        </button>
       </div>
     </div>
 

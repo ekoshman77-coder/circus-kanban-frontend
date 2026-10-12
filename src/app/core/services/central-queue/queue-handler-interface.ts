@@ -31,4 +31,6 @@ export interface IQueueHandler {
 
   /** Wendet eine Aktion im Shadow Mode erneut an (Forward Replay) */
   applyRollForward(item: QueueItem): void;
+
+  refreshDataIfStale(userId: string): Observable<boolean>
 }

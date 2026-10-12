@@ -136,19 +136,19 @@ public saveAndRetry(): void {
   });
 
   const current = this.chain();
-  const updatedChain = new DraftChain(
-    current.id,
-    current.title,
-    updatedItems,
-    current.createdAt,
-    current.origin,
-    current.createdByUserId,
-    current.lastErrorReason,
-    current.lastErrorCode,
-    current.target,
-    current.delegatedByUserId,
-    current.note
-  );
+  const updatedChain = new DraftChain({
+    id: current.id,
+    title: current.title,
+    items: updatedItems,
+    createdAt: current.createdAt,
+    origin: current.origin,
+    createdByUserId: current.createdByUserId,
+    lastErrorReason: current.lastErrorReason,
+    lastErrorCode: current.lastErrorCode,
+    target: current.target,
+    delegatedByUserId: current.delegatedByUserId,
+    note: current.note
+});
 
   this.saved.emit(updatedChain);
 }
