@@ -1,0 +1,40 @@
+<ng-template #popoverTemplate>
+  <div class="mini-popover">
+    <div class="popover-header">
+      <span>🏆 Effort eintragen</span>
+    </div>
+
+    <div class="inputs-row">
+      <!-- Dev Effort -->
+      <div class="input-group" title="Entwickler-Aufwand">
+        <span class="role-icon">🛠️</span>
+        <input 
+          type="number" 
+          min="0"
+          [ngModel]="vm().popupEffortValue()" 
+          (ngModelChange)="vm().popupEffortValue.set($event)" 
+        />
+        <span class="unit">P</span>
+      </div>
+
+      <!-- Reviewer Effort (nur bei Team-Todos) -->
+      @if (vm().todo.milestoneId && vm().todo.reviewerId) {
+        <div class="input-group" title="Reviewer-Aufwand">
+          <span class="role-icon">🔍</span>
+          <input 
+            type="number" 
+            min="0"
+            [ngModel]="vm().popupReviewerEffortValue()" 
+            (ngModelChange)="vm().popupReviewerEffortValue.set($event)" 
+          />
+          <span class="unit">P</span>
+        </div>
+      }
+    </div>
+
+    <div class="popover-actions">
+      <button class="btn-icon btn-cancel" (click)="cancel.emit()" title="Abbrechen">✖</button>
+      <button class="btn-icon btn-confirm" (click)="onConfirm()" title="Speichern">✔</button>
+    </div>
+  </div>
+</ng-template>

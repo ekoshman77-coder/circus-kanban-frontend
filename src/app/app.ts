@@ -17,10 +17,30 @@ import { NotificationService } from './core/services/notification/notification-s
 import { StreakPanelComponent } from './features/streak-panel/streak-panel';
 import { DepartmentService } from './core/services/admin/department-service';
 import { MasterDataService } from './core/services/admin/master-data-service';
+import { DraftFloatingButtonComponent } from './features/draft/draft-floating-button-component/draft-floating-button-component';
+import { DraftUIService } from './features/draft/draft-ui-service';
+import { DraftBoxComponent } from './features/draft/draft-box-component/draft-box-component';
+import { EditModalComponent } from './features/draft/edit-modal/edit-modal-component/edit-modal-component';
+import { LaborSwitchComponent } from './features/labor/labor-switch-component/labor-switch-component';
+import { GraduationModalComponent } from './features/graduation-modal/graduation-modal-component';
+import { UserStatusPollingService } from './core/services/admin/user-status-polling-service';
 
 @Component({
   selector: 'app-root',
-  imports: [Apptitle, RouterLink, RouterOutlet, RouterLinkActive, NotificationComponent, SearchCenterComponent, StreakPanelComponent], // 'Home' und 'TodoPageComponent' fliegen hier raus, da sie über den Router geladen werden!
+  imports: [
+    Apptitle, 
+    RouterLink, 
+    RouterOutlet, 
+    RouterLinkActive, 
+    NotificationComponent, 
+    SearchCenterComponent, 
+    StreakPanelComponent, 
+    DraftFloatingButtonComponent,
+    DraftBoxComponent,
+    EditModalComponent, 
+    LaborSwitchComponent,
+    GraduationModalComponent
+  ], // 'Home' und 'TodoPageComponent' fliegen hier raus, da sie über den Router geladen werden!
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
@@ -32,6 +52,8 @@ export class App implements OnInit {
   public notificationService = inject(NotificationService)
   public departmentService = inject(DepartmentService)
   public masterDataService = inject(MasterDataService)
+  public draftUIService = inject(DraftUIService);
+  public userStatusPollingService = inject(UserStatusPollingService)
 
   // 🎯 Das globale Signal, das unser HTML mit den frischen Level-Daten füttert
   protected globalLevelUpResult = signal<GamificationResult | null>(null);

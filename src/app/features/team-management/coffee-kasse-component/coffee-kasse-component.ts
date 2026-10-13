@@ -12,7 +12,7 @@ import { UserService } from '../../../core/services/user/user-service';
   templateUrl: './coffee-kasse-component.html',
   styleUrls: ['./coffee-kasse-component.css']
 })
-export class CoffeeKasseComponent implements OnInit {
+export class CoffeeKasseComponent {
   private teamService = inject(TeamService);
   private userService = inject(UserService);
 
@@ -48,10 +48,6 @@ export class CoffeeKasseComponent implements OnInit {
 
   public cancelEditing(): void {
     this.editingUserId.set(null);
-  }
-
-  ngOnInit(): void {
-    this.teamService.loadGlobalPool()
   }
 
   public saveProfile(member: UserModel): void {

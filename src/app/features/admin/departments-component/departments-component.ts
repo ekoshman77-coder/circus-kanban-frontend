@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit } from '@angular/core';
+import { Component, computed, effect, ElementRef, inject, OnInit, viewChild } from '@angular/core';
 import { DepartmentService } from '../../../core/services/admin/department-service';
 import { Department } from '../../../core/models/department'; // 👈 Echte Department-Klasse nutzen!
 import { ADMIN_DEPARTMENT_NAME } from '../../../core/shared/constants/admin-constants';
@@ -17,24 +17,22 @@ import { uniqueDepartmentNameValidator } from '../../../core/validators/unique-d
 export class DepartmentTabComponent implements OnInit {
   protected departmentService = inject(DepartmentService);
   protected masterDataService = inject(MasterDataService);
+  private editInput = viewChild<ElementRef<HTMLInputElement>>('editInput');
 
   protected readonly ADMIN_DEPT = ADMIN_DEPARTMENT_NAME;
 
   public departments = computed(() => {
-    return this.departmentService.departments().sort((a, b) => a.name.localeCompare(b.name));
+    return this.departmentService.departmentsSorted();
   });
 
-  public departmentScopes = computed(() => this.masterDataService.departmentScopes());
+  public specializations = computed(() => this.masterDataService.specializations())
 
   createForm = new FormGroup({
     name: new FormControl('', {
       nonNullable: true,
       validators: [Validators.required, uniqueDepartmentNameValidator(() => this.departments().map(d => d.name))]
     }),
-    scope: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required]
-    })
+    specialization: new FormControl<string | null>(null),
   });
 
   editForm = new FormGroup({
@@ -45,10 +43,7 @@ export class DepartmentTabComponent implements OnInit {
           .filter(d => d.id !== this.editingDepartmentId)
           .map(d => d.name))]
     }),
-    scope: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required]
-    })
+    specialization: new FormControl<string | null>(null)
   });
 
   editingDepartmentId: string | null = null;
@@ -57,11 +52,23 @@ export class DepartmentTabComponent implements OnInit {
     
   }
 
+  constructor() {
+    // 🟢 Überwacht automatisch, wann das Input erscheint, und fokussiert es!
+    effect(() => {
+      const inputEl = this.editInput()?.nativeElement;
+      if (inputEl) {
+        inputEl.focus();
+        inputEl.select(); // Bonus: Erleichtert das sofortige Überschreiben!
+      }
+    });
+  }
+
   public onCreateDepartment(): void {
     if (this.createForm.invalid) return;
 
-    const { name, scope } = this.createForm.getRawValue();
-    this.departmentService.createDepartment(name.trim(), scope);
+    const { name, specialization } = this.createForm.getRawValue();
+
+    this.departmentService.createDepartment(name.trim(), specialization?? undefined);
 
     this.createForm.reset();
   }
@@ -74,7 +81,7 @@ export class DepartmentTabComponent implements OnInit {
 
     this.editForm.patchValue({
       name: dept.name,
-      scope: dept.scope
+      specialization: dept.specialization
     });
   }
 
@@ -86,8 +93,8 @@ export class DepartmentTabComponent implements OnInit {
   public onSaveEdit(): void {
     if (this.editForm.invalid || !this.editingDepartmentId) return;
 
-    const { name, scope } = this.editForm.getRawValue();
-    this.departmentService.updateDepartment(this.editingDepartmentId, name.trim(), scope);
+    const { name, specialization } = this.editForm.getRawValue();
+    this.departmentService.updateDepartment(this.editingDepartmentId, name.trim(), specialization?? undefined);
 
     this.cancelEdit();
   }

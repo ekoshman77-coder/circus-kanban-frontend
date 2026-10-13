@@ -1,0 +1,321 @@
+/* 🔮 Backdrop mit leichtem Glaseffekt */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1.5rem;
+}
+
+/* 🎨 Modal-Card mit feinem blauen Leuchten & Rand */
+.modal-card {
+  background: hsla(180, 100%, 100%, 0.969);
+  border-radius: 20px;
+  border: 1px solid hsl(246, 91%, 50%);
+  width: 100%;
+  max-width: 860px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgba(79, 70, 229, 0.25), 0 0 0 1px rgba(99, 102, 241, 0.2);
+  overflow: hidden;
+  animation: modalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* 🚀 Header mit coolem Farbverlauf */
+.modal-header {
+  padding: 1.25rem 1.75rem;
+  background: linear-gradient(135deg, hsl(244, 84%, 60%) 0%, hsl(246, 91%, 50%) 100%);
+  color: #ffffff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #f8fafc;
+}
+
+.btn-close {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #cbd5e1;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.btn-close:hover {
+  background: rgba(239, 68, 68, 0.8);
+  color: #ffffff;
+}
+
+/* 📦 Body & Dropdown-Zone */
+.modal-body {
+  padding: 1.75rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.context-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.2rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #4f46e5;
+  margin-bottom: 0.35rem;
+}
+
+select {
+  padding: 0.65rem 0.85rem;
+  border-radius: 20px;
+  border: 1.5px solid #e0e7ff;
+  background: #f8fafc;
+  font-weight: 500;
+  color: #1e293b;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+select:focus {
+  border-color: #6366f1;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+}
+
+.divider {
+  border: 0;
+  border-top: 1px solid #e2e8f0;
+  margin: 0;
+}
+
+/* 🎯 Grid-Layout & Subtile Boxen für Rollen/Aktionen */
+.selection-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.grid-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.column-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.quick-actions {
+  display: flex;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: #4f46e5;
+  cursor: pointer;
+  padding: 0;
+  font-weight: 600;
+}
+
+.btn-link:hover {
+  text-decoration: underline;
+}
+
+/* 💬 Pill-Container mit sanftem Blauton-Hintergrund */
+/* 💬 Pill-Container mit subtiler Tiefe (Inset-Shadow) */
+.pills-flex-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 0.85rem;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  /* Sanfter innerer Schatten für Tiefe, damit das Grid leicht eingesunken wirkt */
+  box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.03);
+}
+
+/* Basis Pill Styles */
+/* Basis Pill Style (Inaktiv) */
+.pill-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.pill-chip:hover {
+  border-color: #cbd5e1;
+  background-color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+/* 🌟 Active States mit elegantem Hover- & Glow-Schatten */
+.role-pill.active {
+  background-color: #f0f9ff;
+  color: #0369a1;
+  border-color: #38bdf8;
+  /* Weicher blauer Glanz beim Auswählen */
+  box-shadow: 0 3px 8px rgba(56, 189, 248, 0.25);
+}
+
+.action-pill.active {
+  background-color: #f0fdf4;
+  color: #15803d;
+  border-color: #4ade80;
+  /* Weicher grüner Glanz beim Auswählen */
+  box-shadow: 0 3px 8px rgba(74, 222, 128, 0.25);
+}
+
+.pill-icon {
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+/* 🍃 Aufgeräumter, luftiger Preview-Footer */
+.modal-footer {
+  margin-top: 0.5rem;
+  padding: 0.85rem 1.25rem;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Text im Fließtext zusammenhalten */
+.preview-info {
+  font-size: 0.88rem;
+  color: #334155;
+  font-weight: 500;
+  display: block;
+}
+
+/* Zahlen-Badge im Satz */
+.preview-badge {
+  display: inline-block;
+  background: #0284c7;
+  color: #ffffff;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin: 0 0.15rem;
+}
+
+.preview-info code {
+  display: inline-block;
+  background: #ffffff;
+  color: #0369a1;
+  padding: 0.12rem 0.4rem;
+  border-radius: 6px;
+  border: 1px solid #bae6fd;
+  font-weight: 600;
+  margin: 0 0.15rem;
+}
+
+/* 🔘 Schlanke Footer-Buttons */
+.footer-buttons {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.btn-secondary {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-secondary:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, hsl(244, 84%, 60%) 0%, hsl(246, 91%, 50%) 100%);
+  color: white;
+  border: none;
+  padding: 0.45rem 1.1rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+}
+
+.btn-primary:disabled {
+  background: #cbd5e1;
+  box-shadow: none;
+  cursor: not-allowed;
+}

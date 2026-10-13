@@ -2,38 +2,39 @@ import { TestBed } from '@angular/core/testing';
 import { NoteDataManagerService } from './note-data-manager-service';
 import { ConnectionService } from '../connection/connection-service';
 import { NoteRepository } from '../../repositories/note-repository';
+import { CentralQueueService } from '../central-queue/central-queue-service';
 import { Note } from '../../models/note';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { map, of, Subject } from 'rxjs';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { of } from 'rxjs';
 import { signal } from '@angular/core';
+import { QueueHandlerName } from '../../enums/queue-handler-name';
 
 describe('NoteDataManagerService', () => {
   let service: NoteDataManagerService;
 
-  // Mocks
-  let mockConnectionService: any;
-  let mockNoteRepository: any;
-  let connectionStatusSignal: any;
+  // Typsichere Mocks
+  let mockNoteRepository: Partial< NoteRepository >;
+  let mockConnectionService: Partial< ConnectionService >;
+  let mockQueueService: Partial< CentralQueueService >;
 
-  // LocalStorage Mock
-  let store: Record<string, string> = {};
+  // LocalStorage Mock Store
+  let store: Record< string, string > = {};
 
-  // Interface exakt spiegeln für die Helferfunktion
   interface NoteInitParams {
     title: string;
     content: string;
     colorType: string;
     userId: string;
     tag?: string | null;
-    id?: string | null;
+    id?: string;
     isInCalculation?: boolean;
     temperature?: number | null;
     weatherCode?: number | null;
   }
 
-  // Die Helferfunktion bekommt einen absolut sauberen, expliziten Typ
-  const createTestNote = (overrides: Partial<NoteInitParams> = {}): Note => {
+  const createTestNote = (overrides: Partial< NoteInitParams > = {}): Note => {
     return new Note({
+      id: overrides.id ?? 'note-123',
       userId: 'user-1',
       title: 'Standard Title',
       content: 'Standard Content',
@@ -51,161 +52,146 @@ describe('NoteDataManagerService', () => {
       clear: () => { store = {}; }
     });
 
-    connectionStatusSignal = signal<'ONLINE' | 'OFFLINE'>('ONLINE');
     mockConnectionService = {
-      status: connectionStatusSignal
+      isOffline: signal< boolean >(false),
+      isOnline: signal< boolean >(true)
     };
 
     mockNoteRepository = {
       getNotesByUserId: vi.fn().mockReturnValue(of([createTestNote({ id: '1', title: 'Server Note' })])),
       createNote: vi.fn().mockImplementation((note) => of(createTestNote({ ...note, id: 'server-id-99' }))),
-      updateNote: vi.fn().mockImplementation((id, note) => of(createTestNote({ ...note, title: 'Updated on Server' }))),
+      updateNote: vi.fn().mockImplementation((note) => of(createTestNote({ ...note, title: 'Updated on Server' }))),
       deleteNote: vi.fn().mockReturnValue(of(undefined))
+    };
+
+    mockQueueService = {
+      enqueue: vi.fn(),
+      registerService: vi.fn(),
+      updateEntityIdInQueue: vi.fn()
     };
 
     TestBed.configureTestingModule({
       providers: [
         NoteDataManagerService,
         { provide: ConnectionService, useValue: mockConnectionService },
-        { provide: NoteRepository, useValue: mockNoteRepository }
+        { provide: NoteRepository, useValue: mockNoteRepository },
+        { provide: CentralQueueService, useValue: mockQueueService }
       ]
     });
 
     service = TestBed.inject(NoteDataManagerService);
   });
 
+  afterEach(() => {
+    vi.clearAllMocks();
+    vi.unstubAllGlobals();
+  });
+
   it('sollte den Service erfolgreich instanziieren', () => {
     expect(service).toBeTruthy();
   });
 
-  describe('getNotes (Notizen laden)', () => {
-    it('sollte online Daten vom Server holen und das lokale Backup aktualisieren', () => {
-      service.getNotes('user-1').subscribe((notes: Note[]) => {
-        expect(notes.length).toBe(1);
-        expect(notes[0].title).toBe('Server Note');
-
-        const backup = localStorage.getItem('global_notes_pool');
-        expect(backup).toContain('Server Note');
-      });
-    });
-
-    it('sollte offline oder bei Server-Fehlern sofort auf den lokalen Cache ausweichen', () => {
-      const cachedNotes = [createTestNote({ id: 'cached-1', title: 'Offline Note' })];
-      localStorage.setItem('global_notes_pool', JSON.stringify(cachedNotes));
-
-      connectionStatusSignal.set('OFFLINE');
-
-      service.getNotes('user-1').subscribe((notes: Note[]) => {
-        expect(notes.length).toBe(1);
-        expect(notes[0].title).toBe('Offline Note');
-        expect(mockNoteRepository.getNotesByUserId).not.toHaveBeenCalled();
-      });
+  describe('Signal & Reactive State', () => {
+    it('sollte das notesSignal initial als Array bereitstellen', () => {
+      expect(service.notesSignal()).toBeDefined();
+      expect(Array.isArray(service.notesSignal())).toBe(true);
     });
   });
 
-describe('createNote (Notiz erstellen)', () => {
-    it('sollte offline eine temporäre ID vergeben und die Notiz lokal puffern', () => {
-      connectionStatusSignal.set('OFFLINE');
-      
-      // 1. Wir erstellen die Test-Notiz
-      const newNote = createTestNote({ title: 'Neuer Zettel' });
-      
-      // 2. ⚡ DER TRICK: Wir löschen die ID explizit, damit 'newNote.id' falsy/leer ist!
-      delete newNote.id; 
-      
-      const currentList: Note[] = [];
+  describe('createNote (Notiz erstellen)', () => {
+    it('sollte die Notiz im State verarbeiten und in die Queue reihen', () => {
+      const newNote = createTestNote({ id: 'tmp_1', title: 'Neuer Zettel' });
 
-      service.createNote(newNote, currentList).subscribe((savedNote: Note) => {
-        // Jetzt greift 'if (!newNote.id)' im Service und vergibt das 'tmp_'-Präfix!
-        expect(savedNote.id).toContain('tmp_');
-        expect(savedNote.title).toBe('Neuer Zettel');
+      service.createNote(newNote);
 
-        const backup = JSON.parse(localStorage.getItem('global_notes_pool')!);
-        expect(backup.length).toBe(1);
-        expect(backup[0].id).toContain('tmp_');
-      });
-    });
-
-    it('sollte online die Notiz zum Server schicken und den Cache mit Serverdaten füllen', () => {
-      const newNote = createTestNote({ title: 'Neuer Online-Zettel' });
-      const currentList: Note[] = [];
-
-      service.createNote(newNote, currentList).subscribe((savedNote: Note) => {
-        expect(savedNote.id).toBe('server-id-99');
-        expect(mockNoteRepository.createNote).toHaveBeenCalled();
-
-        const backup = JSON.parse(localStorage.getItem('global_notes_pool')!);
-        expect(backup[0].id).toBe('server-id-99');
-      });
+      expect(mockQueueService.enqueue).toHaveBeenCalledWith(
+        QueueHandlerName.NOTE,
+        'CREATE',
+        expect.objectContaining({
+          id: 'tmp_1',
+          note: newNote,
+          displayInfo: {
+            category: 'Notiz erzeugen',
+            title: 'Neuer Zettel'
+          }
+        })
+      );
     });
   });
 
-describe('updateNote (Notiz aktualisieren)', () => {
-    it('sollte optimistisch den Cache aktualisieren und online an den Server senden', () => {
-      const initialNote = createTestNote({ id: 'zettel-1', title: 'Alt' });
+  describe('updateNote (Notiz aktualisieren)', () => {
+    it('sollte bei einer Standard-Aktualisierung eine UPDATE Action enqueuen', () => {
       const updatedNote = createTestNote({ id: 'zettel-1', title: 'Neu' });
-      const currentList = [initialNote];
 
-      // 1. Wir erstellen ein RxJS Subject, das wir manuell steuern können
-      const serverResponseSubject = new Subject<Note>();
-      
-      // 2. Das Repository gibt dieses Subject zurück (der Server-Call "hängt" jetzt in der Leitung)
-      mockNoteRepository.updateNote.mockReturnValueOnce(serverResponseSubject.asObservable());
+      service.updateNote(updatedNote);
 
-      // 3. Aufruf starten
-      service.updateNote(updatedNote, currentList).subscribe((savedNote: Note) => {
-        // Erst wenn das Subject feuert, läuft dieser Block!
-        expect(savedNote.title).toBe('Updated on Server');
-        
-        // Und erst jetzt steht die Server-Antwort im Cache
-        const backup = JSON.parse(localStorage.getItem('global_notes_pool')!);
-        expect(backup[0].title).toBe('Updated on Server');
-      });
-
-      // 🟢 BEWEIS FÜR OPTIMISTIC CACHING:
-      // Das Subject hat noch nicht gefeuert (Server arbeitet noch).
-      // Trotzdem MUSS der Cache bereits optimistisch aktualisiert worden sein!
-      const intermediateBackup = JSON.parse(localStorage.getItem('global_notes_pool')!);
-      expect(intermediateBackup[0].title).toBe('Neu');
-
-      // 4. Jetzt simulieren wir die erfolgreiche Antwort des Servers!
-      serverResponseSubject.next(createTestNote({ ...updatedNote, title: 'Updated on Server' }));
-      serverResponseSubject.complete();
+      expect(mockQueueService.enqueue).toHaveBeenCalledWith(
+        QueueHandlerName.NOTE,
+        'UPDATE',
+        expect.objectContaining({
+          id: 'zettel-1',
+          note: updatedNote,
+          displayInfo: {
+            category: 'Notiz bearbeiten',
+            title: 'Neu'
+          }
+        })
+      );
     });
 
-    it('sollte bei einer temporären ID (offline erstellt) nicht versuchen, den Server zu kontaktieren', () => {
-      const tmpNote = createTestNote({ id: 'tmp_123', title: 'Geändert' });
-      const currentList = [tmpNote];
+    it('sollte bei updateAction "promote" eine PROMOTE Action enqueuen', () => {
+      const note = createTestNote({ id: 'zettel-1', title: 'Promote Me' });
 
-      service.updateNote(tmpNote, currentList).subscribe((savedNote: Note) => {
-        expect(mockNoteRepository.updateNote).not.toHaveBeenCalled();
-      });
+      service.updateNote(note, 'promote');
+
+      expect(mockQueueService.enqueue).toHaveBeenCalledWith(
+        QueueHandlerName.NOTE,
+        'PROMOTE',
+        expect.objectContaining({
+          id: 'zettel-1',
+          displayInfo: {
+            category: 'Notiz befördern',
+            title: 'Promote Me'
+          }
+        })
+      );
+    });
+
+    it('sollte bei updateAction "status_change" eine STATUS_CHANGE Action enqueuen', () => {
+      const note = createTestNote({ id: 'zettel-1', isInCalculation: true });
+
+      service.updateNote(note, 'status_change');
+
+      expect(mockQueueService.enqueue).toHaveBeenCalledWith(
+        QueueHandlerName.NOTE,
+        'STATUS_CHANGE',
+        expect.objectContaining({
+          id: 'zettel-1',
+          isInCalculation: true,
+          displayInfo: {
+            category: 'Notiz-Status ändern',
+            title: 'Standard Title'
+          }
+        })
+      );
     });
   });
-  
-  describe('deleteNote (Notiz pflegen / löschen)', () => {
-    it('sollte die Notiz sofort optimistisch aus dem Cache löschen und online den Server-Call absetzen', () => {
-      const noteToDelete = createTestNote({ id: 'zettel-to-kill', title: 'Kill Me' });
-      const currentList = [noteToDelete];
 
-      service.deleteNote('zettel-to-kill', 'user-1', currentList).subscribe(() => {
-        expect(mockNoteRepository.deleteNote).toHaveBeenCalledWith('zettel-to-kill', 'user-1');
-      });
+  describe('deleteNote (Notiz löschen)', () => {
+    it('sollte eine DELETE Action für die übergebene ID enqueuen', () => {
+      service.deleteNote('zettel-to-kill');
 
-      const backup = JSON.parse(localStorage.getItem('global_notes_pool')!);
-      expect(backup.length).toBe(0);
-    });
-
-    it('sollte bei einer temporären ID nur lokal löschen und keinen Server-Call absetzen', () => {
-      const tmpNote = createTestNote({ id: 'tmp_999', title: 'Offline-Leiche' });
-      const currentList = [tmpNote];
-
-      service.deleteNote('tmp_999', 'user-1', currentList).subscribe(() => {
-        expect(mockNoteRepository.deleteNote).not.toHaveBeenCalled();
-      });
-
-      const backup = JSON.parse(localStorage.getItem('global_notes_pool')!);
-      expect(backup.length).toBe(0);
+      expect(mockQueueService.enqueue).toHaveBeenCalledWith(
+        QueueHandlerName.NOTE,
+        'DELETE',
+        expect.objectContaining({
+          id: 'zettel-to-kill',
+          displayInfo: {
+            category: 'Notiz löschen',
+            title: 'Unbenannte Notiz'
+          }
+        })
+      );
     });
   });
 });

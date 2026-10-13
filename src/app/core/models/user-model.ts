@@ -1,14 +1,16 @@
-import { IDepartment } from "../repositories/department-repository";
-import { generateLocalId, isLocalId } from "../shared/constants/id-const";
+import { IDepartment } from "../repositories/dto/deparment-json";
+import { generateLocalId } from "../shared/constants/id-const";
 import { Department } from "./department";
+import { DomainModel } from "./domain-model";
+import { IUser } from "../repositories/dto/user-dto";
 
-  export type ProjectRole = 'OWNER' | 'PROJECT_MANAGER' | 'DEVELOPER' | 'NONE';
+export type ProjectRole = 'OWNER' | 'PROJECT_MANAGER' | 'DEVELOPER' | 'NONE';
 
-  export interface CoffeeAccount {
-    balance: number;
-    role: string;   // z. B. "Teammitglied", "Barista", "Kaffee-Junkie"
-    emoji: string;  // z. B. "🦊"
-  }
+export interface CoffeeAccount {
+  balance: number;
+  role: string;
+  emoji: string;
+}
 
 export interface IUserInit {
   id: string;
@@ -16,28 +18,25 @@ export interface IUserInit {
   firstName: string;
   lastName: string;
   department: Department | IDepartment | null;
-  departmentRole?: string; // 👈 Die Abteilungsrolle (Org-Ebene)
+  departmentRole?: string;
+  supervisorId?: string | null;
+  supervisorName?: string | null;
   isApproved: boolean | null;
   projectIds: string[];
-  coffeeAccount?: CoffeeAccount; // 👈 Sauber gekapseltes Kaffeekonto!
+  coffeeAccount?: CoffeeAccount;
 }
 
-/**
- * Repräsentiert das User-Objekt innerhalb der Anwendung.
- * Verantwortlich für Datenmodellierung, Formatierung der Benutzerdaten 
- * und geschäftsspezifische Logik (wie Farb-Hashes oder Initialen).
- */
-export class UserModel {
+export class UserModel implements DomainModel<UserModel> {
   id: string;
   firstName: string;
   lastName: string;
   username: string;
   department: Department | null;
-  departmentRole: string; // 👈 Eindeutig Abteilungsrolle
+  departmentRole: string;
+  supervisorId: string | null;
+  supervisorName: string | null;
   isApproved: boolean | null;
   projectIds: string[];
-  
-  // ☕ Kaffeekonto sauber in einem Objekt isoliert!
   coffeeAccount: CoffeeAccount;
 
   constructor(data: IUserInit) {
@@ -55,15 +54,32 @@ export class UserModel {
     }
 
     this.departmentRole = data.departmentRole || '';
+    this.supervisorId = data.supervisorId ?? null;
+    this.supervisorName = data.supervisorName ?? null;
     this.isApproved = data.isApproved ?? null;
     this.projectIds = data.projectIds || [];
 
-    // Init für das Kaffeekonto
     this.coffeeAccount = {
       balance: data.coffeeAccount?.balance ?? 0,
       role: data.coffeeAccount?.role ?? 'Teammitglied',
       emoji: data.coffeeAccount?.emoji ?? '🦊'
     };
+  }
+
+  public cloneWith(changes: Partial<UserModel>): UserModel {
+    return new UserModel({
+      id: changes.id ?? this.id,
+      firstName: changes.firstName ?? this.firstName,
+      lastName: changes.lastName ?? this.lastName,
+      username: changes.username ?? this.username,
+      department: changes.department !== undefined ? changes.department : this.department,
+      departmentRole: changes.departmentRole ?? this.departmentRole,
+      supervisorId: changes.supervisorId !== undefined ? changes.supervisorId : this.supervisorId,
+      supervisorName: changes.supervisorName !== undefined ? changes.supervisorName : this.supervisorName,
+      isApproved: changes.isApproved !== undefined ? changes.isApproved : this.isApproved,
+      projectIds: changes.projectIds ?? this.projectIds,
+      coffeeAccount: changes.coffeeAccount ?? { ...this.coffeeAccount }
+    });
   }
 
   get fullName(): string {
@@ -92,7 +108,13 @@ export class UserModel {
     return this.department?.isAdmin() ?? false;
   }
 
-  public static fromJson(json: any): UserModel {
+  /** 🧪 Prüft, ob der User gezwungen im Labor-Modus ist */
+  public isLaborForced(): boolean {
+    const role = this.departmentRole.toUpperCase();
+    return role === 'INTERN' || role === 'GUEST' || role === 'PRAKTIKANT';
+  }
+
+  public static fromJson(json: IUser): UserModel {
     return new UserModel({
       id: json.id,
       firstName: json.firstName,
@@ -100,22 +122,19 @@ export class UserModel {
       username: json.username,
       isApproved: json.isApproved,
       department: json.department ? Department.fromJson(json.department) : null,
-      
-      // 🏷️ Abteilungsrolle aus dem Server-JSON lesen
-      departmentRole: json.departmentRole || json.department_role || '',
-      
+      departmentRole: json.departmentRole || '',
+      supervisorId: json.supervisorId || null,
+      supervisorName: json.supervisorName || null,
       projectIds: json.projectIds || [],
-      
-      // ☕ Kaffeekonto aus dem flachen oder tiefen JSON zusammenbauen:
       coffeeAccount: {
-        balance: json.coffeeAccount?.balance ?? json.coffeeBalance ?? 0,
-        role: json.coffeeAccount?.role ?? json.role ?? 'Teammitglied',
-        emoji: json.coffeeAccount?.emoji ?? json.emoji ?? '🦊'
+        balance: json.coffeeAccount?.balance ?? 0,
+        role: json.coffeeAccount?.role ?? 'Teammitglied',
+        emoji: json.coffeeAccount?.emoji ?? '🦊'
       }
     });
   }
 
-  public toJson(): any {
+  public toJson(): IUser {
     return {
       id: this.id,
       firstName: this.firstName,
@@ -123,14 +142,11 @@ export class UserModel {
       username: this.username,
       department: this.department ? this.department.toJson() : null,
       departmentRole: this.departmentRole,
-      isApproved: this.isApproved,
+      supervisorId: this.supervisorId,
+      supervisorName: this.supervisorName,
+      isApproved: this.isApproved ?? false,
       projectIds: this.projectIds,
-      
-      // Für Rückwärtskompatibilität schicken wir es flach ODER geschachtelt mit
-      coffeeBalance: this.coffeeAccount.balance,
-      role: this.coffeeAccount.role,
-      emoji: this.coffeeAccount.emoji,
       coffeeAccount: this.coffeeAccount
     };
-  }
+  } 
 }

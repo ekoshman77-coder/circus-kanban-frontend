@@ -84,28 +84,9 @@ export class TodoRepository {
   }
 
   private mapToTodoClass(json: ITodoJSON): Todo {
-    const todo = new Todo({
-      task: json.task,
-      description: json.description,
-      effort: json.effort,
-      dueDate: json.dueDate,
-      userId: json.userId,
-      usedEffort: json.usedEffort,
-      createdAt: json.createdAt,
-      id: json.id,
-      done: json.done,
-      completedAt: json.completedAt,
-      category: json.category,
-      effortChangesCount: json.effortChangesCount,
-      milestoneId: json.milestoneId,
-      isStarted: json.isStarted ?? false,
-      assignedUserId: json.assignedUserId ?? null,
-      teamStatus: (json.teamStatus as TeamStatus) ?? 'BACKLOG',
-      lastDeveloperId: json.lastDeveloperId?? null
-    });
-    return todo;
+    return Todo.fromJson(json);
   }
-
+  
   /**
    * 🔄 Schickt alle Offline-Änderungen gesammelt ans Kotlin-Backend
    */

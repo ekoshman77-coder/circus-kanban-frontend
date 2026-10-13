@@ -69,7 +69,7 @@ public sliderPercentage = computed(() => {
   return Math.max(Math.min(hue, 120), 0);
   });
 
-  public fibonacciSequence = [1, 2, 3, 5, 8, 13, 21];
+  public fibonacciSequence = this.todoService.fibonacciSequence;
 
   dynamicColor = computed(() => {
     return `hsl(${this.sliderHue()}, 85%, 40%)`;

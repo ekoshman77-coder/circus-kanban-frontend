@@ -6,6 +6,7 @@ import { ITodoJSON } from './dto/todo-json';
 import { MilestoneSuggestionsModel } from '../models/milestone-suggestions-model';
 import { IgnoredMilestones, MilestoneInteractionPayload } from './dto/tracked-milestones';
 import { TodoSnoozyPayload } from './dto/todo-snoozy-payload';
+import { PlannerFeedbackPayload } from '../models/queue-items/planner-queue-payload';
 
 export interface PlannerRecommendationDetail {
   plannerType: 'BAYES' | 'NEURAL';
@@ -39,16 +40,6 @@ export interface PlannerRecommendationPayload {
 export interface RejectedTodoFeedback {
   todoId: string;
   rejectReason: 'no_motivation' | 'too_heavy' | 'too_long' | null;
-}
-
-/**
- * Schlanker Feedback-Payload basierend auf der DB-roundId
- */
-export interface PlannerFeedbackPayload {
-  userId: string;
-  roundId: string;
-  acceptedTodoId: string | null;
-  rejectedTodos: RejectedTodoFeedback[];
 }
 
 export interface MilestoneSuggestion {

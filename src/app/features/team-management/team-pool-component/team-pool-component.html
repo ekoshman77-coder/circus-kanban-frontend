@@ -9,53 +9,6 @@
 
     <div class="main-layout">
 
-        <div class="form-section">
-            <h3>➕ Neuen Mitarbeiter registrieren</h3>
-
-            @if (errorFromServer()) {
-            <div class="alert-error-box">
-                <span class="error-text">🛑 <strong>Fehler:</strong> {{ errorFromServer() }}</span>
-                <button type="button" class="btn-close-error" (click)="closeError()">×</button>
-            </div>
-            }
-
-            <form [formGroup]="userForm" (ngSubmit)="onAddUser()" class="user-form">
-
-                <div class="input-group">
-                    <span class="input-icon"
-                        [style.color]="userForm.get('firstName')?.value ? 'inherit' : '#cbd5e1'">👤</span>
-                    <input type="text" formControlName="firstName" placeholder="Vorname">
-                </div>
-
-                <div class="input-group">
-                    <span class="input-icon"
-                        [style.color]="userForm.get('lastName')?.value ? 'inherit' : '#cbd5e1'">👤</span>
-                    <input type="text" formControlName="lastName" placeholder="Nachname">
-                </div>
-
-                <div class="input-group username-group">
-                    <span class="input-icon"
-                        [style.color]="userForm.get('username')?.value ? 'inherit' : '#cbd5e1'">🏷️</span>
-                    <input type="text" formControlName="username" placeholder="Username (z.B. max_m)">
-
-                    @if (isUsernameTaken()) {
-                    <span class="error-msg">⚠️ Username bereits vergeben!</span>
-                    }
-                </div>
-
-                <div class="input-group">
-                    <span class="input-icon"
-                        [style.color]="userForm.get('password')?.value ? 'inherit' : '#cbd5e1'">🔒</span>
-                    <input type="password" formControlName="password" placeholder="Passwort (min. 6 Zeichen)">
-                </div>
-                
-                <button type="submit" [disabled]="userForm.invalid || isUsernameTaken()" class="btn-submit">
-                    Mitarbeiter erstellen
-                </button>
-
-            </form>
-        </div>
-
         <div class="gallery-section">
             <h3>Registrierte Mitarbeiter ({{ filteredUsers().length }})</h3>
 

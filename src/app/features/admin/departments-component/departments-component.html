@@ -13,11 +13,12 @@
         [class.is-invalid]="createForm.controls.name.invalid && createForm.controls.name.touched"
       />
 
-      <select formControlName="scope" class="form-select">
-        <option value="" disabled selected>Scope wählen...</option>
-        @for (scope of departmentScopes(); track scope) {
-          <option [value]="scope">{{ scope }}</option>
+      <select formControlName="specialization" class="form-select">
+        <option [value]="null">Keine Spezialisierung</option>
+        @for (specialization of specializations(); track specialization) {
+          <option [value]="specialization">{{ specialization }}</option>
         }
+
       </select>
 
       <button type="submit" [disabled]="createForm.invalid" class="btn-primary">
@@ -41,17 +42,22 @@
           <!-- EDITIER-MODUS (verwendet editForm) -->
           <form [formGroup]="editForm" (ngSubmit)="onSaveEdit()" class="edit-group-form">
             <div class="edit-group">
+              <div class="dept-avatar" [style.background-color]="department.getColorHash()" aria-hidden="true">
+                  {{ department.getInitials() }}
+              </div>
               <input 
+                #editInput
                 class="editing-name"
                 type="text"
                 formControlName="name"
                 (keyup.escape)="cancelEdit()"
               />
-              <select formControlName="scope" class="form-select">
-                @for (scope of departmentScopes(); track scope) {
-                  <option [value]="scope">{{ scope }}</option>
+              <select formControlName="specialization" class="form-select">
+                @for (specialization of specializations(); track specialization) {
+                  <option [value]="specialization">{{ specialization }}</option>
                 }
               </select>
+
             </div>
 
             <div class="action-buttons">
@@ -61,10 +67,17 @@
           </form>
         } @else {
           <!-- ANZEIGE-MODUS -->
+           
           <span class="department-name">
+            <div class="dept-avatar" [style.background-color]="department.getColorHash()" aria-hidden="true">
+               {{department.getInitials()}}
+            </div>
             {{department.name}} 
-            <small class="badge scope-badge">{{department.scope}}</small>
             @if(department.name === ADMIN_DEPT) { <small class="badge">(System)</small> }
+
+            @if (department.specialization) {
+               <small class="badge spec-badge">⭐ {{ department.specialization }}</small>
+            }
           </span>
           
           <div class="action-buttons">

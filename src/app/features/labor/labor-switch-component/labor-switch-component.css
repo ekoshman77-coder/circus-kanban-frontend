@@ -1,0 +1,56 @@
+.labor-switch-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #e2f0f5;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.labor-switch-container:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* AKTIVER LABOR-MODUS (Leuchtendes Cyan/Neon) */
+.labor-switch-container.active {
+  background: rgba(6, 182, 212, 0.2);
+  border-color: rgba(6, 182, 212, 0.7);
+  color: #22d3ee;
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.3);
+}
+
+.toggle-pill {
+  width: 24px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  position: relative;
+  transition: background 0.2s ease;
+}
+
+.labor-switch-container.active .toggle-pill {
+  background: #06b6d4;
+}
+
+.toggle-thumb {
+  width: 10px;
+  height: 10px;
+  background: #ffffff;
+  border-radius: 50%;
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.labor-switch-container.active .toggle-thumb {
+  transform: translateX(12px);
+}

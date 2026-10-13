@@ -3,9 +3,7 @@ import { inject, Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { InviteRequestDto, SearchUserDto } from "./dto/inivitation-dto";
 import { InvitationUrl } from "./links";
-import { Department } from "../models/department";
-import { IDepartment } from "./department-repository";
-
+import { IDepartment } from "./dto/deparment-json";
 
 @Injectable({
   providedIn: 'root',

@@ -74,125 +74,9 @@
 }
 
 /* ==========================================
-    GRID LAYOUT (FORMULAR LINKS, GALERIE RECHTS)
-   ========================================== */
-.main-layout {
-  display: grid; /* Grid-Layout bleibt exakt gleich */
-  grid-template-columns: 340px 1fr; 
-  gap: var(--spacing-page); /* REGEL 3: Dynamischer Abstand */
-  align-items: start;
-}
-
-@media (max-width: 950px) {
-  .main-layout {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ==========================================
-   ✍️ 2. SEKTION FORMULAR (LINKS)
-   ========================================== */
-.form-section {
-  /* REGEL 2: Konsequente Nutzung der Glas-Variablen */
-  background: var(--glass-background);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: var(--glass-border);
-  border-radius: var(--radius-card);
-  box-shadow: var(--glass-shadow);
-  padding: var(--spacing-card); 
-}
-
-.form-section h3 {
-  font-size: var(--font-size-h3);
-  color: var(--color-text-dark);
-  margin-top: 0;
-  margin-bottom: var(--spacing-gap);
-  font-weight: var(--weight-semibold);
-}
-
-.user-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-gap);
-}
-
-.input-group {
-  position: relative;
-  width: 100%;
-}
-
-.input-group input,
-.input-group select {
-  width: 100%;
-  padding: 11px 12px 11px 40px;
-  font-size: var(--font-size-body);
-  border: 1px solid rgba(15, 23, 42, 0.1);
-  border-radius: var(--radius-element);
-  background-color: rgba(255, 255, 255, 0.5); /* Transluzent für Glas-Look */
-  box-sizing: border-box;
-  transition: all 0.2s;
-  color: var(--color-text-dark);
-}
-
-.input-group select {
-  padding-left: 40px !important; /* Icon-Abstand für Select-Feld */
-}
-
-.input-group input:focus,
-.input-group select:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  background-color: var(--glass-hover-bg);
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-}
-
-.input-icon {
-  position: absolute;
-  left: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 15px;
-  pointer-events: none;
-  z-index: 10;
-}
-
-.username-group {
-  margin-bottom: 5px;
-}
-
-.error-msg {
-  color: var(--color-danger);
-  font-size: var(--font-size-small);
-  display: block;
-  margin-top: 4px;
-  font-weight: var(--weight-medium);
-}
-
-.btn-submit {
-  width: 100%;
-  padding: 11px;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
-  color: white;
-  border: none;
-  border-radius: var(--radius-element);
-  cursor: pointer;
-  font-weight: var(--weight-semibold);
-  font-size: var(--font-size-body);
-  transition: all 0.2s;
-  box-shadow: 0 4px 6px rgba(79, 70, 229, 0.15);
-}
-
-.btn-submit:disabled {
-  background: #cbd5e1;
-  color: #94a3b8;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-/* ==========================================
    🗂️ 3. SEKTION GALERIE (RECHTS)
    ========================================== */
+
 .gallery-section h3 {
   font-size: var(--font-size-h3);
   color: var(--color-text-dark);
@@ -459,33 +343,6 @@
   background: #cbd5e1; 
   color: #94a3b8; 
   cursor: not-allowed; 
-}
-
-/* 🚨 SEKTION ALERTS */
-.alert-error-box {
-  background-color: rgba(254, 242, 242, 0.8);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--color-danger);
-  border-radius: var(--radius-element);
-  padding: 10px 14px;
-  margin-bottom: var(--spacing-gap);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.error-text { 
-  color: var(--color-danger); 
-  font-size: var(--font-size-small); 
-}
-.btn-close-error { 
-  background: none; 
-  border: none; 
-  color: var(--color-danger); 
-  font-size: 16px; 
-  cursor: pointer; 
-  padding: 0; 
 }
 
 @keyframes flyIn {

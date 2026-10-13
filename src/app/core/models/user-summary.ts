@@ -1,17 +1,35 @@
-import { SearchUserDto } from "../repositories/dto/inivitation-dto"
-import { UserModel } from "./user-model"
+import { SearchUserDto } from "../repositories/dto/inivitation-dto";
+import { DomainModel } from "./domain-model";
+import { UserModel } from "./user-model";
 
-export class UserSummary {
-  id: string
-  firstName: string
-  lastName: string
+export class UserSummary implements DomainModel< UserSummary > {
+  id: string;
+  firstName: string;
+  lastName: string;
+
   constructor(init: { id: string, firstName: string, lastName: string }) {
-    this.id = init.id
-    this.firstName = init.firstName
-    this.lastName = init.lastName
+    this.id = init.id;
+    this.firstName = init.firstName;
+    this.lastName = init.lastName;
   }
 
-  static fromJson(userDto: SearchUserDto): UserSummary {
+  public cloneWith(changes: Partial< UserSummary >): UserSummary {
+    return new UserSummary({
+      id: changes.id ?? this.id,
+      firstName: changes.firstName ?? this.firstName,
+      lastName: changes.lastName ?? this.lastName
+    });
+  }
+
+  public toJson(): any {
+    return {
+      id: this.id,
+      firstName: this.firstName,
+      lastName: this.lastName
+    };
+  }
+
+  static fromJson(userDto: any): UserSummary {
     return new UserSummary({
       id: userDto.id ?? '',
       firstName: userDto.firstName ?? '',
@@ -19,16 +37,16 @@ export class UserSummary {
     });
   }
 
-  static fromUserModel(user: UserModel) {
+  static fromUserModel(user: UserModel): UserSummary {
     return new UserSummary({
       id: user.id,
       firstName: user.firstName,
       lastName: user.lastName
-    })
+    });
   }
 
   get fullName(): string {
-    return `${this.firstName} ${this.lastName}`.trim();
+    return `\({this.firstName}\){this.lastName}`.trim();
   }
 
   getInitials(): string {
@@ -64,7 +82,6 @@ export class UserSummary {
         role: "",
         emoji: ""
       }
-    })
+    });
   }
-
 }

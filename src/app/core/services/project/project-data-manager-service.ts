@@ -1,262 +1,363 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, Signal } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { ConnectionService } from '../connection/connection-service';
 import { ProjectRepository } from '../../repositories/project-repository';
 import { Project } from '../../models/project';
-import { Milestone } from '../../models/milestone';
 import { AiRepository, MilestoneSuggestion, MilestoneSuggestionsResponse } from '../../repositories/ai-repository';
 import { MILESTONE_TEMPLATES } from '../../shared/constants/milestone-template';
 import { UnifiedSuggestion } from '../../models/unified-suggestion';
 import { MilestoneSuggestionsModel } from '../../models/milestone-suggestions-model';
 import { ProjectDashboardStatsDTO } from '../../repositories/dto/project-dashboard-stats-dto';
-import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
-import { UserService } from '../user/user-service';
+import { IProjectJSON } from '../../repositories/dto/project-json';
+import { QueueItem } from '../../models/queue-items/queue-item';
+import {
+  AddMemberPayload,
+  DeleteProjectPayload,
+  ProjectAction,
+  ProjectPayload,
+  RemoveMemberPayload,
+  TrackMilestoneIgnorancePayload,
+  TrackMilestonePayload
+} from '../../models/queue-items/project-queue-item';
+import { ProjectRole, UserModel } from '../../models/user-model';
+import { UserSummary } from '../../models/user-summary';
+import { TeamRepository } from '../../repositories/team-repository';
+import { generateLocalId, isLocalId } from '../../shared/constants/id-const';
+import { ConnectionService } from '../connection/connection-service';
+import { IdReplacement, ProjectStateProvider } from './project-state-provider';
+import { BaseQueueDataManager } from '../central-queue/base-queue-data-manager';
+import { QueueHandlerName } from '../../enums/queue-handler-name';
 
-/**
- * Service zur Verwaltung von Projektdaten mit integriertem Offline-Modus.
- * Nutzt eine geräte-weite Synchronisations-Queue und Lese-Caches im LocalStorage.
- */
 @Injectable({
   providedIn: 'root'
 })
-export class ProjectDataManagerService extends BaseDataManager {
+export class ProjectDataManagerService extends BaseQueueDataManager<ProjectStateProvider> {
   private projectRepository = inject(ProjectRepository);
-  private connectionService = inject(ConnectionService);
+  private teamRepository = inject(TeamRepository);
   private aiRepository = inject(AiRepository);
+  private connectionService = inject(ConnectionService);
 
-  // 📂 Die zwei einzigen, festen Schubladen auf dem Gerät:
-  private readonly GLOBAL_POOL_KEY = 'local_projects_global_pool'; // Schneller Lese-Cache für die UI
-  private readonly SYNC_QUEUE_KEY = 'local_projects_pending_sync';  // Schreib-Briefkasten für Offline-Änderungen
-
-  /**
-   * Hilfsmethode: Holt die Warteschlange der offline geänderten Projekte aus dem LocalStorage.
-   */
-  private getSyncQueue(): Project[] {
-    const data = localStorage.getItem(this.SYNC_QUEUE_KEY);
-    if (!data) return [];
-    const rawArray: any[] = JSON.parse(data);
-    return rawArray.map(json => this.mapToFrontendProject(json));
+  constructor() {
+    super(QueueHandlerName.PROJECT);
   }
 
-  /**
-   * Hilfsmethode: Speichert die Warteschlange im LocalStorage ab.
-   */
-  private saveSyncQueue(projects: Project[]): void {
-    localStorage.setItem(this.SYNC_QUEUE_KEY, JSON.stringify(projects));
+  protected override createStateProvider(): ProjectStateProvider {
+    return new ProjectStateProvider();
   }
 
-  /**
-   * Hilfsmethode zur Doppel-Buchführung im Offline-Modus:
-   * Aktualisiert den globalen Lese-Cache (für sofortiges UI-Feedback) UND die geräte-weite Sync-Queue.
-   */
-  private queueOfflineChange(updatedGlobalList: Project[], changedProject: Project): void {
-    // 1. Für die UI im Lese-Cache sichern[cite: 2]
-    localStorage.setItem(this.GLOBAL_POOL_KEY, JSON.stringify(updatedGlobalList));
-
-    // 2. In den geräte-weiten Sync-Briefkasten einreihen[cite: 2]
-    const queue = this.getSyncQueue();
-    const updatedQueue = queue.filter(p => p.id !== changedProject.id);
-    updatedQueue.push(changedProject);
-    this.saveSyncQueue(updatedQueue);
+  public get allProjectsPool(): Signal<Project[]> {
+    return this.getSignal() as Signal<Project[]>;
   }
 
-  /**
-   * Holt alle Projekte. Im Offline-Modus wird direkt auf den Lese-Cache zurückgegriffen.
-   */
-  public getProjects(userId: string): Observable<Project[]> {
-    // Offline-Weiche: Cache sofort zurückgeben[cite: 2]
-    if (this.connectionService.isOffline()) {
-      const data = localStorage.getItem(this.GLOBAL_POOL_KEY);
-      if (!data) return of([]);
-      const rawArray: any[] = JSON.parse(data);
-      return of(rawArray.map(json => this.mapToFrontendProject(json)));
+  // 🎯 Hilfsmethode: Holt Projekttitel über Signal vor Lösch- oder Mitglied-Aktionen
+  private getProjectTitleById(id: string): string {
+    const project = this.allProjectsPool().find((p) => p.id === id);
+    return project?.title || 'Unbenanntes Projekt';
+  }
+
+  // ==========================================
+  // 🚀 BASE QUEUE DATA MANAGER HOOKS
+  // ==========================================
+
+public override executeQueueItem(item: QueueItem): Observable<any> {
+    const action = item.action as ProjectAction;
+    const payload = item.payload;
+
+    switch (action) {
+      case 'CREATE': {
+        const createPayload = payload as ProjectPayload;
+        const projectToSend = new Project({
+          ...createPayload.project,
+          id: undefined
+        });
+        return this.projectRepository.createProject(projectToSend.toJson());
+      }
+      case 'UPDATE': {
+        const updatePayload = payload as ProjectPayload;
+        return this.projectRepository.updateProject(updatePayload.project.toJson());
+      }
+      case 'DELETE': {
+        const deletePayload = payload as DeleteProjectPayload;
+        return this.projectRepository.deleteProject(deletePayload.id);
+      }
+      case 'ADD_MEMBER': {
+        const addPayload = payload as AddMemberPayload;
+        return this.teamRepository.assignToProject$(addPayload.id, addPayload.userId, addPayload.role);
+      }
+      case 'REMOVE_MEMBER': {
+        const removePayload = payload as RemoveMemberPayload;
+        return this.teamRepository.deleteFromProject$(removePayload.id, removePayload.userId);
+      }
+      case 'TRACK_SELECTION': {
+        const selectionPayload = payload as TrackMilestonePayload;
+        return this.aiRepository.trackMilestoneSelection(
+          selectionPayload.projectTitle,
+          selectionPayload.projectArea,
+          selectionPayload.milestoneTitle,
+          selectionPayload.userId
+        );
+      }
+      case 'TRACK_DEGRADATION': {
+        const degrPayload = payload as TrackMilestonePayload;
+        return this.aiRepository.trackMilestoneDegradation(
+          degrPayload.projectTitle,
+          degrPayload.projectArea,
+          degrPayload.milestoneTitle,
+          degrPayload.userId
+        );
+      }
+      case 'TRACK_IGNORANCE': {
+        const ignorPayload = payload as TrackMilestoneIgnorancePayload;
+        return this.aiRepository.trackMilestonesIgnore(
+          ignorPayload.projectTitle,
+          ignorPayload.projectArea,
+          ignorPayload.userId,
+          ignorPayload.milestoneTitles
+        );
+      }
+      default:
+        return throwError((): Error => new Error(`[ProjectDataManager] Unbekannte Action: ${item.action}`));
     }
-
-    // Online-Fall: Vom Server laden und Cache für den nächsten Offline-Fall befüllen[cite: 2]
-    return this.projectRepository.getProjectsByUserId(userId).pipe(
-      map(backendProjects => {
-        const liveProjects = backendProjects.map(bp => this.mapToFrontendProject(bp));
-        localStorage.setItem(this.GLOBAL_POOL_KEY, JSON.stringify(liveProjects));
-        return liveProjects;
-      }),
-      catchError(err => {
-        console.error('Fehler beim Online-Laden, weiche auf Lese-Cache aus:', err);
-        const data = localStorage.getItem(this.GLOBAL_POOL_KEY);
-        if (!data) return of([]);
-        const rawArray: any[] = JSON.parse(data);
-        return of(rawArray.map(json => this.mapToFrontendProject(json)));
-      })
-    );
-  }
-  
-  /**
-   * Erstellt ein neues Projekt. Nutzt offline die geräte-weite Doppel-Buchführung.
-   */
-  public createProject(project: Project, actualList: Project[]): Observable<Project> {
-    const projectUserId = project.userId || '';
-
-    // Offline-Fall: In UI-Liste und Sync-Queue einreihen[cite: 2]
-    if (this.connectionService.isOffline()) {
-      const neueGlobalListe = [...actualList, project];
-      this.queueOfflineChange(neueGlobalListe, project);
-      return of(project);
-    }
-
-    // Online-Fall: Direkt an die API senden und lokalen Lese-Cache nachführen[cite: 2]
-    return this.projectRepository.createProject(project).pipe(
-      map(backendProject => {
-        const saved = this.mapToFrontendProject(backendProject);
-        const aktuelleListe = actualList.filter(p => p.id !== project.id);
-        aktuelleListe.push(saved);
-        localStorage.setItem(this.GLOBAL_POOL_KEY, JSON.stringify(aktuelleListe));
-        return saved;
-      })
-    );
   }
 
-  /**
-   * Aktualisiert ein bestehendes Projekt. Verhindert API-Calls für temporäre Offline-Entwürfe.
-   */
-  public updateProject(project: Project, actualList: Project[]): Observable<Project | undefined> {
-    const projectUserId = project.userId || 'global_user';
-    const body = this.mapToCreateDto(project, projectUserId);
+  protected override handleSuccessResult(item: QueueItem, response: any): void {
+    // 1. Basisklasse tauscht die Haupt-Projekt-ID in der Queue & ruft standardmäßig replaceId auf
+    super.handleSuccessResult(item, response);
 
-    // Offline-Fall: Lokale Listen und Sync-Warteschlange aktualisieren[cite: 2]
-    if (this.connectionService.isOffline()) {
-      const neueGlobalListe = actualList.map(p => p.id === project.id ? project : p);
-      this.queueOfflineChange(neueGlobalListe, project);
-      return of(project);
+    if (item.action === 'CREATE' && response) {
+      const localProject = (item.payload as ProjectPayload)?.project;
+      const serverProjectJson = response as IProjectJSON;
+      const serverProject = Project.fromJson(serverProjectJson);
+
+      if (localProject?.milestones && serverProject?.milestones) {
+        const milestoneReplacements: IdReplacement[] = [];
+
+        // Zuordnung direkt aus Payload vs. Response (z. B. über Index oder Title)
+        localProject.milestones.forEach((localMs, index) => {
+          const serverMs = serverProject.milestones[index]; // oder match per title/orderIndex
+
+          if (localMs?.id && serverMs?.id && localMs.id !== serverMs.id) {
+            // A) Queue informieren
+            this.queueService.updateEntityIdInQueue(localMs.id, serverMs.id);
+
+            // B) Für Bulk-Ersetzung vormerken
+            milestoneReplacements.push({
+              localId: localMs.id,
+              serverId: serverMs.id
+            });
+          }
+        });
+
+        // 2. Ersetzung im Provider mit den gesammelten Paaren anstoßen
+        if (milestoneReplacements.length > 0) {
+          this.stateProvider.replaceIdsBulk(
+            { localId: localProject.id, serverId: serverProject.id },
+            milestoneReplacements
+          );
+        }
+      }
     }
-
-    // Sicherheitsnetz: Rein temporäre/lokale IDs gar nicht erst an die echte Update-API senden
-    if (project.id.startsWith('tmp_') || project.id.startsWith('OFFLINE')) {
-      return of(project);
-    }
-
-    // Online-Fall: Server-Update ausführen und Lese-Cache aktualisieren[cite: 2]
-    return this.projectRepository.updateProject(project.id, body).pipe(
-      map(backendProject => {
-        const updated = this.mapToFrontendProject(backendProject);
-        const aktuelleListe = actualList.filter(p => p.id !== project.id);
-        aktuelleListe.push(updated);
-        localStorage.setItem(this.GLOBAL_POOL_KEY, JSON.stringify(aktuelleListe));
-        return updated;
-      })
-    );
   }
 
-  /**
-   * Löscht ein Projekt. Bereinigt offline auch unvollständige Sync-Einträge aus der Queue.
-   */
-  public deleteProject(id: string, actualList: Project[]): Observable<void | undefined> {
-    // Aus dem lokalen Lese-Cache werfen[cite: 2]
-    const neueGlobalListe = actualList.filter(p => p.id !== id);
-    localStorage.setItem(this.GLOBAL_POOL_KEY, JSON.stringify(neueGlobalListe));
+  // ==========================================
+  // 🔄 REHYDRATION PATTERN
+  // ==========================================
 
-    // Aus der Sync-Warteschlange entfernen (falls es dort als unveröffentlichte Änderung lag)[cite: 2]
-    const queue = this.getSyncQueue();
-    const updatedQueue = queue.filter(p => p.id !== id);
-    this.saveSyncQueue(updatedQueue);
-
-    // Wenn es nie auf dem Server existierte, sind wir hier fertig
-    if (id.startsWith('OFFLINE') || id.startsWith('tmp_')) {
-      return of(undefined);
-    }
-
-    // Online-Fall: Echten Löschbefehl an den Server absetzen[cite: 2]
-    return this.projectRepository.deleteProject(id);
-  }
-  
-  /**
-   * Synchronisiert alle geräte-weit aufgestauten Offline-Änderungen per Bulk-Upload mit dem Server.
-   * Leert den Briefkasten erst nach erfolgreicher Server-Bestätigung.
-   */
-  public synchronizeData(userId: string): Observable<Project[]> {
-    const lokaleListe = this.getSyncQueue();
-    if (lokaleListe.length === 0) return of([]);
-
-    // Gesammelte Offline-Queue zum Backend jagen[cite: 2]
-    return this.projectRepository.syncLocalProjects(userId, lokaleListe).pipe(
-      map((serverJsonArray: any[]) => {
-        const liveProjects = serverJsonArray.map((json: any) => this.mapToFrontendProject(json));
-        // 🔥 WICHTIG: Nach erfolgreichem Sync die Queue leeren![cite: 2]
-        this.saveSyncQueue([]);
-        return liveProjects;
-      }),
-      catchError(err => {
-        console.error('Bulk-Sync fehlgeschlagen. Daten verbleiben in der lokalen Queue.', err);
-        return of(lokaleListe);
+  protected override fetchFromServer(userId: string): Observable<void> {
+    return this.projectRepository.getAllProjects().pipe(
+      map((backendProjectsJson: IProjectJSON[]): void => {
+        const liveProjects = backendProjectsJson.map((json) => Project.fromJson(json));
+        this.stateProvider.applyActionPayload('SET_PROJECTS', { projects: liveProjects });
       })
     );
   }
 
-  // ==========================================================================
-  // 🔄 MAPPING-HELPER & DTO-TRANSFORMATIONEN
-  // ==========================================================================
+  public override checkAndReplaceIds(item: QueueItem, localId: string, serverId: string): void {
+    super.checkAndReplaceIds(item, localId, serverId);
 
-  /**
-   * Transformiert ein Frontend-Projektmodell in ein speicherbares Backend-DTO.
-   */
-  private mapToCreateDto(project: Project, userId: string) {
-    return {
-      userId: userId,
-      ideaId: project.ideaId,
-      title: project.title,
-      area: project.area,
-      content: project.content,
-      status: project.status,
-      departmentId: project.departmentId,
-      milestones: (project.milestones || []).map(m => ({
-        id: (m.id && m.id.startsWith('tmp_')) ? null : m.id,
-        title: m.title,
-        duration: m.duration,
-        usedDuration: m.usedDuration || 0,
-        status: m.status || 'Offen',
-        assignedUserId: m.assignedUser?.id || null
-      })),
-      teamMemberIds: (project.teamMembers || []).map(member => member.user.id)
+    const payload = item.payload;
+    if (!payload) return;
+
+    if ('project' in payload && payload.project) {
+      const projPayload = payload as ProjectPayload;
+
+      if (projPayload.project.ideaId === localId) {
+        projPayload.project.ideaId = serverId;
+      }
+      if (projPayload.project.departmentId === localId) {
+        projPayload.project.departmentId = serverId;
+      }
+
+      if (projPayload.project.milestones && Array.isArray(projPayload.project.milestones)) {
+        projPayload.project.milestones.forEach((milestone) => {
+          if (milestone.id === localId) {
+            milestone.id = serverId;
+          }
+        });
+      }
+    }
+  }
+
+  // ==========================================
+  // 📝 PUBLIC API METHODEN
+  // ==========================================
+
+public createProject(project: Project): void {
+    const snapshot = this.stateProvider.createSnapshot();
+
+    this.stateProvider.applyActionPayload('CREATE', { project });
+
+    const payload: ProjectPayload = {
+      id: project.id,
+      project,
+      snapshot,
+      displayInfo: {
+        category: 'Projekt erstellen',
+        title: project.title || 'Unbenanntes Projekt'
+      }
     };
+    this.queueService.enqueue(this.serviceName, 'CREATE', payload);
   }
 
-  /**
-   * Instantiiert aus einem rohen Backend-JSON die voll funktionsfähigen Frontend-Klassen (Project & Milestone).
-   */
-  private mapToFrontendProject(bp: any): Project {
-    const frontendMilestones = (bp.fullMilestones || bp.milestones || []).map((bm: any) => {
-      return new Milestone({
-        id: bm.id,
-        title: bm.title,
-        duration: bm.duration,
-        usedDuration: bm.usedDuration || 0,
-        status: bm.status || 'Offen',
-        assignedUser: bm.assignedUser || null
-      });
-    });
+  public updateProject(project: Project): void {
+    const snapshot = this.stateProvider.createSnapshot();
 
-    return new Project({
-      id: bp.id,
-      userId: bp.userId,
-      ideaId: bp.ideaId,
-      title: bp.title,
-      area: bp.area,
-      content: bp.content,
-      status: bp.status,
-      departmentId: bp.departmentId,
-      milestones: frontendMilestones,
-      teamMembers: bp.teamMembers || []
-    });
+    this.stateProvider.applyActionPayload('UPDATE', { project });
+
+    const payload: ProjectPayload = {
+      id: project.id,
+      project,
+      snapshot,
+      displayInfo: {
+        category: 'Projekt bearbeiten',
+        title: project.title || this.getProjectTitleById(project.id)
+      }
+    };
+    this.queueService.enqueue(this.serviceName, 'UPDATE', payload);
   }
 
-  /**
-   * Lädt die statischen Ausweich-Meilensteine aus den lokalen App-Konstanten.
-   */
+  public deleteProject(id: string): void {
+    const snapshot = this.stateProvider.createSnapshot();
+    const projectTitle = this.getProjectTitleById(id);
+
+    this.stateProvider.applyActionPayload('DELETE', { id });
+
+    const deletePayload: DeleteProjectPayload = {
+      id,
+      snapshot,
+      displayInfo: {
+        category: 'Projekt löschen',
+        title: projectTitle
+      }
+    };
+
+    this.queueService.enqueue(this.serviceName, 'DELETE', deletePayload);
+  }
+
+  public addMemberToProject(projectId: string, user: UserModel | UserSummary, projectRole: ProjectRole): void {
+    if (isLocalId(projectId)) return;
+
+    const snapshot = this.stateProvider.createSnapshot();
+    const projectTitle = this.getProjectTitleById(projectId);
+    const userName = user.fullName;
+
+    this.stateProvider.applyActionPayload('ADD_MEMBER', { projectId, user, role: projectRole });
+
+    const payload: AddMemberPayload = {
+      id: projectId,
+      userId: user.id,
+      role: projectRole,
+      snapshot,
+      displayInfo: {
+        category: 'Projektmitglied hinzufügen',
+        title: `${userName} ->${projectTitle}`
+      }
+    };
+
+    this.queueService.enqueue(this.serviceName, 'ADD_MEMBER', payload);
+  }
+
+  public removeMemberFromProject(projectId: string, userId: string): void {
+    if (isLocalId(projectId)) return;
+
+    const snapshot = this.stateProvider.createSnapshot();
+    const projectTitle = this.getProjectTitleById(projectId);
+
+    this.stateProvider.applyActionPayload('REMOVE_MEMBER', { projectId, userId });
+
+    const payload: RemoveMemberPayload = {
+      id: projectId,
+      userId,
+      snapshot,
+      displayInfo: {
+        category: 'Projektmitglied entfernen',
+        title: `Mitglied (${userId}) -> ${projectTitle}`
+      }
+    };
+
+    this.queueService.enqueue(this.serviceName, 'REMOVE_MEMBER', payload);
+  }
+
+  // ==========================================
+  // 🔗 DEPENDENCY & CHAIN EXTRACTION
+  // ==========================================
+
+  public override extractEntityIds(item: QueueItem): string[] {
+    const ids = super.extractEntityIds(item);
+    const payload = item.payload;
+    if (!payload) return ids;
+
+    if ('project' in payload && payload.project) {
+      const proj = payload.project as Project;
+      
+      // 1. Idee-Abhängigkeit
+      if (proj.ideaId) {
+        ids.push(proj.ideaId);
+      }
+
+      // 2. Department-Abhängigkeit
+      if (proj.departmentId) {
+        ids.push(proj.departmentId);
+      }
+
+      // 3. Meilenstein-IDs sammeln
+      if (proj.milestones && Array.isArray(proj.milestones)) {
+        proj.milestones.forEach((m) => {
+          if (m.id) {
+            ids.push(m.id);
+          }
+        });
+      }
+    }
+
+    return ids;
+  }
+
+  // ==========================================================================
+  // 💡 KI & MEILENSTEIN-SUGGESTIONS
+  // ==========================================================================
+
+  public getMilestoneSuggestions(title: string, area: string, userId: string): Observable<MilestoneSuggestionsModel> {
+    if (this.connectionService.isOffline()) {
+      return this.getMilestonesOffline();
+    }
+
+    return this.aiRepository.getMilestoneSuggestions(title, area, userId).pipe(
+      map((suggestionsFromServer: MilestoneSuggestionsResponse): MilestoneSuggestionsModel => {
+        const recommended = (suggestionsFromServer.recommended || []).map((s) => this.getMappedSuggestion(s, true));
+        const degraded = (suggestionsFromServer.degraded || []).map((s) => this.getMappedSuggestion(s, false));
+        return { recommended, degraded };
+      }),
+      catchError(() => this.getMilestonesOffline())
+    );
+  }
+
   private getMilestonesOffline(): Observable<MilestoneSuggestionsModel> {
     const offlineSuggestions: UnifiedSuggestion[] = [];
     const templatesRecord = MILESTONE_TEMPLATES as Record<string, Array<{ title: string; duration: number }>>;
 
-    Object.keys(templatesRecord).forEach(category => {
-      templatesRecord[category].forEach(template => {
+    Object.keys(templatesRecord).forEach((category) => {
+      templatesRecord[category].forEach((template) => {
         offlineSuggestions.push({
           title: template.title,
           duration: template.duration,
@@ -266,84 +367,80 @@ export class ProjectDataManagerService extends BaseDataManager {
         });
       });
     });
-    
+
     return of({
       recommended: offlineSuggestions,
       degraded: []
     });
   }
 
-  /**
-   * Hilfsmethode zur einheitlichen UI-Mapping-Struktur von Meilensteinvorschlägen.
-   */
   private getMappedSuggestion(suggestionDto: MilestoneSuggestion, isRecommended: boolean): UnifiedSuggestion {
     return {
       title: suggestionDto.title,
       score: suggestionDto.score,
       source: 'KI',
-      isRecommended: isRecommended,
+      isRecommended,
       words: suggestionDto.words || []
     };
   }
-  
-  /**
-   * KI-Schnittstelle: Ruft KI-gestützte Meilenstein-Vorschläge ab.
-   * Fällt bei Offline-Modus oder Serverfehlern automatisch auf statische App-Templates zurück.
-   */
-  public getMilestoneSuggestions(title: string, area: string, userId: string): Observable<MilestoneSuggestionsModel> {
-    if (this.connectionService.isOffline()) {
-      return this.getMilestonesOffline();
-    }
-    
-    return this.aiRepository.getMilestoneSuggestions(title, area, userId).pipe(
-      map((suggestionsFromServer: MilestoneSuggestionsResponse) => {
-        const recommended = (suggestionsFromServer.recommended || []).map(s => this.getMappedSuggestion(s, true));
-        const degraded = (suggestionsFromServer.degraded || []).map(s => this.getMappedSuggestion(s, false));
-        return { recommended, degraded };
-      }),
-      catchError(() => this.getMilestonesOffline()) // Robustes Fallback bei API-Ausfall
-    );
-  }
-  
+
   // ==========================================================================
-  // 📊 TRACKING & ANALYTICS (Werden offline stumm übersprungen)
+  // 📊 TRACKING & ANALYTICS
   // ==========================================================================
-  
-  public trackMilestoneSelection(projectTitle: string, projectArea: string, milestoneTitle: string, userId: string): Observable<void> {
-    if (this.connectionService.isOffline()) return of(undefined);
-    return this.aiRepository.trackMilestoneSelection(projectTitle, projectArea, milestoneTitle, userId); 
+
+public trackMilestoneSelection(projectTitle: string, projectArea: string, milestoneTitle: string, userId: string): void {
+    const payload: TrackMilestonePayload = {
+      id: generateLocalId(),
+      projectTitle,
+      projectArea,
+      milestoneTitle,
+      userId,
+      displayInfo: {
+        category: 'Analytics',
+        title: `Meilenstein gewählt: ${milestoneTitle}`
+      }
+    };
+    this.queueService.enqueue(this.serviceName, 'TRACK_SELECTION', payload);
   }
 
-  public trackMilestoneDegradation(projectTitle: string, projectArea: string, milestoneTitle: string, userId: string): Observable<void> {
-    if (this.connectionService.isOffline()) return of(undefined);
-    return this.aiRepository.trackMilestoneDegradation(projectTitle, projectArea, milestoneTitle, userId);
+  public trackMilestoneDegradation(projectTitle: string, projectArea: string, milestoneTitle: string, userId: string): void {
+    const payload: TrackMilestonePayload = {
+      id: generateLocalId(),
+      projectTitle,
+      projectArea,
+      milestoneTitle,
+      userId,
+      displayInfo: {
+        category: 'Analytics',
+        title: `Meilenstein abgewertet: ${milestoneTitle}`
+      }
+    };
+    this.queueService.enqueue(this.serviceName, 'TRACK_DEGRADATION', payload);
   }
 
-  public trackMilestoneIgnorance(projectTitle: string, projectArea: string, userId: string, milestoneTitles: string[]): Observable<void> {
-     if (this.connectionService.isOffline()) return of(undefined);
-     return this.aiRepository.trackMilestonesIgnore(projectTitle, projectArea, userId, milestoneTitles);
+  public trackMilestoneIgnorance(projectTitle: string, projectArea: string, userId: string, milestoneTitles: string[]): void {
+    const payload: TrackMilestoneIgnorancePayload = {
+      id: generateLocalId(),
+      projectTitle,
+      projectArea,
+      milestoneTitles,
+      userId,
+      displayInfo: {
+        category: 'Analytics',
+        title: `Meilensteine ignoriert (${milestoneTitles.length})`
+      }
+    };
+    this.queueService.enqueue(this.serviceName, 'TRACK_IGNORANCE', payload);
   }
 
-  /**
-   * Lädt Dashboard-Statistiken. Da Berechnungen serverseitig stattfinden, 
-   * wird im Offline-Modus ein expliziter Error geworfen.
-   */
   public getDashboardStatistics(userId: string): Observable<ProjectDashboardStatsDTO> {
     if (this.connectionService.isOffline()) {
-      return throwError(() => new Error('OFFLINE_MODE'));
+      return throwError((): Error => new Error('OFFLINE_MODE'));
     }
     return this.projectRepository.getDashboardStatistics(userId);
   }
 
   public override checkUnsavedData(): string | null {
-  const pendingQueue = this.getSyncQueue();
-  if (pendingQueue.length > 0) {
-    return `Es gibt noch ${pendingQueue.length} ungespeicherte Projekt-Änderungen.`;
-  }
-  return null;
-}
-
-  public override resetData(): void {
-    this.localStorageService.removeItem(this.SYNC_QUEUE_KEY)
+    return null;
   }
 }

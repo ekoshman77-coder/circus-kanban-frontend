@@ -3,19 +3,34 @@ import { IdeaSortingService } from './idea-sorting-service';
 import { UserService } from '../user/user-service';
 import { NoteService } from './note-service';
 import { NoteSortOrder } from '../../models/note-sort-order';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { signal } from '@angular/core';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { signal, WritableSignal } from '@angular/core';
+import { IUserInit, UserModel } from '../../models/user-model';
 
-describe('IdeaSortingService', () => {
+describe('IdeaSortingService (Vitest - Strictly Typed)', () => {
   let service: IdeaSortingService;
 
-  // Mocks
-  let mockUserService: any;
-  let mockNoteService: any;
-  let currentUserSignal: any;
+  // Typsichere Mocks
+  let mockUserService: Partial< UserService >;
+  let mockNoteService: Partial< NoteService >;
+  let currentUserSignal: WritableSignal< UserModel | null >;
+
+  // Helper zum Erstellen eines Test-Users
+  const createTestUser = (overrides: Partial< IUserInit > = {}): UserModel => {
+    return new UserModel({
+      id: 'user-42',
+      username: 'zaphod',
+      firstName: 'Zaphod',
+      lastName: 'Beeblebrox',
+      department: null,
+      isApproved: true,
+      projectIds: [],
+      ...overrides
+    });
+  };
 
   // LocalStorage Mock-Store
-  let store: Record<string, string> = {};
+  let store: Record< string, string > = {};
 
   beforeEach(() => {
     store = {};
@@ -26,8 +41,7 @@ describe('IdeaSortingService', () => {
       clear: () => { store = {}; }
     });
 
-    // Wir starten ohne eingeloggten User
-    currentUserSignal = signal<any>(null);
+    currentUserSignal = signal< UserModel | null >(null);
 
     mockUserService = {
       currentUser: currentUserSignal,
@@ -38,7 +52,7 @@ describe('IdeaSortingService', () => {
     };
 
     mockNoteService = {
-      loadNotes: vi.fn()
+      notesList: signal([])
     };
 
     TestBed.configureTestingModule({
@@ -52,66 +66,54 @@ describe('IdeaSortingService', () => {
     service = TestBed.inject(IdeaSortingService);
   });
 
+  afterEach(() => {
+    vi.clearAllMocks();
+    vi.unstubAllGlobals();
+  });
+
   it('sollte den Service erfolgreich instanziieren', () => {
     expect(service).toBeTruthy();
   });
 
-  describe('Reaktive Initialisierung über den User-Wechsel (effect)', () => {
-    it('sollte bei nicht-eingeloggtem User die Sortierung leer halten und keine Notizen laden', () => {
+  describe('loadSorting & saveSorting (Context-basiert)', () => {
+    const contextKey = 'board-view';
+
+    it('sollte leere Sortierung liefern, wenn kein User eingeloggt ist', () => {
       currentUserSignal.set(null);
-      TestBed.flushEffects();
 
-      expect(service.currentSortOrders()).toEqual([]);
-      expect(mockNoteService.loadNotes).not.toHaveBeenCalled();
+      const result = service.loadSorting(contextKey);
+      expect(result).toEqual([]);
     });
 
-    it('sollte beim Einloggen eines Users leere Standard-Sortierungen setzen, wenn kein LocalStorage existiert, und loadNotes triggern', () => {
-      currentUserSignal.set({ id: 'user-42', name: 'Zaphod' });
-      TestBed.flushEffects();
+    it('sollte nichts speichern, wenn kein User eingeloggt ist', () => {
+      currentUserSignal.set(null);
 
-      expect(service.currentSortOrders()).toEqual([]);
-      expect(mockNoteService.loadNotes).toHaveBeenCalled();
+      const orders: NoteSortOrder[] = [{ noteId: 'note-1', sortIndex: 0 }];
+      service.saveSorting(contextKey, orders);
+
+      expect(localStorage.getItem('my_note_sorting_null_board-view')).toBeNull();
     });
 
-    it('sollte beim Einloggen eines Users gespeicherte Einstellungen aus dem LocalStorage laden', () => {
-      const savedOrders: NoteSortOrder[] = [
-        { field: 'createdAt', direction: 'desc' } as any
+    it('sollte die Sortierung im LocalStorage speichern und wieder laden', () => {
+      currentUserSignal.set(createTestUser({ id: 'user-42' }));
+
+      // Korrekte NoteSortOrder-Struktur
+      const orders: NoteSortOrder[] = [
+        { noteId: 'note-1', sortIndex: 0 },
+        { noteId: 'note-2', sortIndex: 1 }
       ];
-      localStorage.setItem('my_note_sorting_user-42', JSON.stringify(savedOrders));
+      
+      // Speichern mit Context-Key
+      service.saveSorting(contextKey, orders);
 
-      currentUserSignal.set({ id: 'user-42', name: 'Zaphod' });
-      TestBed.flushEffects();
-
-      expect(service.currentSortOrders()).toEqual(savedOrders);
-      expect(mockNoteService.loadNotes).toHaveBeenCalled();
-    });
-  });
-
-  describe('saveSorting (Sortierung speichern)', () => {
-    it('sollte nichts tun, wenn kein User eingeloggt ist', () => {
-      currentUserSignal.set(null);
-      TestBed.flushEffects();
-
-      const newOrders: NoteSortOrder[] = [{ field: 'title', direction: 'asc' } as any];
-      service.saveSorting(newOrders);
-
-      expect(localStorage.getItem('my_note_sorting_null')).toBeNull();
-    });
-
-    it('sollte das Signal aktualisieren und im LocalStorage des Users speichern', () => {
-      currentUserSignal.set({ id: 'user-1337', name: 'Neo' });
-      TestBed.flushEffects();
-
-      const newOrders: NoteSortOrder[] = [{ field: 'title', direction: 'asc' } as any];
-      service.saveSorting(newOrders);
-
-      // Signal muss aktualisiert sein
-      expect(service.currentSortOrders()).toEqual(newOrders);
-
-      // LocalStorage Eintrag prüfen
-      const stored = localStorage.getItem('my_note_sorting_user-1337');
+      // Prüfen im LocalStorage mit dem exakten Key-Schema des Services
+      const stored = localStorage.getItem('my_note_sorting_user-42_board-view');
       expect(stored).toBeTruthy();
-      expect(JSON.parse(stored!)).toEqual(newOrders);
+      expect(JSON.parse(stored!)).toEqual(orders);
+
+      // Wieder auslesen via Service
+      const loaded = service.loadSorting(contextKey);
+      expect(loaded).toEqual(orders);
     });
   });
 });

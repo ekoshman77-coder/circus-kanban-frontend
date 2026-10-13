@@ -64,7 +64,7 @@ export class ConnectionService {
   }
 
   /**
-   * Startet ein zyklisches Intervall (alle 30 Sekunden) für den Server-Ping[cite: 5].
+   * Startet ein zyklisches Intervall (alle 30 Sekunden) für den Server-Ping
    */
   private initServerHealthCheckLoop(): void {
     interval(30000).pipe(
@@ -73,7 +73,7 @@ export class ConnectionService {
   }
 
   /**
-   * Lauscht auf die systemweiten Verbindungsänderungen des Browsers (Navigator Online/Offline)[cite: 5].
+   * Lauscht auf die systemweiten Verbindungsänderungen des Browsers (Navigator Online/Offline).
    */
   private initConnectionListeners(): void {
     window.addEventListener('offline', () => {

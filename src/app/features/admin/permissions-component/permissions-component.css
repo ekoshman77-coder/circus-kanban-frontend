@@ -15,63 +15,6 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-/* 🟢 CREATE-FORM */
-.create-card {
-  border-left: 6px solid #4f46e5;
-  background: linear-gradient(135deg, #f8fafa 0%, hsl(180, 40%, 98%) 100%);
-  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.08);
-}
-
-.create-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-}
-
-.create-card h3 {
-  margin: 0;
-  color: #312e81;
-  font-size: 1.15rem;
-}
-
-.form-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: flex-end;
-  margin-top: 1rem;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  flex: 1;
-  min-width: 160px;
-}
-
-.form-group label {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #475569;
-}
-
-select {
-  padding: 0.6rem 0.8rem;
-  border-radius: 8px;
-  border: 1px solid #cbd5e1;
-  background-color: #fff;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
-}
-
-select:focus {
-  outline: none;
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-}
-
 /* 🔍 FILTER-RIEGEL */
 .filter-card {
   padding: 0.65rem 1.25rem;
@@ -247,4 +190,27 @@ select:focus {
   font-size: 0.85rem;
   cursor: pointer;
   text-decoration: underline;
+}
+
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.btn-add-matrix {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.25);
+  font-weight: 600;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-add-matrix:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(79, 70, 229, 0.35);
 }

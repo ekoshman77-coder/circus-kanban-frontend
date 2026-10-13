@@ -26,6 +26,13 @@ describe('ProjectMilestonesComponent (Vitest Edition)', () => {
   let sampleTodos: Todo[];
 
   beforeEach(async () => {
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn(() => null),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+      clear: vi.fn(),
+    });
+    
     // 1. Echte Test-Strukturen aufbauen
     sampleProjects = [
       {
@@ -65,7 +72,9 @@ describe('ProjectMilestonesComponent (Vitest Edition)', () => {
 
     // 2. Mocking-Fabrik anschmeißen
     mockProjectService = {
-      projectsList: signal<any[]>(sampleProjects)
+      projectsList: signal<any[]>(sampleProjects),
+      hasPermission: vi.fn().mockReturnValue(true),
+      setActiveProjectId: vi.fn()
     };
 
     mockTabService = {
@@ -84,7 +93,6 @@ describe('ProjectMilestonesComponent (Vitest Edition)', () => {
 
     mockTeamService = {
       setCurrentProject: vi.fn(),
-      hasPermission: vi.fn().mockReturnValue(true)
     };
 
     mockTodoQueryService = {};
@@ -124,16 +132,17 @@ describe('ProjectMilestonesComponent (Vitest Edition)', () => {
   // 🔄 DROPDOWN & FILTER LOGIK
   // ==========================================================================
   describe('Filterung nach Meilenstein & Projekt', () => {
-    it('sollte beim direkten Meilensteinwechsel das Zielprojekt ermitteln und die Filter setzen', () => {
+it('sollte beim direkten Meilensteinwechsel das Zielprojekt ermitteln und die Filter setzen', () => {
       component.onMilestoneChanged('ms-rehearsal');
 
       expect(component.boardFilter()).toEqual({
         projectId: 'proj-magic',
         milestoneId: 'ms-rehearsal'
       });
-      expect(mockTeamService.setCurrentProject).toHaveBeenCalledWith('proj-magic');
+      // 🟢 KORREKTUR: Jetzt auf den ProjectService prüfen
+      expect(mockProjectService.setActiveProjectId).toHaveBeenCalledWith('proj-magic');
     });
-
+    
     it('sollte das reaktive "currentMatch" korrekt berechnen, wenn Filter aktiv ist', () => {
       component.boardFilter.set({ projectId: 'proj-magic', milestoneId: 'ms-setup' });
       fixture.detectChanges();
@@ -184,13 +193,13 @@ describe('ProjectMilestonesComponent (Vitest Edition)', () => {
       component.boardFilter.set({ projectId: 'proj-magic', milestoneId: 'ms-setup' });
     });
 
-    it('sollte Interaktionen erlauben, wenn der TeamService grünes Licht gibt', () => {
-      mockTeamService.hasPermission.mockReturnValue(true);
+    it('sollte Interaktionen erlauben, wenn der ProjectService grünes Licht gibt', () => {
+      mockProjectService.hasPermission.mockReturnValue(true);
       expect(component.canInteractWithTodos()).toBe(true);
     });
 
     it('sollte Interaktionen blockieren, wenn dem User das Editier-Recht fehlt', () => {
-      mockTeamService.hasPermission.mockReturnValue(false);
+      mockProjectService.hasPermission.mockReturnValue(false); // 👈 HIER mockProjectService nutzen!
       expect(component.canInteractWithTodos()).toBe(false);
     });
   });

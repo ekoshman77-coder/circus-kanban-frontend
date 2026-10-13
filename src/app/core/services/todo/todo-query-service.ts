@@ -3,7 +3,6 @@ import { TodoDataManagerService } from './todo-data-manager-service';
 import { ProjectService } from '../project/project-service';
 import { TeamService } from '../team/team-service';
 import { Todo } from '../../models/todo';
-import { ProjectAction } from '../../enums/project-action-enum'; // Passe das an dein echtes Enum/Typ an
 
 @Injectable({
   providedIn: 'root'
@@ -42,18 +41,5 @@ export class TodoQueryService {
     );
 
     return foundProject ? foundProject.id : null;
-  }
-
-  /**
-   * 👑 Die Weiche für die Todo-Rechte: Löst Milestone auf und fragt den TeamService
-   */
-  public hasPermissionForMilestone(milestoneId: string | null, action: ProjectAction): boolean {
-    if (!milestoneId) return true; // Privates Todo -> Der Besitzer darf immer alles!
-
-    // 1. Projekt-ID ermitteln
-    const projectId = this.getProjectIdByMilestoneId(milestoneId);
-    
-    // 2. Pure Rechteprüfung an den TeamService delegieren
-    return this.teamService.hasPermission(projectId, action);
   }
 }

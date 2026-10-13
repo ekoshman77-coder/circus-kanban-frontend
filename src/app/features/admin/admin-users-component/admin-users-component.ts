@@ -8,36 +8,44 @@ import { UserModel } from '../../../core/models/user-model';
 import { AdminTeamService } from '../../../core/services/admin/admin-team-service';
 import { MasterDataService } from '../../../core/services/admin/master-data-service';
 import { Department } from '../../../core/models/department';
-import { RoleSelectionModalComponent } from '../../../core/shared/components/role-selection-modal/role-selection-modal';
+import { RoleApprovalResult, RoleSelectionModalComponent } from '../../../core/shared/components/role-selection-modal/role-selection-modal';
+import { CreateUserDrawerComponent } from '../create-user-drawer-component/create-user-drawer-component';
+import { UniversalPopupComponent } from '../../../core/shared/components/universal-popup-component/universal-popup-component';
 
 @Component({
   selector: 'app-admin-users-component',
   standalone: true,
-  imports: [CommonModule, FormsModule, DragDropModule, RoleSelectionModalComponent],
+  imports: [CommonModule, FormsModule, DragDropModule, 
+            RoleSelectionModalComponent, CreateUserDrawerComponent, UniversalPopupComponent
+          ],
   templateUrl: './admin-users-component.html',
   styleUrl: './admin-users-component.css',
 })
-export class AdminUsersComponent implements OnInit {
+export class AdminUsersComponent {
   protected departmentService = inject(DepartmentService);
   protected filterService = inject(FilterService);
   protected adminTeamService = inject(AdminTeamService);
   protected masterDataService = inject(MasterDataService); // 👈 MasterDataService injizieren
 
-  public departments = this.departmentService.departments;
 
   // 🔮 MODAL STATE
   public isRoleModalOpen = signal(false);
   public modalTitle = signal('Rolle zuweisen');
   public modalMessage = signal('');
+  public isAddUserDrawerOpen = signal<boolean>(false)
+  public departments = computed(() => this.departmentService.departmentsSorted())
 
   // Temporäre Speicherung für den ausstehenden Transfer
   public pendingUser = signal<UserModel | null>(null);
   private pendingDeptId = signal<string | null>(null);
 
+  // 🗑️ STATE FÜR LÖSCH-POPUP
+  public isDeletePopupOpen = signal<boolean>(false);
+  public userToDelete = signal<UserModel | null>(null);
+
   public allUsers = computed(() => {
     const search = this.filterService.searchTerm().toLowerCase().trim();
     return this.adminTeamService.adminUsersSignal()
-      .map(member => member.user)
       .filter((user) => {
         return user.firstName.toLowerCase().includes(search)
           || user.lastName.toLowerCase().includes(search)
@@ -63,11 +71,6 @@ export class AdminUsersComponent implements OnInit {
     return map;
   });
 
-  public ngOnInit(): void {
-    this.adminTeamService.loadAdminPool();
-     // 👈 Masterdata laden
-  }
-
   public getUsersForDept(departmentId: string): UserModel[] {
     return this.approvedUsersByDept().get(departmentId) || [];
   }
@@ -79,13 +82,7 @@ public filteredRoles = computed(() => {
   if (!dept) return [];
 
   // Direkter Zugriff auf das string[] aus MasterData
-  const allRoles = this.masterDataService.departmentRoles();
-
-  if (dept.isAdmin()) {
-    return allRoles.filter(role => role.toLowerCase().includes('admin'));
-  } else {
-    return allRoles.filter(role => !role.toLowerCase().includes('admin'));
-  }
+  return this.masterDataService.departmentRoles();
 });
 
   public handleDrop(event: CdkDragDrop<UserModel[]>) {
@@ -95,9 +92,8 @@ public filteredRoles = computed(() => {
     const targetListId = event.container.id;
 
     if (targetListId === 'trash-list') {
-      if (confirm(`Möchtest du ${user.firstName} ${user.lastName} wirklich löschen/ablehnen?`)) {
-        this.adminTeamService.deleteMember(user.id);
-      }
+      this.userToDelete.set(user);
+      this.isDeletePopupOpen.set(true);    
     }
     else if (targetListId.startsWith('dept-list-')) {
       const targetDepartmentId = targetListId.replace('dept-list-', '');
@@ -116,6 +112,22 @@ public filteredRoles = computed(() => {
     }
   }
 
+  public onDeleteConfirmed(user: UserModel | null): void {
+    if (user) {
+      this.adminTeamService.deleteMember(user.id);
+    }
+    this.closeDeletePopup();
+  }
+
+  public onDeleteCancelled(): void {
+    this.closeDeletePopup();
+  }
+
+  private closeDeletePopup(): void {
+    this.isDeletePopupOpen.set(false);
+    this.userToDelete.set(null);
+  }
+
   // ⚡ Klick auf Rollen-Badge/Button auf der Karte (Fall B)
   public openRoleChangeModal(user: UserModel) {
     if (!user.department) return;
@@ -131,23 +143,23 @@ public filteredRoles = computed(() => {
   }
 
   // ✅ Wird aufgerufen, wenn im Modal eine Rolle angeklickt wurde
-public onRoleConfirmed(selectedRole: string) {
-  console.log('2️⃣ [PARENT] RoleConfirmed empfangen:', selectedRole);
+  public onRoleConfirmed(result: RoleApprovalResult) {
+    console.log('2️⃣ [PARENT] RoleConfirmed empfangen:', result);
 
-  const user = this.pendingUser();
-  const dept = this.selectedDepartment();
+    const user = this.pendingUser();
+    const dept = this.selectedDepartment();
 
-  console.log('3️⃣ [PARENT] User:', user?.username, 'Abteilung:', dept?.name);
+    console.log('3️⃣ [PARENT] User:', user?.username, 'Abteilung:', dept?.name, 'Supervisor:', result.supervisorId);
 
-  if (user && dept) {
-    console.log('4️⃣ [PARENT] Sendet an approveMember:', user.id, dept.name, selectedRole);
-    this.adminTeamService.approveMember(user.id, dept, selectedRole);
-  } else {
-    console.warn('⚠️ [PARENT] User oder Department ist NULL!', { user, dept });
+    if (user && dept) {
+      // 🚀 Übergibt role AND supervisorId an den Service
+      this.adminTeamService.approveMember(user.id, dept, result.role, result.supervisorId?? undefined);
+    } else {
+      console.warn('⚠️ [PARENT] User oder Department ist NULL!', { user, dept });
+    }
+
+    this.resetPendingState();
   }
-
-  this.resetPendingState();
-}
 
   // ❌ Wird aufgerufen, wenn im Modal abgebrochen wurde
   public onRoleCancelled() {
@@ -173,4 +185,13 @@ public onRoleConfirmed(selectedRole: string) {
       }
     }
   }
+
+  public onUserDrawerClose() {
+    this.isAddUserDrawerOpen.set(false)
+  }
+
+  public onUserCreated() {
+    
+  }
+
 }

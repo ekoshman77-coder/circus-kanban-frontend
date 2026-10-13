@@ -1,6 +1,5 @@
-import { computed, effect, inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, Signal, signal } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { catchError, map, tap } from 'rxjs/operators';
 import { Project } from '../../models/project';
 import { ProjectDataManagerService } from './project-data-manager-service';
 import { UserService } from '../user/user-service';
@@ -12,8 +11,12 @@ import { UnifiedSuggestion } from '../../models/unified-suggestion';
 import { MilestoneSuggestionsModel } from '../../models/milestone-suggestions-model';
 import { NotificationService } from '../notification/notification-service';
 import { ProjectDashboardStatsDTO } from '../../repositories/dto/project-dashboard-stats-dto';
-import { ProjectDraftService } from './project-draft-service'; // <-- Neu importiert!
+import { ProjectDraftService } from './project-draft-service';
 import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
+import { ProjectRole, UserModel } from '../../models/user-model';
+import { UserSummary } from '../../models/user-summary';
+import { ProjectMember } from '../../models/project-member';
+import { PermissionService, UIActionIntent } from '../permissions/permission-service';
 
 @Injectable({
   providedIn: 'root'
@@ -24,19 +27,29 @@ export class ProjectService extends BaseDataManager {
   private userService = inject(UserService);
   private noteService = inject(NoteService);
   private notificationService = inject(NotificationService);
-  private draftService = inject(ProjectDraftService); // <-- Hier injiziert!
+  private draftService = inject(ProjectDraftService);
+  private permissionService = inject(PermissionService);
 
-  private allProjectsPool = signal<Project[]>([]);
+  public readonly allProjectsPool = this.dataManager.allProjectsPool;
+
+  // 👥 Signal: Nur die Projekte, in denen der aktuell angemeldete User ein Teammitglied ist
+  public readonly myProjectsList = computed(() => {
+    const rawProjects = this.allProjectsPool();
+    const currentUserId = this.userService.getCurrentUserId();
+
+    if (!currentUserId) return [];
+
+    return rawProjects.filter(project =>
+      project.teamMembers.some(member => member.user.id === currentUserId)
+    );
+  });
+
   // 👁️ Merkt sich, ob die "Strafbank" (der Keller) in dieser Session geöffnet wurde
   private degradedWereShownSignal = signal<boolean>(false);
 
-  public setDegradedWereShown(): void {
-    this.degradedWereShownSignal.set(true);
-  }
-
   private dashboardStatsSignal = signal<ProjectDashboardStatsDTO | null>(null);
   public readonly dashboardStats = this.dashboardStatsSignal.asReadonly();
-  
+
   public readonly projectsList = computed(() => {
     const rawProjects = this.allProjectsPool();
     const currentUser = this.userService.currentUser();
@@ -50,12 +63,23 @@ export class ProjectService extends BaseDataManager {
   private activeMilestoneIdSignal = signal<string | null>(null);
   public readonly activeMilestoneId = this.activeMilestoneIdSignal.asReadonly();
 
+  private activeProjectIdSignal = signal<string | null>(null);
+  public readonly activeProjectId = this.activeProjectIdSignal.asReadonly();
+
   private _aiSuggestionsSignal = signal<MilestoneSuggestionsModel | null>(null);
+
+  // 👥 Dynamisch berechnetes Signal für die Teammitglieder des aktuell aktiven Projekts
+  public readonly currentProjectMembersSignal = computed<ProjectMember[]>(() => {
+    const projectId = this.activeProjectIdSignal();
+    if (!projectId) return [];
+    const project = this.allProjectsPool().find(p => p.id === projectId);
+    return project?.teamMembers || [];
+  });
 
   // Die gefilterte Lesebrille für KI-Vorschläge
   public suggestions = computed(() => {
     const rawSuggestions = this._aiSuggestionsSignal();
-    const currentProject = this.draftService.currentDraft(); // ✨ Greift jetzt auf den neuen DraftService zu!
+    const currentProject = this.draftService.currentDraft();
     const rejectedTitles = this.degradedMilestones();
 
     if (!rawSuggestions) return null;
@@ -76,20 +100,16 @@ export class ProjectService extends BaseDataManager {
     };
   });
 
-  public setActiveMilestoneId(id: string | null) {
-    this.activeMilestoneIdSignal.set(id);
+  public setDegradedWereShown(): void {
+    this.degradedWereShownSignal.set(true);
   }
 
-  constructor() {
-    super()
-    effect(() => {
-      const user = this.userService.currentUser();
-      if (user) {
-        this.loadProjects();
-      } else {
-        this.allProjectsPool.set([]);
-      }
-    });
+  public setActiveProjectId(id: string | null): void {
+    this.activeProjectIdSignal.set(id);
+  }
+
+  public setActiveMilestoneId(id: string | null): void {
+    this.activeMilestoneIdSignal.set(id);
   }
 
   public getProjectIdByMilestoneId(milestoneId: string | null): string | null {
@@ -127,73 +147,70 @@ export class ProjectService extends BaseDataManager {
     return Math.round((completedPoints / allPoints) * 100);
   }
 
-  public loadProjects(): void {
-    try {
-      this.dataManager.getProjects(this.userService.getCurrentUserId()?? "").subscribe({
-        next: (projects) => this.allProjectsPool.set(projects),
-        error: (err) => console.error('Fehler beim Laden der Projekte:', err)
-      });
-    } catch (e) {
-      console.warn('Projekte konnten nicht geladen werden.');
-    }
-  }
-
-  public updateMilestoneInProject(projectId: string, updatedMilestone: Milestone): Observable<boolean> {
+  public updateMilestoneInProject(projectId: string, updatedMilestone: Milestone): void {
     const currentProject = this.allProjectsPool().find(p => p.id === projectId);
-    if (!currentProject) return of(false);
+    if (!currentProject) return;
 
     const updatedMilestones = currentProject.milestones.map(ms =>
       ms.id === updatedMilestone.id ? updatedMilestone : ms
     );
 
     const updatedProject = new Project({ ...currentProject, milestones: updatedMilestones });
-
-    return this.dataManager.updateProject(updatedProject, this.allProjectsPool()).pipe(
-      tap(() => {
-        this.allProjectsPool.update(projects =>
-          projects.map(p => p.id === projectId ? updatedProject : p)
-        );
-      }),
-      map(() => true),
-      catchError(() => of(false))
-    );
+    this.dataManager.updateProject(updatedProject);
   }
 
   /**
    * Speichert das fertig berechnete Projekt ab.
    */
-  public saveCalculatedProject(project: Project): Observable<Project> {
+  public saveCalculatedProject(project: Project): void {
     project.userId = this.userService.getCurrentUserId() ?? "";
+    this.ignoreSuggestions(project.title, project.area, this.degradedWereShownSignal());
+
+    this.dataManager.createProject(project);
     this.noteService.updateNoteStatus(project.ideaId, true);
-    this.ignoreSuggestions(project.title, project.area, this.degradedWereShownSignal())
-    
-    return this.dataManager.createProject(project, this.allProjectsPool()).pipe(
-      tap((savedProject) => {
-        this.allProjectsPool.update(projects => [...projects, savedProject]);
-        this.noteService.updateNoteStatus(project.ideaId, true);
-      })
-    );
   }
 
   /**
    * Aktualisiert ein bestehendes Projekt (für den Edit-Mode)
    */
-  public updateCalculatedProject(updatedProject: Project): Observable<Project | undefined> {
-   this.ignoreSuggestions(updatedProject.title, updatedProject.area, this.degradedWereShownSignal())
-
-    return this.dataManager.updateProject(updatedProject, this.allProjectsPool()).pipe(
-      tap(() => {
-        this.allProjectsPool.update(projects =>
-          projects.map(p => p.id === updatedProject.id ? updatedProject : p)
-        );
-      })
-    );
+  public updateCalculatedProject(updatedProject: Project): void {
+    this.ignoreSuggestions(updatedProject.title, updatedProject.area, this.degradedWereShownSignal());
+    this.dataManager.updateProject(updatedProject);
   }
 
   public removeProject(projectId: string): void {
-    const currentPool = this.allProjectsPool();
-    this.allProjectsPool.update(projects => projects.filter(p => p.id !== projectId));
-    this.dataManager.deleteProject(projectId, currentPool).subscribe();
+    this.dataManager.deleteProject(projectId);
+  }
+
+  // ==========================================
+  // MITGLIEDER-VERWALTUNG (Projekt-Grenzbereich)
+  // ==========================================
+
+  public addMemberToProject(projectId: string | null, member: UserModel | UserSummary, projectRole: ProjectRole): void {
+    if (projectId) {
+      this.dataManager.addMemberToProject(projectId, member, projectRole);
+    }
+  }
+
+  public removeMemberFromProject(projectId: string | null, userId: string): void {
+    if (projectId) {
+      this.dataManager.removeMemberFromProject(projectId, userId);
+    }
+  }
+
+  /** 📦 Liefert die UserModel[] aus dem aktiven Projekt-Signal */
+  public getProjectUsersSignal(projectId: string | null): Signal<UserModel[]> {
+    return computed(() => {
+      if (!projectId) return [];
+      const project = this.allProjectsPool().find(p => p.id === projectId);
+      return project ? project.teamMembers.map(m => m.user) : [];
+    });
+  }
+
+  /** 📦 Fallback-Methode, falls noch alte Komponenten ein Observable erwarten */
+  public getProjectUsers$(projectId: string | null): Observable<UserModel[]> {
+    const users = this.getProjectUsersSignal(projectId)();
+    return of(users);
   }
 
   // ==========================================
@@ -220,7 +237,7 @@ export class ProjectService extends BaseDataManager {
     if (!userId || !milestone) return;
 
     if (milestone.source === 'KI') {
-      this.dataManager.trackMilestoneSelection(projectTitle, projectArea, milestoneTitle, userId).subscribe();
+      this.dataManager.trackMilestoneSelection(projectTitle, projectArea, milestoneTitle, userId);
     }
   }
 
@@ -230,7 +247,7 @@ export class ProjectService extends BaseDataManager {
       ...(this._aiSuggestionsSignal()?.degraded || [])
     ];
     const milestone = allSuggestions.find(m => m.title === milestoneTitle);
-    
+
     this._aiSuggestionsSignal.update(model => {
       if (!model) return null;
       return {
@@ -245,23 +262,25 @@ export class ProjectService extends BaseDataManager {
     this.degradedMilestones.set([...this.degradedMilestones(), milestoneTitle]);
 
     if (milestone.source === 'KI') {
-      this.dataManager.trackMilestoneDegradation(projectTitle, projectArea, milestoneTitle, userId).subscribe();
+      this.dataManager.trackMilestoneDegradation(projectTitle, projectArea, milestoneTitle, userId);
     }
   }
 
-  public ignoreSuggestions(projectTitle: string, projectArea: string, allMilestoneswereShown: boolean) {
+  public ignoreSuggestions(projectTitle: string, projectArea: string, allMilestoneswereShown: boolean): void {
     const userId = this.userService.getCurrentUserId();
-    if (!userId || !this._aiSuggestionsSignal) return;
+    if (!userId || !this._aiSuggestionsSignal()) return;
 
     const visibleSuggestions = allMilestoneswereShown
-      ? [...(this._aiSuggestionsSignal()?.recommended) ?? [], ...(this._aiSuggestionsSignal()?.degraded) ?? []]
+      ? [...(this._aiSuggestionsSignal()?.recommended ?? []), ...(this._aiSuggestionsSignal()?.degraded ?? [])]
       : this._aiSuggestionsSignal()?.recommended ?? [];
 
     const titles = visibleSuggestions
       .filter(milestone => milestone.source === 'KI')
       .map(milestone => milestone.title);
 
-    this.dataManager.trackMilestoneIgnorance(projectTitle, projectArea, userId, titles).subscribe();
+    if (titles.length > 0) {
+      this.dataManager.trackMilestoneIgnorance(projectTitle, projectArea, userId, titles);
+    }
   }
 
   public loadMilestoneSuggestions(title: string, area: string): void {
@@ -293,12 +312,12 @@ export class ProjectService extends BaseDataManager {
           this.notificationService.showNotification(
             'Globale Statistiken sind im Offline-Modus nicht verfügbar. 🔌',
             'info'
-          ); 
+          );
         } else {
           this.notificationService.showNotification(
             'Fehler beim Laden der Dashboard-Statistiken.',
             'error'
-          ); 
+          );
         }
       }
     });
@@ -306,15 +325,66 @@ export class ProjectService extends BaseDataManager {
 
   public cleanSuggestions(): void {
     this._aiSuggestionsSignal.set({ recommended: [], degraded: [] });
-    this.degradedMilestones.set([]);          
-    this.degradedWereShownSignal.set(false);  
+    this.degradedMilestones.set([]);
+    this.degradedWereShownSignal.set(false);
   }
 
-public override resetData(): void {
-    this.allProjectsPool.set([]);
+/** 🛡️️ Universelle Rechte-Prüfung für Projekte */
+/** 🛡 Universelle Rechte-Prüfung für Projekte (mit Diagnose) */
+  public hasPermission(projectId: string | null, action: UIActionIntent): boolean {
+    const currentUserId = this.userService.getCurrentUserId();
+    if (!currentUserId || !projectId) {
+      console.warn('🕵️‍♂️ [Permission Check] Abgebrochen: UserID oder ProjectID fehlt.', { currentUserId, projectId });
+      return false;
+    }
+
+    const currentProject = this.allProjectsPool().find(p => p.id === projectId);
+    if (!currentProject) {
+      console.warn('🕵️‍♂️ [Permission Check] Projekt im Pool nicht gefunden! ID:', projectId);
+      return false;
+    }
+
+    const members = currentProject.teamMembers || [];
+    const myBinding = members.find(m => {
+      const memberUserId = typeof m.user === 'object' ? m.user?.id : m.user;
+      return memberUserId === currentUserId;
+    });
+
+    const isOwner = currentProject.userId === currentUserId;
+    const systemRole = this.userService.currentUser()?.departmentRole ?? "";
+
+    // 🔍 INSPEKTION: Das verrät uns die Konsole im Browser:
+    console.log('🕵️‍♂️ [Permission Inspection]', {
+      projectId: currentProject.id,
+      projectTitle: currentProject.title,
+      projectOwnerId: currentProject.userId,
+      currentUserId: currentUserId,
+      isOwner: isOwner,
+      teamMembersCount: members.length,
+      allMembersRaw: members,
+      myFoundBinding: myBinding,
+      myProjectRole: myBinding?.projectRole,
+      systemRole: systemRole,
+      requestedAction: action
+    });
+
+    const result = this.permissionService.canUserPerformAction(action, {
+      isOwner: isOwner,
+      contextRole: myBinding?.projectRole,
+      systemRole: systemRole
+    });
+
+    console.log(`🛡 [Permission Result] Ist erlaubt für '${action}'? ->`, result);
+
+    return result;
+  }
+    
+  // Reset-Hook für Ausloggen / Auth-Reset
+  public override resetData(): void {
     this.dashboardStatsSignal.set(null);
     this.degradedMilestones.set([]);
     this.activeMilestoneIdSignal.set(null);
+    this.activeProjectIdSignal.set(null);
     this.cleanSuggestions();
   }
 }

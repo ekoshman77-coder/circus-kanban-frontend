@@ -5,7 +5,10 @@ import { Router, RouterLink } from '@angular/router';
 import { UserService } from '../../../core/services/user/user-service';
 import { UniversalPopupComponent } from '../../../core/shared/components/universal-popup-component/universal-popup-component';
 import { NotificationService } from '../../../core/services/notification/notification-service';
-import { ApprovalPollingService } from '../../../core/services/admin/approval-polling-service';
+import { UserStatusPollingService } from '../../../core/services/admin/user-status-polling-service';
+import { DraftService } from '../../../core/services/draft-chains/draft-service';
+import { switchMap } from 'rxjs';
+import { AppStateService } from '../../../core/services/app-state/app-state-service';
 
 @Component({
   selector: 'app-welcome',
@@ -16,9 +19,11 @@ import { ApprovalPollingService } from '../../../core/services/admin/approval-po
 })
 export class WelcomeComponent implements OnInit {
   public userService = inject(UserService);
-  private notificationService = inject(NotificationService); 
-  private approvalService = inject(ApprovalPollingService)
+  private notificationService = inject(NotificationService);
+  private approvalService = inject(UserStatusPollingService);
+  private draftService = inject(DraftService)
   private router = inject(Router);
+  private appStateService = inject(AppStateService)
 
   public registerForm = new FormGroup({
     username: new FormControl("", Validators.required),
@@ -44,16 +49,16 @@ export class WelcomeComponent implements OnInit {
     this.showPassword.update(value => !value);
   }
 
- constructor() {
+  constructor() {
     // 🎯 REAKTIVER EFFEKT: Lauscht NUR auf das flüchtige Freischaltungs-Signal!
     effect(() => {
       if (this.approvalService.justApproved()) {
         const user = this.userService.currentUser();
         console.log('🎉 Warteraum-Erfolg! Komponente leitet weiter...');
-        
+
         this.router.navigate(['/todopage']);
         this.notificationService.showNotification(
-          `Willkommen an Bord, ${user?.firstName}! Dein Account wurde freigeschaltet. 🎉`, 
+          `Willkommen an Bord, ${user?.firstName}! Dein Account wurde freigeschaltet. 🎉`,
           'success'
         );
       }
@@ -90,7 +95,7 @@ export class WelcomeComponent implements OnInit {
     return currentInput === '';
   });
 
-public onLogin(): void {
+  public onLogin(): void {
     const name = (this.registerForm.get("username")?.value ?? "").trim();
     const password = (this.registerForm.get("password")?.value ?? "").trim();
 
@@ -106,15 +111,18 @@ public onLogin(): void {
     this.userService.login(name, password).subscribe({
       next: (user) => {
         if (!user) {
-          this.isLoading.set(false); 
+          this.isLoading.set(false);
           return;
         }
+        
+        this.appStateService.initializeUserSession()
+
         this.saveUserToRecent(user.username);
         this.errorMessage.set('');
         this.registerForm.reset();
         this.isLoading.set(false);
         this.popupProcessedFor.set(null);
-
+        
         // 🚀 WEITERLEITUNG WEGEN LOGIN: 
         // Wenn der User sich einloggt UND bereits approved ist, leiten wir IHN HIER DIREKT WEITER!
         if (user.isApproved) {
@@ -146,29 +154,31 @@ public onLogin(): void {
     this.popupProcessedFor.set(null)
   }
 
-public onLogout(): void {
-  this.popupProcessedFor.set("logout");
+  public onLogout(): void {
+    this.popupProcessedFor.set("logout");
+    this.isLoading.set(true);
 
-  this.userService.logout().subscribe({
-    next: (canProceed) => {
-      // Wenn das Logout erfolgreich war (true) – egal ob direkt oder beim 2. Mal –
-      // setzen wir den Zustand der Komponente wieder zurück.
-      if (canProceed) {
+    // 1. Zuerst alle Labor-Drafts via Bypass an den Supervisor senden
+    this.draftService.delegateAllLaborDraftsToSupervisor().pipe(
+      switchMap(() => {
+        // 2. Erst wenn der Transfer eingeleitet/erfolgreich ist -> Logout ausführen
+        return this.userService.logout();
+      })
+    ).subscribe({
+      next: (canProceed) => {
+        this.isLoading.set(false);
+        if (canProceed) {
+          this.popupProcessedFor.set(null);
+        }
+      },
+      error: (err) => {
+        console.error('❌ Fehler beim Übertragen der Praktikanten-Entwürfe:', err);
+        this.isLoading.set(false);
         this.popupProcessedFor.set(null);
-      } else {
-        // Falls canProceed 'false' ist, bedeutet das: 
-        // Der Service hat ungespeicherte Daten gefunden und blockiert.
-        // Das Popup öffnet sich automatisch über das HTML (@if(logoutWarnings())).
-        // popupProcessedFor bleibt auf 'logout', damit onContinue() weiß, was zu tun ist.
       }
-    },
-    error: (err) => {
-      // Da der Service im catchError ohnehin ein 'of(true)' zurückgibt,
-      // landen wir hier fast nie. Aber falls doch was Unvorhergesehenes passiert:
-      this.popupProcessedFor.set(null);
-    }
-  });
-}
+    });
+  }
+
   public onRegister(): void {
     // 1. Auslesen aller Werte über das coole Destructuring, das wir besprochen haben
     const { username, firstName, lastName, password, } = this.registerForm.value;
@@ -215,6 +225,7 @@ public onLogout(): void {
 
         // 🪄 Der magische Reset, den du herausgefunden hast!
         this.registerForm.reset();
+        this.appStateService.initializeUserSession()
         this.isLoading.set(false);
       },
       error: (err: string) => {

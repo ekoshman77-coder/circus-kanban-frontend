@@ -1,10 +1,16 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { UserService } from '../user/user-service';
-import { AiRepository, PlannerRecommendationDetail, PlannerRecommendationPayload, PlannerRecommendationsResponse, RejectedTodoFeedback } from '../../repositories/ai-repository';
+import {
+  AiRepository,
+  PlannerRecommendationDetail,
+  PlannerRecommendationsResponse,
+  RejectedTodoFeedback
+} from '../../repositories/ai-repository';
 import { Todo } from '../../models/todo';
-import { delay, Observable, tap } from 'rxjs';
+import { ConnectionService } from '../connection/connection-service';
 import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 import { RecommendationResult, RejectReason } from '../../models/recommendation-result';
+import { PlannerDataManagerService } from './planner-data-manager-service';
 
 export interface RecommendedTodoItem {
   todo: Todo;
@@ -18,45 +24,39 @@ export interface RecommendedTodoItem {
 export class PlannerService extends BaseDataManager {
   private userService = inject(UserService);
   private aiRepository = inject(AiRepository);
+  private connectionService = inject(ConnectionService);
+  private plannerDataManager = inject(PlannerDataManagerService);
 
-  /** Signal für die Runden-ID der aktuellen Empfehlungen */
-  public activeRoundId = signal<string | null>(null);
-
-  /** Signal für die Liste der empfohlenen To-Dos (max. 2) */
-  public recommendations = signal<RecommendedTodoItem[]>([]);
-
-  /** Signal für den Ladezustand */
-  public isLoading = signal<boolean>(false);
+  public readonly activeRoundId = signal<string | null>(null);
+  public readonly recommendations = signal<RecommendedTodoItem[]>([]);
+  public readonly isLoading = signal<boolean>(false);
 
   /**
-   * Lädt die 2 Aufgabenempfehlungen basierend auf Energie und Arbeitszeit
+   * Lädt die Aufgabenempfehlungen der KI (Nur Online verfügbar)
    */
   public loadSmartRecommendation(energy: string, timeLeft: number): void {
-    console.log("PlannerService:: Start loading recommendation", { energy, timeLeft });
+    if (this.connectionService.isOffline()) {
+      console.warn('⚡ [PlannerService] Empfehlungen können offline nicht geladen werden.');
+      this.isLoading.set(false);
+      return;
+    }
+
     const currentUserId = this.userService.getCurrentUserId();
     this.isLoading.set(true);
 
-    const payload: PlannerRecommendationPayload = {
-      userId: currentUserId ?? "default-user",
-      userEnergy: (energy || 'MEDIUM').toUpperCase(), // 👈 Großschreibung erzwingen!
-      workingTimeLeft: Number(timeLeft) || 8          // 👈 Sicherstellen, dass es eine Number ist
-    };
-
-    console.log("Sending Payload to Backend:", payload); this.aiRepository.getPlannerRecommendation({
-      userId: currentUserId ?? "",
-      userEnergy: energy,
-      workingTimeLeft: timeLeft
-    })
+    this.aiRepository
+      .getPlannerRecommendation({
+        userId: currentUserId ?? '',
+        userEnergy: energy,
+        workingTimeLeft: timeLeft
+      })
       .subscribe({
         next: (response: PlannerRecommendationsResponse) => {
-          console.log("PlannerService:: recommendation response", response);
-
           this.activeRoundId.set(response.roundId);
 
-          // Mappe Server-Vorschläge in Domain-Objekte
           const mappedItems: RecommendedTodoItem[] = response.recommendations
-            .filter(rec => rec.todo !== null)
-            .map(rec => ({
+            .filter((rec) => rec.todo !== null)
+            .map((rec) => ({
               todo: new Todo(rec.todo!),
               plannerDetails: rec.plannerDetails,
               modeCode: rec.modeCode
@@ -73,78 +73,59 @@ export class PlannerService extends BaseDataManager {
   }
 
   /**
-   * Sendet das Runden-Feedback
+   * Sendet das Runden-Feedback (Optimistisch & Offline-Safe über DataManager)
    */
-  /**
-   * Sendet das Runden-Feedback
-   */
-/**
- * Sendet das Runden-Feedback direkt ans Backend (void)
- */
-public sendFeedback(feedback: RecommendationResult): void { // 👈 void statt Observable<void>
-  const currentUserId = this.userService.getCurrentUserId();
-  const roundId = this.activeRoundId();
+  public sendFeedback(feedback: RecommendationResult): void {
+    const currentUserId = this.userService.getCurrentUserId() ?? '';
+    const roundId = this.activeRoundId() ?? '';
 
-  if (!roundId) {
-    console.warn('Keine aktive roundId vorhanden!');
+    this.isLoading.set(true);
+
+    // 1. Snooze-Aktionen sofort lokal ausführen & in Queue schieben
+    feedback.rejections
+      .filter((todo) => todo.reason === 'snooze')
+      .forEach((it) => {
+        this.snoozeRecommendedTodo(it.todoId, 30);
+      });
+
+    // 2. Ablehnungen filtern
+    const rejectedTodos: RejectedTodoFeedback[] = feedback.rejections
+      .filter((todo): todo is { todoId: string; reason: Exclude<RejectReason, 'snooze'> } => todo.reason !== 'snooze')
+      .map((reject) => ({
+        todoId: reject.todoId,
+        rejectReason: reject.reason
+      }));
+
+    // 3. Feedback in die Queue schieben
+    this.plannerDataManager.queueFeedback(
+      currentUserId,
+      roundId,
+      feedback.selectedTodoId ?? null,
+      rejectedTodos
+    );
+
+    // 4. UI sofort zurücksetzen (Zero-Latency)
+    this.recommendations.set([]);
+    this.activeRoundId.set(null);
+    this.isLoading.set(false);
   }
 
-  this.isLoading.set(true);
+  /**
+   * Ein einzelnes Todo snoozen (Lokales UI-Update + Queue)
+   */
+  public snoozeRecommendedTodo(todoId: string, durationInMin: number): void {
+    // 1. Sofort aus lokaler Ansicht entfernen
+    this.recommendations.update((list) => list.filter((item) => item.todo.id !== todoId));
 
-  // 1. Snooze-Aktionen sofort ausführen
-  feedback.rejections
-    .filter(todo => todo.reason === 'snooze')
-    .forEach(it => {
-      this.snoozyrecommendedTodo(it.todoId, 30).subscribe();
-    });
-
-  // 2. Echte Ablehnungen filtern & typsicher für das Backend mappen
-  const rejectedTodos: RejectedTodoFeedback[] = feedback.rejections
-    .filter((todo): todo is { todoId: string; reason: Exclude<RejectReason, 'snooze'> } => todo.reason !== 'snooze')
-    .map(reject => ({
-      todoId: reject.todoId,
-      rejectReason: reject.reason
-    }));
-
-  // 3. Das KI-Feedback ans Backend senden UND HIER SUBSCRIBEN 🔥
-  this.aiRepository.sendPlannerFeedback({
-    userId: currentUserId ?? "",
-    roundId: roundId ?? "",
-    acceptedTodoId: feedback.selectedTodoId ?? null,
-    rejectedTodos: rejectedTodos
-  })
-    .pipe(
-      delay(800)
-    )
-    .subscribe({ // 👈 Hier schicken wir den HTTP-Call ab!
-      next: () => {
-        console.log('🧠 Runden-Feedback erfolgreich gesendet!');
-        // Ansicht zurücksetzen
-        this.recommendations.set([]);
-        this.activeRoundId.set(null);
-        this.isLoading.set(false);
-      },
-      error: (err) => {
-        console.error('Fehler beim Senden des Runden-Feedbacks:', err);
-        this.isLoading.set(false);
-      }
-    });
-}
+    // 2. Snooze in die Queue schieben
+    this.plannerDataManager.queueSnooze(todoId, durationInMin);
+  }
 
   /**
-   * Ein einzelnes Todo snoozen (entfernt es auch lokal aus den Vorschlägen)
+   * Abwärtskompatible Alias-Methode für bestehenden Code
    */
-  public snoozyrecommendedTodo(todoId: string, durationInMin: number): Observable<void> {
-    return this.aiRepository.snoozyTodo(todoId, durationInMin).pipe(
-      tap({
-        next: () => {
-          console.log("Todo wurde erfolgreich gesnoozt");
-          // Entferne das gesnoozte Todo direkt aus der lokalen Liste
-          this.recommendations.update(list => list.filter(item => item.todo.id !== todoId));
-        },
-        error: (err) => console.error("Fehler beim Snoozen", err)
-      })
-    );
+  public snoozyrecommendedTodo(todoId: string, durationInMin: number): void {
+    this.snoozeRecommendedTodo(todoId, durationInMin);
   }
 
   public override resetData(): void {
@@ -153,7 +134,11 @@ public sendFeedback(feedback: RecommendationResult): void { // 👈 void statt O
     this.isLoading.set(false);
   }
 
-  public clearRecommendations() {
-    this.resetData()
+  public clearRecommendations(): void {
+    this.resetData();
+  }
+
+  public override checkUnsavedData(): string | null {
+    return null;
   }
 }

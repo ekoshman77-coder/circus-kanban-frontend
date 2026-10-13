@@ -18,6 +18,11 @@
       (click)="changeTab('permissions')">
       🔐 Permissions
     </button>
+    <button
+      [class.active]="activeTab() === 'ideas'"
+      (click)="changeTab('ideas')">
+      💡 Ideen
+    </button>
   </div>
 
   <!-- Der dynamische Content-Bereich mit individuellem Gradient-Glass-Look -->
@@ -30,6 +35,9 @@
     }
     @if (activeTab() === 'permissions') {
       <app-permissions-component></app-permissions-component>
+    }
+    @if (activeTab() === 'ideas') {
+      <app-admin-ideas-tab-component></app-admin-ideas-tab-component>
     }
   </div>
 </div>

@@ -1,6 +1,6 @@
 :host {
   position: relative !important;
-  z-index: 9999 !important; /* Steht über Einladungen und Todos */
+  z-index: 100 !important; /* Steht über Einladungen und Todos */
   display: inline-block;
 }
 

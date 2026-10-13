@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { TodoService } from '../../../core/services/todo/todo-service'; // Pfad prüfen!
 import { Todo } from '../../../core/models/todo';
 import { FocusDataManagerService } from '../../../core/services/focus/focus-data-manager-service';
+import { FocusService } from '../../../core/services/focus/focus-service';
 
 /**
  * FocusTimerComponent steuert die Logik des Pomodoro-Timers.
@@ -19,7 +20,7 @@ import { FocusDataManagerService } from '../../../core/services/focus/focus-data
 })
 export class FocusTimerComponent implements OnDestroy {
   private todoService = inject(TodoService);
-  private focusDataManager = inject(FocusDataManagerService);
+  private focusService = inject(FocusService);
 
   // Alle offenen To-Dos für das Dropdown aus deinem reaktiven Service-Signal
   protected openTodos = this.todoService.openTodosOnly;
@@ -108,35 +109,21 @@ export class FocusTimerComponent implements OnDestroy {
   /**
    * Setzt den Timer wieder zurück und schickt das Todo zum server für Bearbeitung.
    */
-  private handleTimerFinished(): void {
+private handleTimerFinished(): void {
     this.pauseTimer();
     const todo = this.selectedTodo();
     
     if (todo) {
-      this.focusDataManager.recordCompletedPomodoro(todo.id).subscribe({
-        next: (result) => {
-          if (result) {
-            this.isSyncOffline.set(false);
-          } else {
-            this.isSyncOffline.set(true);
-          }
-          
-          // 🎉 Visuelle Feier starten!
-          this.showSuccessCelebration.set(true);
-          
-          // ❌ DAS TIMEOUT HABEN WIR HIER REAUSGEWORFEN! 
-          // Das Pop-up bleibt, bis du selbst klickst.
-        },
-        error: (err) => {
-          this.isSyncOffline.set(true);
-          this.showSuccessCelebration.set(true);
-        }
-      });
+      // 🚀 Rein in die Queue, völlig ohne Subscribe/Callback!
+      this.focusService.recordCompletedPomodoro(todo);
+      
+      // 🎉 Sofortiges Zero-Latency Feedback für die UI
+      this.showSuccessCelebration.set(true);
     }
     
     this.totalSecondsLeft.set(this.DEFAULT_TIME);
   }
-
+  
   ngOnDestroy(): void {
     this.pauseTimer();
     document.title = 'Schulung To-Do App'; // Beim Verlassen der Seite den Tab aufräumen

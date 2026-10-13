@@ -107,10 +107,10 @@ describe('TodoService - Board Filter Tests (Vitest)', () => {
     });
 
     describe('Synchrone Hilfsmethoden', () => {
-        it('sollte die Fibonacci-Sequenz bis zum Limit korrekt generieren', () => {
-            service = TestBed.inject(TodoService); // Service hier erstellen
-            const seq = service.initFibonacciSequence(10);
-            expect(seq).toEqual([1, 2, 3, 5, 8]);
+        it('sollte die Fibonacci-Sequenz im Constructor korrekt initialisieren', () => {
+            service = TestBed.inject(TodoService);
+            // testet das öffentliche Feld, das bis Limit 40 geht [1, 2, 3, 5, 8, 13, 21, 34]
+            expect(service.fibonacciSequence).toEqual([1, 2, 3, 5, 8, 13, 21, 34]);
         });
 
         it('sollte ein Todo anhand der ID aus todosSignal finden', () => {
@@ -142,28 +142,33 @@ describe('TodoService - Board Filter Tests (Vitest)', () => {
 
             // 1. Daten & Mocks vorbereiten
             allTodosPoolMock.set([initialTodo]);
-            dataManagerMock.updateTodo = vi.fn().mockReturnValue(of([updatedTodo]));
 
-            // 2. Service wird in "Echtzeit" geboren. Die Effekte laufen einmal ruhig an.
+            // Der Mock muss auch den allTodosPoolMock-Signal-Wert ersetzen/updaten!
+            dataManagerMock.updateTodo = vi.fn().mockImplementation((todo: Todo) => {
+                allTodosPoolMock.update(pool => pool.map(t => t.id === todo.id ? todo : t));
+                return of([todo]);
+            });
+
+            // 2. Service wird in "Echtzeit" geboren
             service = TestBed.inject(TodoService);
 
-            // 3. JETZT ERST aktivieren wir die Zeitmaschine für die updateTodo-Methode!
+            // 3. Zeitmaschine für die updateTodo-Methode aktivieren
             vi.useFakeTimers();
 
-            // 4. Methode ausführen (isDragAndDrop = false -> 300ms Delay!)
+            // 4. Methode ausführen (isDragAndDrop = false -> 300ms Delay)
             service.updateTodo(updatedTodo, false);
 
-            // Sofortige Prüfung (Timer läuft im Hintergrund)
+            // Sofortige Prüfung (Timer läuft noch)
             expect(allTodosPoolMock()).toContainEqual(initialTodo);
 
             // 🕒 Zeitmaschine 300ms vorspulen
             vi.advanceTimersByTime(300);
 
-            // 🧼 Microtasks von RxJS einmal durchrutschen lassen
+            // 🧼 Microtasks/Promises auflösen
             await Promise.resolve();
 
             // 5. Überprüfung
-            expect(dataManagerMock.updateTodo).toHaveBeenCalled();
+            expect(dataManagerMock.updateTodo).toHaveBeenCalledWith(updatedTodo);
             expect(allTodosPoolMock().length).toBe(1);
             expect(allTodosPoolMock()[0].id).toBe('todo-1');
             expect(allTodosPoolMock()[0].task).toBe('neue Aufgabe');
