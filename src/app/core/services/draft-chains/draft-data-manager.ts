@@ -1,4 +1,4 @@
-import { inject, Injectable, Signal } from '@angular/core';
+import { computed, inject, Injectable, Signal } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { tap, map } from 'rxjs/operators';
 import { BaseQueueDataManager } from '../central-queue/base-queue-data-manager';
@@ -18,7 +18,26 @@ export class DraftQueueDataManager extends BaseQueueDataManager<DraftStateProvid
   private draftRepository = inject(DraftRepository);
   private userService = inject(UserService);
 
+/**
+   * 🎯 Modus-sensitives Signal für die UI:
+   * - Im Labor-Modus: Zeigt NUR Sandbox-Drafts (`origin === 'LABOR'`)
+   * - Im Live-Modus: Zeigt NUR echte Live-Drafts (`origin !== 'LABOR'`)
+   */
   public get draftChainsSignal(): Signal<DraftChain[]> {
+    const rawSignal = this.getSignal() as Signal<DraftChain[]>;
+    const isLabor = this.queueService.isLaborMode;
+
+    return computed(() => {
+      const allDrafts = rawSignal();
+      if (isLabor()) {
+        return allDrafts.filter(chain => chain.origin === 'LABOR');
+      } else {
+        return allDrafts.filter(chain => chain.origin !== 'LABOR');
+      }
+    });
+  }
+
+  public get allDraftChainsSignal(): Signal<DraftChain[]> {
     return this.getSignal() as Signal<DraftChain[]>;
   }
 

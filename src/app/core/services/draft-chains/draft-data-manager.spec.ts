@@ -1,4 +1,3 @@
-import { TestBed } from '@angular/core/testing';
 import { DraftQueueDataManager } from './draft-data-manager';
 import { CentralQueueService } from '../central-queue/central-queue-service';
 import { DraftRepository } from '../../repositories/draft-repository';
@@ -11,6 +10,7 @@ import { signal } from '@angular/core';
 import { vi, describe, beforeEach, it, expect } from 'vitest';
 import { LocalStorageService } from '../user/local-storage-service';
 import { mockLocalStorageService } from '@tests/helpers/test-providers';
+import { TestBed } from '@angular/core/testing';
 
 describe('DraftQueueDataManager', () => {
   let manager: DraftQueueDataManager;
@@ -28,6 +28,7 @@ describe('DraftQueueDataManager', () => {
     laborModeExitedSubject = new Subject<void>();
 
     mockQueueService = {
+      isLaborMode: signal(false), // 👈 NEU: isLaborMode Signal im Mock ergänzt!
       draftChainCreated$: draftChainCreatedSubject.asObservable(),
       laborModeExited$: laborModeExitedSubject.asObservable(),
       registerService: vi.fn(),
@@ -67,6 +68,8 @@ describe('DraftQueueDataManager', () => {
   });
 
   it('sollte promoteLaborDraftsToRealWorld Labor-Items flushen und Sandbox zurücksetzen', () => {
+    mockQueueService.isLaborMode.set(true); // 👈 Für Labor-Tests isLaborMode auf true setzen
+
     const laborDraft = new DraftChain({
       id: 'labor_1',
       title: 'Labor Notiz',
@@ -95,6 +98,8 @@ describe('DraftQueueDataManager', () => {
   });
 
   it('sollte exportDraftPackageJson die Labor-Entwürfe als JSON-String ausgeben', () => {
+    mockQueueService.isLaborMode.set(true); // 👈 Für Labor-Tests isLaborMode auf true setzen
+
     const laborDraft = new DraftChain({
       id: 'labor_1',
       title: 'Export Test',
@@ -143,5 +148,35 @@ describe('DraftQueueDataManager', () => {
     laborModeExitedSubject.next();
 
     expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  // 🧪 NEUER TEST: Filterung je nach isLaborMode Signal prüfen
+  it('sollte draftChainsSignal je nach isLaborMode filtern', () => {
+    const liveDraft = new DraftChain({
+      id: 'live_1',
+      title: 'Live Draft',
+      origin: 'LOCAL',
+      items: []
+    });
+
+    const laborDraft = new DraftChain({
+      id: 'labor_1',
+      title: 'Labor Draft',
+      origin: 'LABOR',
+      items: []
+    });
+
+    manager.saveDraftChain(liveDraft);
+    manager.saveDraftChain(laborDraft);
+
+    // Live-Modus:
+    mockQueueService.isLaborMode.set(false);
+    expect(manager.draftChainsSignal().length).toBe(1);
+    expect(manager.draftChainsSignal()[0].id).toBe('live_1');
+
+    // Labor-Modus:
+    mockQueueService.isLaborMode.set(true);
+    expect(manager.draftChainsSignal().length).toBe(1);
+    expect(manager.draftChainsSignal()[0].id).toBe('labor_1');
   });
 });

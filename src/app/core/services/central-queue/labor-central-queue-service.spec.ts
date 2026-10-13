@@ -7,20 +7,16 @@ import { IQueueHandler } from './queue-handler-interface';
 import { LocalStorageService } from '../user/local-storage-service';
 import { AUTH_CONTEXT, IAuthContext } from '../user/auth-context';
 import { TestBed } from '@angular/core/testing';
+import { mockLocalStorageService } from '@tests/helpers/test-providers';
 
 describe('LaborCentralQueueService', () => {
   let service: LaborCentralQueueService;
   let mockHandler1: Partial<IQueueHandler>;
   let mockHandler2: Partial<IQueueHandler>;
-  let mockLocalStorageService: Partial<LocalStorageService>;
   let mockAuthContext: Partial<IAuthContext>;
+  let registryMap: Map<QueueHandlerName, IQueueHandler>;
 
   beforeEach(() => {
-    mockLocalStorageService = {
-      getItem: vi.fn().mockReturnValue(null),
-      setItem: vi.fn(),
-      removeItem: vi.fn()
-    };
 
     mockAuthContext = {
       getCurrentUserId: vi.fn().mockReturnValue('user-labor-123'),
@@ -37,19 +33,24 @@ describe('LaborCentralQueueService', () => {
       refreshDataIfStale: vi.fn().mockReturnValue(throwError(() => new Error('Server-Fehler')))
     };
 
+    // 1. Erstelle die Map für den Konstruktor
+    registryMap = new Map<QueueHandlerName, IQueueHandler>();
+    registryMap.set(QueueHandlerName.DRAFT, mockHandler1 as IQueueHandler);
+    registryMap.set(QueueHandlerName.USER_SETTINGS, mockHandler2 as IQueueHandler);
+
+    // 2. Nutze useFactory, damit Angular weiß, wie die Map in den Konstruktor gelagert wird
     TestBed.configureTestingModule({
       providers: [
-        LaborCentralQueueService,
+        {
+          provide: LaborCentralQueueService,
+          useFactory: () => new LaborCentralQueueService(registryMap)
+        },
         { provide: LocalStorageService, useValue: mockLocalStorageService },
         { provide: AUTH_CONTEXT, useValue: mockAuthContext }
       ]
     });
 
     service = TestBed.inject(LaborCentralQueueService);
-
-    // Registriere 2 Test-Handler in der Registry
-    (service as any).registry.set(QueueHandlerName.DRAFT, mockHandler1 as IQueueHandler);
-    (service as any).registry.set(QueueHandlerName.USER_SETTINGS, mockHandler2 as IQueueHandler);
   });
 
   it('sollte fetchInitialDataForLabor sequentiell für alle Handler ausführen und Fehler abfangen', () => {

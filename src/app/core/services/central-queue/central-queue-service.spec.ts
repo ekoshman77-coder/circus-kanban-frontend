@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 
 import { CentralQueueService } from './central-queue-service';
 import { LocalStorageService } from '../user/local-storage-service';
@@ -22,7 +22,8 @@ describe('CentralQueueService (Facade)', () => {
 
         mockAuthContext = {
             getCurrentUserId: vi.fn().mockReturnValue('user-123'),
-            isLoggedIn: vi.fn().mockReturnValue(true)
+            isLoggedIn: vi.fn().mockReturnValue(true),
+            onLogout$: new Subject<void>().asObservable() // 👈 HIER onLogout$ im Mock bereitstellen!
         };
 
         TestBed.configureTestingModule({
@@ -35,7 +36,7 @@ describe('CentralQueueService (Facade)', () => {
 
         facadeService = TestBed.inject(CentralQueueService);
     });
-
+    
     it('sollte bootstrapLiveAndSealLabor direkt im Labor-Modus starten und fetchInitialDataForLabor aufrufen', () => {
         const laborInstance = (facadeService as any).activeServiceInstance as LaborCentralQueueService;
         const fetchSpy = vi.spyOn(laborInstance, 'fetchInitialDataForLabor').mockReturnValue(of(true));

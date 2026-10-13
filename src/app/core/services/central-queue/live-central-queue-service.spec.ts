@@ -15,6 +15,7 @@ import { DraftRepository } from '../../repositories/draft-repository';
 import { UserService } from '../user/user-service';
 import { LiveCentralQueueService } from './live-central-queue-service';
 import { CentralQueueService } from './central-queue-service';
+import { mockLocalStorageService } from '@tests/helpers/test-providers';
 
 describe('LiveCentralQueueService - Lawinen-Extraktion, Draft & Recovery (Vitest)', () => {
   let queueService: LiveCentralQueueService;
@@ -23,20 +24,12 @@ describe('LiveCentralQueueService - Lawinen-Extraktion, Draft & Recovery (Vitest
 
   let mockAuthContext: Partial<IAuthContext>;
   let mockConnectionService: Partial<ConnectionService>;
-  let mockLocalStorageService: Partial<LocalStorageService>;
   let mockHandler: IQueueHandler;
 
   let executeSubjects: Subject<any>[];
 
-beforeEach(() => {
+  beforeEach(() => {
     executeSubjects = [];
-
-    mockLocalStorageService = {
-      getItem: vi.fn().mockReturnValue(null),
-      setItem: vi.fn(),
-      removeItem: vi.fn(),
-      register: vi.fn()
-    };
 
     mockConnectionService = {
       isOnline: signal<boolean>(true),
@@ -79,12 +72,12 @@ beforeEach(() => {
     const draftSubject = new Subject<any>();
 
     const mockCentralQueueService = {
+      isLaborMode: signal(false), // 👈 DAS HAT GEFEHLT!
       draftChainCreated$: draftSubject.asObservable(),
       laborModeExited$: new Subject<void>(),
       registerService: vi.fn(),
       enqueue: vi.fn(),
       processQueue: vi.fn(),
-      // 🟢 Durchreichen von reinjectChain an den echten queueService:
       reinjectChain: vi.fn().mockImplementation((items: QueueItem[]) => {
         queueService.reinjectChain(items);
       }),
@@ -123,7 +116,7 @@ beforeEach(() => {
 
     queueService = TestBed.inject(LiveCentralQueueService);
     draftManager = TestBed.inject(DraftQueueDataManager);
-    
+
     // 🟢 Den StateProvider direkt vom Manager beziehen:
     draftProvider = (draftManager as any).stateProvider;
 

@@ -24,7 +24,7 @@ export const authErrorInterceptor: HttpInterceptorFn = (req, next) => {
         
         const userService = injector.get(UserService);
         // 🧼 Lokale Session löschen, damit userService.isLoggedIn() ab jetzt false liefert
-        userService.logout(); 
+        userService.forceLogout(); 
         
         // 🚀 Sofort zurück zur Login-Seite schicken!
         router.navigate(['/']);

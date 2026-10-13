@@ -9,6 +9,7 @@ import { LiveCentralQueueService } from './live-central-queue-service';
 import { LaborCentralQueueService } from './labor-central-queue-service';
 import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 import { AUTH_CONTEXT } from '../user/auth-context';
+import { UserService } from '../user/user-service';
 
 @Injectable({
   providedIn: 'root'
@@ -42,6 +43,11 @@ export class CentralQueueService extends BaseDataManager implements ICentralQueu
 
     // 🛡️ 2. Ausschließlich den benötigten Service instanziieren
     this.bootActiveService();
+
+    this.authContext.onLogout$.subscribe(() => {
+      console.log('🧹 [CentralQueueService] Logout erkannt! Setze Queue & DataManager zurück...');
+      this.resetData();
+    });
   }
 
   public toggleLaborMode(): void {
