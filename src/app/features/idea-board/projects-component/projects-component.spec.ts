@@ -30,6 +30,7 @@ describe('ProjectsComponent (Vitest Edition)', () => {
       ideaId: 'idea-1',
       area: 'Show',
       status: 'Active',
+      departmentId: "dept1",
       content: 'Die große Eröffnungsshow planen'
     });
     // Dummy-Meilenstein verknüpfen (as any um komplexe Interfaces zu umgehen)
@@ -42,7 +43,8 @@ describe('ProjectsComponent (Vitest Edition)', () => {
       ideaId: 'idea-2',
       area: 'Sicherheit',
       status: 'Active',
-      content: 'Löwendressur optimieren'
+      content: 'Löwendressur optimieren',
+      departmentId: "dept1"
     });
 
     sampleProjects = [proj1, proj2];
@@ -52,7 +54,8 @@ describe('ProjectsComponent (Vitest Edition)', () => {
       projectsList: signal<Project[]>(sampleProjects),
       activeProjects: signal<Project[]>(sampleProjects),
       dashboardStats: signal({ totalProjects: 2, totalMilestones: 1, totalTodos: 5 }),
-      removeProject: vi.fn()
+      removeProject: vi.fn(),
+      hasPermission: vi.fn().mockReturnValue(true)
     };
 
     mockTabService = {
@@ -67,7 +70,6 @@ describe('ProjectsComponent (Vitest Edition)', () => {
     };
 
     mockTeamService = {
-      hasPermission: vi.fn().mockReturnValue(true)
     };
 
     // 3. TestBed konfigurieren
@@ -222,14 +224,14 @@ it('sollte den Benutzer direkt auf das Team-Board des Projekts schicken', () => 
   // ==========================================================================
   describe('Benutzerrechte', () => {
     it('sollte true zurückgeben, wenn der TeamService das Löschen erlaubt', () => {
-      mockTeamService.hasPermission.mockReturnValue(true);
+      mockProjectService.hasPermission.mockReturnValue(true);
       const canDelete = component.canDeleteProject('proj-1');
-      expect(mockTeamService.hasPermission).toHaveBeenCalledWith('proj-1', 'PROJECT_DELETE');
+      expect(mockProjectService.hasPermission).toHaveBeenCalledWith('proj-1', 'PROJECT_DELETE');
       expect(canDelete).toBe(true);
     });
 
     it('sollte false zurückgeben, wenn der TeamService das Löschen verweigert', () => {
-      mockTeamService.hasPermission.mockReturnValue(false);
+      mockProjectService.hasPermission.mockReturnValue(false);
       const canDelete = component.canDeleteProject('proj-1');
       expect(canDelete).toBe(false);
     });

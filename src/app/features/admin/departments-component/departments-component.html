@@ -1,49 +1,85 @@
 <div class="department-tab">
   
   <!-- 1. NEUE ABTEILUNG ERSTELLEN -->
-  <div class="create-section">
+  <form [formGroup]="createForm" (ngSubmit)="onCreateDepartment()" class="create-section">
     <h3>🏢 Neue Abteilung gründen</h3>
     <div class="input-group">
+      
       <input 
         type="text" 
-        [(ngModel)]="newDepartmentName" 
+        formControlName="name" 
         placeholder="Name der Abteilung (z.B. Marketing)"
         class="form-input"
-        (keyup.enter)="onCreateDepartment()"
+        [class.is-invalid]="createForm.controls.name.invalid && createForm.controls.name.touched"
       />
-      <button (click)="onCreateDepartment()" class="btn-primary">
+
+      <select formControlName="specialization" class="form-select">
+        <option [value]="null">Keine Spezialisierung</option>
+        @for (specialization of specializations(); track specialization) {
+          <option [value]="specialization">{{ specialization }}</option>
+        }
+
+      </select>
+
+      <button type="submit" [disabled]="createForm.invalid" class="btn-primary">
         ➕ Erstellen
       </button>
+
     </div>
-  </div>
+    
+    <!-- Fehlermeldung bei doppeltem Namen -->
+    @if (createForm.controls.name.errors?.['nameExists'] && createForm.controls.name.touched) {
+      <span class="error-msg">⚠️ Eine Abteilung mit diesem Namen existiert bereits.</span>
+    }
+  </form>
 
   <!-- 2. LISTE DER ABTEILUNGEN -->
-<div class="departments-list">
-  @for(department of departments(); track department.id) {
-    <div class="department-row" [class.is-admin-dept]="department.name === ADMIN_DEPT">
-        
-        @if (idEditing(department)) {
-          <!-- EDITIER-MODUS -->
-          <input 
-            class="editing-name"
-            type="text"
-            [(ngModel)]="editingName"
-            (keyup.enter)="onSaveEdit()"
-            (keyup.escape)="cancelEdit()"
-          />
-          <!-- 💡 HIER: Buttons in eine Gruppe gepackt -->
-          <div class="action-buttons">
-            <button class="save-edit" (click)="onSaveEdit()">💾 Speichern</button>
-            <button class="cancel-edit" (click)="cancelEdit()">❌ Abbrechen</button>
-          </div>
+  <div class="departments-list">
+    @for(department of departments(); track department.id) {
+      <div class="department-row" [class.is-admin-dept]="department.name === ADMIN_DEPT">
+          
+        @if (isEditing(department)) {
+          <!-- EDITIER-MODUS (verwendet editForm) -->
+          <form [formGroup]="editForm" (ngSubmit)="onSaveEdit()" class="edit-group-form">
+            <div class="edit-group">
+              <div class="dept-avatar" [style.background-color]="department.getColorHash()" aria-hidden="true">
+                  {{ department.getInitials() }}
+              </div>
+              <input 
+                #editInput
+                class="editing-name"
+                type="text"
+                formControlName="name"
+                (keyup.escape)="cancelEdit()"
+              />
+              <select formControlName="specialization" class="form-select">
+                @for (specialization of specializations(); track specialization) {
+                  <option [value]="specialization">{{ specialization }}</option>
+                }
+              </select>
+
+            </div>
+
+            <div class="action-buttons">
+              <button type="submit" [disabled]="editForm.invalid" class="save-edit">💾 Speichern</button>
+              <button type="button" class="cancel-edit" (click)="cancelEdit()">❌ Abbrechen</button>
+            </div>
+          </form>
         } @else {
           <!-- ANZEIGE-MODUS -->
+           
           <span class="department-name">
+            <div class="dept-avatar" [style.background-color]="department.getColorHash()" aria-hidden="true">
+               {{department.getInitials()}}
+            </div>
             {{department.name}} 
             @if(department.name === ADMIN_DEPT) { <small class="badge">(System)</small> }
+
+            @if (department.specialization) {
+               <small class="badge spec-badge">⭐ {{ department.specialization }}</small>
+            }
           </span>
           
-          <!-- 💡 HIER: Buttons in eine Gruppe gepackt -->
           <div class="action-buttons">
             @if (department.name !== ADMIN_DEPT) {
               <button class="edit" (click)="startEdit(department)">✏️ Bearbeiten</button>

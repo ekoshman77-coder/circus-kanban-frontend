@@ -30,10 +30,10 @@ export type BoardFilterState = {
  * Das interaktive Herzstück der Team-Zusammenarbeit im edlen Zirkus-Design.
  * 
  * **Hauptaufgaben der Komponente:**
- * * **Statusverwaltung:** Steuert das 5-Spalten-Kanban-System (Workflow-Zustände von BACKLOG bis DONE)[cite: 2, 3].
- * * **Ticket-Lebenszyklus:** Regelt das reaktive Drag & Drop, wendet automatisierte Workflow-Regeln an (z. B. automatisches Zuweisen/Freigeben von Entwicklern)[cite: 3].
- * * **Zuweisung & Bearbeitung:** Verwaltet die Zuweisung von Team-Mitgliedern zu spezifischen Aufgaben[cite: 3].
- * * **Reaktive Filterung:** Filtert Aufgaben nahtlos nach Projekt oder Meilenstein in Echtzeit via Angular Signals[cite: 3].
+ * * **Statusverwaltung:** Steuert das 5-Spalten-Kanban-System (Workflow-Zustände von BACKLOG bis DONE).
+ * * **Ticket-Lebenszyklus:** Regelt das reaktive Drag & Drop, wendet automatisierte Workflow-Regeln an (z. B. automatisches Zuweisen/Freigeben von Entwicklern).
+ * * **Zuweisung & Bearbeitung:** Verwaltet die Zuweisung von Team-Mitgliedern zu spezifischen Aufgaben.
+ * * **Reaktive Filterung:** Filtert Aufgaben nahtlos nach Projekt oder Meilenstein in Echtzeit via Angular Signals.
  */
 @Component({
   selector: 'app-team-board',
@@ -83,7 +83,7 @@ export class TeamBoardComponent implements OnInit {
     return (this.boardFilter().type === 'milestone') ? this.boardFilter().id : ""; 
   });
   
-  public readonly currentProjectMembers = this.teamService.currentProjectMembersSignal;
+  public readonly currentProjectMembers = this.projectService.currentProjectMembersSignal;
 
   /** Extrahiert die zuweisbaren User aus den aktuellen Projekt-Mitgliedern */
   public readonly assignableUsers = computed(() => {
@@ -91,15 +91,6 @@ export class TeamBoardComponent implements OnInit {
   });
 
   /** Prüft, ob der aktuelle User Schreibrechte (Editieren) im aktuellen Projekt besitzt */
-  public readonly canEdit = computed(() => {
-    return this.teamService.hasPermission(this.currentProjectId(), 'TODO_EDIT');
-  });
-
-  /** Prüft, ob der aktuelle User Löschrechte im aktuellen Projekt besitzt */
-  public readonly canDelete = computed(() => {
-    return this.teamService.hasPermission(this.currentProjectId(), 'TODO_DELETE');
-  });
-
   constructor() {
     // Initialisierung: Keinen global aktiven Meilenstein erzwingen
     this.projectService.setActiveMilestoneId(null);
@@ -118,7 +109,7 @@ export class TeamBoardComponent implements OnInit {
     });
 
     // Reaktiv das aktive Projekt synchronisieren, wenn sich der Filter ändert
-    effect(() => {
+effect(() => {
       const filter = this.boardFilter();
       let projectId = "";
 
@@ -128,9 +119,16 @@ export class TeamBoardComponent implements OnInit {
         projectId = this.todoQueryService.getProjectIdByMilestoneId(filter.id) ?? "";
       }
 
-      if (projectId && projectId !== this.teamService.currentProjectId()) {
-        this.teamService.setCurrentProject(projectId);
+      // 1. Projekt-Kontext im zentralen ProjectService setzen/abgleichen
+      if (projectId && projectId !== this.projectService.activeProjectId()) {
+        this.projectService.setActiveProjectId(projectId);
       }
+
+      // 2. Dem TeamService Bescheid geben, damit er die Teammitglieder für dieses Projekt lädt
+      if (projectId) {
+        this.projectService.setActiveProjectId(projectId);
+      }
+
       this.currentProjectId.set(projectId);
     });
   }
@@ -229,7 +227,7 @@ public onTodoDropped(event: CdkDragDrop<any>): void {
   if (!movedViewModel) return;
 
   // 1. Eine saubere Kopie erstellen, um Seiteneffekte zu vermeiden
-  const updatedTodo = Todo.fromTodo(movedViewModel.todo);
+  const updatedTodo = movedViewModel.todo.cloneWith({});
   const targetColumnId = event.container.id;
 
   console.log("-----------------------------------------");
@@ -312,16 +310,10 @@ private handleReviewWorkflow(todo: Todo): void {
 }
 
 private handleDoneWorkflow(movedViewModel: TodoViewModel): void {
-  movedViewModel.todo.teamStatus = 'DONE';
-  movedViewModel.todo.assignedUserId = null; // 🧼 User bei DONE entfernen
-  movedViewModel.todo.completedAt = Date.now();
-
-  // Für das Punkte-Popup übergeben wir das bearbeitete Todo
-  console.log("🟢 Karte geht Richtung DONE. Triggere Punkte-Popup direkt auf dem ViewModel.");
+  console.log("🟢 Karte geht Richtung DONE. Triggere Done-Workflow im ViewModel.");
   
-  // 🎪 Wir delegieren das Popup komplett an das ViewModel der Karte!
-  // Die Karte bleibt physikalisch in ihrer aktuellen Spalte stehen.
-  movedViewModel.onTodoChecked(this.todoService);
+  // 🎯 Saubere Delegation an das ViewModel der Karte:
+  movedViewModel.triggerDoneWorkflow();
 }
 
   /** Bestätigt den tatsächlichen Aufwand im Abschluss-Popup */
@@ -360,7 +352,7 @@ private handleDoneWorkflow(movedViewModel: TodoViewModel): void {
     if (!this.currentProjectId()) {
       return false;
     }
-    return this.teamService.hasPermission(this.currentProjectId(), 'TODO_EDIT');
+    return true;
   }
 
   // --- Modal Popups ---

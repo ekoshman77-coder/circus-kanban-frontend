@@ -1,0 +1,127 @@
+@if (pollingService.graduationPending(); as event) {
+  <div class="modal-overlay">
+    <div class="modal-card">
+
+      <!-- ================= STEP 1: ÜBERSICHT ================= -->
+      @if (currentStep() === 'OVERVIEW') {
+        <div class="modal-header">
+          <div class="badge-container">
+            <span class="badge-icon">🎓</span>
+          </div>
+          <h2>Willkommen im Team, {{ event.user.firstName }}!</h2>
+          <span class="role-badge">{{ event.user.departmentRole }}</span>
+          <p class="subtitle">
+            Deine Rolle wurde erfolgreich aktualisiert.
+          </p>
+        </div>
+
+        <div class="modal-body">
+          <p>
+            Du hast während deiner Sandbox-Phase Entwürfe erstellt. Was möchtest du damit tun?
+          </p>
+
+          <!-- Zusammenfassung (Clean Grid ohne störende Divs) -->
+          <div class="summary-box">
+            <div class="summary-item">
+              <span class="count">{{ itemCounts().totalChains }}</span>
+              <span class="label">Ketten</span>
+            </div>
+            <div class="summary-item">
+              <span class="count">{{ itemCounts().notesCount }}</span>
+              <span class="label">Notizen</span>
+            </div>
+            <div class="summary-item">
+              <span class="count">{{ itemCounts().todosCount }}</span>
+              <span class="label">To-Dos</span>
+            </div>
+            <div class="summary-item">
+              <span class="count">{{ itemCounts().projectsCount }}</span>
+              <span class="label">Projekte</span>
+            </div>
+          </div>
+
+          <!-- Aufklappbare Detail-Liste -->
+          @if (itemCounts().totalChains > 0) {
+            <button class="btn-toggle-details" (click)="toggleDetails()">
+              {{ showDetails() ? '▼ Details verbergen' : '▶ Entwürfe anzeigen' }}
+            </button>
+
+            @if (showDetails()) {
+              <div class="details-list">
+                @for (chain of laborDrafts(); track chain.id) {
+                  <div class="detail-item">
+                    <span class="chain-title">📄 {{ chain.title || 'Unbenannter Entwurf' }}</span>
+                    <span class="chain-badge">{{ chain.items.length }} Aktion(en)</span>
+                  </div>
+                }
+              </div>
+            }
+          }
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn btn-primary" (click)="onPromoteToRealWorld()">
+            🚀 In die Realwelt übernehmen & verarbeiten
+          </button>
+          <button class="btn btn-secondary" (click)="onKeepAsDrafts()">
+            📦 Als normale Entwürfe behalten
+          </button>
+          <button class="btn btn-danger-link" (click)="askForDiscardConfirmation()">
+            🗑️ Sandbox-Daten verwerfen
+          </button>
+        </div>
+      }
+
+      <!-- ================= STEP 2: SICHERHEITSABFRAGE LÖSCHEN ================= -->
+      @if (currentStep() === 'CONFIRM_DISCARD') {
+        <div class="modal-header">
+          <div class="badge-container warning-bg">
+            <span class="badge-icon">⚠️</span>
+          </div>
+          <h2>Bist du absolut sicher?</h2>
+          <p class="subtitle">
+            Diese Aktion löscht {{ itemCounts().totalChains }} Sandbox-Entwurfskette(n) unwiderruflich.
+          </p>
+        </div>
+
+        <div class="modal-actions mt-24">
+          <button class="btn btn-danger" (click)="onConfirmDiscard()">
+            Ja, alles unwiderruflich löschen
+          </button>
+          <button class="btn btn-secondary" (click)="onCancelDiscard()">
+            Abbrechen & zurück
+          </button>
+        </div>
+      }
+
+      <!-- ================= STEP 3: LADE-ZUSTAND ================= -->
+      @if (currentStep() === 'PROCESSING') {
+        <div class="modal-body text-center py-32">
+          <div class="spinner"></div>
+          <h3>Verarbeite deine Entwürfe...</h3>
+          <p class="subtitle">Deine Aktionen werden vorbereitet.</p>
+        </div>
+      }
+
+      <!-- ================= STEP 4: ERFOLG ================= -->
+      @if (currentStep() === 'SUCCESS') {
+        <div class="modal-header">
+          <div class="badge-container success-bg">
+            <span class="badge-icon">🎉</span>
+          </div>
+          <h2>Alles erledigt!</h2>
+          <p class="subtitle">
+            Deine Entwürfe wurden erfolgreich in die Echtzeit-Queue übertragen.
+          </p>
+        </div>
+
+        <div class="modal-actions mt-24">
+          <button class="btn btn-primary" (click)="onCloseWizard()">
+            Super, weiter geht's!
+          </button>
+        </div>
+      }
+
+    </div>
+  </div>
+}

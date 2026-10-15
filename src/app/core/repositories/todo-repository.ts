@@ -9,6 +9,7 @@ import { LoggerService } from '../services/logger/logger-service';
 import { TodoUpdateResponse } from './dto/dto-interface';
 import { ITodoJSON } from './dto/todo-json';
 import { TodoBulkDto } from '../models/todo-bulk';
+import { AdminTodoFilter } from './dto/admin-todo-filter';
 
 
 @Injectable({
@@ -84,35 +85,16 @@ export class TodoRepository {
   }
 
   private mapToTodoClass(json: ITodoJSON): Todo {
-    const todo = new Todo({
-      task: json.task,
-      description: json.description,
-      effort: json.effort,
-      dueDate: json.dueDate,
-      userId: json.userId,
-      usedEffort: json.usedEffort,
-      createdAt: json.createdAt,
-      id: json.id,
-      done: json.done,
-      completedAt: json.completedAt,
-      category: json.category,
-      effortChangesCount: json.effortChangesCount,
-      milestoneId: json.milestoneId,
-      isStarted: json.isStarted ?? false,
-      assignedUserId: json.assignedUserId ?? null,
-      teamStatus: (json.teamStatus as TeamStatus) ?? 'BACKLOG',
-      lastDeveloperId: json.lastDeveloperId?? null
-    });
-    return todo;
+    return Todo.fromJson(json);
   }
-
+  
   /**
    * 🔄 Schickt alle Offline-Änderungen gesammelt ans Kotlin-Backend
    */
   public syncBulkTodos(userId: string, offlineTodos: TodoBulkDto[]): Observable<SyncResult> {
     // Wichtig: userId wird als Query-Param (?userId=...) übergeben, die Liste als JSON-Body
     return this.http.post<SyncResult>(`${bulkApiUrl}?userId=${userId}`, offlineTodos).pipe(
-      map((result) => {
+      map((result: SyncResult) => {
         const mappedList = result.liste.map((json: any) => this.mapToTodoClass(json))
         return {
           gamificationResult: result.gamificationResult,
@@ -168,5 +150,16 @@ export class TodoRepository {
   public getQuickPredictions(modus: 'PAUSE' | 'ACTIVE'): Observable<string[]> {
     const params = new HttpParams().set('modus', modus);
     return this.http.get<string[]>(`${todoApiUrl}/quick-predictions`, { params });
+  }
+
+  public getAdminTodosByFilter(filter: AdminTodoFilter): Observable<ITodoJSON[]> {
+  return this.http.post<ITodoJSON[]>(`${todoApiUrl}/admin/filter`, filter);
+  }
+
+  /**
+   * 👑 Admin: To-Do aus dem Archiv/Papierkorb wiederherstellen
+   */
+  public restoreAdminTodo(id: string): Observable<void> {
+    return this.http.put<void>(`${todoApiUrl}/${id}/restore`, null);
   }
 }  

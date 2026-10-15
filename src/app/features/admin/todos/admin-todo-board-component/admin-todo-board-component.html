@@ -1,0 +1,150 @@
+<div class="admin-board-container">
+
+    <!-- 🌐 1. OFFLINE-BANNER -->
+    @if (!isOnline()) {
+    <div class="banner offline-banner">
+        <span class="icon">📡</span>
+        <div>
+            <strong>Offline-Modus aktiv</strong>
+            <p>Das Admin-Board benötigt eine Verbindung zum Server.</p>
+        </div>
+    </div>
+    }
+
+    <!-- 🎛️ 2. FILTER-BAR -->
+    <div class="filter-bar" [class.disabled]="!isOnline()">
+        <!-- Dropdowns & Archiv-Checkbox -->
+        <div class="filter-group">
+            <label>Abteilung</label>
+            <select [(ngModel)]="selectedDepartmentId" (change)="onFilterChange()" [disabled]="!isOnline()">
+                <option value="">-- Alle Abteilungen --</option>
+                @for (dept of departmentOptions(); track dept.id) {
+                <option [value]="dept.id">{{ dept.name }}</option>
+                }
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label>Projekt</label>
+            <select [(ngModel)]="selectedProjectId" (change)="onFilterChange()" [disabled]="!isOnline()">
+                <option value="">-- Alle Projekte --</option>
+                @for (project of projectOptions(); track project.id) {
+                <option [value]="project.id">{{ project.title }}</option>
+                }
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label>Benutzer</label>
+            <select [(ngModel)]="selectedTargetUserId" (change)="onFilterChange()" [disabled]="!isOnline()">
+                <option value="">-- Alle Benutzer --</option>
+                @for (user of userOptions(); track user.id) {
+                <option [value]="user.id">{{ user.firstName }} {{ user.lastName }}</option>
+                }
+            </select>
+        </div>
+
+        <div class="filter-group checkbox-group">
+            <label>
+                <input type="checkbox" [(ngModel)]="isArchived" (change)="onFilterChange()" [disabled]="!isOnline()">
+                Archivierte To-Dos
+            </label>
+        </div>
+    </div>
+
+    <!-- ⏳ 3. SPINNER / BOARD-CONTENT -->
+    @if (isLoading()) {
+    <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Lade gefilterte Daten vom Server...</p>
+    </div>
+    }
+    @else {
+    @if (isOnline() && !hasActiveFilter()) {
+    <div class="banner info-banner">
+        <span class="icon">🔍</span>
+        <div>
+            <strong>Kein Filter ausgewählt</strong>
+            <p>Bitte wähle oben eine Abteilung, ein Projekt oder einen Benutzer aus.</p>
+        </div>
+    </div>
+    }
+
+    @if (isOnline() && hasActiveFilter()) {
+    <div class="board-layout">
+
+        <!-- 📋 TO-DO-LISTE (cdkDropList für Karten) -->
+        <div class="todo-list" cdkDropList #todoList="cdkDropList" [cdkDropListConnectedTo]="[trashZone]">
+
+            @for (todo of todos(); track todo.id) {
+            @let user = getUserForTodo(todo.userId);
+            @let isExpanded = isTodoExpanded(todo.id);
+
+            <div class="todo-card" cdkDrag [cdkDragData]="todo">
+                <div class="card-header-row">
+                    <!-- 🔽 Aufklapp-Pfeil für die Beschreibung -->
+                    <button class="btn-toggle-desc" (click)="toggleDescription(todo.id)"
+                        [title]="isExpanded ? 'Beschreibung einklappen' : 'Beschreibung anzeigen'">
+                        {{ isExpanded ? '▼' : '▶' }}
+                    </button>
+
+                    <h4 [title]="todo.task">{{ todo.task }}</h4>
+
+                    <span class="status-badge" [class.done]="todo.done">
+                        {{ todo.done ? 'Erledigt' : 'Offen' }}
+                    </span>
+                </div>
+
+                <!-- 📜 Beschreibung klappt nur auf, wenn isExpanded === true -->
+                @if (isExpanded && todo.description) {
+                <div class="card-desc-expanded">
+                    <p>{{ todo.description }}</p>
+                </div>
+                }
+
+                <!-- 🏷️ Meta-Infos (immer sichtbar) -->
+                <div class="card-meta">
+                    @if (todo.milestoneId) {
+                    <span class="meta-tag team-tag" title="Team-Aufgabe">👥 Team</span>
+                    } @else {
+                    <span class="meta-tag private-tag" title="Persönliche Aufgabe">🔒 Privat</span>
+                    }
+
+                    @if (user) {
+                    <div class="avatar-circle-small" [style.background-color]="user.getColorHash()"
+                        [title]="'Erstellt von: ' + user.fullName">
+                        {{ user.getInitials() }}
+                    </div>
+                    } @else {
+                    <span class="meta-tag user-tag" title="Unbekannter User">👤 {{ todo.userId }}</span>
+                    }
+
+                    <span class="meta-tag status-tag">📌 {{ todo.teamStatus }}</span>
+                </div>
+            </div>
+            }
+
+        </div>
+
+        <!-- 🗑️/🔄 DYNAMISCHE TRASH-ZONE -->
+        <div class="trash-zone" [class.restore-zone]="isArchived" [class.delete-zone]="!isArchived" cdkDropList
+            #trashZone="cdkDropList" (cdkDropListDropped)="onDropInTrash($event)">
+
+            <div class="trash-content">
+                @if (isArchived) {
+                <span class="trash-icon">🔄</span>
+                <h3>Wiederherstellen-Zone</h3>
+                <p>To-Do hierher ziehen, um es aus dem Papierkorb zu holen.</p>
+                } @else {
+                <span class="trash-icon">🗑️</span>
+                <h3>Papierkorb-Zone</h3>
+                <p>To-Do hierher ziehen, um es zu archivieren.</p>
+                }
+            </div>
+        </div>
+
+    </div>
+    }
+    }
+
+</div>

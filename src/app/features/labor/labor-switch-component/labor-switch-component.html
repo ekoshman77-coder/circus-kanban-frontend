@@ -1,0 +1,14 @@
+@if (!isLaborForced()) {
+  <div class="labor-switch-container" 
+    [class.active]="isLaborMode()" 
+    (click)="toggleLaborMode()"
+    [title]="isLaborMode() ? 'Labor-Modus (Sandbox) AKTIV' : 'Labor-Modus aktivieren'">
+    
+    <span class="labor-icon">🧪</span>
+    <span class="labor-label">Labor</span>
+    
+    <div class="toggle-pill">
+      <div class="toggle-thumb"></div>
+    </div>
+  </div>
+}

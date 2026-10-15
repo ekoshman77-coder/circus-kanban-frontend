@@ -1,6 +1,7 @@
 import { Component, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { UserService } from '../../../core/services/user/user-service';
+import { UserEnergyLevel } from '../../../core/models/user.settings';
+import { UserSettingsService } from '../../../core/services/user/user-settings-service';
 
 @Component({
   selector: 'app-planner-settings',
@@ -8,83 +9,92 @@ import { UserService } from '../../../core/services/user/user-service';
   imports: [CommonModule],
   templateUrl: './planner-settings-component.html',
   styleUrl: './planner-settings-component.css'
-  })
+})
 export class PlannerSettingsComponent {
-  userService = inject(UserService);
+  private userSettingsService = inject(UserSettingsService);
 
-  // 1️⃣ REINE SLIDER SIGNALE (Erlauben unendliche Fließkommazahlen für 100% flüssige Maus-Bewegung)
-  sliderWorkingTimeLeft = signal<number>(this.userService.workingTimeLeft());
-  sliderWorkingHours = signal<number>(this.userService.workingHours());
-  sliderPrimeStart = signal<number>(this.userService.primeTimeStartHour());
-  sliderPrimeEnd = signal<number>(this.userService.primeTimeEndHour());
+  // 1️⃣ LOKALE UI-SIGNALS (Komponente besitzt ihren eigenen State)
+  public userEnergy = signal<UserEnergyLevel>('MEDIUM');
 
-  // 2️⃣ DISKRETE ANZEIGE-SIGNALE (Springen stur erst um, wenn eine neue Ganzzahl erreicht ist)
-  displayWorkingTimeLeft = signal<number>(this.userService.workingTimeLeft());
-  displayWorkingHours = signal<number>(this.userService.workingHours());
-  displayPrimeStart = signal<number>(this.userService.primeTimeStartHour());
-  displayPrimeEnd = signal<number>(this.userService.primeTimeEndHour());
+  // Slider-Signale (für flüssige 100fps Drag-Bewegung)
+  public sliderWorkingTimeLeft = signal<number>(8);
+  public sliderWorkingHours = signal<number>(8);
+  public sliderPrimeStart = signal<number>(10);
+  public sliderPrimeEnd = signal<number>(18);
+
+  // Diskrete Anzeige-Signale (Ganzzahlen)
+  public displayWorkingTimeLeft = signal<number>(8);
+  public displayWorkingHours = signal<number>(8);
+  public displayPrimeStart = signal<number>(10);
+  public displayPrimeEnd = signal<number>(18);
 
   constructor() {
-    // Wenn Daten initial geladen werden, setzen wir beide Signal-Welten gleich
+    // Synchronisiere den DataManager-State in die lokalen Komponentensignals
     effect(() => {
-      const hours = this.userService.workingHours();
-      const start = this.userService.primeTimeStartHour();
-      const end = this.userService.primeTimeEndHour();
-      const left = this.userService.workingTimeLeft();
+      const settings = this.userSettingsService.settings();
+      if (!settings) return;
 
-      this.sliderWorkingHours.set(hours);
-      this.displayWorkingHours.set(hours);
+      this.userEnergy.set(settings.userEnergy);
 
-      this.sliderPrimeStart.set(start);
-      this.displayPrimeStart.set(start);
+      this.sliderWorkingHours.set(settings.defaultWorkingHours);
+      this.displayWorkingHours.set(settings.defaultWorkingHours);
 
-      this.sliderPrimeEnd.set(end);
-      this.displayPrimeEnd.set(end);
+      this.sliderPrimeStart.set(settings.primeTimeStartHour);
+      this.displayPrimeStart.set(settings.primeTimeStartHour);
 
-      this.sliderWorkingTimeLeft.set(left);
-      this.displayWorkingTimeLeft.set(left);
+      this.sliderPrimeEnd.set(settings.primeTimeEndHour);
+      this.displayPrimeEnd.set(settings.primeTimeEndHour);
+
+      this.sliderWorkingTimeLeft.set(settings.workingTimeLeft);
+      this.displayWorkingTimeLeft.set(settings.workingTimeLeft);
     }, { allowSignalWrites: true });
   }
 
-  // 🏃‍♂️ INPUT-EVENTS: Überschreiben die Slider-Werte absolut pixelgenau und flüssig!
-  onWorkingTimeLeftInput(event: Event) {
-    const val = Number((event.target as HTMLInputElement).value);
-    this.sliderWorkingTimeLeft.set(val); // Für die flüssige Maus
-    this.displayWorkingTimeLeft.set(Math.floor(val)); // Für die Textbox daneben
+  // ⚡ ENERGIE LEVEL ÄNDERN
+  public onEnergyChange(level: UserEnergyLevel): void {
+    this.userEnergy.set(level);
+    this.userSettingsService.setUserEnergy(level);
   }
 
-  onWorkingHoursInput(event: Event) {
+  // 🏃‍♂️ INPUT-EVENTS (während des Slidens)
+  public onWorkingTimeLeftInput(event: Event): void {
+    const val = Number((event.target as HTMLInputElement).value);
+    this.sliderWorkingTimeLeft.set(val);
+    this.displayWorkingTimeLeft.set(Math.floor(val));
+  }
+
+  public onWorkingHoursInput(event: Event): void {
     const val = Number((event.target as HTMLInputElement).value);
     this.sliderWorkingHours.set(val);
     this.displayWorkingHours.set(Math.floor(val));
   }
 
-  onPrimeStartInput(event: Event) {
+  public onPrimeStartInput(event: Event): void {
     const val = Number((event.target as HTMLInputElement).value);
     this.sliderPrimeStart.set(val);
     this.displayPrimeStart.set(Math.floor(val));
   }
 
-  onLocalPrimeEndInput(event: Event) {
+  public onLocalPrimeEndInput(event: Event): void {
     const val = Number((event.target as HTMLInputElement).value);
     this.sliderPrimeEnd.set(val);
     this.displayPrimeEnd.set(Math.floor(val));
   }
 
-  // 💾 CHANGE-EVENTS (beim Loslassen): Schießen die saubere Ganzzahl in den Service
-  onWorkingTimeLeftChange() {
-    this.userService.changeWorkingTimeLeft(this.displayWorkingTimeLeft());
+  // 💾 CHANGE-EVENTS (beim Loslassen des Sliders -> ab in die Queue!)
+  public onWorkingTimeLeftChange(): void {
+    this.userSettingsService.setWorkingTimeLeft(this.displayWorkingTimeLeft());
   }
 
-  onWorkingHoursChange() {
-    this.userService.changeDefaultWorkingHours(this.displayWorkingHours());
+  public onWorkingHoursChange(): void {
+    this.userSettingsService.changeDefaultWorkingHours(this.displayWorkingHours());
   }
 
-  onPrimeTimeStartChange() {
-    this.userService.changePrimeTimeStart(this.displayPrimeStart());
+  public onPrimeTimeStartChange(): void {
+    this.userSettingsService.changePrimeTimeStart(this.displayPrimeStart());
   }
 
-  onPrimeTimeEndChange() {
-    this.userService.changePrimeTimeEnd(this.displayPrimeEnd());
+  public onPrimeTimeEndChange(): void {
+    this.userSettingsService.changePrimeTimeEnd(this.displayPrimeEnd());
   }
 }

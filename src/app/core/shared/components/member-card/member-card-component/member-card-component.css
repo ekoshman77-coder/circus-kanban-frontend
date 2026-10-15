@@ -1,6 +1,7 @@
 :host {
   display: block;
   width: 100%;
+  box-sizing: border-box;
 }
 
 /* 🃏 Das Haupt-Kästchen der Karte */
@@ -12,27 +13,27 @@
   border: 1px solid #e2e8f0;
   border-radius: 10px;
   padding: 10px 14px;
-  margin-bottom: 10px;
   box-shadow: 0 2px 4px rgba(15, 23, 42, 0.03);
-  cursor: grab; /* Schicke Greif-Hand für das Kanban-Gefühl! */
+  cursor: grab; /* Schicke Greif-Hand für das Kanban-Gefühl */
   transition: all 0.2s ease-in-out;
+  box-sizing: border-box;
+  width: 100%;
+  height: 62px; /* Fixed Height verhindert Wackeln beim Draggen */
 }
 
-/* 🚀 Wenn man die Karte aktiv mit der Maus anfasst und zieht */
+/* 🚀 Wenn man die Karte aktiv mit der Maus anfasst */
 .mini-user-card:active {
   cursor: grabbing;
-  opacity: 0.6;
-  transform: scale(0.98);
 }
 
-/* 🌟 Der sanfte Schwebe-Effekt beim Drüberfahren (wie auf der Pool-Seite!) */
+/* 🌟 Schwebe-Effekt */
 .mini-user-card:hover {
   transform: translateY(-2px);
   border-color: #cbd5e1;
   box-shadow: 0 6px 12px -2px rgba(15, 23, 42, 0.08);
 }
 
-/* 🎨 Der runde, bunte Avatar mit deinen Pastellfarben */
+/* 🎨 Der runde Avatar */
 .mini-avatar {
   width: 38px;
   height: 38px;
@@ -45,40 +46,47 @@
   color: #1e293b;
   box-sizing: border-box;
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
-  flex-shrink: 0; /* Verhindert, dass der Kreis gequetscht wird */
+  flex-shrink: 0;
 }
 
-/* 📝 Text-Bereich (Name und Username) */
+/* 📝 Text-Bereich */
 .mini-user-info {
-  flex: 1; /* Nimmt den gesamten restlichen Platz ein */
+  flex: 1;
   min-width: 0;
 }
 
 .mini-user-info h5 {
-  margin: 0 0 2px 0;
+  margin: 0;
   font-size: 14px;
   color: #0f172a;
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis; /* Schneidet zu lange Namen elegant mit "..." ab */
+  text-overflow: ellipsis;
 }
 
-.mini-user-info p {
-  margin: 0;
-  font-size: 11px;
+.card-role-badge {
+  display: inline-block;
+  font-size: 0.75rem;
   color: #64748b;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* ➕/❌ Die Action-Buttons am rechten Rand */
+/* ➕/❌ Die Action-Buttons */
 .mini-card-action button {
   background: none;
   border: none;
   font-size: 14px;
   cursor: pointer;
-  padding: 4px;
+  padding: 6px;
   border-radius: 6px;
   transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-mini-add:hover { background-color: #f0fdf4; }

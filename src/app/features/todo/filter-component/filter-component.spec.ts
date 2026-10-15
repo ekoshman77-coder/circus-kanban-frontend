@@ -7,11 +7,10 @@ describe('FilterComponent', () => {
   let fixture: ComponentFixture<FilterComponent>;
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({
+    TestBed.configureTestingModule({
       imports: [FilterComponent]
     })
-    .compileComponents();
-
+    
     fixture = TestBed.createComponent(FilterComponent);
     component = fixture.componentInstance;
     await fixture.whenStable();

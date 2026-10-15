@@ -7,7 +7,7 @@ import { TeamService } from '../team/team-service';
 import { Todo } from '../../models/todo';
 import { Project } from '../../models/project';
 import { Milestone } from '../../models/milestone';
-import { N } from '@angular/cdk/keycodes';
+import { describe, beforeEach, it, expect, vi } from 'vitest';
 
 describe('TodoQueryService (Vitest)', () => {
   let service: TodoQueryService;
@@ -20,6 +20,20 @@ describe('TodoQueryService (Vitest)', () => {
   // Signals für die Mocks
   let allTodosPoolMock = signal<Todo[]>([]);
   let projectsListMock = signal<any[]>([]);
+
+  // 🏭 Helper für Valide Test-Projekte
+  const createTestProject = (overrides: Partial<ConstructorParameters<typeof Project>[0]> = {}): Project => {
+    return new Project({
+      ideaId: 'idea123',
+      title: 'test-project',
+      userId: 'user-123',
+      departmentId: 'dep-it-01',
+      area: 'IT',
+      scope: 'DEPARTMENT',
+      milestones: [],
+      ...overrides
+    });
+  };
 
   beforeEach(() => {
     todoDataManagerMock = {
@@ -45,12 +59,9 @@ describe('TodoQueryService (Vitest)', () => {
 
     service = TestBed.inject(TodoQueryService);
 
-    // Vor jedem Test leer machen
     allTodosPoolMock.set([]);
     projectsListMock.set([]);
   });
-
-  // --- HIER STARTEN UNSERE TRAININGS-TESTS ---
 
   it('sollte ein leeres Array liefern, wenn projectId null ist', () => {
     const result = service.getTodosForProject(null);
@@ -59,105 +70,61 @@ describe('TodoQueryService (Vitest)', () => {
 
   it('sollte nur Todos zurückgeben, deren Meilenstein zum Projekt gehört', () => {
     const milestone = new Milestone({
-        title: "test milestone",
-        duration: 1,
-        id: "test-milestone"
-    })
+      title: "test milestone",
+      duration: 1,
+      id: "test-milestone"
+    });
 
-    const project = new Project({
-        ideaId: "idea123",
-        title: "test-project",
-        userId: "user-123",
-        area: "",
-        milestones: [milestone]
-    })
+    const project = createTestProject({
+      milestones: [milestone]
+    });
 
-    projectsListMock.update(value => [...value, project])
-    
+    projectsListMock.update(value => [...value, project]);
+
     const todoWithoutMilestone = new Todo({
-        task: "todo without milestone",        
-    })
+      task: "todo without milestone",
+    });
 
     const todoWithWrongMilestone = new Todo({
-        task: "wrong milestone",
-        milestoneId: "wrong-milestone" 
-    })
-        
-    const todoWithTestMilestone = new Todo({
-        task: "wrong milestone",
-        milestoneId: "test-milestone" 
-    })
+      task: "wrong milestone",
+      milestoneId: "wrong-milestone"
+    });
 
-    allTodosPoolMock.set([todoWithoutMilestone, todoWithWrongMilestone, todoWithTestMilestone])
-    
-    expect(service.getTodosForProject(project.id)).toEqual([todoWithTestMilestone])
-    
-});
+    const todoWithTestMilestone = new Todo({
+      task: "correct milestone todo",
+      milestoneId: "test-milestone"
+    });
+
+    allTodosPoolMock.set([todoWithoutMilestone, todoWithWrongMilestone, todoWithTestMilestone]);
+
+    expect(service.getTodosForProject(project.id)).toEqual([todoWithTestMilestone]);
+  });
 
   it('sollte die korrekte Projekt-ID anhand der Milestone-ID finden', () => {
     const testMilestone = new Milestone({
-        title: "test milestone",
-        duration: 1,
-        id: "test-milestone"
-    })
+      title: "test milestone",
+      duration: 1,
+      id: "test-milestone"
+    });
 
-    const testProject = new Project({
-        ideaId: "idea123",
-        title: "test-project",
-        userId: "user-123",
-        area: "",
-        milestones: [testMilestone]
-    })
+    const testProject = createTestProject({
+      id: "proj-valid",
+      milestones: [testMilestone]
+    });
 
     const wrongMilestone = new Milestone({
-        title: "test milestone",
-        duration: 1,
-        id: "wrong-milestone"
-    })
+      title: "wrong milestone",
+      duration: 1,
+      id: "wrong-milestone"
+    });
 
-    const wrongProject = new Project({
-        ideaId: "idea1234",
-        title: "wrong-project",
-        userId: "user-123",
-        area: "",
-        milestones: [wrongMilestone]
-    })
+    const wrongProject = createTestProject({
+      id: "proj-wrong",
+      milestones: [wrongMilestone]
+    });
 
-    projectsListMock.set([wrongProject, testProject])
+    projectsListMock.set([wrongProject, testProject]);
 
-    expect(service.getProjectIdByMilestoneId(testMilestone.id)).toBe(testProject.id)    
+    expect(service.getProjectIdByMilestoneId(testMilestone.id)).toBe(testProject.id);
   });
-
-  it('sollte true zurückgeben, wenn milestoneId null ist (privates Todo)', () => {
-    const hasPerm = service.hasPermissionForMilestone(null, 'TODO_CREATE');
-    expect(hasPerm).toBe(true);
-  });
-
-  it('sollte result von teamSetrvice zurückgeben, wenn milestoneId not null ist ', () => {
-        const testMilestone = new Milestone({
-        title: "test milestone",
-        duration: 1,
-        id: "test-milestone"
-    })
-
-    const testProject = new Project({
-        ideaId: "idea123",
-        title: "test-project",
-        userId: "user-123",
-        area: "",
-        milestones: [testMilestone]
-    })
-
-    projectsListMock.set([testProject])
-
-    const hasPerm = service.hasPermissionForMilestone(testMilestone.id, 'TODO_CREATE');
-    expect(hasPerm).toBe(true);
- 
-    teamServiceMock.hasPermission.mockReturnValueOnce(false)
-    expect(service.hasPermissionForMilestone(testMilestone.id, 'TODO_CREATE')).toBe(false)
-
-    expect(teamServiceMock.hasPermission).toHaveBeenNthCalledWith(2, testProject.id, 'TODO_CREATE')
-
-  });
-
 });

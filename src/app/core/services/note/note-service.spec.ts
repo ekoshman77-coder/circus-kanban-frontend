@@ -13,10 +13,10 @@ describe('NoteService', () => {
   let mockDataManager: any;
   let mockUserService: any;
   let currentUserSignal: any;
+  let notesSignalMock: ReturnType< typeof signal< Note[] > >; // 👈 Hier mit Leerzeichen!
 
-  let store: Record<string, string> = {};
+  let store: Record< string, string > = {};
 
-  // Das explizite Interface, um den TS2345-Fehler endgültig zu eliminieren
   interface NoteInitParams {
     title: string;
     content: string;
@@ -29,8 +29,7 @@ describe('NoteService', () => {
     weatherCode?: number | null;
   }
 
-  // Die Helferfunktion nutzt jetzt das saubere Interface
-  const createTestNote = (overrides: Partial<NoteInitParams> = {}): Note => {
+  const createTestNote = (overrides: Partial< NoteInitParams > = {}): Note => {
     return new Note({
       userId: 'user-77',
       title: 'Zettel-Titel',
@@ -49,7 +48,10 @@ describe('NoteService', () => {
       clear: () => { store = {}; }
     });
 
-    currentUserSignal = signal<any>({ id: 'user-77', name: 'Zaphod' });
+    currentUserSignal = signal< any >({ id: 'user-77', name: 'Zaphod' });
+
+    // 🟢 1. Neues Signal für den DataManager-Mock anlegen
+    notesSignalMock = signal< Note[] >([createTestNote({ id: 'zettel-123' })]);
 
     mockUserService = {
       currentUser: currentUserSignal,
@@ -59,11 +61,21 @@ describe('NoteService', () => {
       })
     };
 
+    // 🟢 2. mockDataManager stellt notesSignal bereit und manipuliert es bei Aufrufen
     mockDataManager = {
+      notesSignal: notesSignalMock,
       getNotes: vi.fn().mockReturnValue(of([createTestNote({ id: 'zettel-123' })])),
-      createNote: vi.fn().mockImplementation((note) => of(note)),
-      updateNote: vi.fn().mockImplementation((note) => of(note)),
-      deleteNote: vi.fn().mockReturnValue(of(undefined))
+      createNote: vi.fn().mockImplementation((note: Note) => {
+        notesSignalMock.update((list) => [...list, note]);
+      }),
+      updateNote: vi.fn().mockImplementation((note: Note) => {
+        notesSignalMock.update((list) =>
+          list.map((n) => (n.id === note.id ? note : n))
+        );
+      }),
+      deleteNote: vi.fn().mockImplementation((id: string) => {
+        notesSignalMock.update((list) => list.filter((n) => n.id !== id));
+      })
     };
 
     TestBed.configureTestingModule({
@@ -81,26 +93,28 @@ describe('NoteService', () => {
     expect(service).toBeTruthy();
   });
 
-  describe('Reaktive Effekte (Konstruktor)', () => {
-    it('sollte beim Starten die Notizen des Users automatisch laden', () => {
-      // ⚡ DER TRICK: Wir zwingen Angular, den effect() im Konstruktor sofort auszuführen!
+  describe('Reaktive Effekte & Cleanup', () => {
+    it('sollte beim Starten die Notizen des Users über das Signal bereitstellen', () => {
       TestBed.flushEffects();
 
-      expect(mockDataManager.getNotes).toHaveBeenCalledWith('user-77');
       expect(service.notesList().length).toBe(1);
       expect(service.notesList()[0].id).toBe('zettel-123');
     });
 
-    it('sollte das Signal leeren, wenn sich der User ausloggt', () => {
-      // Zuerst Effekte für den Login-Zustand abarbeiten
-      TestBed.flushEffects();
-      
-      // 1. Ausloggen simulieren
+    it('sollte beim Ausloggen den Draft löschen und den State zurücksetzen', () => {
+      // 1. Vorab einen Draft im LocalStorage speichern
+      service.saveDraft({ title: 'Geheimer Entwurf', content: 'Geheim' });
+      expect(service.getDraft()).not.toBeNull();
+
+      // 2. Logout / Reset simulieren
       currentUserSignal.set(null);
-      
-      // Wieder die Effekte triggern, damit der else-Zweig im effect feuert!
+      notesSignalMock.set([]); // DataManager-Signal wird zurückgesetzt
+      service.resetData();     // Löscht den Draft aus dem LocalStorage
+
       TestBed.flushEffects();
-      
+
+      // 3. Überprüfen: Entwurf ist weg & Notizliste ist leer
+      expect(service.getDraft()).toBeNull();
       expect(service.notesList()).toEqual([]);
     });
   });
@@ -121,7 +135,7 @@ describe('NoteService', () => {
     it('sollte einen neuen Zettel im Signal anhängen', () => {
       // 1. Zustand für diesen Test komplett isolieren
       const initialNote = createTestNote({ id: 'zettel-123' });
-      (service as any).notesSignal.set([initialNote]);
+      notesSignalMock.set([initialNote]);
 
       // 2. Aktion ausführen
       service.addNote({
@@ -141,7 +155,7 @@ describe('NoteService', () => {
     it('sollte die Änderung synchron einspielen und bei Servererfolg beibehalten', () => {
       // 1. Zustand für diesen Test isolieren
       const originalNote = createTestNote({ id: 'zettel-123', title: 'Alt' });
-      (service as any).notesSignal.set([originalNote]);
+      notesSignalMock.set([originalNote]);
 
       const changedNote = createTestNote({ id: 'zettel-123', title: 'Neu Benannt' });
 
@@ -154,7 +168,7 @@ describe('NoteService', () => {
     it('sollte bei einem API-Fehler einen automatischen Rollback auf den Vorher-Zustand machen', () => {
       // 1. Zustand für diesen Test isolieren
       const originalNote = createTestNote({ id: 'zettel-123', title: 'Zettel-Titel' });
-      (service as any).notesSignal.set([originalNote]);
+      notesSignalMock.set([originalNote]);
 
       const changedNote = createTestNote({ id: 'zettel-123', title: 'Fehler-Titel' });
 
@@ -172,7 +186,7 @@ describe('NoteService', () => {
     it('sollte den Zettel synchron entfernen', () => {
       // Zustand für diesen Test isolieren
       const testNote = createTestNote({ id: 'zettel-123' });
-      (service as any).notesSignal.set([testNote]);
+      notesSignalMock.set([testNote]);
 
       service.removeNote('zettel-123');
       expect(service.notesList().length).toBe(0);
@@ -181,7 +195,7 @@ describe('NoteService', () => {
     it('sollte bei Lösch-Fehlern den Zettel wieder zurückholen (Rollback)', () => {
       // Zustand für diesen Test isolieren
       const testNote = createTestNote({ id: 'zettel-123' });
-      (service as any).notesSignal.set([testNote]);
+      notesSignalMock.set([testNote]);
 
       mockDataManager.deleteNote.mockReturnValueOnce(throwError(() => new Error('Db Error!')));
 
@@ -200,7 +214,7 @@ describe('NoteService', () => {
       
       // Wir setzen den Zustand des Signals manuell auf unsere Testnotiz
       // (Damit umgehen wir jegliche Seiteneffekte aus vorherigen Lösch-Tests!)
-      (service as any).notesSignal.set([testNote]);
+      notesSignalMock.set([testNote]);
 
       // Jetzt rufen wir die Methode auf
       service.updateNoteStatus('zettel-123', true);

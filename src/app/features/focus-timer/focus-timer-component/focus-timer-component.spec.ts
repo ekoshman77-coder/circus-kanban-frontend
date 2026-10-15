@@ -2,10 +2,10 @@ import { TestBed, ComponentFixture, fakeAsync, tick } from '@angular/core/testin
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { FocusTimerComponent } from './focus-timer-component';
 import { TodoService } from '../../../core/services/todo/todo-service';
-import { FocusDataManagerService } from '../../../core/services/focus/focus-data-manager-service';
 import { of } from 'rxjs';
 import { Todo } from '../../../core/models/todo';
 import { signal } from '@angular/core';
+import { FocusService } from '../../../core/services/focus/focus-service';
 
 describe('FocusTimerComponent', () => {
   let component: FocusTimerComponent;
@@ -31,7 +31,7 @@ beforeEach(() => {
     imports: [FocusTimerComponent],
     providers: [
       { provide: TodoService, useValue: todoServiceMock },
-      { provide: FocusDataManagerService, useValue: focusDataManagerMock },
+      { provide: FocusService, useValue: focusDataManagerMock },
       // 🔥 DAS HIER SCHALTET DIE SCHULDIGE ZONE AUS:
     ]
   });
@@ -125,7 +125,7 @@ it('should trigger FocusDataManager and show celebration when timer reaches 0', 
   vi.advanceTimersByTime(1000);
   fixture.detectChanges();
   // A) Wurde die Server-Methode mit der richtigen Todo-ID aufgerufen?
-  expect(focusDataManagerMock.recordCompletedPomodoro).toHaveBeenCalledWith('todo_abc');
+  expect(focusDataManagerMock.recordCompletedPomodoro).toHaveBeenCalledWith(mockTodo);
 
   // B) Wurde das Erfolgs-Popup im Signal aktiviert?
   expect(component['showSuccessCelebration']()).toBe(true);

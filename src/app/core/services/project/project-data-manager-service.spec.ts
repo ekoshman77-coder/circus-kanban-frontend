@@ -3,20 +3,29 @@ import { ProjectDataManagerService } from './project-data-manager-service';
 import { ProjectRepository } from '../../repositories/project-repository';
 import { ConnectionService } from '../connection/connection-service';
 import { AiRepository } from '../../repositories/ai-repository';
+import { TeamRepository } from '../../repositories/team-repository';
+import { CentralQueueService } from '../central-queue/central-queue-service';
 import { Project } from '../../models/project';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { of, throwError } from 'rxjs';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { of } from 'rxjs';
+import { signal, WritableSignal } from '@angular/core';
+import { QueueHandlerName } from '../../enums/queue-handler-name';
 
-describe('ProjectDataManagerService', () => {
+describe('ProjectDataManagerService (Vitest - Strictly Typed)', () => {
   let service: ProjectDataManagerService;
 
-  let mockProjectRepo: any;
-  let mockConnectionService: any;
-  let mockAiRepo: any;
+  // Typsichere Mocks
+  let mockProjectRepo: Partial< ProjectRepository >;
+  let mockTeamRepo: Partial< TeamRepository >;
+  let mockConnectionService: Partial< ConnectionService >;
+  let mockAiRepo: Partial< AiRepository >;
+  let mockQueueService: Partial< CentralQueueService >;
 
-  let store: Record<string, string> = {};
+  // LocalStorage Mock-Store
+  let store: Record< string, string > = {};
   
   let testProject: Project;
+  let isOfflineSignal: WritableSignal< boolean >;
 
   beforeEach(() => {
     store = {};
@@ -27,17 +36,24 @@ describe('ProjectDataManagerService', () => {
       clear: () => { store = {}; }
     });
 
+    isOfflineSignal = signal< boolean >(false);
+
     mockConnectionService = {
-      isOffline: vi.fn().mockReturnValue(false)
+      isOffline: isOfflineSignal,
+      isOnline: signal< boolean >(true)
+    };
+    
+    mockProjectRepo = {
+      getAllProjects: vi.fn().mockReturnValue(of([])),
+      createProject: vi.fn().mockImplementation((p) => of(p)),
+      updateProject: vi.fn().mockImplementation((p) => of(p)),
+      deleteProject: vi.fn().mockReturnValue(of(undefined)),
+      getDashboardStatistics: vi.fn().mockReturnValue(of({ totalProjects: 10, activeProjects: 5, completedProjects: 5 }))
     };
 
-    mockProjectRepo = {
-      getProjectsByUserId: vi.fn().mockReturnValue(of([])),
-      createProject: vi.fn().mockImplementation((p) => of(p)),
-      updateProject: vi.fn().mockImplementation((id, p) => of({ id, ...p })),
-      deleteProject: vi.fn().mockReturnValue(of(undefined)),
-      syncLocalProjects: vi.fn().mockReturnValue(of([])),
-      getDashboardStatistics: vi.fn().mockReturnValue(of({ total: 10 }))
+    mockTeamRepo = {
+      assignToProject$: vi.fn().mockReturnValue(of(null)),
+      deleteFromProject$: vi.fn().mockReturnValue(of(null))
     };
 
     mockAiRepo = {
@@ -47,12 +63,20 @@ describe('ProjectDataManagerService', () => {
       trackMilestonesIgnore: vi.fn().mockReturnValue(of(undefined))
     };
 
+    mockQueueService = {
+      enqueue: vi.fn(),
+      registerService: vi.fn(),
+      updateEntityIdInQueue: vi.fn()
+    };
+
     TestBed.configureTestingModule({
       providers: [
         ProjectDataManagerService,
         { provide: ProjectRepository, useValue: mockProjectRepo },
+        { provide: TeamRepository, useValue: mockTeamRepo },
         { provide: ConnectionService, useValue: mockConnectionService },
-        { provide: AiRepository, useValue: mockAiRepo }
+        { provide: AiRepository, useValue: mockAiRepo },
+        { provide: CentralQueueService, useValue: mockQueueService }
       ]
     });
 
@@ -64,6 +88,7 @@ describe('ProjectDataManagerService', () => {
       ideaId: 'idea-999',
       title: 'Standard Test Projekt',
       area: 'Software',
+      departmentId: 'dept-123',
       content: 'Beschreibung',
       status: 'Active',
       milestones: [],
@@ -71,132 +96,77 @@ describe('ProjectDataManagerService', () => {
     });
   });
 
-  describe('getProjects (Projekte laden)', () => {
-    it('sollte online Daten vom Server laden und im global_pool cachen', () => {
-      const backendProj = { id: 'live-1', title: 'Online Projekt', milestones: [] };
-      mockProjectRepo.getProjectsByUserId.mockReturnValueOnce(of([backendProj]));
-
-      service.getProjects().subscribe((projects: Project[]) => {
-        expect(projects.length).toBe(1);
-        expect(projects[0].title).toBe('Online Projekt');
-        
-        const cached = JSON.parse(localStorage.getItem('local_projects_global_pool')!);
-        expect(cached[0].title).toBe('Online Projekt');
-      });
-    });
-
-    it('sollte offline direkt auf das LocalStorage-Backup (global_pool) zugreifen', () => {
-      mockConnectionService.isOffline.mockReturnValueOnce(true);
-      
-      testProject.title = 'Offline UI Projekt';
-      localStorage.setItem('local_projects_global_pool', JSON.stringify([testProject]));
-
-      service.getProjects().subscribe((projects: Project[]) => {
-        expect(projects.length).toBe(1);
-        expect(projects[0].title).toBe('Offline UI Projekt');
-        expect(mockProjectRepo.getProjectsByUserId).not.toHaveBeenCalled();
-      });
-    });
+  afterEach(() => {
+    vi.clearAllMocks();
+    vi.unstubAllGlobals();
   });
 
-  describe('Doppel-Buchführung im Offline-Modus', () => {
-    it('sollte beim Erstellen offline das Projekt im global_pool UND in der pending_sync Queue sichern', () => {
-      mockConnectionService.isOffline.mockReturnValueOnce(true);
-      
-      testProject.id = 'OFFLINE_123';
-      testProject.title = 'Neues Offline Projekt';
+  describe('Projekterstellung und Enqueueing', () => {
+    it('sollte beim Erstellen das Projekt lokal anwenden und in die Queue reihen', () => {
+      service.createProject(testProject);
 
-      service.createProject(testProject, []).subscribe(res => {
-        expect(res.title).toBe('Neues Offline Projekt');
-
-        const uiCache = JSON.parse(localStorage.getItem('local_projects_global_pool')!);
-        expect(uiCache.length).toBe(1);
-        expect(uiCache[0].title).toBe('Neues Offline Projekt');
-
-        const syncQueue = JSON.parse(localStorage.getItem('local_projects_pending_sync')!);
-        expect(syncQueue.length).toBe(1);
-        expect(syncQueue[0].id).toBe('OFFLINE_123');
-      });
+      expect(mockQueueService.enqueue).toHaveBeenCalledWith(
+        QueueHandlerName.PROJECT,
+        'CREATE',
+        expect.objectContaining({
+          id: testProject.id,
+          project: testProject
+        })
+      );
     });
 
-    it('sollte beim Ändern offline die Änderung im global_pool UND in der pending_sync Queue nachführen', () => {
-      mockConnectionService.isOffline.mockReturnValueOnce(true);
-      
-      testProject.id = 'proj-555';
-      testProject.title = 'Projekt Version A';
-      localStorage.setItem('local_projects_pending_sync', JSON.stringify([testProject]));
-
+    it('sollte beim Aktualisieren die Änderung lokal anwenden und in die Queue reihen', () => {
       const geaendertesProj = new Project({
         ...testProject,
-        title: 'Projekt Version B'
+        title: 'Neuer Titel'
       });
 
-      service.updateProject(geaendertesProj, [testProject]).subscribe(() => {
-        const uiCache = JSON.parse(localStorage.getItem('local_projects_global_pool')!);
-        expect(uiCache[0].title).toBe('Projekt Version B');
+      service.updateProject(geaendertesProj);
 
-        const syncQueue = JSON.parse(localStorage.getItem('local_projects_pending_sync')!);
-        expect(syncQueue[0].title).toBe('Projekt Version B');
-      });
+      expect(mockQueueService.enqueue).toHaveBeenCalledWith(
+        QueueHandlerName.PROJECT,
+        'UPDATE',
+        expect.objectContaining({
+          id: geaendertesProj.id,
+          project: geaendertesProj
+        })
+      );
     });
 
-    it('sollte beim Löschen offline das Projekt aus beiden Töpfen entfernen', () => {
-      testProject.id = 'proj-delete';
-      
-      localStorage.setItem('local_projects_global_pool', JSON.stringify([testProject]));
-      localStorage.setItem('local_projects_pending_sync', JSON.stringify([testProject]));
+    it('sollte beim Löschen das Projekt lokal entfernen und Lösch-Auftrag enqueuen', () => {
+      service.deleteProject('proj-123');
 
-      service.deleteProject('proj-delete', [testProject]).subscribe(() => {
-        const uiCache = JSON.parse(localStorage.getItem('local_projects_global_pool')!);
-        expect(uiCache.length).toBe(0);
-
-        const syncQueue = JSON.parse(localStorage.getItem('local_projects_pending_sync')!);
-        expect(syncQueue.length).toBe(0);
-      });
-    });
-  });
-
-  describe('synchronizeData (Wieder online gehen)', () => {
-    it('sollte die pending_sync Queue zum Server senden und danach vollständig leeren', () => {
-      testProject.id = 'tmp_offline_1';
-      testProject.title = 'Offline Entwurf';
-      localStorage.setItem('local_projects_pending_sync', JSON.stringify([testProject]));
-
-      const serverResponse = [{ id: 'server-id-1', title: 'Offline Entwurf (Serverversion)' }];
-      mockProjectRepo.syncLocalProjects.mockReturnValueOnce(of(serverResponse));
-
-      service.synchronizeData('user-777').subscribe((res: Project[]) => {
-        expect(res.length).toBe(1);
-        expect(res[0].id).toBe('server-id-1');
-
-        const syncQueue = JSON.parse(localStorage.getItem('local_projects_pending_sync')!);
-        expect(syncQueue.length).toBe(0);
-      });
+      expect(mockQueueService.enqueue).toHaveBeenCalledWith(
+        QueueHandlerName.PROJECT,
+        'DELETE',
+        expect.objectContaining({
+          id: 'proj-123'
+        })
+      );
     });
   });
 
   describe('Hybrid-Weiche (getMilestoneSuggestions)', () => {
     it('sollte online das AiRepository befragen', () => {
       const mockSuggestion = { title: 'KI-Tipp', score: 99, words: [] };
-      mockAiRepo.getMilestoneSuggestions.mockReturnValueOnce(of({
+      vi.mocked(mockAiRepo.getMilestoneSuggestions!).mockReturnValueOnce(of({
         recommended: [mockSuggestion],
         degraded: []
       }));
 
       service.getMilestoneSuggestions('App', 'Software', 'user-1').subscribe(res => {
-        expect(res!.recommended.length).toBe(1);
-        expect(res!.recommended[0].title).toBe('KI-Tipp');
-        expect(res!.recommended[0].source).toBe('KI');
+        expect(res.recommended.length).toBe(1);
+        expect(res.recommended[0].title).toBe('KI-Tipp');
+        expect(res.recommended[0].source).toBe('KI');
       });
     });
 
     it('sollte offline auf statische Templates ausweichen', () => {
-      mockConnectionService.isOffline.mockReturnValueOnce(true);
+      isOfflineSignal.set(true);
 
       service.getMilestoneSuggestions('App', 'Software', 'user-1').subscribe(res => {
-        // Wir prüfen einfach, ob wir statische Templates erhalten und die Quelle korrekt gesetzt ist
-        expect(res!.recommended.length).toBeGreaterThan(0);
-        expect(res!.recommended[0].source).toBe('TEMPLATE');
+        expect(res.recommended.length).toBeGreaterThan(0);
+        expect(res.recommended[0].source).toBe('TEMPLATE');
       });
     });
   });

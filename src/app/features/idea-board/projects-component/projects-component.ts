@@ -50,6 +50,7 @@ export class ProjectsComponent implements OnInit {
    */
   public readonly projects = computed(() => {
     const list = this.projectService.projectsList();
+    console.log("projectlist ", list)
     const query = this.filterService.searchTerm().toLowerCase().trim();
     
     if (!query) {
@@ -97,7 +98,7 @@ export class ProjectsComponent implements OnInit {
     if (!projectId) {
       return false;
     }
-    return this.teamService.hasPermission(projectId, 'PROJECT_DELETE');
+    return this.projectService.hasPermission(projectId, 'PROJECT_DELETE');
   }
 
   /**

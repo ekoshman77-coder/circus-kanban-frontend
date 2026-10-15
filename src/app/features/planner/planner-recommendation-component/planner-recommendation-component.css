@@ -1,409 +1,161 @@
-.recommendation-card {
-  background: linear-gradient(90deg, #f0fdf4 0%, #e6fffa 100%);
-  border: 1px solid #b4fdd6;
-  border-radius: 8px;
-  padding: 12px 20px; /* ⚡ Viel weniger Innenabstand! */
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+.recommendation-panel {
   display: flex;
-  align-items: center;
-  justify-content: space-between; /* ⚡ Elemente nebeneinander statt untereinander! */
-  gap: 16px;
-  max-width: 100%; /* ⚡ Nutzt die volle Breite der Matrix aus */
-  margin: 0 0 16px 0; /* ⚡ Kleiner Abstand nach unten zur Matrix */
-}
-
-/* Titel und Untertitel kompakt zusammenfassen */
-.card-title { 
-  margin: 0; 
-  font-size: 15px; 
-  font-weight: bold;
-  color: #0f172a; 
-  white-space: nowrap;
-}
-.card-subtitle { display: none; } /* ⚡ Text weglassen, spart massig Platz! */
-
-.ai-status-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  position: absolute;
-  top: 12px;
-  right: 16px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.status-lamp {
-  width: 8px;
-  height: 8px;
-  background-color: #10b981; /* Angenehmes Grün */
-  border-radius: 50%;
-  box-shadow: 0 0 8px #10b981;
-  transition: all 0.3s ease;
-}
-
-/* Wenn die KI rechnet, wird die Lampe lila/blau und pulsiert */
-.status-lamp.lamp-pulsing {
-  background-color: #8b5cf6; 
-  box-shadow: 0 0 12px #8b5cf6;
-  animation: pulse-glow 1s infinite alternate;
-}
-
-@keyframes pulse-glow {
-  0% { transform: scale(0.9); opacity: 0.4; }
-  100% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 16px #8b5cf6; }
-}
-
-/* Die ganze Karte pulsiert leicht im Hintergrund mit */
-.card-loading-pulse {
-  animation: card-pulse 1.5s infinite ease-in-out;
-  pointer-events: none; /* Verhindert Doppel-Klicks während des Ladens! */
-}
-
-@keyframes card-pulse {
-  0% { opacity: 0.95; }
-  50% { opacity: 0.8; }
-  100% { opacity: 0.95; }
-}
-
-/* 🛠️ FIX: Basiert auf einer sauberen Links-Rechts-Aufteilung */
-.content-state {
-  display: flex;
-  align-items: flex-start; /* ⚡ Richtet Text und Buttons oben bündig aus, kein vertikales Verrutschen mehr! */
-  justify-content: space-between;
-  flex-index: 1;
-  gap: 20px;
-  width: 100%;
-}
-
-/* Das vorgeschlagene To-Do als flache Zeile */
-.todo-highlight {
-  background: transparent;
-  border: none;
-  padding: 0;
-  margin: 0;
-  box-shadow: none;
-  display: flex;
-  align-items: flex-start; /* ⚡ Richtet das Stunden-Badge und den Text sauber oben aus */
-  gap: 12px;
-  flex: 1; /* ⚡ Nimmt sich den restlichen Platz links, drückt aber die Buttons nicht weg */
-}
-
-.todo-effort {
-  position: static; /* ⚡ Nicht mehr absolut oben drüber klebend! */
-  transform: none;
-  background: #0ea5e9;
-  color: white;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: bold;
-  white-space: nowrap;
-}
-
-.todo-task { 
-  margin: 0; 
-  font-size: 15px; 
-  color: #1e293b; 
-  font-weight: 600;
-  text-align: left;
-}
-
-/* Die Buttons dezent und schmal nebeneinander */
-.action-buttons { 
-  display: flex; 
-  gap: 8px; 
-}
-.btn-accept { 
-  padding: 6px 14px; 
-  background: #10b981; 
-  color: white; 
-  border: none; 
-  border-radius: 6px; 
-  font-weight: 600; 
-  font-size: 13px; 
-  cursor: pointer; 
-  white-space: nowrap;
-}
-.btn-accept:hover { background: #059669; }
-
-.btn-snooze {
-  padding: 6px 12px;
-  background: #ffffff;
-  color: #64748b; /* Ein schickes Schiefer-Grau */
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  font-weight: 500;
-  font-size: 13px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s ease;
-}
-
-.btn-snooze:hover {
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.5rem;
   background: #f8fafc;
-  border-color: #94a3b8;
-  color: #334155;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
 }
 
-.btn-reject { 
-  padding: 6px 12px; 
-  background: #f1f5f9; /* ⚡ Dezentes Grau statt aggressivem Rot! */
-  color: #475569; 
-  border: 1px solid #cbd5e1; 
-  border-radius: 6px; 
-  font-weight: 500; 
-  font-size: 13px; 
-  cursor: pointer; 
-  white-space: nowrap;
-}
-.btn-reject:hover { background: #e2e8f0; }
-
-/* 📋 Das Feedback-Overlay – sitzt als kompakter Block ganz RECHTS */
-.feedback-overlay { 
-  display: flex;
-  flex-direction: column;    /* Frage OBEN, Buttons DARUNTER */
-  align-items: flex-end;     /* Alles akkurat am rechten Rand ausrichten */
-  gap: 8px;                  /* Fester Abstand zwischen Frage und Buttons */
-  background: transparent; 
-  padding: 0;
-  margin: 0;
-  flex-shrink: 0;            /* Verhindert, dass der Block zusammengedrückt wird */
-}
-
-/* Die Frage steht sauber über den Buttons */
-.feedback-prompt { 
-  font-weight: 600; 
-  color: #475569; 
-  font-size: 13px; 
-  margin: 0; 
-  text-align: right;         /* Text schmiegt sich bündig nach rechts an */
-  white-space: nowrap; 
-}
-
-/* Die Button-Gruppe sitzt direkt unter dem Text */
-.reason-grid { 
-  display: flex; 
-  gap: 6px;                  /* Knackiger Abstand zwischen den Pillen */
-  justify-content: flex-end; /* Richtet die Buttons nach rechts aus */
-}
-
-/* 🎨 REASON-BUTTON STYLE (Die schicken Pillen-Buttons) */
-/* 🎨 DER NEUE COLOR-BORDER PILLEN-STYLE */
-.reason-btn { 
-  padding: 6px 14px; 
-  background-color: white;
-  border: 1px solid #cbd5e1; /* Fallback-Rahmen */
-  border-radius: 20px; 
-  font-size: 13px; 
-  font-weight: 600; /* Text etwas knackiger für bessere Lesbarkeit */
-  cursor: pointer; 
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  white-space: nowrap;
-}
-
-/* 🥱 1. Button: Keine Lust (Sanftes Blau) */
-.reason-btn:nth-child(1) {
-  border-color: #bfdbfe;
-  color: #2563eb;
-}
-.reason-btn:nth-child(1):hover { 
-  background-color: #eff6ff; 
-  border-color: #3b82f6;
-  color: #1d4ed8;
-  transform: translateY(-1px);
-}
-
-/* 🧠 2. Button: Zu schwer (Sanftes Lila) */
-.reason-btn:nth-child(2) {
-  border-color: #ddd6fe;
-  color: #7c3aed;
-}
-.reason-btn:nth-child(2):hover { 
-  background-color: #f5f3ff; 
-  border-color: #8b5cf6;
-  color: #6d28d9;
-  transform: translateY(-1px);
-}
-
-/* ⏱️ 3. Button: Zu lange (Sanftes Orange) */
-.reason-btn:nth-child(3) {
-  border-color: #fed7aa;
-  color: #ea580c;
-}
-.reason-btn:nth-child(3):hover { 
-  background-color: #fff7ed; 
-  border-color: #f97316;
-  color: #c2410c;
-  transform: translateY(-1px);
-}
-
-/* ↩️ Der Zurück-Button bleibt edel-neutral */
-.reason-btn.cancel { 
-  background: #f1f5f9; 
-  border: 1px solid #cbd5e1; 
-  color: #475569;
-}
-.reason-btn.cancel:hover {
-  background: #e2e8f0;
-  border-color: #94a3b8;
-  color: #1e293b;
-  transform: translateY(-1px);
-}
-
-/* Ladezustand & Fehler ebenfalls kompakt */
-.loading-state, .empty-state { display: flex; align-items: center; gap: 8px; padding: 0; margin: 0; font-size: 14px; }
-.empty-text { margin: 0; font-size: 14px; }
-.refresh-btn { padding: 4px 10px; font-size: 12px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; }
-.spinner { border: 2px solid #f3f3f3; border-top: 2px solid #10b981; border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite; margin: 0; }
-
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-/* 🪐 Die Ladezone für den Planer */
-.ai-loading-zone {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 30px 20px;
-  background: linear-gradient(90deg, #fffbeb 25%, #fef08a 50%, #fffbeb 75%);
-  background-size: 200% 100%;
-  animation: loading-pulse 1.5s infinite ease-in-out;
-  border: 1px dashed #ca8a04; /* Gold-Rahmen von dir */
+/* TOP SELECTION DROPZONE */
+.selection-zone {
+  border: 2px dashed #10b981;
+  background: #ecfdf5;
+  color: #065f46;
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(234, 179, 8, 0.2);
-}
+  padding: 1rem;
+  text-align: center;
+  transition: all 0.2s ease;
 
-/* Kapsel für Lampe und drehende Sterne */
-/* 🪐 Die Ladezone – jetzt als kompakter, zentrierter Badge mitten in der Karte */
-.ai-loading-zone {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 5px 5px;
-  background-color: #fffbeb; /* Das warme Creme-Gelb von dir, aber nur für den kleinen Kasten! */
-  border: 1px dashed #ca8a04; /* Der schicke Gold-Rahmen */
-  border-radius: 8px;
-  margin: 4px auto; /* Zentriert es elegant in der Karte */
-  box-shadow: 0 4px 12px rgba(234, 179, 8, 0.15);
-  animation: loading-pulse 1.5s infinite ease-in-out;
-}
-
-/* Kapsel für Lampe und Stern */
-.ai-lamp-container {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-}
-
-/* 🟢 DAS PERFEKTE KI-LÄMPCHEN (10px – gut sichtbar und kräftig pulsierend!) */
-.ai-glowing-lamp {
-  width: 10px;
-  height: 10px;
-  background-color: #eab308; /* Strahlendes Gold-Gelb */
-  border-radius: 50%;
-  box-shadow: 0 0 8px #fef08a, 0 0 16px #eab308;
-  animation: lamp-blink 0.6s infinite alternate ease-in-out; /* Schnelles, lebendiges Blinken */
-}
-
-/* Der Mini-Stern rotiert im Hintergrund */
-.skeleton-sparkle {
-  position: absolute;
-  font-size: 14px;
-  left: -2px;
-  top: -2px;
-  animation: spin-slow 2s infinite linear;
-}
-
-.ai-loading-text {
-  color: #854d0e; /* Dein edles Honig-Braun */
-  font-weight: 600;
-  font-size: 14px;
-  margin: 0;
-}
-
-/* --- ANIMATIONEN --- */
-@keyframes loading-pulse {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-@keyframes spin-slow {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* ⚡ HIER WAR DER FEHLER: Jetzt pulsiert der Schatten richtig stark! */
-@keyframes lamp-blink {
-  0% {
-    transform: scale(0.8);
-    box-shadow: 0 0 4px #fef08a, 0 0 8px #eab308;
-    opacity: 0.5;
-  }
-  100% {
-    transform: scale(1.2);
-    box-shadow: 0 0 16px #fef08a, 0 0 24px #eab308, 0 0 32px #eab308;
-    opacity: 1;
+  &.cdk-drop-list-receiving {
+    background: #d1fae5;
+    transform: scale(1.02);
   }
 }
 
-/* 🛠️ FIX: Wenn das Feedback-Overlay aktiv ist, bricht der Inhalt sauber nach unten um */
-.content-state {
-  flex-wrap: wrap; /* Erlaubt Elementen, untereinander zu rutschen */
-  gap: 12px;
+/* CARDS CONTAINER */
+.cards-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
 }
 
-/* 🧠 KI-Stimmungs-Barometer Style */
-.ai-mood-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 8px; /* Schöner Abstand unter dem Aufgabentitel */
-  padding: 6px 12px;
-  background: rgba(14, 165, 233, 0.06); /* Ein ganz feiner Hauch von edlem KI-Blau */
-  border-left: 3px solid #0ea5e9; /* Stylische blaue Akzentlinie links */
-  border-radius: 0 6px 6px 0;
-  width: fit-content; /* Passt sich kompakt der Textlänge an */
-}
-
-.mood-icon {
-  font-size: 14px;
-}
-
-.mood-text {
-  font-size: 13px;
-  font-weight: 500;
-  color: #0369a1; /* Dunkleres Info-Blau für beste Lesbarkeit */
-  font-style: italic; /* Macht es als "Gedankengang" der KI erkennbar */
-}
-
-/* Stellt sicher, dass Titel und Barometer eine saubere, vertikale Spalte bilden */
-.todo-details {
+.todo-card {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 8px; /* Abstand zwischen To-Do-Text und Barometer */
-  flex: 1;
+  justify-content: space-between;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+  position: relative;
+  
+  &.cdk-drag-dragging {
+    opacity: 0.4;
+  }
 }
 
-/* 🧠 KI-Stimmungs-Barometer Style */
-.ai-mood-bar {
+.card-drag-handle {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  background: rgba(14, 165, 233, 0.06); 
-  border-left: 3px solid #0ea5e9; 
-  border-radius: 0 6px 6px 0;
-  width: fit-content;
-  margin: 0 !important; /* ⚡ Verhindert unerwartete Abstände */
+  gap: 0.5rem;
+  cursor: grab;
+  color: #64748b;
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+  
+  &:active { cursor: grabbing; }
+  .badge { background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
+}
+
+.todo-title { margin: 0 0 0.5rem 0; font-size: 1.1rem; color: #0f172a; }
+
+.ai-reasoning {
+  display: flex;
+  gap: 0.5rem;
+  background: #f1f5f9;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #475569;
+  margin-bottom: 1rem;
+}
+
+.card-actions {
+  display: flex;
+  gap: 0.5rem;
+  
+  button {
+    flex: 1;
+    padding: 0.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-accept { background: #10b981; color: white; }
+  .btn-reject-toggle { background: #f1f5f9; color: #64748b; }
+}
+
+/* INLINE REJECT POPOVER */
+.inline-reject-menu {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  .menu-title { font-size: 0.85rem; font-weight: bold; margin-bottom: 0.5rem; text-align: center; }
+  .reject-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    
+    button {
+      padding: 0.4rem;
+      border: 1px solid #cbd5e1;
+      background: white;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      &:hover { background: #f8fafc; }
+    }
+  }
+}
+
+/* REJECT DROPZONES (BOTTOM) */
+.reject-dropzones-wrapper {
+  .section-label { font-size: 0.8rem; color: #64748b; display: block; margin-bottom: 0.5rem; }
+}
+
+.dropzones-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.reject-zone {
+  background: #ffffff;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  padding: 0.75rem 0.25rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.75rem;
+  color: #64748b;
+  transition: all 0.2s ease;
+
+  &.cdk-drop-list-receiving {
+    border-color: #ef4444;
+    background: #fef2f2;
+    color: #991b1b;
+    transform: scale(1.05);
+  }
+}
+
+/* DRAG PREVIEW STYLE */
+.card-drag-preview {
+  padding: 0.75rem 1rem;
+  background: #0f172a;
+  color: white;
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
 }

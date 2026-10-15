@@ -9,4 +9,5 @@ export interface INoteJson {
   temperature?: number;
   weatherCode?: number;
   departmentId?: string;
+  scope: string
 }

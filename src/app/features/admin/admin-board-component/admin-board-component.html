@@ -1,7 +1,7 @@
 <div class="admin-board-container">
   <h1>👑 Administrator-Zentrale</h1>
 
-  <!-- Die Reiter-Leiste -->
+  <!-- Die Reiter-Leiste mit Glassmorphism -->
   <div class="tab-navigation">
     <button 
       [class.active]="activeTab() === 'departments'" 
@@ -13,15 +13,47 @@
       (click)="changeTab('users')">
       👥 Benutzer & Warteraum
     </button>
+    <button 
+      [class.active]="activeTab() === 'permissions'" 
+      (click)="changeTab('permissions')">
+      🔐 Permissions
+    </button>
+    <button
+      [class.active]="activeTab() === 'ideas'"
+      (click)="changeTab('ideas')">
+      💡 Ideen
+    </button>
+    <button
+      [class.active]="activeTab() === 'projects'"
+      (click)="changeTab('projects')">
+      💡 Projects
+    </button>
+    <button
+      [class.active]="activeTab() === 'todos'"
+      (click)="changeTab('todos')">
+      💡 Todos
+    </button>
   </div>
 
-  <!-- Der dynamische Content-Bereich -->
-  <div class="tab-content">
+  <!-- Der dynamische Content-Bereich mit individuellem Gradient-Glass-Look -->
+  <div class="tab-content" [ngClass]="'tab-' + activeTab()">
     @if (activeTab() === 'departments') {
       <app-departments-component></app-departments-component>
     }
     @if (activeTab() === 'users') {
       <app-admin-users-component></app-admin-users-component>
+    }
+    @if (activeTab() === 'permissions') {
+      <app-permissions-component></app-permissions-component>
+    }
+    @if (activeTab() === 'ideas') {
+      <app-admin-ideas-tab-component></app-admin-ideas-tab-component>
+    }
+    @if (activeTab() === 'projects') {
+      <app-admin-project-board-component></app-admin-project-board-component>
+    }
+    @if (activeTab() === 'todos') {
+      <app-admin-todo-board-component></app-admin-todo-board-component>
     }
   </div>
 </div>

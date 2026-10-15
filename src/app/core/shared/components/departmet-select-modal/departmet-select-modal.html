@@ -1,0 +1,45 @@
+<div class="modal-overlay">
+    <div class="dept-modal">
+        <span class="title">Abteilungen</span>
+        <div class="controls">        
+            <div class="select-buttons">
+              <button class="select-option" (click)="onSelectAll()">✓</button>
+              <button class="select-option" (click)="onUnselectAll()">✕</button>
+            </div>
+            @if(rolesForm) {
+            <div class="roles-buttons">
+            <form [formGroup]="rolesForm">
+              <div formArrayName="roles">
+                @for (control of formControls(); track control.value.name) {
+                    <button class="role-button"
+                         type="button"
+                        [class.active]="isRoleChecked(control)"
+                        [class.inactive]="!isRoleChecked(control)"
+                        (click)="toggleRoleCheck(control)"
+                    >
+                    {{control.value.name}}
+                    </button>
+                }
+
+              </div>
+            </form>
+            </div>
+            }
+        </div>
+
+        <div class="dept-list">
+            @for (dept of departmentViews(); track dept.id) {
+            <div class="department">
+                <label>
+                    <input type="checkbox" [checked]="dept.isChecked" (change)="dept.toggleCheck()">
+                    {{dept.departmentName}}
+                </label>
+            </div>
+            }
+        </div>
+        <div class="action-buttons">
+            <button class="result-button-select" (click)="onSelectFinish()">hinzufügen</button>
+            <button class="result-button-cancel" (click)="cancelSelect()">abbrechen</button>
+        </div>
+    </div>
+</div>

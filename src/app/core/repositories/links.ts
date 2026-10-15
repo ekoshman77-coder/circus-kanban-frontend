@@ -20,8 +20,13 @@
   export const aiNotePredictionUrl = `${baseUrl}/ai/notes/predict`;
   export const aiCategoriesApiUrl = `${baseUrl}/ai/todos/categories`;
   export const aiNoteCategoriesUrl = `${baseUrl}/ai/notes/categories`;
-  export const streakUrl = `${baseUrl}/streaks/sync`;
+  export const streakUrl = `${baseUrl}/streaks`;
   export const aiTodoSnoozingUrl = `${baseUrl}/ai/planner/snooze`;
   export const departmentApiUrl = `${baseUrl}/departments`
+  export const allUsersAdminApiUrl = `${teamApiUrl}/all-users`;
+  export const MasterDataUrl = `${baseUrl}/masterdata`
+  export const InvitationUrl = `${baseUrl}/invitation`
+  export const PermissionUrl = `${baseUrl}/admin/permissions`
+  export const DraftUrl = `${baseUrl}/drafts`
 
   

@@ -1,28 +1,24 @@
-<div class="mini-user-card" 
-     draggable="true" 
-     (dragstart)="onDragStart($event)">
+<div class="mini-user-card">
   
   <div class="mini-avatar" [style.background-color]="user().getColorHash()">
-    {{ user().firstName[0]?.toUpperCase() }}{{ user().lastName[0]?.toUpperCase() }}
+    {{ user().getInitials() }}
   </div>
   
   <div class="mini-user-info">
-    <h5>{{ user().firstName }} {{ user().lastName }}</h5>
-    <p>&#64;{{ user().username }}</p>
+    <h5>{{ user().fullName }}</h5>
 
-    <!-- 🏷️ HIER ZIEHT DIE ROLLE EIN: Nur da, wenn auch übergeben! -->
-    @if (projectRole() && projectRole() !== 'NONE') {
-      <span class="card-role-badge" style="display: inline-block; font-size: 0.75rem; color: #64748b; margin-top: 4px;">
-        🛠️ Rolle: <strong>{{ projectRole() }}</strong>
+    @if (role() && role() !== 'NONE') {
+      <span class="card-role-badge" (click)="onBadgeClicked()">
+        🛠️ {{ role() }}
       </span>
     }
   </div>
 
   <div class="mini-card-action">
     @if (actionType() === 'add') {
-      <button (click)="onButtonClick()" class="btn-mini-add">➕</button>
+      <button type="button" (click)="onButtonClick()" class="btn-mini-add" title="Hinzufügen">➕</button>
     } @else {
-      <button (click)="onButtonClick()" class="btn-mini-remove">❌</button>
+      <button type="button" (click)="onButtonClick()" class="btn-mini-remove" title="Entfernen">❌</button>
     }
   </div>
 </div>

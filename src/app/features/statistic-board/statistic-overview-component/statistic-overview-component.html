@@ -1,15 +1,13 @@
 <div class="dashboard-wrapper">
   
   <div class="dashboard-filter-bar">
-    <span class="filter-label">📈 Projekt analysieren:</span>
-    <app-milestone-selector-component
-      [initialProjectId]="selectedProjectId()"
-      [onlyProjects]="true"
-      [canChooseProject]="true"
-      [appearance]="'dropdown'"
-      [appearance]="'modal'"
-      (projectSelected)="onProjectSelected($event)">
-    </app-milestone-selector-component>
+       <app-stat-filter-bar
+       [myProjects]="myProjects()"
+       [showScopesFilter]="false"
+       [activeFilter]="activeFilter()"
+       (filterChange)="onFilterSelected($event)"
+    >
+    </app-stat-filter-bar>
   </div>
 
   <div class="dashboard-grid">

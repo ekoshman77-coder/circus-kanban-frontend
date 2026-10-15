@@ -1,37 +1,52 @@
 import { TestBed } from '@angular/core/testing';
-import { signal } from '@angular/core';
+import { signal, WritableSignal } from '@angular/core';
 import { TeamDataManager } from './team-data-manager';
 import { TeamRepository } from '../../repositories/team-repository';
 import { UserRepository } from '../../repositories/user-repository';
 import { ConnectionService } from '../connection/connection-service';
 import { UserService } from '../user/user-service';
 import { NotificationService } from '../notification/notification-service';
-import { UserModel } from '../../models/user-model';
+import { IUserInit, UserModel } from '../../models/user-model';
 import { ProjectMember } from '../../models/project-member';
 import { of } from 'rxjs';
-import { setupLocalStorageMock } from '../../shared/test-utils/local-storage-mock';
+import { setupLocalStorageMock } from '../../../../../tests/helpers/local-storage-mock';
+import { describe, beforeEach, it, expect, vi } from 'vitest';
+import { CentralQueueService } from '../central-queue/central-queue-service';
 
-
-describe('TeamDataManager (Vitest)', () => {
+describe('TeamDataManager (Vitest - Strictly Typed)', () => {
   let manager: TeamDataManager;
-  
-  // Mocks für die Repositories und Services
-  let teamRepoMock: any;
-  let userRepoMock: any;
-  let connectionServiceMock: any;
-  let userServiceMock: any;
-  let notificationServiceMock: any;
 
-  // Reaktives Signal für den Online-Status im Mock steuerbar machen
-  let isOnlineSignal = signal<boolean>(false);
+  // 🏭 Helper-Factory für unkomplizierte UserModel-Erstellung in Tests
+  const createTestUser = (overrides: Partial< IUserInit > = {}): UserModel => {
+    return new UserModel({
+      id: 'user-123',
+      username: 'testuser',
+      firstName: 'Max',
+      lastName: 'Mustermann',
+      department: null,
+      isApproved: true,
+      projectIds: [],
+      ...overrides
+    });
+  };
 
-  beforeEach(() => { 
+  // Mocks mit echten Typ-Schnittstellen
+  let teamRepoMock: Partial< TeamRepository >;
+  let userRepoMock: Partial< UserRepository >;
+  let connectionServiceMock: Partial< ConnectionService >;
+  let userServiceMock: Partial< UserService >;
+  let notificationServiceMock: Partial< NotificationService >;
+  let centralQueueServiceMock: Partial< CentralQueueService >;
 
+  let isOnlineSignal: WritableSignal< boolean >;
+
+  beforeEach(() => {
     setupLocalStorageMock();
-    // 1. Spione (Mocks) aufbauen
+    isOnlineSignal = signal< boolean >(false);
+
     teamRepoMock = {
       getMembersForProject$: vi.fn().mockReturnValue(of([])),
-      getAllGlobalUsers$: vi.fn().mockReturnValue(of([])),
+      getAllDepartmentUsers$: vi.fn().mockReturnValue(of([])),
       assignToProject$: vi.fn().mockReturnValue(of(null)),
       deleteFromProject$: vi.fn().mockReturnValue(of(null)),
       updateCoffeeAccount$: vi.fn().mockReturnValue(of(null))
@@ -40,11 +55,11 @@ describe('TeamDataManager (Vitest)', () => {
     userRepoMock = {
       updateProfile$: vi.fn().mockReturnValue(of(null)),
       deleteGlobalUser$: vi.fn().mockReturnValue(of(null)),
-      register: vi.fn().mockReturnValue(of({ id: 'new-id', username: 'newuser' }))
+      createUser: vi.fn().mockReturnValue(of({ id: 'new-id', username: 'newuser', firstName: 'New', lastName: 'User' }))
     };
 
     connectionServiceMock = {
-      isOnline: vi.fn().mockImplementation(() => isOnlineSignal())
+      isOnline: isOnlineSignal
     };
 
     userServiceMock = {
@@ -55,10 +70,13 @@ describe('TeamDataManager (Vitest)', () => {
       showNotification: vi.fn()
     };
 
-    // LocalStorage vor jedem Test leeren, damit sich Tests nicht gegenseitig stören
+    centralQueueServiceMock = {
+      enqueue: vi.fn(),
+      registerService: vi.fn()
+    };
+
     localStorage.clear();
 
-    // 2. TestBed konfigurieren
     TestBed.configureTestingModule({
       providers: [
         TeamDataManager,
@@ -66,87 +84,57 @@ describe('TeamDataManager (Vitest)', () => {
         { provide: UserRepository, useValue: userRepoMock },
         { provide: ConnectionService, useValue: connectionServiceMock },
         { provide: UserService, useValue: userServiceMock },
-        { provide: NotificationService, useValue: notificationServiceMock }
+        { provide: NotificationService, useValue: notificationServiceMock },
+        { provide: CentralQueueService, useValue: centralQueueServiceMock }
       ]
     });
 
-    // Wichtig: Wir steuern den Start-Zustand standardmäßig auf OFFLINE
     isOnlineSignal.set(false);
   });
 
-  it('sollte beim Erstellen globale Mitglieder aus dem Cache laden', () => {
-    // Vorbereitung: Wir legen Fake-Daten in den LocalStorage
-    const fakeCachedMembers = [
-      {
-        user: { id: 'u1', firstName: 'Elena', username: 'elena_dev', projectIds: [] },
-        projectRole: 'OWNER'
-      }
-    ];
-    localStorage.setItem('offline_global_members', JSON.stringify(fakeCachedMembers));
-
-    // Ausführung: Erst JETZT instanziieren wir den Service über TestBed
+  it('sollte Kaffeekassen-Änderungen über die State-Provider-Pipeline und Queue verarbeiten', () => {
     manager = TestBed.inject(TeamDataManager);
 
-    // Auswertung
-    const globalMembers = manager.globalMembersSignal();
-    expect(globalMembers.length).toBe(1);
-    expect(globalMembers[0].user.firstName).toBe('Elena');
-    expect(globalMembers[0].projectRole).toBe('OWNER');
-  });
+    const initialUser = createTestUser({ id: 'u-coffee', firstName: 'Coffee', lastName: 'Lover' });
+    const initialMember = new ProjectMember(initialUser, 'DEVELOPER');
 
-  it('sollte im Offline-Modus Daten aus dem Projekt-Cache laden, falls vorhanden', () => {
-    manager = TestBed.inject(TeamDataManager);
-    const projectId = 'project-abc';
-    const cacheKey = `offline_project_members_${projectId}`;
-    
-    const fakeProjectMembers = [
-      {
-        user: { id: 'u2', firstName: 'Max', username: 'max_design', projectIds: ['project-abc'] },
-        projectRole: 'DESIGNER'
-      }
-    ];
-    localStorage.setItem(cacheKey, JSON.stringify(fakeProjectMembers));
+    // Wir simulieren initial geladene Mitglieder über den StateProvider des DataManagers
+    (manager as any).stateProvider.applyActionPayload('SET_MEMBERS', { members: [initialMember] });
 
     // Ausführung
-    manager.loadProjectMembers(projectId);
+    manager.updateCoffeeAccount('u-coffee', 25.00, 'Barista', '☕');
 
-    // Auswertung
-    expect(manager.isProjectOfflineAvailable()).toBe(true);
-    expect(manager.currentProjectMembersSignal().length).toBe(1);
-    expect(manager.currentProjectMembersSignal()[0].user.firstName).toBe('Max');
-    // Sicherstellen, dass das Repository NICHT gerufen wurde, weil wir ja offline sind!
-    expect(teamRepoMock.getMembersForProject$).not.toHaveBeenCalled();
+    // Auswertung: Lokales Signal sofort aktualisiert
+    const updatedMember = manager.globalMembersSignal().find(m => m.user.id === 'u-coffee');
+    expect(updatedMember?.user.coffeeAccount.balance).toBe(25.00);
+    expect(updatedMember?.user.coffeeAccount.role).toBe('Barista');
+
+    // Auswertung: Event in Queue eingereiht
+    expect(centralQueueServiceMock.enqueue).toHaveBeenCalledWith(
+      expect.any(String),
+      'UPDATE_COFFEE',
+      expect.objectContaining({
+        id: 'u-coffee',
+        balance: 25.00,
+        role: 'Barista',
+        emoji: '☕'
+      })
+    );
   });
 
-  it('sollte das Flag isProjectOfflineAvailable auf false setzen, wenn Projekt offline fehlt', () => {
+  it('sollte ein Mitglied optimistisch aus dem Signal entfernen und in Queue pushen', () => {
     manager = TestBed.inject(TeamDataManager);
-    const projectId = 'unbekanntes-projekt';
 
-    // Ausführung (Cache ist leer!)
-    manager.loadProjectMembers(projectId);
+    const memberToDelete = new ProjectMember(createTestUser({ id: 'u-delete' }), 'DEVELOPER');
+    (manager as any).stateProvider.applyActionPayload('SET_MEMBERS', { members: [memberToDelete] });
 
-    // Auswertung
-    expect(manager.isProjectOfflineAvailable()).toBe(false);
-    expect(manager.currentProjectMembersSignal().length).toBe(0);
-  });
+    manager.deleteGlobalMember('u-delete');
 
-  it('sollte bei addMemberToProject sofort die Optimistic UI bedienen (Signal und Cache)', () => {
-    manager = TestBed.inject(TeamDataManager);
-    const projectId = 'proj-1';
-    const newUser = new UserModel({ id: 'u3', username: 'newbie', firstName: 'Tom', lastName: 'Tester', projectIds: [] });
-
-    // Ausführung
-    manager.addMemberToProject(projectId, newUser, 'DEVELOPER');
-
-    // Auswertung: Signal muss sofort gefüllt sein
-    const members = manager.currentProjectMembersSignal();
-    expect(members.length).toBe(1);
-    expect(members[0].user.firstName).toBe('Tom');
-    expect(members[0].projectRole).toBe('DEVELOPER');
-
-    // Auswertung: Auch im LocalStorage muss es sofort stehen
-    const cached = localStorage.getItem(`offline_project_members_${projectId}`);
-    expect(cached).toBeTruthy();
-    expect(JSON.parse(cached!).length).toBe(1);
+    expect(manager.globalMembersSignal().length).toBe(0);
+    expect(centralQueueServiceMock.enqueue).toHaveBeenCalledWith(
+      expect.any(String),
+      'DELETE_MEMBER',
+      expect.objectContaining({ id: 'u-delete' })
+    );
   });
 });

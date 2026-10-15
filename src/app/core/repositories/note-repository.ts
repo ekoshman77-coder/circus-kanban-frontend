@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, tap } from 'rxjs/operators';
 import { Note } from '../models/note';
 import { noteApiUrl } from './links';
 import { INoteJson } from './dto/note-json';
@@ -17,6 +17,7 @@ export class NoteRepository {
     let params = new HttpParams();
     params = new HttpParams().set('userId', userId);
     return this.http.get<INoteJson[]>(noteApiUrl, { params }).pipe(
+      tap(j => console.log("NOTESREPOSTORY: noten von server", j)),
       map(jsonArray => (jsonArray || []).map(json => this.mapToNoteClass(json)))
     );
   }
@@ -29,16 +30,38 @@ export class NoteRepository {
   }
 
   // ✏️ PUT /api/notes/{id}
-  updateNote(id: string, note: Note): Observable<Note> {
+  updateNote(note: Note): Observable<Note> {
+    const id = note.id!
     return this.http.put<INoteJson>(`${noteApiUrl}/${id}`, note).pipe(
       map(json => this.mapToNoteClass(json))
     );
   }
 
+  promoteNote(id: string): Observable<Note> {
+    return this.http.patch<INoteJson>(`${noteApiUrl}/${id}/promote`, {}).pipe(
+      map(json => this.mapToNoteClass(json))
+    );
+  }
+
+  revertNote(id: string): Observable<Note> {
+    return this.http.patch<INoteJson>(`${noteApiUrl}/${id}/revert`, {}).pipe(
+      map(json => this.mapToNoteClass(json))
+    );
+  }
+
+  changeStatus(id: string, newStatus: boolean): Observable<Note> {
+    const payload = {
+      id: id,
+      inCalculation: newStatus
+    }
+    return this.http.patch<INoteJson>(`${noteApiUrl}/status`, payload).pipe(
+      map(json => this.mapToNoteClass(json))
+    )
+  }
+
   // 🗑️ DELETE /api/notes/{id}
-deleteNote(id: string, userId: string): Observable<void> {
-    let params = new HttpParams().set('userId', userId);
-    return this.http.delete<void>(`${noteApiUrl}/${id}`, { params });
+  deleteNote(id: string): Observable<void> {  
+    return this.http.delete<void>(`${noteApiUrl}/${id}`);
   }
   
   // 🔍 GET Einzelne Note
@@ -60,7 +83,8 @@ deleteNote(id: string, userId: string): Observable<void> {
       tag: json.tag,
       isInCalculation: json.isInCalculation,
       temperature: json.temperature,
-      weatherCode: json.weatherCode
+      weatherCode: json.weatherCode,
+      scope: json.scope
     });
   }
 }

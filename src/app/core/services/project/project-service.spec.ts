@@ -6,44 +6,72 @@ import { UserService } from '../user/user-service';
 import { NoteService } from '../note/note-service';
 import { NotificationService } from '../notification/notification-service';
 import { ProjectDraftService } from './project-draft-service';
-import { signal } from '@angular/core';
+import { signal, WritableSignal } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { Project } from '../../models/project';
 import { TodoViewModel } from '../../viewmodel/todo-view-model';
 import { UnifiedSuggestion } from '../../models/unified-suggestion';
+import { IUserInit, UserModel } from '../../models/user-model';
+import { Milestone } from '../../models/milestone';
+import { LocalStorageService } from '../user/local-storage-service';
+import { mockLocalStorageService } from '@tests/helpers/test-providers';
+import { PermissionService } from '../permissions/permission-service';
 
-
-describe('ProjectService (Vitest)', () => {
+describe('ProjectService (Vitest - Strictly Typed)', () => {
   let service: ProjectService;
   
-  // Mock-Objekte deklarieren
-  let dataManagerMock: any;
-  let userServiceMock: any;
-  let noteServiceMock: any;
-  let notificationServiceMock: any;
-  let draftServiceMock: any;
+  // 🏭 Helper-Factory für UserModel
+  const createTestUser = (overrides: Partial< IUserInit > = {}): UserModel => {
+    return new UserModel({
+      id: 'user-123',
+      username: 'testuser',
+      firstName: 'Max',
+      lastName: 'Mustermann',
+      department: null,
+      isApproved: true,
+      projectIds: [],
+      ...overrides
+    });
+  };
 
-  // Reaktivität über echte Angular Signals simulieren
-  const currentUserSignal = signal<any>(null);
-  const currentDraftSignal = signal<any>(null);
+  // Typsichere Mocks
+  let dataManagerMock: Partial< ProjectDataManagerService >;
+  let userServiceMock: Partial< UserService >;
+  let noteServiceMock: Partial< NoteService >;
+  let notificationServiceMock: Partial< NotificationService >;
+  let draftServiceMock: Partial< ProjectDraftService >;
+
+  // Reaktive Signals für Mocks
+  let currentUserSignal: WritableSignal< UserModel | null >;
+  let currentDraftSignal: WritableSignal< Project | null >;
+  let allProjectsPoolSignal: WritableSignal< Project[] >;
 
   beforeEach(() => {
-    // Vitest Mocks erstellen
+    currentUserSignal = signal< UserModel | null >(null);
+    currentDraftSignal = signal< Project | null >(null);
+    allProjectsPoolSignal = signal< Project[] >([]);
+
+    const permissionServiceMock = {
+      canUserPerformAction: vi.fn().mockReturnValue(true),
+      allPermissions: signal([]),
+      hasPermission: vi.fn().mockReturnValue(true)
+    };
+
     dataManagerMock = {
-      getProjects: vi.fn().mockReturnValue(of([])),
+      allProjectsPool: allProjectsPoolSignal,
       updateProject: vi.fn(),
       createProject: vi.fn(),
       deleteProject: vi.fn(),
-      trackMilestoneSelection: vi.fn(),
-      trackMilestoneDegradation: vi.fn(),
-      trackMilestoneIgnorance: vi.fn(),
-      getMilestoneSuggestions: vi.fn(),
+      trackMilestoneSelection: vi.fn().mockReturnValue(of(null)),
+      trackMilestoneDegradation: vi.fn().mockReturnValue(of(null)),
+      trackMilestoneIgnorance: vi.fn().mockReturnValue(of(null)),
+      getMilestoneSuggestions: vi.fn().mockReturnValue(of({ recommended: [], degraded: [] })),
       getDashboardStatistics: vi.fn()
     };
     
     userServiceMock = {
-      currentUser: vi.fn().mockReturnValue(currentUserSignal),
-      getCurrentUserId: vi.fn()
+      currentUser: currentUserSignal,
+      getCurrentUserId: vi.fn().mockReturnValue('user-123')
     };
 
     noteServiceMock = {
@@ -55,9 +83,7 @@ describe('ProjectService (Vitest)', () => {
     };
 
     draftServiceMock = {
-      get currentDraft() {
-       return currentDraftSignal;
-      }
+      currentDraft: currentDraftSignal
     };
 
     TestBed.configureTestingModule({
@@ -67,7 +93,9 @@ describe('ProjectService (Vitest)', () => {
         { provide: UserService, useValue: userServiceMock },
         { provide: NoteService, useValue: noteServiceMock },
         { provide: NotificationService, useValue: notificationServiceMock },
-        { provide: ProjectDraftService, useValue: draftServiceMock }
+        { provide: ProjectDraftService, useValue: draftServiceMock },
+        { provide: LocalStorageService, useValue: mockLocalStorageService},
+        { provide: PermissionService, useValue: permissionServiceMock}
       ]
     });
 
@@ -75,9 +103,9 @@ describe('ProjectService (Vitest)', () => {
   });
 
   afterEach(() => {
-    // Signale nach jedem Test zurücksetzen
     currentUserSignal.set(null);
     currentDraftSignal.set(null);
+    allProjectsPoolSignal.set([]);
     vi.clearAllMocks();
   });
 
@@ -121,38 +149,51 @@ describe('ProjectService (Vitest)', () => {
   // ==========================================
   // 2. SIGNALS & KI-FILTERUNG
   // ==========================================
-it('sollte Vorschläge herausfiltern, die bereits im Entwurf (Draft) existieren', () => {
-  // 1. Setup: Draft mit bereits existierendem Meilenstein vorbereiten
-  currentDraftSignal.set({
-    milestones: [{ title: 'Konzept' }]
-  } as any);
+  describe('Signals & KI-Filterung', () => {
+    it('sollte Vorschläge herausfiltern, die bereits im Entwurf (Draft) existieren', () => {
+      // 1. Setup: Draft mit einem vollständigen Project-Objekt erstellen
+      currentDraftSignal.set(new Project({
+        id: 'p1',
+        title: 'Mein Projekt',
+        area: 'Tech',
+        ideaId: 'idea-123',
+        userId: 'user-123',
+        departmentId: 'dept-123',
+        milestones: [
+          new Milestone({
+            title: 'Konzept',
+            duration: 5
+          })
+        ]
+      }));
+      
+      const testUser = createTestUser({ id: 'user-123' });
+      currentUserSignal.set(testUser);
+      
+      const mockSuggestions = {
+        recommended: [
+          { title: 'Konzept', source: 'KI', isRecommended: true, words: [] },
+          { title: 'Design', source: 'KI', isRecommended: true, words: [] }
+        ] as UnifiedSuggestion[],
+        degraded: [] as UnifiedSuggestion[]
+      };
 
-  userServiceMock.getCurrentUserId.mockReturnValue('user-123');
-  currentUserSignal.set({ id: 'user-123' }); // Damit der Constructor-Effect happy ist
-  
-  const mockSuggestions = {
-    recommended: [
-      { title: 'Konzept', source: 'KI', isRecommended: true, words: [] },
-      { title: 'Design', source: 'KI', isRecommended: true, words: [] }
-    ] as UnifiedSuggestion[],
-    degraded: [] as UnifiedSuggestion[]
-  };
+      vi.mocked(dataManagerMock.getMilestoneSuggestions!).mockReturnValue(of(mockSuggestions));
 
-  dataManagerMock.getMilestoneSuggestions.mockReturnValue(of(mockSuggestions));
+      // 2. Aktion: Vorschläge laden
+      service.loadMilestoneSuggestions('Mein Projekt', 'Tech');
 
-  // 2. Aktion: Vorschläge laden
-  service.loadMilestoneSuggestions('Mein Projekt', 'Tech');
+      // 3. Reaktivität erzwingen
+      TestBed.flushEffects();
 
-  // 3. Reaktivität erzwingen
-  TestBed.flushEffects();
-
-  // 4. Auswertung
-  const filtered = service.suggestions();
-  
-  expect(filtered).not.toBeNull();
-  expect(filtered?.recommended).toHaveLength(1);
-  expect(filtered?.recommended[0].title).toBe('Design');
-});
+      // 4. Auswertung
+      const filtered = service.suggestions();
+      
+      expect(filtered).not.toBeNull();
+      expect(filtered?.recommended).toHaveLength(1);
+      expect(filtered?.recommended[0].title).toBe('Design');
+    });
+  });
 
   // ==========================================
   // 3. ASYNCHRONER KRAM & FEHLERHANDLING
@@ -160,18 +201,19 @@ it('sollte Vorschläge herausfiltern, die bereits im Entwurf (Draft) existieren'
   describe('Projekt-Aktionen & Analytics', () => {
 
     it('sollte beim Speichern eines Projekts die Notiz via NoteService sperren/aktualisieren', () => {
-      const mockProject = new Project({ id: 'p2', title: 'Vitest App', ideaId: 'note-99', userId: 'user-123', area: 'Tech' });
-      userServiceMock.getCurrentUserId.mockReturnValue('user-123');
-      dataManagerMock.createProject.mockReturnValue(of(mockProject));
+      const mockProject = new Project({ id: 'p2', title: 'Vitest App', ideaId: 'note-99', userId: 'user-123', area: 'Tech', departmentId: "dept" });
+      vi.mocked(userServiceMock.getCurrentUserId!).mockReturnValue('user-123');
 
-      service.saveCalculatedProject(mockProject).subscribe(() => {
-        expect(noteServiceMock.updateNoteStatus).toHaveBeenCalledWith('note-99', true);
-      });
+      // Aufruf ist jetzt synchron (void)
+      service.saveCalculatedProject(mockProject);
+
+      expect(dataManagerMock.createProject).toHaveBeenCalledWith(mockProject);
+      expect(noteServiceMock.updateNoteStatus).toHaveBeenCalledWith('note-99', true);
     });
 
     it('sollte bei einer Offline-Fehlermeldung die passende Benachrichtigung anzeigen', () => {
-      userServiceMock.getCurrentUserId.mockReturnValue('user-123');
-      dataManagerMock.getDashboardStatistics.mockReturnValue(
+      vi.mocked(userServiceMock.getCurrentUserId!).mockReturnValue('user-123');
+      vi.mocked(dataManagerMock.getDashboardStatistics!).mockReturnValue(
         throwError(() => new Error('OFFLINE_MODE'))
       );
 

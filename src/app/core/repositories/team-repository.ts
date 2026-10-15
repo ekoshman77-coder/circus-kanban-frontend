@@ -2,9 +2,9 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, Observable, tap } from 'rxjs';
 import { ProjectRole, UserModel } from '../models/user-model';
-import { teamApiUrl, userApiUrl } from './links';
-import { IUserJson } from './dto/user-json';
+import { allUsersAdminApiUrl, teamApiUrl, userApiUrl } from './links';
 import { ProjectMember } from '../models/project-member';
+import { AssignUserToProjekt } from './dto/assign-user-to-project';
 
 @Injectable({
   providedIn: 'root'
@@ -13,7 +13,7 @@ export class TeamRepository {
   private http = inject(HttpClient);
 
   /** 📥 Holt alle Projektmitglieder inklusive ihrer Rollen */
-  public getMembersForProject$(userId: string, projectId?: string | null ): Observable<ProjectMember[]> {
+  public getMembersForProject$(userId: string, projectId?: string | null): Observable<ProjectMember[]> {
     console.log('📡 [TeamRepo] GET getMembersForProject$ für Projekt:', projectId);
     let params = new HttpParams();
     params = params.append("userId", userId)
@@ -38,18 +38,15 @@ export class TeamRepository {
     // 🎯 WICHTIG: NUR teamApiUrl benutzen, kein extra '/assign' anfügen!
     const url = teamApiUrl;
 
-    // 1. Die Query-Parameter für das Backend
-    const params = new HttpParams()
-      .set('projectId', projectId)
-      .set('role', role);
-
     // 2. Das JSON-Objekt für den @RequestBody
-    const body = {
-      userId: memberId
+    const body: AssignUserToProjekt = {
+      userId: memberId,
+      projectId: projectId,
+      projectRole: role
     };
 
     // 3. Abschicken!
-    return this.http.post<any>(url, body, { params }).pipe(
+    return this.http.post<any>(url, body).pipe(
       map(json => {
         console.log('📬 [TeamRepo] Server-Antwort für Zuweisung erhalten:', json);
         return new ProjectMember(
@@ -85,12 +82,25 @@ export class TeamRepository {
   }
 
   /** 🌍 Holt alle registrierten Benutzer weltweit verpackt als ProjectMember (Standard-Rolle NONE) */
-public getAllDepartmentUsers$(userId: string): Observable<ProjectMember[]> {
+  public getAllDepartmentUsers$(userId: string): Observable<ProjectMember[]> {
     console.log('📡 [TeamRepo] GET getAllGlobalUsers$ für User:', userId);
 
     const params = new HttpParams().set('userId', userId);
 
     return this.http.get<any[]>(teamApiUrl, { params }).pipe(
+      map(jsonArray => jsonArray.map(json => {
+        return new ProjectMember(
+          UserModel.fromJson(json.user || json),
+          (json.projectRole as ProjectRole) || 'NONE'
+        );
+      }))
+    );
+  }
+
+  public getAllUsersForAdminBoard$(): Observable<ProjectMember[]> {
+    console.log('📡 [TeamRepo] GET getAllUsersForAdminBoard$ aufgerufen');
+
+    return this.http.get<any[]>(allUsersAdminApiUrl).pipe(
       map(jsonArray => jsonArray.map(json => {
         return new ProjectMember(
           UserModel.fromJson(json.user || json),

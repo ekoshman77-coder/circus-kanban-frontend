@@ -1,130 +1,137 @@
-import { Injectable, inject, effect } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
-import { catchError, tap } from 'rxjs/operators';
-import { ConnectionService } from '../connection/connection-service';
 import { GamificationRepository } from '../../repositories/gamification-repsoitory';
 import { UserService } from '../user/user-service';
 import { LoggerService } from '../logger/logger-service';
 import { GamificationResult } from '../../models/gamification';
-import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
+import { BaseQueueDataManager } from '../central-queue/base-queue-data-manager';
+import { QueueItem } from '../../models/queue-items/queue-item';
+import { generateLocalId } from '../../shared/constants/id-const';
+import { FocusPomodoroPayload } from '../../models/queue-items/pomodoro-payload';
+import { EmptyStateProvider } from '../central-queue/state-providers/empty-state-provider';
+import { QueueHandlerName } from '../../enums/queue-handler-name';
+import { Todo } from '../../models/todo';
 
-/**
- * Service für das Offline-sichere Tracken und Synchronisieren von Fokus-Zeiten (Pomodoro).
- * * **Architektur-Highlight (Offline-First):** 
- * - Bei aktiver Verbindung werden Pomodoros direkt ans Backend gefunkt.
- * - Ist der Nutzer offline (z. B. im Zug), werden Sitzungen in einer LocalStorage-Warteschlange gepuffert.
- * - Ein reaktiver Angular-Wächter (`effect`) überwacht den Online-Status und stößt vollautomatisch 
- *   einen Bulk-Sync an, sobald die Verbindung wiederhergestellt ist.
- */
+export type FocusQueueAction = 'RECORD_POMODORO';
+
 @Injectable({
   providedIn: 'root'
 })
-export class FocusDataManagerService extends BaseDataManager {
-
+export class FocusDataManagerService extends BaseQueueDataManager<EmptyStateProvider> {
   private gamificationRepository = inject(GamificationRepository);
-  private connectionService = inject(ConnectionService);
   private userService = inject(UserService);
   private loggerService = inject(LoggerService);
 
-  /** Schlüssel für die Offline-Warteschlange im LocalStorage */
-  private readonly OFFLINE_POMODORO_PREFIX = 'offline_pomodoro_queue_';
-
   constructor() {
-    super()
-    // 🛰️ Der automatische Sync-Wächter:
-    // Lauscht reaktiv auf Statusänderungen des ConnectionService.
-    // Sobald wir ONLINE gehen, triggern wir die Nachsynchronisation.
-    effect(() => {
-      if ((this.connectionService.status() === 'ONLINE') && (this.userService.currentUser())) {
-        this.syncOfflinePomodoros();
-      }
-    });
+    super(QueueHandlerName.FOCUS);
   }
 
-  /**
-   * Registriert ein erfolgreich beendetes Pomodoro-Intervall.
-   * Speichert die Session bei Offline-Zustand lokal ab, um Datenverlust zu verhindern.
-   * * @param todoId Die ID der verknüpften Aufgabe.
-   * @returns Ein Observable mit dem Gamification-Ergebnis (XP, Level-Ups) oder `null`.
-   */
-  public recordCompletedPomodoro(todoId: string): Observable<GamificationResult | null> {
-    const userId = this.userService.getCurrentUserId();
-    if (!userId) return of(null);
+  protected override createStateProvider(): EmptyStateProvider {
+    return new EmptyStateProvider();
+  }
 
-    // 🚂 Szenario A: Offline-Modus
-    if (this.connectionService.status() === 'OFFLINE') {
-      this.pushToOfflineQueue({ todoId, timestamp: Date.now() });
-      this.loggerService.info('FocusDataManager', 'Pomodoro offline im Speicher gesichert.');
-      return of(null); 
+  // ==========================================
+  // 🚀 QUEUE HANDLER IMPLEMENTIERUNG
+  // ==========================================
+
+  public override executeQueueItem(item: QueueItem): Observable<any> {
+    const action = item.action as FocusQueueAction;
+
+    switch (action) {
+      case 'RECORD_POMODORO': {
+        const payload = item.payload as FocusPomodoroPayload;
+        const { userId, todoId } = payload;
+
+        return this.gamificationRepository.sendPomodoroSession(userId, { todoId, count: 1 });
+      }
+      default:
+        return throwError((): Error => new Error(`[FocusDataManager] Unbekannte Action: ${item.action}`));
+    }
+  }
+
+  public override handleQueueResult(item: QueueItem, success: boolean, response: GamificationResult | null): void {
+    if (success && response) {
+      // 🏆 Sobald das Pomodoro online verbucht ist, bekommt der User seine XP im Header
+      this.userService.updateGamification(response);
+      this.loggerService.info('FocusDataManager', 'Pomodoro verbucht. XP & Level im State aktualisiert!');
+    } else if (!success) {
+      this.loggerService.warn(
+        'FocusDataManager',
+        `Fehler beim Verbuchen von Pomodoro für Todo ID: ${(item.payload as FocusPomodoroPayload).todoId}`
+      );
+    }
+  }
+
+  public override checkAndReplaceIds(item: QueueItem, localId: string, serverId: string): void {
+    if (item.action === 'RECORD_POMODORO') {
+      const payload = item.payload as FocusPomodoroPayload;
+      if (payload && payload.todoId === localId) {
+        payload.todoId = serverId;
+      }
+    }
+  }
+
+  // ==========================================
+  // 🔗 DEPENDENCY & CHAIN EXTRACTION
+  // ==========================================
+
+  public override extractEntityIds(item: QueueItem): string[] {
+    const ids = super.extractEntityIds(item);
+
+    if (item.action === 'RECORD_POMODORO') {
+      const payload = item.payload as FocusPomodoroPayload;
+      if (payload && payload.todoId) {
+        ids.push(payload.todoId);
+      }
     }
 
-    // 🌐 Szenario B: Online-Modus (Direkt ans Backend senden)
-    return this.gamificationRepository.sendPomodoroSession(userId, { todoId, count: 1 }).pipe(
-      tap(gamificationResult => {
-        if (gamificationResult) {
-          // Gamification-Daten im Header (XP, Level, Titel) reaktiv aktualisieren
-          this.userService.updateGamification(gamificationResult);
-          this.loggerService.info('FocusDataManager', 'Pomodoro online verbucht. XP erhalten!');
-        }
-      }),
-      catchError(err => {
-        this.loggerService.warn('FocusDataManager', 'Fehler beim Online-Senden, sichere offline...', err);
-        this.pushToOfflineQueue({ todoId, timestamp: Date.now() });
-        return throwError(() => err);
-      })
-    );
+    return ids;
   }
+
+  // ==========================================
+  // 🔄 REHYDRATION PATTERN
+  // ==========================================
+
+  protected override fetchFromServer(userId: string): Observable<void> {
+    return of(undefined);
+  }
+
+  // ==========================================
+  // 📝 PUBLIC API METHODEN (Für FocusService / Queue)
+  // ==========================================
 
   /**
-   * Sendet sämtliche lokal gepufferten Offline-Pomodoros als Sammelübertragung (Bulk)
-   * an den Server und leert bei Erfolg die Warteschlange[cite: 7].
+   * Registriert ein Pomodoro-Intervall sofort in der CentralQueue.
    */
-  private syncOfflinePomodoros(): void {
+  public recordCompletedPomodoro(todo: Todo, todoTitle?: string): void {
     const userId = this.userService.getCurrentUserId();
-    const queue = this.getOfflineQueue();
-    if (!userId || queue.length === 0) return;
+    if (!userId) {
+      return;
+    }
 
-    this.loggerService.info('FocusDataManager', `Bulk-Sync startet für ${queue.length} Offline-Pomodoros...`);
-
-    this.gamificationRepository.sendPomodoroBulk(userId, queue).subscribe({
-      next: (gamificationResult) => {
-        if (gamificationResult) {
-          this.userService.updateGamification(gamificationResult);
-        }
-        this.clearOfflineQueue();
-        this.loggerService.info('FocusDataManager', 'Sämtliche Offline-Pomodoros erfolgreich nachsynchronisiert!');
-      },
-      error: (err) => {
-        this.loggerService.error('FocusDataManager', 'Fehler beim Pomodoro-Bulk-Sync', err);
+    const payload: FocusPomodoroPayload = {
+      id: generateLocalId(),
+      userId,
+      todoId: todo.id,
+      count: 1,
+      displayInfo: {
+        category: 'Fokus-Session',
+        title: todo.task ? `Pomodoro: "${todo.task}"` : 'Fokus-Session abschließen'
       }
-    });
-  }
+    };
 
-  // --- Lokale Hilfsfunktionen für den LocalStorage ---
-
-  private getPomodoroKey(): string {
-    const userId = this.userService.getCurrentUserId()?? "anonymous"
-    return(`${this.OFFLINE_POMODORO_PREFIX}${userId}`)
+    this.queueService.enqueue(this.serviceName, 'RECORD_POMODORO', payload);
+    this.loggerService.info('FocusDataManager', 'Pomodoro in die globale Queue eingereiht.');
   }
-  /** Holt die aktuelle Offline-Warteschlange aus dem Speicher[cite: 7]. */
-  private getOfflineQueue(): any[] {
-    const data = localStorage.getItem(this.getPomodoroKey());
-    return data ? JSON.parse(data) : [];
-  }
-
-  /** Fügt einen neuen Eintrag an das Ende der Offline-Warteschlange an[cite: 7]. */
-  private pushToOfflineQueue(item: any): void {
-    const queue = this.getOfflineQueue();
-    queue.push(item);
-    localStorage.setItem(this.getPomodoroKey(), JSON.stringify(queue));
-  }
-
-  /** Löscht die Offline-Warteschlange vollständig[cite: 7]. */
-  private clearOfflineQueue(): void {
-    localStorage.removeItem(this.getPomodoroKey());
-  }
+  // ==========================================
+  // 🧹 BASE DATA MANAGER OVERRIDES
+  // ==========================================
 
   public override resetData(): void {
-    
+    // Kein lokaler Storage-State vorhanden
+  }
+
+  public override checkUnsavedData(): string | null {
+    return null;
   }
 }

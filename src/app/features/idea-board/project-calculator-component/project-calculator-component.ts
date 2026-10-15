@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal, effect, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ProjectService } from '../../../core/services/project/project-service';
 import { NoteService } from '../../../core/services/note/note-service';
 import { Project } from '../../../core/models/project';
@@ -17,6 +17,7 @@ import { Note } from '../../../core/models/note';
 import { NotificationService } from '../../../core/services/notification/notification-service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { TeamService } from '../../../core/services/team/team-service';
+import { PermissionService } from '../../../core/services/permissions/permission-service';
 
 /**
  * @component ProjectCalculatorComponent
@@ -29,7 +30,7 @@ import { TeamService } from '../../../core/services/team/team-service';
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
+    FormsModule, ReactiveFormsModule,
     DragDropModule,
     UniversalPopupComponent,
     MilestoneSuggestionsComponent,
@@ -38,7 +39,7 @@ import { TeamService } from '../../../core/services/team/team-service';
   templateUrl: './project-calculator-component.html',
   styleUrl: './project-calculator-component.css'
 })
-export class ProjectCalculatorComponent implements OnInit {
+export class ProjectCalculatorComponent {
   // -------------------------------------------------------------------------
   // 🛠️ INJIZIERTE SERVICES
   // -------------------------------------------------------------------------
@@ -49,30 +50,55 @@ export class ProjectCalculatorComponent implements OnInit {
   protected userService = inject(UserService);
   public projectDraftService = inject(ProjectDraftService);
   private notificationService = inject(NotificationService);
+  private permissionService = inject(PermissionService);
   private teamService = inject(TeamService);
+  private formBuilder = inject(FormBuilder);
 
   // -------------------------------------------------------------------------
   // 🚦 REAKTIVE ZUSTÄNDE (SIGNALS)
   // -------------------------------------------------------------------------
-  
+
   /** Die zugrundeliegende Idee (Notiz), aus welcher der Entwurf gestartet wurde */
   public currentIdea = signal<Note | null>(null);
-  
+
+  // Ein einziges computed Signal als Schnittstelle für das UI:
+  readonly activeIdea = computed(() => {
+    const project = this.activeProject(); // bzw. das geladene Projekt aus deinem Signal
+
+    // 1. Wenn wir ein bestehendes Projekt laden und es eine ideaId hat -> Notiz aus der Liste holen
+    if (project?.ideaId) {
+      return this.noteService.notesList().find(n => n.id === project.ideaId) ?? null;
+    }
+
+    // 2. Ansonsten den Wert aus currentIdea nehmen (z.B. bei neuem Entwurf von der Pinnwand)
+    return this.currentIdea();
+  });
+
   /** Flag, ob wir ein brandneues Projekt kalkulieren (true) oder ein existierendes bearbeiten (false) */
   protected isBrandNewDraft = signal<boolean>(true);
-  
+  /** projekt existiert in DB (egal ganz neu o) */
+  public isExistingDbProject = computed(() => {
+    const proj = this.activeProject();
+    if (!proj || !proj.id) return false;
+
+    // Existiert die ID des aktiven Projekts in der geladenen DB-Liste?
+    return this.projectService.projectsList().some(p => p.id === proj.id);
+  });
+
+  protected isHeaderEditingOpen = signal<boolean>(false);
+
   /** Zustand der KI-Vorschläge-Sidebar (offen/geschlossen) */
   protected isSidebarOpen = signal<boolean>(false);
 
   /** Steuert die Anzeige des Wiederherstellungs-Banners für ungespeicherte Entwürfe */
   protected showRestoreBanner = signal<boolean>(false);
-  
+
   /** Der aus dem LocalStorage ausgelesene Titel des ungespeicherten Entwurfs */
   protected draftTitleFromStorage = signal<string>('');
 
   /** Formular-Zustand für den Titel eines manuell hinzuzufügenden Meilensteins */
   protected newMilestoneTitle = signal<string>('');
-  
+
   /** Formular-Zustand für die Dauer eines manuell hinzuzufügenden Meilensteins */
   protected newMilestoneDuration = signal<number>(1);
 
@@ -81,25 +107,32 @@ export class ProjectCalculatorComponent implements OnInit {
 
   /** Der Fachbereich (Tag) des Projekts zur gezielten Abfrage passender KI-Templates */
   protected suggestedArea = signal<string>('Allgemein');
-  
+
   /** Steuert die Lade-Animation während KI-Vorschläge abgerufen werden */
   protected isMagicLoading = signal<boolean>(false);
 
   /** Steuert die Anzeige des Erfolgs-Popups nach Abschluss der Kalkulation */
   protected showSuccessPopup = signal<boolean>(false);
-  
+
   /** Hält den finalen Projekttitel für die Anzeige im Erfolgs-Popup bereit */
   protected finalProjectTitle = signal<string>('');
 
+  /** form für Eingabe Metadaten */
+  protected projectForm = this.formBuilder.group({
+    title: ["", [Validators.required, Validators.minLength(5)]],
+    area: ["", [Validators.required, Validators.minLength(3)]],
+    content: ["", [Validators.required, Validators.minLength(20)]]
+  })
+
   /** Die ID des Meilensteins, der sich aktuell im Inline-Edit-Modus befindet (null falls keiner) */
   protected editingMilestoneId: string | null = null;
-  
+
   /** Temporärer Titel während des Inline-Edits */
   protected editTitle: string = '';
-  
+
   /** Temporäre Dauer während des Inline-Edits */
   protected editTime: number = 1;
-  
+
   /** Array von 1 bis 30 für die Dropdown-Auswahl der Meilenstein-Tage */
   public availableDays: number[] = Array.from({ length: 30 }, (_, i) => i + 1);
 
@@ -138,7 +171,7 @@ export class ProjectCalculatorComponent implements OnInit {
   // -------------------------------------------------------------------------
   // 🏗️ CONSTRUCTOR & LIFECYCLE HOOKS
   // -------------------------------------------------------------------------
-  
+
   constructor() {
     /**
      * Reagiert autark auf Änderungen des Navigation-States und steuert den internen State
@@ -161,10 +194,16 @@ export class ProjectCalculatorComponent implements OnInit {
 
       this.handleNavigationStateChange(navState, userId);
     });
-  }
 
-  ngOnInit(): void {
-    this.projectService.loadProjects();
+    effect(() => {
+      const proj = this.activeProject()
+      if (!proj) return;
+      this.projectForm.patchValue({
+        title: proj.title ?? "",
+        area: proj.area ?? "",
+        content: proj.content ?? ""
+      }, { emitEvent: false })
+    })
   }
 
   /**
@@ -197,26 +236,51 @@ export class ProjectCalculatorComponent implements OnInit {
         if (cachedTitle && cachedTitle.trim().toLowerCase() === foundIdea.title.trim().toLowerCase()) {
           this.projectDraftService.loadDraftFromStorageIntoSignal();
         } else {
+          this.projectService.cleanSuggestions();
           this.projectDraftService.initDraftFromIdea(foundIdea);
         }
         this.suggestedArea.set(foundIdea.tag || 'Allgemein');
       }
     }
     else if (navState.type === 'project') {
-      this.isBrandNewDraft.set(false);
       this.currentIdea.set(null);
       this.showRestoreBanner.set(false);
 
       const matchingProject = this.projectService.projectsList().find((p) => p.id === navState.id);
       if (matchingProject) {
-        this.localEditProject.set(new Project({
-          ...matchingProject,
-          milestones: [...(matchingProject.milestones || [])]
-        }));
-        this.suggestedArea.set(matchingProject.area || 'Allgemein');
+        // 1. TeamService über das aktive Projekt informieren -> lädt die ProjectMembers & Berechtigungen
+        this.projectService.setActiveProjectId(matchingProject.id);
+
+        // 2. Altlasten im lokale Draft-Storage aufräumen
+        this.projectDraftService.clearDraft();
+
+        const isNewEmptyProject = !matchingProject.milestones || matchingProject.milestones.length === 0;
+
+        if (isNewEmptyProject) {
+          // 🟢 Fall 2: DB-Projekt existiert schon, hat aber noch keine Meilensteine
+          this.isBrandNewDraft.set(true);
+          this.localEditProject.set(null);
+
+          // Wir setzen das existierende Projekt in den DraftService
+          this.projectDraftService.currentDraft.set(new Project({
+            ...matchingProject,
+            milestones: []
+          }));
+          this.suggestedArea.set(matchingProject.area || 'Allgemein');
+
+          // Automatisch KI-Vorschläge laden
+          this.applySmartTemplates();
+        } else {
+          // 🔵 Fall 3: Richtig existierendes DB-Projekt mit Meilensteinen -> Edit-Modus
+          this.isBrandNewDraft.set(false);
+          this.localEditProject.set(new Project({
+            ...matchingProject,
+            milestones: [...(matchingProject.milestones || [])]
+          }));
+          this.suggestedArea.set(matchingProject.area || 'Allgemein');
+        }
       }
     }
-
     this.navigationService.currentNavigationState.set(null);
   }
 
@@ -261,7 +325,6 @@ export class ProjectCalculatorComponent implements OnInit {
       milestones: [...currentMilestones, newMilestone]
     }));
 
-    this.projectService.acceptSuggestion(currentProject.title, trimmedTitle);
   }
 
   /**
@@ -297,7 +360,7 @@ export class ProjectCalculatorComponent implements OnInit {
       milestones: updatedMilestones
     }));
 
-    this.projectService.degradeSuggestion(currentProject.title, milestoneToDegrade.title);
+    this.projectService.degradeSuggestion(currentProject.title, currentProject.area, milestoneToDegrade.title);
   }
 
   /**
@@ -476,7 +539,7 @@ export class ProjectCalculatorComponent implements OnInit {
     const project = this.activeProject();
     if (!project || !project.milestones || project.milestones.length === 0) return false;
     if (!this.isBrandNewDraft()) {
-      return this.teamService.hasPermission(project.id, 'PROJECT_EDIT');
+      return this.projectService.hasPermission(project.id, 'PROJECT_EDIT');
     }
     return true;
   }
@@ -499,6 +562,10 @@ export class ProjectCalculatorComponent implements OnInit {
    * Schickt das fertige Rechenergebnis per HTTP-Request an das Backend. 
    * Löscht bei Erfolg lokale Entwurfsdaten und wechselt reaktiv in die Projektübersicht.
    */
+/**
+   * Schickt das fertige Rechenergebnis an den Service. 
+   * Löscht bei Erfolg lokale Entwurfsdaten und wechselt reaktiv in die Projektübersicht.
+   */
   public handleAutoSaveConfirm(): void {
     const project = this.activeProject();
     if (!project || !project.milestones || project.milestones.length === 0) {
@@ -507,46 +574,48 @@ export class ProjectCalculatorComponent implements OnInit {
       return;
     }
 
+    // Für bereits bestehende, gefüllte Projekte: Rechte-Prüfung
     if (!this.isBrandNewDraft()) {
       const currentUserId = this.userService.getCurrentUserId();
-      if (project.userId !== currentUserId) {
+      if (project.userId !== currentUserId && !this.projectService.hasPermission(project.id, 'PROJECT_EDIT')) {
         this.notificationService.showNotification('Keine Berechtigung! 🛑', 'error');
         this.showSuccessPopup.set(false);
         return;
       }
     }
 
-    const saveObservable = this.isBrandNewDraft()
-      ? this.projectService.saveCalculatedProject(project)
-      : (this.projectService as any).updateProject?.(project) || this.projectService.saveCalculatedProject(project);
-
-    saveObservable.subscribe({
-      next: () => {
-        const erfolgsNachricht = this.isBrandNewDraft()
-          ? `Projekt "${project.title}" wurde erfolgreich gestartet! 🚀`
-          : `Änderungen am Projekt "${project.title}" wurden gespeichert! 💾`;
-
-        this.notificationService.showNotification(erfolgsNachricht, 'success');
-
-        if (this.isBrandNewDraft()) {
-          this.projectDraftService.clearDraft();
-          this.currentIdea.set(null);
-        } else {
-          this.localEditProject.set(null);
-        }
-
-        this.isBrandNewDraft.set(true);
-        this.showSuccessPopup.set(false);
-        this.navigationService.changeTab(BoardTab.Projects, { type: 'project', id: "" });
-      },
-      error: (err: HttpErrorResponse) => {
-        const serverMessage = err.error?.message || 'Fehler beim Speichern!';
-        this.notificationService.showNotification(serverMessage, 'error');
-        this.showSuccessPopup.set(false);
+    try {
+      // Synchrones Speichern/Update über den Service
+      if (this.isExistingDbProject()) {
+        this.projectService.updateCalculatedProject(project);
+      } else {
+        this.projectService.saveCalculatedProject(project);
       }
-    });
-  }
 
+      const erfolgsNachricht = this.isExistingDbProject()
+        ? `Änderungen am Projekt "${project.title}" wurden gespeichert! 💾`
+        : `Projekt "${project.title}" wurde erfolgreich kalkuliert und gestartet! 🚀`;
+
+      this.notificationService.showNotification(erfolgsNachricht, 'success');
+
+      if (this.isBrandNewDraft()) {
+        this.projectDraftService.clearDraft();
+        this.currentIdea.set(null);
+      } else {
+        this.localEditProject.set(null);
+      }
+
+      this.isBrandNewDraft.set(true);
+      this.showSuccessPopup.set(false);
+      this.navigationService.changeTab(BoardTab.Projects, { type: 'project', id: "" });
+
+    } catch (err: any) {
+      const serverMessage = err?.error?.message || err?.message || 'Fehler beim Speichern!';
+      this.notificationService.showNotification(serverMessage, 'error');
+      this.showSuccessPopup.set(false);
+    }
+  }
+  
   /** Schließt das Bestätigungs-Popup ohne zu speichern */
   public cancelPopupCountdown(): void {
     this.showSuccessPopup.set(false);
@@ -584,5 +653,38 @@ export class ProjectCalculatorComponent implements OnInit {
    */
   public onDrop(event: any): void {
     this.onMilestoneDropped(event);
+  }
+
+  public toggleHeaderEdit() {
+    this.isHeaderEditingOpen.update(value => !value)
+  }
+
+  protected onProjectFormSubmit() {
+    if (this.projectForm.invalid) {
+      this.projectForm.markAllAsTouched()
+      return
+    }
+
+    const targetSignal = this.getActiveSignal();
+    const current = targetSignal();
+    if (!current) return;
+
+    const values = this.projectForm.value;
+    targetSignal.set(new Project({
+      ...current,
+      title: values.title ?? current.title,
+      area: values.area ?? current.area,
+      content: values.content ?? current.content
+    }));
+  }
+
+  protected onProjectFormReset() {
+      const proj = this.activeProject()
+      if (!proj) return;
+      this.projectForm.patchValue({
+        title: proj.title ?? "",
+        area: proj.area ?? "",
+        content: proj.content ?? ""
+      })
   }
 }

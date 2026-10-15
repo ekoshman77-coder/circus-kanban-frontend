@@ -1,6 +1,10 @@
 <div class="performance-container">
 
-  @if (mode === 'tasks') {
+  <app-stat-filter-bar [myProjects]="myProjects()" [showScopesFilter]="true" [activeFilter]="activeFilter()"
+    (filterChange)="setFilter($event)">
+  </app-stat-filter-bar>
+
+  @if (mode() === 'tasks') {
   <div class="perf-card-grid">
     <div class="perf-card large">
       <span class="card-emoji">🚀</span>
@@ -12,7 +16,7 @@
     <div class="perf-card stats-sub-box">
       <div class="sub-row">
         <span>Gesamt Erledigt:</span>
-        <strong>{{ completedTodos.length }} Tasks</strong>
+        <strong>{{ completedTodos().length }} Tasks</strong>
       </div>
       <div class="sub-row">
         <span>Davon Express:</span>
@@ -42,17 +46,17 @@
   </div>
   }
 
-<div class="perf-extra-row">
+  <div class="perf-extra-row">
 
     <div class="perf-card small-analytic">
       <div class="analytic-header">
         <span class="analytic-emoji">🧙‍♂️</span>
         <h3>Ehrlichkeit</h3>
       </div>
-      <div class="medium-percentage" [class.warning-orange]="totalEffortManipulations > 0">
-        {{ totalEffortManipulations }}×
+      <div class="medium-percentage warning-orange">
+        {{ totalEffortManipulations }} <span class="text-lg font-normal">Korrekturen</span>
       </div>
-      <p class="card-sub">Schätz-Korrekturen</p>
+      <p class="card-sub">Schätz-Anpassungen im Verlauf</p>
     </div>
 
     <div class="perf-card small-analytic">
@@ -66,26 +70,36 @@
       <p class="card-sub">bis zum Haken</p>
     </div>
 
+    <!-- 🎯 DYNAMISCHE STREAK-KACHEL (User-Streak ODER Projekt-Streak) -->
+    @if (showStreakCard()) {
     <div class="perf-card small-analytic">
       <div class="analytic-header">
-        <span class="analytic-emoji">🔥</span>
-        <h3>Aktiv-Streak</h3>
+        <span class="analytic-emoji">
+          @if (isShieldActive) { 🛡️ } @else if (isSpecificProjectFilter()) { 🔋 } @else { 🔥 }
+        </span>
+        <h3>{{ streakTitle }}</h3>
       </div>
       <div class="medium-percentage" [style.color]="streakMeta.color">
+        @if (isSpecificProjectFilter()) {
+        {{ projectStreakInfo()?.batteryPercentage ?? 0 }}<span class="text-lg font-normal">%</span>
+        } @else {
         {{ currentStreak }} <span class="text-lg font-normal">Tage</span>
+        }
       </div>
-      <p class="card-sub">in Folge aktiv</p>
+      <p class="card-sub">
+        {{ streakSubText }}
+      </p>
     </div>
+    }
 
     <div class="perf-card small-analytic circular-card">
       <div class="analytic-header">
         <span class="analytic-emoji">🎯</span>
         <h3>Planung</h3>
       </div>
-      
-      <div class="circular-progress" 
-           [style.--progress-val]="predictabilityScore * 100"
-           [style.--progress-color]="predictabilityMeta.color">
+
+      <div class="circular-progress" [style.--progress-val]="predictabilityScore * 100"
+        [style.--progress-color]="predictabilityMeta.color">
         <div class="circular-progress-inner">
           {{ predictabilityScore | percent:'1.0-0' }}
         </div>

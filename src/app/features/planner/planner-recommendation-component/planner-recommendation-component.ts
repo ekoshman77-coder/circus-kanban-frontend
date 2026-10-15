@@ -1,172 +1,78 @@
-import { Component, inject, signal, output, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { UserService } from '../../../core/services/user/user-service';
-import { PlannerService } from '../../../core/services/ai/planner-service';
-import { NotificationService } from '../../../core/services/notification/notification-service';
-import { Todo } from '../../../core/models/todo';
+import { Component, input, output, signal, computed } from '@angular/core';
+import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
+import { RecommendationResult, RejectReason } from '../../../core/models/recommendation-result';
+import { RecommendedTodoItem } from '../../../core/services/ai/planner-service';
+
+export interface RecommendationTodo {
+  id: string;
+  title: string;
+  estimatedHours: number;
+  aiReasoning: string;
+  quadrant: string;
+}
 
 @Component({
   selector: 'app-planner-recommendation',
   standalone: true,
-  imports: [CommonModule],
+  imports: [DragDropModule],
   templateUrl: './planner-recommendation-component.html',
   styleUrls: ['./planner-recommendation-component.css']
 })
 export class PlannerRecommendationComponent {
-  private userService = inject(UserService);
-  public plannerService = inject(PlannerService);
-  private notificationService = inject(NotificationService)
+  // 🟢 Verwendet das echte Server-Modell mit plannerDetails & modeCode
+  recommendations = input<RecommendedTodoItem[]>([]);
+  
+  // 🟢 Ein zentrales Output-Event für das Gesamtergebnis
+  sessionCompleted = output<RecommendationResult>();
 
-  closeRequest = output<{ accepted: boolean; todoId: string }>();
-  showFeedbackReasons = signal<boolean>(false);
-  isComputing = computed(() => this.plannerService.isLoading());
+  // Lokaler Puffer innerhalb der Komponente für Ablehnungen
+  private rejectionsBuffer = signal<{ todoId: string; reason: RejectReason }[]>([]);
+  activePopoverId = signal<string | null>(null);
 
-  // 🌐 Unser Wörterbuch für die Internationalisierung (Frontend-Driven UI)
-  PLANNER_MESSAGES: { [key in 'de' | 'en']: { [textKey: string]: string } } = {
-    de: {
-      DEFAULT_TITLE: 'Deine Empfehlung',
-      DEFAULT_DESC: 'Hier ist dein nächstes To-Do.',
+  // Verbleibende Todos im UI (ausgeblendet, wenn bereits abgelehnt)
+  visibleList = computed(() => {
+    const rejectedIds = new Set(this.rejectionsBuffer().map(r => r.todoId));
+    return this.recommendations().filter(item => !rejectedIds.has(item.todo.id));
+  });
 
-      // 🧠 Die neuen Begründungen für das Barometer (Deutsch)
-      REASON_DEFAULT: 'Weil diese Aufgabe perfekt in deinen aktuellen Tag passt.',
-      REASON_LOW_ENERGY_SHORT_TIME: 'Weil deine Energie niedrig ist und du gerade wenig Zeit hast.',
-      REASON_NO_TODOS_LEFT: 'Hervorragend! Du hast alle Aufgaben für heute erledigt.'
-    },
-    en: {
-      DEFAULT_TITLE: 'Your Recommendation',
-      DEFAULT_DESC: 'Here is your next to-do.',
+  // 🚀 Ein Todo wurde gewählt (Klick oder Drag nach oben)
+  onSelect(item: RecommendedTodoItem) {
+    this.finishSession(item.todo.id);
+  }
 
-      // 🧠 Die neuen Begründungen für das Barometer (Englisch - schon fertig für GitHub!)
-      REASON_DEFAULT: 'Because this task fits perfectly into your current day.',
-      REASON_LOW_ENERGY_SHORT_TIME: 'Because your energy is low and you are short on time.',
-      REASON_NO_TODOS_LEFT: 'Excellent! You have completed all tasks for today.'
+  // ❌ Ein Todo wurde abgelehnt (Dropzone oder Klick)
+  onReject(todoId: string, reason: RejectReason) {
+    // 1. Im lokalen Puffer speichern
+    this.rejectionsBuffer.update(list => [...list, { todoId, reason }]);
+    this.activePopoverId.set(null);
+
+    // 2. Prüfen: Sind jetzt alle vorgeschlagenen Todos verarbeitet?
+    if (this.visibleList().length === 0) {
+      this.finishSession(); // Fertig, ohne gewähltes Todo
     }
-  };
-  currentLanguage: 'de' | 'en' = 'de';// Hier simulieren wir erst mal Deutsch
-
-  constructor() {
-    this.loadNextRecommendation();
   }
 
-  // Helper-Getters für ein saubereres HTML
-  get titleKey(): string {
-    const code = this.plannerService.aiResponseCode()?.reasonCode;
-    return code ? `${code}_TITLE` : 'DEFAULT_TITLE';
-  }
-
-  get descKey(): string {
-    const code = this.plannerService.aiResponseCode()?.reasonCode;
-    return code ? `${code}_DESC` : 'DEFAULT_DESC';
-  }
-
-  acceptTodo(todo: any) {
-    console.log('🚀 Starten geklickt für:', todo.task);
-
-    // 1. Feedback an den Server senden (damit die KI lernt: Das mag der User!)
-    const currentEnergy = this.userService.userEnergy();
-    this.plannerService.sendFeedback(todo.id, true, null, currentEnergy);
-
-    // 2. Event nach oben feuern, um den Banner auf dem Dashboard zu aktivieren
-    this.closeRequest.emit({ accepted: true, todoId: todo.id });
-  }
-
-  rejectTodo() {
-    this.showFeedbackReasons.set(true);
-  }
-
-  cancelReject() {
-    this.showFeedbackReasons.set(false);
-  }
-
-  sendDetailedFeedback(todo: any, reason: 'no_motivation' | 'too_heavy' | 'too_long') {
-    console.log('Feedback gesendet:', reason);
-    const currentEnergy = this.userService.userEnergy();
-
-    // 🎯 REIHENFOLGE ERZWUNGEN: Wir subscriben direkt auf den Service-Call!
-    this.plannerService.sendFeedback(todo.id, false, reason, currentEnergy).subscribe({
-      next: () => {
-        this.loadNextRecommendation();
-      },
-      error: (err) => {
-        console.error('Feedback fehlgeschlagen:', err);
-
-        // 1. Schicke Toast-Nachricht auf den Bildschirm 🍿
-        this.notificationService.showNotification(
-          'Verbindung abgebrochen! Dein Feedback konnte nicht gespeichert werden.',
-          'error'
-        );
-
-        // 2. Wir schleißen die Empfehlungs-Komponente, 
-        // damit der User nicht auf dem alten To-Do hängen bleibt.
-        this.closeRequest.emit({ accepted: false, todoId: todo.id });
-      }
+  // 🏁 Baut das Paket zusammen und schickt es an die Elternkomponente / den Service
+  private finishSession(selectedTodoId?: string) {
+    console.log("PlannerRecommendationComponent: finishSession startet", selectedTodoId);
+    this.sessionCompleted.emit({
+      selectedTodoId: selectedTodoId,
+      rejections: this.rejectionsBuffer()
     });
   }
 
-  loadNextRecommendation() {
-    console.log('startet loading neuer Rekomendation')
-    this.showFeedbackReasons.set(false);
+  onDrop(event: CdkDragDrop<any>, targetZone: 'select' | RejectReason) {
+    const item = event.item.data as RecommendedTodoItem;
+    if (!item) return;
 
-    const energy = this.userService.userEnergy();
-    const timeLeft = this.userService.workingTimeLeft();
-
-    // 🚀 RAUS MIT DEM MOCK! Wir rufen jetzt die echte Server-Logik auf:
-    this.plannerService.loadSmartRecommendation(energy, timeLeft);
-  }
-
-  // 🧠 Das Stimmungs-Barometer zieht sich jetzt die ECHTEN Daten vom Server
-  get moodExplanation(): { icon: string, text: string } | null {
-    const aiResponse = this.plannerService.aiResponseCode(); // recommendedTodoResponse
-    const todo = this.plannerService.recommendedTodo();
-
-    if (!aiResponse || !aiResponse.reasonCode || !todo) return null;
-
-    const code = aiResponse.reasonCode;
-
-    // 1. Dein genialer Inkubations-Spezialfall (Bleibt als Premium-Feature im Frontend!)
-    if (code === 'LOW_ENERGY_SHORT_TIME' && todo.effort > 1) {
-      return {
-        icon: '🛌💤',
-        text: this.currentLanguage === 'de'
-          ? 'Code-Inkubation: Lies dir das Ticket jetzt nur entspannt durch. Dein Unterbewusstsein löst es heute Nacht im Schlaf!'
-          : 'Code Incubation: Just read through the ticket relaxedly. Your subconscious will solve it in your sleep tonight!'
-      };
-    }
-
-    // 2. Dynamischer Text basierend auf dem Server-Code und der aktuellen Sprache
-    const textKey = `REASON_${code}`;
-    const translatedText = this.PLANNER_MESSAGES[this.currentLanguage][textKey] ||
-      this.PLANNER_MESSAGES[this.currentLanguage]['REASON_DEFAULT'];
-
-    return {
-      icon: this.getIconForCode(code),
-      text: translatedText
-    };
-  }
-
-  // Hilfsfunktion für die passenden Icons zu deinen echten Server-Codes
-  private getIconForCode(code: string): string {
-    switch (code) {
-      case 'LOW_ENERGY_SHORT_TIME': return '🔋';
-      case 'NO_TODOS_LEFT': return '🎉';
-      default: return '💡';
+    if (targetZone === 'select') {
+      this.onSelect(item);
+    } else {
+      this.onReject(item.todo.id, targetZone);
     }
   }
 
-  public snoozeTodo(todo: Todo) {
-    console.log('Ticket gesnoozed:', todo.task);
-    this.plannerService.snoozyrecommendedTodo(todo.id, 5).subscribe({
-      next: () => {
-        console.log('Server Antwort ist gekommen Ticket gesnoozed:', todo.task);
-        setTimeout(() => {
-          this.loadNextRecommendation();
-        }, 300);
-      },
-      error: () => {
-        this.notificationService.showNotification(
-          "Verbindung abgebrochen! Todo konnte nicht auf Warten gestellt werden.", 'error');
-      }
-
-    })
+  toggleInlineMenu(todoId: string) {
+    this.activePopoverId.update(id => id === todoId ? null : todoId);
   }
 }
