@@ -3,11 +3,13 @@ import { Todo } from "../todo";
 import { SnapshotPayload } from "./queue-item";
 
 export type TodoAction =
+  | 'SET_TODOS' 
   | 'CREATE'
   | 'UPDATE'
   | 'DELETE'
   | 'BULK_DELETE_COMPLETED'
-  | 'BULK_DELETE_ALL';
+  | 'BULK_DELETE_ALL'
+  | 'RESTORE' ;
 
 export interface TodoSnapshotPayload extends SnapshotPayload<ITodoJSON> {}
 

@@ -48,4 +48,28 @@ export class ProjectRepository {
   public getDashboardStatistics(userId: string): Observable<ProjectDashboardStatsDTO> {
     return this.http.get<ProjectDashboardStatsDTO>(`${projectApiUrl}/statistics/${userId}`);
   }
+
+  /**
+ * 👑 Lädt alle aktiven Firmenprojekte für den Admin
+ */
+public getAllProjectsForAdmin(): Observable<IProjectJSON[]> {
+  return this.http.get<IProjectJSON[]>(`${projectApiUrl}/admin/all`);
+}
+
+/**
+ * 👑 Lädt alle gezippten/gelöschten Projekte für den Admin-Papierkorb
+ */
+public getZipProjectsForAdmin(): Observable<IProjectJSON[]> {
+  return this.http.get<IProjectJSON[]>(`${projectApiUrl}/admin/zipped`);
+}
+
+/**
+ * 👑 Verschiebt ein Projekt in den Zip-Status (Löschen) oder stellt es wieder her
+ */
+public setProjectZipStatusForAdmin(projectId: string, isZipped: boolean): Observable<IProjectJSON> {
+  return this.http.patch<IProjectJSON>(
+    `${projectApiUrl}/admin/${projectId}/zip?isZipped=${isZipped}`,
+    {}
+  );
+}
 }

@@ -23,6 +23,16 @@
       (click)="changeTab('ideas')">
       💡 Ideen
     </button>
+    <button
+      [class.active]="activeTab() === 'projects'"
+      (click)="changeTab('projects')">
+      💡 Projects
+    </button>
+    <button
+      [class.active]="activeTab() === 'todos'"
+      (click)="changeTab('todos')">
+      💡 Todos
+    </button>
   </div>
 
   <!-- Der dynamische Content-Bereich mit individuellem Gradient-Glass-Look -->
@@ -38,6 +48,12 @@
     }
     @if (activeTab() === 'ideas') {
       <app-admin-ideas-tab-component></app-admin-ideas-tab-component>
+    }
+    @if (activeTab() === 'projects') {
+      <app-admin-project-board-component></app-admin-project-board-component>
+    }
+    @if (activeTab() === 'todos') {
+      <app-admin-todo-board-component></app-admin-todo-board-component>
     }
   </div>
 </div>

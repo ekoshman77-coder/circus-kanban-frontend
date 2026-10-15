@@ -22,6 +22,8 @@ import { TeamDataManager } from './core/services/team/team-data-manager';
 import { TodoDataManagerService } from './core/services/todo/todo-data-manager-service';
 import { DraftService } from './core/services/draft-chains/draft-service';
 import { DraftQueueDataManager } from './core/services/draft-chains/draft-data-manager';
+import { AdminProjectDataManagerService } from './core/services/admin/projects/admin-data-manager';
+import { AdminTodoDataManagerService } from './core/services/admin/todos/admin-todo-data-manager';
 
 const DATA_MANAGER_REGISTRY: Record<QueueHandlerName, Type<IQueueHandler>> = {
   // 1. Höchste Priorität: Hauptfunktionalitäten
@@ -39,7 +41,9 @@ const DATA_MANAGER_REGISTRY: Record<QueueHandlerName, Type<IQueueHandler>> = {
   [QueueHandlerName.TEAM]: TeamDataManager,
   [QueueHandlerName.DEPARTMENT]: DepartmentDataManager,
   [QueueHandlerName.PERMISSION]: PermissionDataManager,
-  [QueueHandlerName.ADMIN_TEAM]: AdminTeamManager
+  [QueueHandlerName.ADMIN_TEAM]: AdminTeamManager,
+  [QueueHandlerName.ADMIN_PROJECT]: AdminProjectDataManagerService,
+  [QueueHandlerName.ADMIN_TODO]: AdminTodoDataManagerService
 };
 
 export const appConfig: ApplicationConfig = {

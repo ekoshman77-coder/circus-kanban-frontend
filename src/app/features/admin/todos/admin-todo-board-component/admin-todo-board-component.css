@@ -1,0 +1,459 @@
+/* ========================================== */
+/* 🎨 VIBRANT COLOR THEME                     */
+/* ========================================== */
+:host {
+  display: block;
+  width: 100%;
+
+  /* Hauptfarben */
+  --primary-color: #3b82f6;        /* Kräftiges Blau */
+  --primary-hover: #2563eb;
+  --bg-board: #f0f7ff;             /* Frischer, sanfter Blau-Hintergrund */
+  --bg-card: #ffffff;              /* Sauberes Weiß für Karten */
+  --border-color: #cbd5e1;          /* Deutlich sichtbarer Rand */
+  --text-main: #0f172a;             /* Dunkles Marineblau für Text */
+  --text-muted: #475569;            /* Lesbares Schiefergrau */
+
+  /* Banner-Farben */
+  --info-bg: #e0f2fe;              /* Helles Himmelblau */
+  --info-border: #38bdf8;          /* Leuchtendes Blau */
+  --info-text: #0369a1;
+
+  --offline-bg: #ffe4e6;           /* Frisches Rosa/Rot */
+  --offline-border: #fb7185;       /* Kräftiges Rot */
+  --offline-text: #be123c;
+}
+
+/* ========================================== */
+/* 📦 CONTAINER & LAYOUT                      */
+/* ========================================== */
+.admin-board-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.75rem;
+  background-color: var(--bg-board);
+  border-radius: 16px;
+  border: 1px solid #dbeafe;
+  box-shadow: 0 4px 20px rgba(37, 99, 235, 0.05);
+  max-width: 1200px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+/* ========================================== */
+/* 📢 BANNER (Offline & Info)                 */
+/* ========================================== */
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.1rem 1.3rem;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.banner .icon {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.banner strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.banner p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.banner.offline-banner {
+  background-color: var(--offline-bg) !important;
+  border-color: var(--offline-border) !important;
+  color: var(--offline-text) !important;
+}
+
+.banner.info-banner {
+  background-color: var(--info-bg) !important;
+  border-color: var(--info-border) !important;
+  color: var(--info-text) !important;
+}
+
+/* ========================================== */
+/* 🎛️ FILTER-BAR                              */
+/* ========================================== */
+.filter-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+  align-items: flex-end;
+  background-color: var(--bg-card);
+  padding: 1.5rem;
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+  border-top: 4px solid var(--primary-color); /* Blauer Akzentstreifen oben! */
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+  transition: opacity 0.3s ease;
+}
+
+.filter-bar.disabled {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.filter-bar .filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filter-bar .filter-group label {
+  font-size: 0.825rem;
+  font-weight: 700;
+  color: var(--primary-color); /* BLAUE LABELS */
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.filter-bar .filter-group select {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.925rem;
+  font-weight: 500;
+  color: var(--text-main);
+  background-color: #f8fafc;
+  border: 1.5px solid var(--border-color);
+  border-radius: 10px;
+  outline: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.filter-bar .filter-group select:focus {
+  border-color: var(--primary-color);
+  background-color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+.filter-bar .filter-group.checkbox-group {
+  justify-content: flex-end;
+  padding-bottom: 0.5rem;
+}
+
+.filter-bar .filter-group.checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  text-transform: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-main);
+
+  input[type="checkbox"] {
+    width: 1.2rem;
+    height: 1.2rem;
+    accent-color: var(--primary-color);
+    cursor: pointer;
+  }
+}
+
+/* 📋 Schmaleres, dichteres Grid für das Admin-Board */
+.todo-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); /* 👈 Schmalere Spalten! */
+  gap: 1rem;
+}
+
+.todo-card {
+  background-color: var(--bg-card);
+  border: 1px solid #bfdbfe;
+  border-left: 4px solid var(--primary-color);
+  border-radius: 10px;
+  padding: 0.65rem 0.85rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  
+  cursor: grab;
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  transition: box-shadow 0.2s ease;
+}
+
+.card-header-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Winziger Toggle-Button für die Beschreibung */
+.btn-toggle-desc {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  padding: 0 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.btn-toggle-desc:hover {
+  color: var(--primary-color);
+  transform: scale(1.1);
+}
+
+.todo-card h4 {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-grow: 1; /* Nimmt den restlichen Platz ein */
+}
+
+/* Ausgeklappte Beschreibung mit sanftem Hintergrund */
+.card-desc-expanded {
+  background-color: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  padding: 0.5rem;
+  margin-top: 0.2rem;
+  font-size: 0.8rem;
+  color: var(--text-main);
+  line-height: 1.4;
+  word-break: break-word; /* Wichtig für Passwörter oder lange Tokens ohne Leerzeichen */
+}
+
+.card-desc-expanded p {
+  margin: 0;
+}
+
+/* Status-Badge im Mini-Format */
+.status-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  background-color: #f1f5f9;
+  color: #64748b;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.status-badge.done {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+/* Meta-Daten-Leiste extrem flach */
+.card-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.1rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #f8fafc;
+}
+
+.meta-tag {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  background-color: #f8fafc;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.meta-tag.team-tag {
+  background-color: #e0f2fe;
+  color: #0369a1;
+  border-color: #bae6fd;
+}
+
+.meta-tag.private-tag {
+  background-color: #f3e8ff;
+  color: #6b21a8;
+  border-color: #e9d5ff;
+}
+
+/* Mini-Avatar direkt in der Meta-Leiste */
+.avatar-circle-small {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  color: #0f172a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  cursor: help;
+}
+/* ========================================== */
+/* 🧩 CDK DRAG & DROP FIXES (Geist & Placeholder) */
+/* ========================================== */
+
+/* Das schwebende Element, das man mit der Maus zieht */
+.cdk-drag-preview {
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2) !important;
+  border-radius: 12px;
+  background-color: var(--bg-card) !important;
+  border-left: 5px solid var(--primary-color) !important;
+  padding: 1.25rem;
+  box-sizing: border-box;
+}
+
+/* Der "Geist" / Platzhalter im Grid, während die Karte gezogen wird */
+.cdk-drag-placeholder {
+  background-color: #e2e8f0;
+  border: 2px dashed #94a3b8;
+  border-radius: 12px;
+  opacity: 0.6;
+  box-shadow: none;
+}
+
+/* Butterweiche Ein-/Ausblendanimation beim Sortieren */
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.todo-list.cdk-drop-list-dragging .todo-card:not(.cdk-drag-placeholder) {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* ========================================== */
+/* ⏳ LOADING & EMPTY STATES                  */
+/* ========================================== */
+.loading-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3.5rem 1.5rem;
+  background-color: var(--bg-card);
+  border-radius: 14px;
+  border: 2px dashed #93c5fd;
+  color: var(--text-muted);
+  text-align: center;
+  font-weight: 500;
+}
+
+.loading-state .spinner {
+  width: 36px;
+  height: 36px;
+  border: 4px solid rgba(59, 130, 246, 0.15);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 0.875rem;
+}
+
+/* ========================================== */
+/* 🎬 ANIMATIONEN                             */
+/* ========================================== */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Layout mit To-Do-Liste + Trash-Zone nebeneinander oder untereinander */
+.board-layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .board-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 🗑️/🔄 DYNAMISCHE TRASH-ZONE STYLES */
+.trash-zone {
+  min-height: 220px;
+  border-radius: 16px;
+  border: 3px dashed transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* 🔴 ROT: Löschen / Archivieren */
+.trash-zone.delete-zone {
+  background-color: #fff1f2;
+  border-color: #f43f5e;
+  color: #9f1239;
+}
+
+.trash-zone.delete-zone:hover,
+.cdk-drop-list-dragging .trash-zone.delete-zone {
+  background-color: #ffe4e6;
+  transform: scale(1.02);
+}
+
+/* 🟢 GRÜN: Wiederherstellen */
+.trash-zone.restore-zone {
+  background-color: #f0fdf4;
+  border-color: #22c55e;
+  color: #14532d;
+}
+
+.trash-zone.restore-zone:hover,
+.cdk-drop-list-dragging .trash-zone.restore-zone {
+  background-color: #dcfce7;
+  transform: scale(1.02);
+}
+
+.trash-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+/* CDK Drag & Drop Animationen */
+.cdk-drag-preview {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2) !important;
+  border-radius: 12px;
+  opacity: 0.9;
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.3;
+}

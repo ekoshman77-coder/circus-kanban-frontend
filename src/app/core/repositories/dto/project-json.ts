@@ -1,6 +1,8 @@
 import { IMilestoneJSON } from "./milestone-json";
 import { IProjectMemberJSON } from "./project-member-json";
 
+export type ProjectStatus = 'Calculation' | 'Active' | 'Closed' | 'Zip'; 
+
 export interface IProjectJSON {
   id: string;
   ideaId: string;
@@ -8,7 +10,7 @@ export interface IProjectJSON {
   title: string;
   area: string;
   content?: string;
-  status: 'Calculation' | 'Active' | 'Zip';
+  status: ProjectStatus;
   departmentId: string;
   scope: string;
   milestones: IMilestoneJSON[];     // Aus Kotlin milestones

@@ -20,6 +20,10 @@ export class AdminTeamService extends BaseDataManager {
     this.adminDataManager.deleteAdminMember(userId);
   }
 
+  public getUserById(id: string): UserModel | null {
+    return this.adminUsersSignal().find(user => user.id === id)?? null
+  }
+  
   // ==========================================
   // 🧹 BASE DATA MANAGER OVERRIDES
   // ==========================================
