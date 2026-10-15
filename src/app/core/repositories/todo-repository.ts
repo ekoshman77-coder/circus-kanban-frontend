@@ -9,6 +9,7 @@ import { LoggerService } from '../services/logger/logger-service';
 import { TodoUpdateResponse } from './dto/dto-interface';
 import { ITodoJSON } from './dto/todo-json';
 import { TodoBulkDto } from '../models/todo-bulk';
+import { AdminTodoFilter } from './dto/admin-todo-filter';
 
 
 @Injectable({
@@ -149,5 +150,16 @@ export class TodoRepository {
   public getQuickPredictions(modus: 'PAUSE' | 'ACTIVE'): Observable<string[]> {
     const params = new HttpParams().set('modus', modus);
     return this.http.get<string[]>(`${todoApiUrl}/quick-predictions`, { params });
+  }
+
+  public getAdminTodosByFilter(filter: AdminTodoFilter): Observable<ITodoJSON[]> {
+  return this.http.post<ITodoJSON[]>(`${todoApiUrl}/admin/filter`, filter);
+  }
+
+  /**
+   * 👑 Admin: To-Do aus dem Archiv/Papierkorb wiederherstellen
+   */
+  public restoreAdminTodo(id: string): Observable<void> {
+    return this.http.put<void>(`${todoApiUrl}/${id}/restore`, null);
   }
 }  

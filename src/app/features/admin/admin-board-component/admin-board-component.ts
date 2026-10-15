@@ -4,17 +4,26 @@ import { AdminUsersComponent } from '../admin-users-component/admin-users-compon
 import { PermissionsComponent } from '../permissions-component/permissions-component';
 import { NgClass } from '@angular/common';
 import { AdminIdeasTabComponent } from '../admin-ideas/admin-ideas-tab-component/admin-ideas-tab-component';
+import { AdminProjectBoardComponent } from '../projects/admin-project-board-component/admin-project-board-component';
+import { AdminTodoBoardComponent } from '../todos/admin-todo-board-component/admin-todo-board-component';
 
+export type AdminBoardTabs = 'departments' | 'users' | 'permissions' | 'ideas' | 'projects' | 'todos';
 @Component({
   selector: 'app-admin-board-component',
-  imports: [NgClass, DepartmentTabComponent, AdminUsersComponent, PermissionsComponent, AdminIdeasTabComponent],
+  imports: [NgClass, 
+    DepartmentTabComponent, 
+    AdminUsersComponent, PermissionsComponent, 
+    AdminIdeasTabComponent, 
+    AdminProjectBoardComponent, 
+    AdminTodoBoardComponent
+  ],
   templateUrl: './admin-board-component.html',
   styleUrl: './admin-board-component.css',
 })
 export class AdminBoardComponent {
-activeTab = signal<'departments' | 'users' | 'permissions' | 'ideas'>('departments');
+activeTab = signal<AdminBoardTabs>('departments');
 
-  changeTab(tab: 'departments' | 'users' | 'permissions' | 'ideas') {
+  changeTab(tab: AdminBoardTabs) {
     this.activeTab.set(tab);
   }
 }

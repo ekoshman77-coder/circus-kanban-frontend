@@ -1,7 +1,7 @@
 import { computed } from "@angular/core";
 import { Milestone } from "./milestone";
 import { ProjectRole, UserModel } from "./user-model";
-import { IProjectJSON } from "../repositories/dto/project-json";
+import { IProjectJSON, ProjectStatus } from "../repositories/dto/project-json";
 import { generateLocalId } from "../shared/constants/id-const";
 import { ProjectMember } from "./project-member";
 import { DomainModel } from "./domain-model";
@@ -14,7 +14,7 @@ export class Project implements DomainModel< Project > {
   public area: string;
   public content: string;
   public departmentId: string;
-  public status: 'Calculation' | 'Active' | 'Zip';
+  public status: ProjectStatus;
   public milestones: Milestone[];
   public scope: string;
   public teamMembers: ProjectMember[];
@@ -27,7 +27,7 @@ export class Project implements DomainModel< Project > {
     id?: string;
     content?: string;
     departmentId: string;
-    status?: 'Calculation' | 'Active' | 'Zip';
+    status?: ProjectStatus;
     milestones?: Milestone[];
     teamMembers?: ProjectMember[];
     scope?: string;

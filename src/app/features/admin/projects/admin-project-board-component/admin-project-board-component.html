@@ -1,0 +1,147 @@
+<div class="admin-board-container">
+
+    <!-- 🔍 STEUERUNGSLEISTE / FILTER -->
+    <div class="board-header">
+        <div class="filter-group">
+            <label for="deptSelect">🏢 Abteilung:</label>
+            <select id="deptSelect" [ngModel]="adminProjectService.selectedDepartmentId()"
+                (ngModelChange)="adminProjectService.selectedDepartmentId.set($event)">
+                <option value="ALL">Alle Abteilungen</option>
+                @for (dept of departments(); track dept.id) {
+                <option [value]="dept.id">{{ dept.name }}</option>
+                }
+            </select>
+        </div>
+
+        <div class="stats-summary">
+            <span class="badge active-badge">
+                🟢 {{ adminProjectService.projectStats().totalActive }} Aktive Projekte
+            </span>
+            <span class="badge zipped-badge">
+                🗑️ {{ adminProjectService.projectStats().totalZipped }} Im Papierkorb
+            </span>
+        </div>
+    </div>
+
+    <!-- 📐 ELASTISCHES BOARD -->
+    <div class="zones-wrapper">
+
+        <!-- 🟢 AKTIVE PROJEKTE ZONE -->
+        <div class="zone active-zone" [class.expanded]="expandedZone() === 'active'"
+            [class.collapsed]="expandedZone() === 'zipped'" (mouseenter)="setExpandedZone('active')"
+            (click)="setExpandedZone('active')" id="activeList" cdkDropList
+            [cdkDropListData]="adminProjectService.activeProjects()" [cdkDropListConnectedTo]="['zippedList']"
+            (cdkDropListDropped)="onDropToActive($event)">
+
+            @if (expandedZone() === 'active') {
+            <div class="zone-header">
+                <h2>💼 Aktive Firmenprojekte</h2>
+            </div>
+
+            <div class="projects-grid">
+                @for (project of adminProjectService.activeProjects(); track project.id) {
+                <div class="project-card" cdkDrag [cdkDragData]="project" (cdkDragStarted)="onDragStarted()"
+                    (cdkDragEnded)="onDragEnded()">
+
+                    <div class="card-header">
+                        <div class="dept-avatar" [style.background-color]="getDepartmentColor(project.departmentId)"
+                            [title]="getDepartmentName(project.departmentId)">
+                            {{ getDepartmentInitials(project.departmentId) }}
+                        </div>
+                        <div class="title-section">
+                            <h3>{{ project.title }}</h3>
+                            <span class="area-tag">{{ project.area || 'Allgemein' }}</span>
+                        </div>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="status-selector">
+                            <label>Status:</label>
+                            <select [ngModel]="project.status" (ngModelChange)="onStatusChange(project, $any($event))">
+                                <option value="Calculation">🧮 Calculation</option>
+                                <option value="Active">🚀 Active</option>
+                                <option value="Closed">✅ Closed</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="card-footer">
+                        <button class="zip-btn" (click)="adminProjectService.toggleProjectZipStatus(project.id, true)"
+                            title="In den Papierkorb verschieben">
+                            🗑️ Papierkorb
+                        </button>
+                    </div>
+                </div>
+                } @empty {
+                <div class="empty-state">Keine aktiven Projekte vorhanden.</div>
+                }
+            </div>
+            } @else {
+            <!-- Schrumpf-Zustand (Drop-Slot) -->
+            <div class="collapsed-indicator">
+                <button class="expand-toggle-btn" (click)="setExpandedZone('active')"
+                    (mouseenter)="setExpandedZone('active')" title="Aktive Projekte aufklappen">
+                    ▶️
+                </button>
+
+                <span class="collapsed-icon">💼</span>
+                <span class="collapsed-text">Aktive Projekte ({{ adminProjectService.activeProjects().length }})</span>
+            </div>
+            }
+        </div>
+
+        <!-- 🗑️ PAPIERKORB ZONE (ZIP) -->
+        <div class="zone zipped-zone" [class.expanded]="expandedZone() === 'zipped'"
+            [class.collapsed]="expandedZone() === 'active'" (mouseenter)="setExpandedZone('zipped')"
+            (click)="setExpandedZone('zipped')" id="zippedList" cdkDropList
+            [cdkDropListData]="adminProjectService.zippedProjects()" [cdkDropListConnectedTo]="['activeList']"
+            (cdkDropListDropped)="onDropToZip($event)">
+
+            @if (expandedZone() === 'zipped') {
+            <div class="zone-header">
+                <h2>🗑️ Papierkorb & Archiv</h2>
+            </div>
+
+            <div class="projects-grid">
+                @for (project of adminProjectService.zippedProjects(); track project.id) {
+                <div class="project-card zipped-card" cdkDrag [cdkDragData]="project" (cdkDragStarted)="onDragStarted()"
+                    (cdkDragEnded)="onDragEnded()">
+
+                    <div class="card-header">
+                        <div class="dept-avatar" [style.background-color]="getDepartmentColor(project.departmentId)">
+                            {{ getDepartmentInitials(project.departmentId) }}
+                        </div>
+                        <div class="title-section">
+                            <h3>{{ project.title }}</h3>
+                            <span class="area-tag">{{ project.area || 'Allgemein' }}</span>
+                        </div>
+                    </div>
+
+                    <div class="card-footer">
+                        <button class="restore-btn"
+                            (click)="adminProjectService.toggleProjectZipStatus(project.id, false)"
+                            title="Projekt wiederherstellen">
+                            ↩️ Wiederherstellen
+                        </button>
+                    </div>
+                </div>
+                } @empty {
+                <div class="empty-state">Der Papierkorb ist leer.</div>
+                }
+            </div>
+            } @else {
+            <!-- Schrumpf-Zustand (Drop-Slot) -->
+            <div class="collapsed-indicator">
+                <button class="expand-toggle-btn" (click)="setExpandedZone('zipped')"
+                    (mouseenter)="setExpandedZone('zipped')" title="Papierkorb aufklappen">
+                    ◀️
+                </button>
+
+                <span class="collapsed-icon">🗑️</span>
+                <span class="collapsed-text">Papierkorb ({{ adminProjectService.zippedProjects().length }})</span>
+            </div>
+            }
+        </div>
+
+    </div>
+</div>
