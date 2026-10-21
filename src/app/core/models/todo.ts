@@ -2,6 +2,7 @@ import { Identifiable } from "./identifable";
 import { ITodoJSON } from "../repositories/dto/todo-json";
 import { generateLocalId } from "../shared/constants/id-const";
 import { DomainModel } from "./domain-model";
+import { SensitiveMatch } from "./sensitive-match";
 
 export enum DateStatus {
   DUE = "due",
@@ -39,6 +40,8 @@ export class Todo implements Identifiable, DomainModel<Todo> {
   assignedUserId?: string | null;
   isStarted?: boolean;
   lastDeveloperId?: string | null;
+  isSensitive: boolean;
+  sensitiveMatches: SensitiveMatch[];
 
   constructor(init: {
     task: string;
@@ -61,6 +64,8 @@ export class Todo implements Identifiable, DomainModel<Todo> {
     assignedUserId?: string | null;
     isStarted?: boolean;
     lastDeveloperId?: string | null;
+    isSensitive?: boolean;
+    sensitiveMatches?: SensitiveMatch[];
   }) {
     this.task = init.task;
     this.id = init.id ?? generateLocalId();
@@ -82,6 +87,8 @@ export class Todo implements Identifiable, DomainModel<Todo> {
     this.isStarted = init.isStarted ?? false;
     this.teamStatus = (init.teamStatus as TeamStatus) ?? 'BACKLOG';
     this.lastDeveloperId = init.lastDeveloperId ?? null;
+    this.isSensitive = init.isSensitive?? false;
+    this.sensitiveMatches = init.sensitiveMatches ?? []
   }
 
   public toJson(): ITodoJSON {
@@ -105,7 +112,9 @@ export class Todo implements Identifiable, DomainModel<Todo> {
       isStarted: this.isStarted ?? false,
       assignedUserId: this.assignedUserId ?? null,
       teamStatus: this.teamStatus,
-      lastDeveloperId: this.lastDeveloperId ?? null
+      lastDeveloperId: this.lastDeveloperId ?? null,
+      isSensitive: this.isSensitive,
+      sensitiveMatches: this.sensitiveMatches.map(sm => sm.toJson())
     };
   }
 
@@ -130,7 +139,10 @@ export class Todo implements Identifiable, DomainModel<Todo> {
       isStarted: json.isStarted ?? false,
       assignedUserId: json.assignedUserId ?? null,
       teamStatus: (json.teamStatus as TeamStatus) ?? 'BACKLOG',
-      lastDeveloperId: json.lastDeveloperId ?? null
+      lastDeveloperId: json.lastDeveloperId ?? null,
+      isSensitive: json.isSensitive ?? false,
+      sensitiveMatches: json.sensitiveMatches?.map(sm => SensitiveMatch.fromJson(sm))?? []
+      
     });
   }
 

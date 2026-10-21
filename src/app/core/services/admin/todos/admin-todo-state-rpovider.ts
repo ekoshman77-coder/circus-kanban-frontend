@@ -11,7 +11,8 @@ export class AdminTodoStateProvider extends TodoStateProvider {
       const todoAction = action as TodoAction
       switch (todoAction) {
         case 'UPDATE':
-        case 'RESTORE': 
+        case 'RESTORE':
+        case 'SANITIZE_FEEDBACK':    
         case 'DELETE': {
            break;
         }

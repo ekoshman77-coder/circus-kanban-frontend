@@ -57,7 +57,7 @@ export class PlannerService extends BaseDataManager {
           const mappedItems: RecommendedTodoItem[] = response.recommendations
             .filter((rec) => rec.todo !== null)
             .map((rec) => ({
-              todo: new Todo(rec.todo!),
+              todo: Todo.fromJson(rec.todo!),
               plannerDetails: rec.plannerDetails,
               modeCode: rec.modeCode
             }));

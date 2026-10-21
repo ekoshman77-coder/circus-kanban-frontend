@@ -1,0 +1,36 @@
+<div class="sensitive-editor-container">
+  <div class="editor-header">
+    <h3>🕵️‍♂️ Admin Sensitivitäts-Review</h3>
+    <p class="subtitle">Klicke auf die markierten Stellen, um sie zu schwärzen oder freizugeben.</p>
+  </div>
+
+  <div class="text-viewer-box">
+    @for (segment of textMap(); track $index) {
+      @switch (segment.textType) {
+        @case ('normal') {
+          <span class="text-normal">{{ segment.text }}</span>
+        }
+        @case ('unknown') {
+          <span class="text-sensitive unknown" (click)="onSegmentClick(segment)" title="Klicken zum Schwärzen">
+            {{ segment.text }}
+          </span>
+        }
+        @case ('approved') {
+          <span class="text-sensitive approved" (click)="onSegmentClick(segment)" title="Geschwärzt. Klicken zum Freigeben">
+            {{ segment.text }}
+          </span>
+        }
+        @case ('unapproved') {
+          <span class="text-sensitive unapproved" (click)="onSegmentClick(segment)" title="Falschalarm. Klicken zum Schwärzen">
+            {{ segment.text }}
+          </span>
+        }
+      }
+    }
+  </div>
+
+  <div class="editor-actions">
+    <button type="button" class="btn-secondary" (click)="cancel()">Abbrechen</button>
+    <button type="button" class="btn-primary" (click)="saveChanges()">Überprüfung speichern 💾</button>
+  </div>
+</div>

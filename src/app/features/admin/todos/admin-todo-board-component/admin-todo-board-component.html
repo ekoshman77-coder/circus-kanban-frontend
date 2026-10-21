@@ -13,7 +13,6 @@
 
     <!-- 🎛️ 2. FILTER-BAR -->
     <div class="filter-bar" [class.disabled]="!isOnline()">
-        <!-- Dropdowns & Archiv-Checkbox -->
         <div class="filter-group">
             <label>Abteilung</label>
             <select [(ngModel)]="selectedDepartmentId" (change)="onFilterChange()" [disabled]="!isOnline()">
@@ -49,6 +48,10 @@
                 <input type="checkbox" [(ngModel)]="isArchived" (change)="onFilterChange()" [disabled]="!isOnline()">
                 Archivierte To-Dos
             </label>
+            <label class="sensitive-filter-label">
+                <input type="checkbox" [(ngModel)]="onlySensitive" (change)="onFilterChange()" [disabled]="!isOnline()">
+                ⚠️ Nur Verdächtige
+            </label>
         </div>
     </div>
 
@@ -73,7 +76,7 @@
     @if (isOnline() && hasActiveFilter()) {
     <div class="board-layout">
 
-        <!-- 📋 TO-DO-LISTE (cdkDropList für Karten) -->
+        <!-- 📋 TO-DO-LISTE -->
         <div class="todo-list" cdkDropList #todoList="cdkDropList" [cdkDropListConnectedTo]="[trashZone]">
 
             @for (todo of todos(); track todo.id) {
@@ -82,7 +85,6 @@
 
             <div class="todo-card" cdkDrag [cdkDragData]="todo">
                 <div class="card-header-row">
-                    <!-- 🔽 Aufklapp-Pfeil für die Beschreibung -->
                     <button class="btn-toggle-desc" (click)="toggleDescription(todo.id)"
                         [title]="isExpanded ? 'Beschreibung einklappen' : 'Beschreibung anzeigen'">
                         {{ isExpanded ? '▼' : '▶' }}
@@ -95,14 +97,20 @@
                     </span>
                 </div>
 
-                <!-- 📜 Beschreibung klappt nur auf, wenn isExpanded === true -->
                 @if (isExpanded && todo.description) {
                 <div class="card-desc-expanded">
                     <p>{{ todo.description }}</p>
+
+                    <div class="sanitize-action-row">
+                        <span class="sanitize-hint">🔒 Sensible Daten erkannt?</span>
+                        <button class="btn-sanitize" (click)="openSanitizeModal(todo, $event)"
+                            title="Beschreibung prüfen und sensible Stellen schwärzen">
+                            🧹 Inhalt prüfen & bereinigen
+                        </button>
+                    </div>
                 </div>
                 }
 
-                <!-- 🏷️ Meta-Infos (immer sichtbar) -->
                 <div class="card-meta">
                     @if (todo.milestoneId) {
                     <span class="meta-tag team-tag" title="Team-Aufgabe">👥 Team</span>
@@ -120,13 +128,21 @@
                     }
 
                     <span class="meta-tag status-tag">📌 {{ todo.teamStatus }}</span>
+
+                    @if (todo.sensitiveMatches && todo.sensitiveMatches.length > 0) {
+                    <span class="meta-tag warning-tag clickable" (click)="openSanitizeModal(todo, $event)"
+                        title="Möglicherweise sensible Daten enthalten! Klicken zum Prüfen.">
+                        ⚠️ {{ todo.sensitiveMatches.length }} Treffer
+                    </span>
+                    }
+                    
                 </div>
             </div>
             }
 
         </div>
 
-        <!-- 🗑️/🔄 DYNAMISCHE TRASH-ZONE -->
+        <!-- 🗑️ TRASH-ZONE -->
         <div class="trash-zone" [class.restore-zone]="isArchived" [class.delete-zone]="!isArchived" cdkDropList
             #trashZone="cdkDropList" (cdkDropListDropped)="onDropInTrash($event)">
 
@@ -148,3 +164,15 @@
     }
 
 </div>
+
+<!-- 🪟 4. OVERLAY-MODAL FÜR DEN SENSITIVE-TEXT-EDITOR -->
+@if (activeTodoForSanitization(); as activeTodo) {
+<div class="modal-backdrop" (click)="closeSanitizeModal()">
+    <div class="modal-window" (click)="$event.stopPropagation()">
+        <app-sensitive-text-editor-component [text]="activeTodo.description?? ''"
+            [matches]="activeTodo.sensitiveMatches || []" (editFinished)="onSanitizationFinished($event)"
+            (cancelled)="closeSanitizeModal()">
+        </app-sensitive-text-editor-component>
+    </div>
+</div>
+}
