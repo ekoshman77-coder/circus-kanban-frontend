@@ -28,5 +28,6 @@
   export const InvitationUrl = `${baseUrl}/invitation`
   export const PermissionUrl = `${baseUrl}/admin/permissions`
   export const DraftUrl = `${baseUrl}/drafts`
+  export const sanitizeApiUrl = `${baseUrl}/sanitize`;
 
   

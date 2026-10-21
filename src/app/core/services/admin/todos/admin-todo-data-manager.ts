@@ -10,7 +10,8 @@ import { Todo } from '../../../models/todo';
 import { QueueItem } from '../../../models/queue-items/queue-item';
 import { AdminTodoStateProvider } from './admin-todo-state-rpovider';
 import { AdminTodoFilter } from '../../../repositories/dto/admin-todo-filter';
-import { TodoAction } from '../../../models/queue-items/todo-queue-payload';
+import { SanitizationFeedbackPayload, TodoAction } from '../../../models/queue-items/todo-queue-payload';
+import { SanitizationFeedback } from '../../../models/sanitiziation-feedback';
 
 @Injectable({
   providedIn: 'root'
@@ -62,12 +63,7 @@ export class AdminTodoDataManagerService extends BaseQueueDataManager<AdminTodoS
     const filter = this.activeFilter();
 
     // 🛡️ Guard 3: Schutz vor Datenflut (Gültiges Filter-Kriterium erforderlich)
-    const hasValidFilter = filter && (
-      !!filter.projectId ||
-      !!filter.targetUserId ||
-      filter.isArchived === true ||
-      (!!filter.departmentId && (!!filter.fromDate || !!filter.toDate || filter.isArchived !== undefined))
-    );
+    const hasValidFilter = !!filter && filter.isValid()
 
     if (!hasValidFilter) {
       this.stateProvider.applyActionPayload(setTodosAction, emptyPayload);
@@ -155,6 +151,21 @@ export class AdminTodoDataManagerService extends BaseQueueDataManager<AdminTodoS
     return todo?.task || 'Unbenanntes Ticket';
   }
 
+  public saveSanitizationFeedback(feedbackDto: SanitizationFeedback, todoId: string): void {
+    const taskTitle = this.getAdminTodoTaskById(todoId);
+
+    const payload: SanitizationFeedbackPayload = {
+      id: todoId,
+      feedbackDto,
+      displayInfo: {
+        category: 'Admin-Verwaltung',
+        title: `Sensible Daten prüfen: ${taskTitle}`
+      }
+    };
+
+    this.queueService.enqueue(this.serviceName, 'SANITIZE_FEEDBACK', payload);
+  }
+
   // ==========================================
   // 🚫 LEERE ROLLBACKS (Kein Snapshot-Müll)
   // ==========================================
@@ -171,6 +182,15 @@ export class AdminTodoDataManagerService extends BaseQueueDataManager<AdminTodoS
       case 'DELETE': {
         return this.todoRepository.deleteTodo(payload.id).pipe(
             switchMap(() => this.forceFetchFromServer())
+        );
+      }
+
+      case 'SANITIZE_FEEDBACK': {
+        const payload = item.payload as any;
+        return this.todoRepository.sendSanitizationFeedback(payload.feedbackDto).pipe(
+          switchMap(() => {
+            return this.forceFetchFromServer();
+          })
         );
       }
 

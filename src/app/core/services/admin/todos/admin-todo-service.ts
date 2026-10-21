@@ -5,11 +5,16 @@ import { DepartmentService } from '../department-service';
 import { AdminProjectService } from '../projects/admin-project-service';
 import { AdminTeamService } from '../admin-team-service';
 import { AdminTodoFilter } from '../../../repositories/dto/admin-todo-filter';
+import { SensitiveMatch } from '../../../models/sensitive-match';
+import { SanitizationFeedback } from '../../../models/sanitiziation-feedback';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AdminTodoService extends BaseDataManager {
+  sanitizeTodo(todoId: string) {
+    throw new Error('Method not implemented.');
+  }
   private adminDataManager = inject(AdminTodoDataManagerService);
   
   // 🔗 Fassaden-Services für die Dropdowns einbinden
@@ -63,6 +68,17 @@ export class AdminTodoService extends BaseDataManager {
   
   public restoreTodo(todoId: string) {
     this.adminDataManager.restoreTodo(todoId)
+  }
+
+  public saveSanitizationFeedback(todoId: string, matches: SensitiveMatch[], feedbackMap: Map<string, boolean | null>): void {
+    const feedback = SanitizationFeedback.fromFeedbackMap(todoId, matches, feedbackMap);
+    
+    if (feedback.feedbacks.length === 0) {
+      return; // Keine Änderungen vom Admin getroffen
+    }
+
+    // 🔄 Übergabe an den Queue-DataManager statt direktes subscribe()
+    this.adminDataManager.saveSanitizationFeedback(feedback, todoId);
   }
 
   // ==========================================

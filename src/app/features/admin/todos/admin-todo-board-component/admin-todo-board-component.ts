@@ -9,10 +9,11 @@ import { Todo } from '../../../../core/models/todo';
 import { UserService } from '../../../../core/services/user/user-service';
 import { UserModel } from '../../../../core/models/user-model';
 import { AdminTeamService } from '../../../../core/services/admin/admin-team-service';
+import { SensitiveTextEditorComponent } from '../../../../core/shared/components/sensitive-text-editor/sensitive-text-editor-component/sensitive-text-editor-component';
 
 @Component({
   selector: 'app-admin-todo-board-component',
-  imports: [CommonModule, FormsModule, DragDropModule],
+  imports: [CommonModule, FormsModule, DragDropModule, SensitiveTextEditorComponent],
   templateUrl: './admin-todo-board-component.html',
   styleUrl: './admin-todo-board-component.css',
 })
@@ -22,11 +23,13 @@ export class AdminTodoBoardComponent {
   private adminTeamService = inject(AdminTeamService);
 
   private expandedTodoId = signal<string | null>(null);
+    public activeTodoForSanitization = signal<Todo | null>(null);
 
   public selectedDepartmentId = '';
   public selectedProjectId = '';
   public selectedTargetUserId = '';
   public isArchived = false;
+  public onlySensitive = false;
 
   public isOnline = this.connectionService.isOnline;
   public isLoading = this.adminTodoService.isLoading;
@@ -36,18 +39,16 @@ export class AdminTodoBoardComponent {
   public projectOptions = this.adminTodoService.projectOptions;
   public userOptions = this.adminTodoService.userOptions;
 
-  public hasActiveFilter = computed(() => {
-    const filter = this.adminTodoService.activeFilter();
-    return !!(filter && (filter.projectId || filter.targetUserId || filter.isArchived || filter.departmentId));
-  });
+  public hasActiveFilter = computed(() =>  this.adminTodoService.activeFilter()?.isValid());
 
   public onFilterChange(): void {
-    const filter: AdminTodoFilter = {
+    const filter: AdminTodoFilter = new AdminTodoFilter({
       departmentId: this.selectedDepartmentId || undefined,
       projectId: this.selectedProjectId || undefined,
       targetUserId: this.selectedTargetUserId || undefined,
-      isArchived: this.isArchived
-    };
+      isArchived: this.isArchived,
+      onlySensitive: this.onlySensitive
+    });
 
     this.adminTodoService.applyFilter(filter);
   }
@@ -84,5 +85,32 @@ export class AdminTodoBoardComponent {
       // Andernfalls öffnen (und das eventuell vorherige automatisch schließen!)
       this.expandedTodoId.set(todoId);
     }
+  }
+
+  public sanitizeTodoDescription(todoId: string, event: MouseEvent): void {
+    event.stopPropagation(); // Verhindert, dass sich die Karte komisch verhält
+    
+    // Wir rufen später unseren DataManager auf
+    this.adminTodoService.sanitizeTodo(todoId);
+  }
+
+  // 🧼 Modal öffnen
+  public openSanitizeModal(todo: Todo, event: MouseEvent): void {
+    event.stopPropagation();
+    this.activeTodoForSanitization.set(todo);
+  }
+
+  // ❌ Modal schließen
+  public closeSanitizeModal(): void {
+    this.activeTodoForSanitization.set(null);
+  }
+
+  // 💾 Speichern der Entscheidungen aus dem Editor
+  public onSanitizationFinished(feedbackMap: Map<string, boolean | null>): void {
+    const activeTodo = this.activeTodoForSanitization();
+    if (activeTodo) {
+      this.adminTodoService.saveSanitizationFeedback(activeTodo.id, activeTodo.sensitiveMatches, feedbackMap);
+    }
+    this.closeSanitizeModal();
   }
 }
