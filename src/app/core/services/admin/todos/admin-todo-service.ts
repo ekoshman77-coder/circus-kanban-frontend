@@ -7,6 +7,7 @@ import { AdminTeamService } from '../admin-team-service';
 import { AdminTodoFilter } from '../../../repositories/dto/admin-todo-filter';
 import { SensitiveMatch } from '../../../models/sensitive-match';
 import { SanitizationFeedback } from '../../../models/sanitiziation-feedback';
+import { SanitizationDataManager } from '../../ai/sanitization/sanitization-data-manager';
 
 @Injectable({
   providedIn: 'root'
@@ -16,11 +17,12 @@ export class AdminTodoService extends BaseDataManager {
     throw new Error('Method not implemented.');
   }
   private adminDataManager = inject(AdminTodoDataManagerService);
-  
+
   // 🔗 Fassaden-Services für die Dropdowns einbinden
   private departmentService = inject(DepartmentService);
   private adminProjectService = inject(AdminProjectService);
   private adminTeamService = inject(AdminTeamService);
+  private sanitizationDataManager = inject(SanitizationDataManager);
 
   // 🎛️ Öffentliche Signals & Status für die UI
   public readonly isOnline = this.adminDataManager.connectionService.isOnline;
@@ -51,6 +53,19 @@ export class AdminTodoService extends BaseDataManager {
     };
   });
 
+  constructor() {
+    super();
+
+    // 🎧 Lausche auf globale Muster-Änderungen und aktualisiere die Todo-Ansicht
+    this.sanitizationDataManager.patternCreated$.subscribe(() => {
+      console.log('🔄 [AdminTodoService] Neues Sanitization-Muster erkannt. Aktualisiere Todo-Liste...');
+      const currentFilter = this.activeFilter();
+      if (currentFilter) {
+        this.applyFilter(currentFilter); // Triggert den Refresh mit dem aktuellen Filter
+      }
+    });
+  }
+  
   // ==========================================
   // 📝 ACTIONS
   // ==========================================
@@ -65,14 +80,14 @@ export class AdminTodoService extends BaseDataManager {
   public archiveTodo(todoId: string) {
     this.adminDataManager.archiveTodo(todoId)
   }
-  
+
   public restoreTodo(todoId: string) {
     this.adminDataManager.restoreTodo(todoId)
   }
 
   public saveSanitizationFeedback(todoId: string, matches: SensitiveMatch[], feedbackMap: Map<string, boolean | null>): void {
     const feedback = SanitizationFeedback.fromFeedbackMap(todoId, matches, feedbackMap);
-    
+
     if (feedback.feedbacks.length === 0) {
       return; // Keine Änderungen vom Admin getroffen
     }

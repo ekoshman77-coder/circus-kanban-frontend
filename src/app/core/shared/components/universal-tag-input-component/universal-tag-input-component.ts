@@ -17,7 +17,7 @@ export class UniversalTagInputComponent implements OnInit, OnDestroy {
   private userService = inject(UserService);
 
   public textToWatch = input<string>('');
-  public contextType = input<'todo' | 'note'>('todo');
+  public contextType = input<'todo' | 'note' | 'sanitization'>('todo');
   public placeholder = input<string>('Kategorie...');
   public initialValue = input<string>('');
   public currentCategories = input<string[]>([]);

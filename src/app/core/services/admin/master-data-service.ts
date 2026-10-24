@@ -13,6 +13,8 @@ export class MasterDataService {
     private localStorageService = inject(LocalStorageService)
 
     private masterData = signal<MasterDataDto | null>(null)
+
+    public patternTypes = computed(() => this.masterData()?.patternTypes?? [])
     
     public departmentScopes = computed(() => this.masterData()?.departmentScopes?? [])
 

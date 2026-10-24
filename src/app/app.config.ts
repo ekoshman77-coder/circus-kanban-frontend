@@ -24,6 +24,7 @@ import { DraftService } from './core/services/draft-chains/draft-service';
 import { DraftQueueDataManager } from './core/services/draft-chains/draft-data-manager';
 import { AdminProjectDataManagerService } from './core/services/admin/projects/admin-data-manager';
 import { AdminTodoDataManagerService } from './core/services/admin/todos/admin-todo-data-manager';
+import { SanitizationDataManager } from './core/services/ai/sanitization/sanitization-data-manager';
 
 const DATA_MANAGER_REGISTRY: Record<QueueHandlerName, Type<IQueueHandler>> = {
   // 1. Höchste Priorität: Hauptfunktionalitäten
@@ -43,7 +44,8 @@ const DATA_MANAGER_REGISTRY: Record<QueueHandlerName, Type<IQueueHandler>> = {
   [QueueHandlerName.PERMISSION]: PermissionDataManager,
   [QueueHandlerName.ADMIN_TEAM]: AdminTeamManager,
   [QueueHandlerName.ADMIN_PROJECT]: AdminProjectDataManagerService,
-  [QueueHandlerName.ADMIN_TODO]: AdminTodoDataManagerService
+  [QueueHandlerName.ADMIN_TODO]: AdminTodoDataManagerService,
+  [QueueHandlerName.SANITIZATION]: SanitizationDataManager
 };
 
 export const appConfig: ApplicationConfig = {

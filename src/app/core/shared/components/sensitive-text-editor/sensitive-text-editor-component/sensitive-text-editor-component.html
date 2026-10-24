@@ -1,31 +1,73 @@
 <div class="sensitive-editor-container">
   <div class="editor-header">
-    <h3>🕵️‍♂️ Admin Sensitivitäts-Review</h3>
-    <p class="subtitle">Klicke auf die markierten Stellen, um sie zu schwärzen oder freizugeben.</p>
+    <div class="header-title-row">
+      <div>
+        <h3>🕵️‍♂️ Admin Sensitivitäts-Review</h3>
+        <p class="subtitle">Klicke auf markierte Stellen zum Schwärzen oder aktiviere den Lern-Modus.</p>
+      </div>
+      <button type="button" class="btn-learning-toggle" [class.active]="isLearningModeActive()"
+        (click)="toggleLearningMode()">
+        ✨ {{ isLearningModeActive() ? 'Lern-Modus aktiv (Text markieren)' : 'Neues Muster anlernen' }}
+      </button>
+    </div>
   </div>
 
-  <div class="text-viewer-box">
+  @if (selectedTextForPattern(); as markedText) {
+  <div class="pattern-creator-box">
+    <h4>💡 Neues Muster aus Markierung erstellen</h4>
+    <p class="marked-preview">Ausgewählt: <strong>"{{ markedText }}"</strong></p>
+
+    <div class="pattern-config-row">
+      <label>Typ:</label>
+      <select [(ngModel)]="selectedPatternType" (ngModelChange)="onPatternTypeChange($event)">
+        @for (type of patternTypes(); track type) {
+        <option [value]="type">{{ type }}</option>
+        }
+      </select>
+
+      <label>Kategorie/Grund:</label>
+      <!-- 🚀 UNSERE WUNDERBARE UNIVERSAL-KOMPONENTE! -->
+      <div style="flex: 1; min-width: 200px;">
+          <app-universal-tag-input-component
+            [contextType]="'sanitization'"
+            [initialValue]="patternReason()"
+            [currentCategories]="availableReasons()"
+            placeholder="z. B. PIN, PASSWORD, TOKEN"
+            (valueChanged)="patternReason.set($event)">
+          </app-universal-tag-input-component>
+      </div>      
+
+      <button type="button" class="btn-primary" (click)="submitNewPattern()">
+        Muster speichern & Rescan 🚀
+      </button>
+    </div>
+
+  </div>
+  }
+
+  <div class="text-viewer-box" (mouseup)="onTextMouseUp()">
     @for (segment of textMap(); track $index) {
-      @switch (segment.textType) {
-        @case ('normal') {
-          <span class="text-normal">{{ segment.text }}</span>
-        }
-        @case ('unknown') {
-          <span class="text-sensitive unknown" (click)="onSegmentClick(segment)" title="Klicken zum Schwärzen">
-            {{ segment.text }}
-          </span>
-        }
-        @case ('approved') {
-          <span class="text-sensitive approved" (click)="onSegmentClick(segment)" title="Geschwärzt. Klicken zum Freigeben">
-            {{ segment.text }}
-          </span>
-        }
-        @case ('unapproved') {
-          <span class="text-sensitive unapproved" (click)="onSegmentClick(segment)" title="Falschalarm. Klicken zum Schwärzen">
-            {{ segment.text }}
-          </span>
-        }
-      }
+    @switch (segment.textType) {
+    @case ('normal') {
+    <span class="text-normal">{{ segment.text }}</span>
+    }
+    @case ('unknown') {
+    <span class="text-sensitive unknown" (click)="onSegmentClick(segment)" title="Klicken zum Schwärzen">
+      {{ segment.text }}
+    </span>
+    }
+    @case ('approved') {
+    <span class="text-sensitive approved" (click)="onSegmentClick(segment)" title="Geschwärzt. Klicken zum Freigeben">
+      {{ segment.text }}
+    </span>
+    }
+    @case ('unapproved') {
+    <span class="text-sensitive unapproved" (click)="onSegmentClick(segment)"
+      title="Falschalarm. Klicken zum Schwärzen">
+      {{ segment.text }}
+    </span>
+    }
+    }
     }
   </div>
 

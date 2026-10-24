@@ -10,6 +10,7 @@ import { UserService } from '../../../../core/services/user/user-service';
 import { UserModel } from '../../../../core/models/user-model';
 import { AdminTeamService } from '../../../../core/services/admin/admin-team-service';
 import { SensitiveTextEditorComponent } from '../../../../core/shared/components/sensitive-text-editor/sensitive-text-editor-component/sensitive-text-editor-component';
+import { CreatePatternFromSelectionDto } from '../../../../core/repositories/dto/create-pattern-from-selection';
 
 @Component({
   selector: 'app-admin-todo-board-component',
@@ -23,7 +24,18 @@ export class AdminTodoBoardComponent {
   private adminTeamService = inject(AdminTeamService);
 
   private expandedTodoId = signal<string | null>(null);
-    public activeTodoForSanitization = signal<Todo | null>(null);
+
+// 1. Wir speichern im Modal nur noch die ID des aktuell geöffneten To-Dos
+  private activeTodoIdForSanitization = signal<string | null>(null);
+
+  // 2. Ein Computed Signal sucht automatisch immer das passende, frische Todo aus der aktuellen todos()-Liste!
+  public activeTodoForSanitization = computed(() => {
+    const id = this.activeTodoIdForSanitization();
+    if (!id) return null;
+    // Sobald sich `todos()` durch den Server-Fetch ändert, liefert dieses computed() 
+    // sofort das brandneue Todo-Objekt mit den aktualisierten sensitiveMatches zurück!
+    return this.todos().find(t => t.id === id) || null;
+  });
 
   public selectedDepartmentId = '';
   public selectedProjectId = '';
@@ -97,12 +109,12 @@ export class AdminTodoBoardComponent {
   // 🧼 Modal öffnen
   public openSanitizeModal(todo: Todo, event: MouseEvent): void {
     event.stopPropagation();
-    this.activeTodoForSanitization.set(todo);
+    this.activeTodoIdForSanitization.set(todo.id);
   }
 
   // ❌ Modal schließen
   public closeSanitizeModal(): void {
-    this.activeTodoForSanitization.set(null);
+    this.activeTodoIdForSanitization.set(null);
   }
 
   // 💾 Speichern der Entscheidungen aus dem Editor
@@ -112,5 +124,25 @@ export class AdminTodoBoardComponent {
       this.adminTodoService.saveSanitizationFeedback(activeTodo.id, activeTodo.sensitiveMatches, feedbackMap);
     }
     this.closeSanitizeModal();
+  }
+
+public onCreateNewPattern(dto: CreatePatternFromSelectionDto): void {
+    console.log('✅ Neues Muster erstellt. Lade Todos neu und aktualisiere aktives Modal...');
+    
+    // 1. Wir merken uns die ID des aktuell im Modal geöffneten Todos
+    const currentActiveId = this.activeTodoForSanitization()?.id;
+
+    // 2. Wir triggern den Filter-Reload (holt die Daten vom Server)
+    this.onFilterChange();
+
+    // 3. Sobald die neuen Todos da sind, aktualisieren wir das Modal-Objekt sofort mit den frischen Server-Daten!
+    if (currentActiveId) {
+      // Kleine Verzögerung oder direkter Lookup im aktuellen todos()-Signal
+      const updatedTodo = this.todos().find(t => t.id === currentActiveId);
+      if (updatedTodo) {
+        this.activeTodoIdForSanitization.set(updatedTodo.id);
+        console.log('🔄 Modal mit frischen Server-Daten aktualisiert. Neue Matches:', updatedTodo.sensitiveMatches?.length);
+      }
+    }
   }
 }
