@@ -11,5 +11,6 @@ export enum QueueHandlerName {
   TEAM = 'Team',
   TODO = 'Todo',
   ADMIN_TODO = 'Admin todo',
-  DRAFT = 'Draft' 
+  DRAFT = 'Draft', 
+  SANITIZATION = 'Sanitization'
 }

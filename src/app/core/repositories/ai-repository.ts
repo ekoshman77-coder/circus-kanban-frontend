@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { aiCategoriesApiUrl, aiNoteCategoriesUrl, aiNotePredictionUrl, aiPredictionApiUrl, aiPredictionEffortUrl, aiTodoSnoozingUrl, getAiMilestonesUrl, smartPlannerFeedbackUrl, smartPlannerUrl, trackAiIgnoredMilestoneUrl, trackAiMilestoneDegradationUrl, trackAiMilestoneSelectionUrl } from './links';
+import { aiCategoriesApiUrl, aiNoteCategoriesUrl, aiNotePredictionUrl, aiPredictionApiUrl, aiPredictionEffortUrl, aiSanitizationCategoriesUrl, aiSanitizationPredictionUrl, aiTodoSnoozingUrl, getAiMilestonesUrl, smartPlannerFeedbackUrl, smartPlannerUrl, trackAiIgnoredMilestoneUrl, trackAiMilestoneDegradationUrl, trackAiMilestoneSelectionUrl } from './links';
 import { ITodoJSON } from './dto/todo-json';
 import { MilestoneSuggestionsModel } from '../models/milestone-suggestions-model';
 import { IgnoredMilestones, MilestoneInteractionPayload } from './dto/tracked-milestones';
@@ -59,30 +59,46 @@ export interface MilestoneSuggestionsResponse {
 export class AiRepository {
   private http = inject(HttpClient);
 
-  /**
-   * Holt den KI-Vorschlag live vom Server
+/**
+   * Holt den KI-Vorschlag live vom Server (unterstützt jetzt auch Sanitization mit 2 Parametern!)
    */
-  public getServerPrediction(text: string, contextType: 'todo' | 'note'): Observable<{ suggestedCategory: string }> {
+  public getServerPrediction(
+    text: string, 
+    contextType: 'todo' | 'note' | 'sanitization', 
+    patternType?: string
+  ): Observable<{ suggestedCategory: string }> {
+    console.log("AiRepository getServerPrediction")
     if (contextType === 'note') {
-      return this.http.post<{ suggestedCategory: string }>(aiNotePredictionUrl, {text});
+      return this.http.post<{ suggestedCategory: string }>(aiNotePredictionUrl, { text });
+    }
+    if (contextType === 'sanitization') {
+      // 🎯 Übergibt jetzt exakt selectedText und patternType an das neue Backend-DTO!
+      return this.http.post<{ suggestedCategory: string }>(aiSanitizationPredictionUrl, { 
+        selectedText: text, 
+        patternType: patternType ?? 'EXACT' 
+      });
     }
     
-    // Fallback für To-Dos (bleibt exakt wie vorher)
-    return this.http.post<{ suggestedCategory: string }>(aiPredictionApiUrl, {text});  }
+    // Fallback für To-Dos
+    return this.http.post<{ suggestedCategory: string }>(aiPredictionApiUrl, { text });
+  }
 
   /**
    * Alle existierenden Kategorien vom Server holen (GET)
    */
-  public getServerCategories(contextType: 'todo' | 'note'): Observable<string[]> {
-    // 🛠️ Wenn das IdeaBoard fragt, holen wir die reinen Zettel-Tags ohne störende Parameter!
+  public getServerCategories(contextType: 'todo' | 'note' | 'sanitization'): Observable<string[]> {
     if (contextType === 'note') {
       return this.http.get<string[]>(aiNoteCategoriesUrl);
     }
+    if (contextType === 'sanitization') {
+      // 🎯 Nutzt nun den zentralen Link
+      return this.http.get<string[]>(aiSanitizationCategoriesUrl);
+    }
 
     // Fallback für To-Dos
-    return this.http.get<string[]>(`${aiCategoriesApiUrl}`);
+    return this.http.get<string[]>(aiCategoriesApiUrl);
   }
-  
+    
   /**
    * ⏱️ Holt die globale Aufwandsschätzung live vom Server
    */
