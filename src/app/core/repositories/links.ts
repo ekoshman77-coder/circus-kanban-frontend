@@ -28,5 +28,8 @@
   export const InvitationUrl = `${baseUrl}/invitation`
   export const PermissionUrl = `${baseUrl}/admin/permissions`
   export const DraftUrl = `${baseUrl}/drafts`
+  export const sanitizeApiUrl = `${baseUrl}/sanitize`;
+  export const aiSanitizationPredictionUrl = `${baseUrl}/ai/predict-sanitization`;
+  export const aiSanitizationCategoriesUrl = `${baseUrl}/ai/sanitization/categories`;
 
   

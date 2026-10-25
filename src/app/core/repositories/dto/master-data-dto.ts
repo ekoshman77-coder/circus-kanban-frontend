@@ -7,4 +7,5 @@ export interface MasterDataDto {
   resources: string[];
   actions: string[];
   specializations: string[];
+  patternTypes: string[]
 }

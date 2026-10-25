@@ -1,3 +1,5 @@
+import { ISensitiveMatchInit } from "../../models/sensitive-match";
+
 export type TodoSyncState = 'fine' | 'dirty' | 'new';
 
 export interface ITodoJSON {
@@ -23,4 +25,6 @@ export interface ITodoJSON {
   teamStatus: string; 
   // 🧠 UNSER NEUES TICKET-GEDÄCHTNIS (Synchron zum Kotlin-Backend!)
   lastDeveloperId?: string | null;
+  isSensitive?: boolean;
+  sensitiveMatches?: ISensitiveMatchInit[];
 }

@@ -27,21 +27,26 @@ export class UniversalPredictorService {
    * @param contextType Der Kontext der Anfrage ('todo' oder 'note').
    * @returns Ein Promise mit der vorgeschlagenen Kategorie oder einem leeren String bei ungültigem Input.
    */
-  public async predict(text: string, userId: string, contextType: 'todo' | 'note'): Promise<string> {
+  public async predict(
+    text: string, 
+    userId: string, 
+    contextType: 'todo' | 'note' | 'sanitization', 
+    patternType?: string
+  ): Promise<string> {
     if (!text || text.trim().length < 3) return '';
 
-    // 🌐 Online-Pfad: Nutzt die Server-KI
     if (this.connectionService.status() === 'ONLINE') {
       try {
-        return (await firstValueFrom(this.aiRepository.getServerPrediction(text, contextType))).suggestedCategory;
+        console.log("prediction from service läuft")
+        // Übergibt den text, contextType und den optionalen patternType direkt an das Repository
+        return (await firstValueFrom(
+          this.aiRepository.getServerPrediction(text, contextType, patternType)
+        )).suggestedCategory;
       } catch (err) {
-        console.warn('⚡ Server-KI zickt, wechsle reibungslos in den Offline-Modus...');
-        return this.predictOffline(text, userId, contextType);
+        console.warn('⚡ Server-KI nicht erreichbar...');
       }
     }
-
-    // Offline-Pfad: Holt sich die Daten autonom aus dem LocalStorage
-    return this.predictOffline(text, userId, contextType);
+    return '';
   }
 
   /**
@@ -77,13 +82,17 @@ export class UniversalPredictorService {
    * @param localCategories Optionale Standardkategorien als finaler Fallback.
    * @returns Ein Promise mit einem sortierten Array von Kategorienamen.
    */
-  public async getAvailableCategories(userId: string, contextType: 'todo' | 'note', localCategories: string[]): Promise<string[]> {
+  public async getAvailableCategories(userId: string, contextType: 'todo' | 'note' | 'sanitization', localCategories: string[]): Promise<string[]> {
     if (this.connectionService.status() === 'ONLINE') {
       try {
         return await firstValueFrom(this.aiRepository.getServerCategories(contextType));
       } catch (err) {
         console.warn('⚠️ Server-Kategorien nicht erreichbar, nutze lokale Kategorieliste...');
       }
+    }
+
+    if (contextType === 'sanitization') {
+      return localCategories;
     }
 
     const tagSet = this.getCategoriesFromLocalStorage(userId, contextType);
@@ -155,7 +164,7 @@ export class UniversalPredictorService {
     try {
       const items = JSON.parse(data) as any[];
       const tagSet = new Set<string>();
-      
+
       const targetField = contextType === 'note' ? 'tag' : 'category';
 
       for (const item of items) {

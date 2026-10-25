@@ -3,13 +3,14 @@ import { TeamStatus, Todo } from '../models/todo';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { GamificationResult, TodoStatusUpdatePayload } from '../models/gamification';
-import { aiCategoriesApiUrl, bulkApiUrl, gamificationApiUrl, todoApiUrl } from './links';
+import { aiCategoriesApiUrl, bulkApiUrl, gamificationApiUrl, sanitizeApiUrl, todoApiUrl } from './links';
 import { SyncResult } from './dto/sync-result';
 import { LoggerService } from '../services/logger/logger-service';
 import { TodoUpdateResponse } from './dto/dto-interface';
 import { ITodoJSON } from './dto/todo-json';
 import { TodoBulkDto } from '../models/todo-bulk';
 import { AdminTodoFilter } from './dto/admin-todo-filter';
+import { ISanitizationFeedbackDTO } from './dto/senisitive-feedback-dto';
 
 
 @Injectable({
@@ -161,5 +162,12 @@ export class TodoRepository {
    */
   public restoreAdminTodo(id: string): Observable<void> {
     return this.http.put<void>(`${todoApiUrl}/${id}/restore`, null);
+  }
+
+  /**
+   * 🧹 Schickt das Admin-Feedback für sensible Daten an den SanitizationController
+   */
+  public sendSanitizationFeedback(feedbackDto: ISanitizationFeedbackDTO): Observable<void> {
+    return this.http.post<void>(`${sanitizeApiUrl}/apply`, feedbackDto);
   }
 }  
