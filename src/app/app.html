@@ -115,3 +115,8 @@
 @if (userStatusPollingService.graduationPending()) {
   <app-graduation-modal></app-graduation-modal>
 }
+@if (todoModalService.activeEditingTodoId(); as id) {
+  <app-todo-edit 
+    (close)="todoModalService.closeEdit()">
+  </app-todo-edit>
+}

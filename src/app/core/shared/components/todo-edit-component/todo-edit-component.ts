@@ -1,14 +1,15 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { TodoService } from '../../../core/services/todo/todo-service';
-import { Todo } from '../../../core/models/todo';
+import { TodoService } from '../../../services/todo/todo-service';
+import { Todo } from '../../../models/todo';
 // 🌟 NEU: Der richtige Universal-Input Import
-import { UniversalTagInputComponent } from '../../../core/shared/components/universal-tag-input-component/universal-tag-input-component';
-import { ConnectionService } from '../../../core/services/connection/connection-service';
-import { NavigationHistoryService } from '../../../core/services/navigation/navigation-history-service';
-import { MilestoneSelectorComponent } from '../../../core/shared/components/milestone-selector-component/milestone-selector-component';
+import { UniversalTagInputComponent } from '../universal-tag-input-component/universal-tag-input-component';
+import { ConnectionService } from '../../../services/connection/connection-service';
+import { NavigationHistoryService } from '../../../services/navigation/navigation-history-service';
+import { MilestoneSelectorComponent } from '../milestone-selector-component/milestone-selector-component';
+import { TodoModalService } from './todo-modal-service';
 
 @Component({
   selector: 'app-todo-edit',
@@ -19,11 +20,13 @@ import { MilestoneSelectorComponent } from '../../../core/shared/components/mile
   styleUrl: './todo-edit-component.css'
 })
 export class TodoEditComponent implements OnInit {
-  private route = inject(ActivatedRoute);
+  //private route = inject(ActivatedRoute);
   private fb = inject(FormBuilder);
   protected todoService = inject(TodoService);
   protected connectionService = inject(ConnectionService)
-  private navigationHistoryService = inject(NavigationHistoryService)
+  private todoEditService = inject(TodoModalService)
+
+  public close = output<void>();
 
   public milestoneId = signal<string | null>(null)
 
@@ -47,9 +50,12 @@ export class TodoEditComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
+    const id = this.todoEditService.activeEditingTodoId()
+    console.log('🔍 [TodoEdit] Modal geöffnet mit ID aus Service:', id);
     if (id) {
       const todo = this.todoService.getTodoById(id)
+      console.log('📝 [TodoEdit] Gefundenes To-Do:', todo);
+
       if (todo) {
         this.currentTodo = todo;
         this.milestoneId.set(todo.milestoneId)
@@ -77,9 +83,11 @@ export class TodoEditComponent implements OnInit {
           daysAhead: [daysAhead, [Validators.required]]
         });
       } else {
+        console.warn('⚠️ [TodoEdit] To-Do-ID existiert im Service, aber getTodoById liefert nichts!');
         this.cancel();
       }
     } else {
+      console.warn('⚠️ [TodoEdit] Keine ID im TodoModalService gefunden!');
       this.cancel();
     }
   };
@@ -121,7 +129,7 @@ export class TodoEditComponent implements OnInit {
   }
 
   cancel(): void {
-    this.navigationHistoryService.back('/');
+    this.todoEditService.closeEdit()
   }
 
   save(): void {
@@ -142,10 +150,16 @@ export class TodoEditComponent implements OnInit {
     this.currentTodo.milestoneId = this.milestoneId()
 
     this.todoService.updateTodo(this.currentTodo);
-    this.navigationHistoryService.back('/');
+    this.todoEditService.closeEdit()
   }
 
   public onMilestoneSelected(id: string | null) {
       this.milestoneId.set(id)
+  }
+
+  public adjustTextareaHeight(event: any): void {
+    const textarea = event.target;
+    textarea.style.height = 'auto'; // Kurz zurücksetzen, um die echte Höhe zu messen
+    textarea.style.height = textarea.scrollHeight + 'px'; // Auf die tatsächliche Text-Höhe setzen
   }
 }

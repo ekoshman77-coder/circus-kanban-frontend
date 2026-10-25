@@ -5,6 +5,7 @@ export interface IAuthContext {
   isLoggedIn(): boolean;
   getCurrentUserId(): string | null;
   onLogout$: Observable<void>;
+  onLogin$: Observable<void>;
 }
 
 // 🟢 Hier fehlte :

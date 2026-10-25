@@ -44,11 +44,6 @@ export const routes: Routes = [
       canActivate: [authGuard]
     }, 
     { 
-      path: "todopage/edit/:id", 
-      loadComponent: () => import('./features/todo/todo-edit-component/todo-edit-component').then(m => m.TodoEditComponent),
-      canActivate: [authGuard]
-    },
-    { 
       path: "ideas", 
       component: IdeaPageComponent,
       canActivate: [authGuard]
