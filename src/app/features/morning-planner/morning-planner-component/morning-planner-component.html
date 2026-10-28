@@ -1,0 +1,57 @@
+@if (isOpen()) {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <div class="morning-planner-modal" (click)="$event.stopPropagation()">
+      
+      <button class="close-btn" (click)="closeModal()" aria-label="Schließen">&times;</button>
+
+      <div class="header">
+        <h2>☀️ Guten Morgen!</h2>
+        <p class="subtitle">Noch ein bisschen müde? Kein Problem – lass uns ganz entspannt und leicht in den Tag starten.</p>
+      </div>
+
+      <!-- Loading State -->
+      @if (plannerService.isLoading()) {
+        <div class="loading-state">
+          <p>Die KI brüht den perfekten Start-Task für dich auf...</p>
+        </div>
+      }
+
+      <!-- Empfehlung vorhanden -->
+      @if (!plannerService.isLoading() && plannerService.recommendations().length > 0) {
+        @let currentItem = plannerService.recommendations()[0];
+        
+        <div class="task-spotlight">
+          <span class="badge">Dein sanfter Einstieg</span>
+          <h3>{{ currentItem.todo.task }}</h3>
+          @if (currentItem.todo.description) {
+            <p class="desc">{{ currentItem.todo.description }}</p>
+          }
+        </div>
+
+        <!-- Die 3 Feedback-Optionen -->
+        <div class="actions">
+          <button class="btn btn-primary" (click)="acceptTask(currentItem)">
+            Machen wir! 🚀
+          </button>
+
+          <button class="btn btn-secondary" (click)="rejectAsTooHeavy(currentItem)">
+            Zu anstrengend / Erst mal Augen reiben 🥱
+          </button>
+
+          <button class="btn btn-danger-large" (click)="handleNoTime(currentItem)">
+            🏃‍♂️ Keine Zeit / Meeting in 2 Min!
+          </button>
+        </div>
+      }
+
+      <!-- Fallback, falls keine Aufgabe da ist -->
+      @if (!plannerService.isLoading() && plannerService.recommendations().length === 0) {
+        <div class="empty-state">
+          <p>Alles blitzblank für heute oder noch im Schlummermodus. Genieß deinen Tag! 🎉</p>
+          <button class="btn btn-secondary" (click)="closeModal()">Schließen</button>
+        </div>
+      }
+
+    </div>
+  </div>
+}

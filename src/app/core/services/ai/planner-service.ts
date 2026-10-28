@@ -30,6 +30,45 @@ export class PlannerService extends BaseDataManager {
   public readonly activeRoundId = signal<string | null>(null);
   public readonly recommendations = signal<RecommendedTodoItem[]>([]);
   public readonly isLoading = signal<boolean>(false);
+  public readonly showMorningModal = signal<boolean>(false);
+
+  /**
+   * Prüft, ob heute MORGENS ist und ob das Modal schon gezeigt wurde
+   */
+  public checkMorningState(): void {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const isMorningTime = currentHour >= 5 && currentHour < 12;
+    const todayString = now.toISOString().split('T')[0];
+    const lastShownDate = this.localStorageService.getItem('last_morning_greeting_date');
+
+    // Wenn heute schon mal was angezeigt/registriert wurde, direkt raus
+    if (lastShownDate === todayString) {
+      return;
+    }
+
+    if (isMorningTime) {
+      // FALL 1: Wir sind morgens, aber OFFLINE.
+      // Wir können keine KI-Empfehlung laden, aber wir MÜSSEN den Tag 
+      // im localStorage sperren, damit das Modal später am Tag nicht plötzlich aufspringt!
+      if (this.connectionService.isOffline()) {
+        this.localStorageService.setItem('last_morning_greeting_date', todayString);
+        return;
+      }
+
+      // FALL 2: Wir sind morgens UND ONLINE. Alles perfekt -> Modal öffnen!
+      this.showMorningModal.set(true);
+    }
+  }
+
+  /**
+   * Schließt das Modal und merkt sich, dass es heute schon da war
+   */
+  public dismissMorningModal(): void {
+    const todayString = new Date().toISOString().split('T')[0];
+    this.localStorageService.setItem('last_morning_greeting_date', todayString);
+    this.showMorningModal.set(false);
+  }
 
   /**
    * Lädt die Aufgabenempfehlungen der KI (Nur Online verfügbar)
@@ -128,10 +167,47 @@ export class PlannerService extends BaseDataManager {
     this.snoozeRecommendedTodo(todoId, durationInMin);
   }
 
+  /**
+   * ☕ Lädt die morgendliche Top-Empfehlung (Nutzer wird über das Backend-Principal erkannt)
+   */
+  public loadMorningRecommendation(): void {
+    if (this.connectionService.isOffline()) {
+      console.warn('⚡ [PlannerService] Morgendliche Empfehlungen können offline nicht geladen werden.');
+      this.isLoading.set(false);
+      return;
+    }
+
+    this.isLoading.set(true);
+
+    this.aiRepository
+      .getMorningRecommendation()
+      .subscribe({
+        next: (response: PlannerRecommendationsResponse) => {
+          this.activeRoundId.set(response.roundId);
+
+          const mappedItems: RecommendedTodoItem[] = response.recommendations
+            .filter((rec) => rec.todo !== null)
+            .map((rec) => ({
+              todo: Todo.fromJson(rec.todo!),
+              plannerDetails: rec.plannerDetails,
+              modeCode: rec.modeCode
+            }));
+
+          this.recommendations.set(mappedItems);
+          this.isLoading.set(false);
+        },
+        error: (err) => {
+          console.error('Fehler beim Laden der morgendlichen KI-Empfehlung:', err);
+          this.isLoading.set(false);
+        }
+      });
+  }
+
   public override resetData(): void {
     this.recommendations.set([]);
     this.activeRoundId.set(null);
     this.isLoading.set(false);
+    this.localStorageService.removeItem('last_morning_greeting_date');
   }
 
   public clearRecommendations(): void {

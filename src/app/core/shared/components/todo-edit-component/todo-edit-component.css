@@ -1,0 +1,343 @@
+/* ==========================================================================
+   🌐 MODAL OVERLAY & CONTAINER (Kompakt & Übersichtlich)
+   ========================================================================== */
+:host {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  overflow-y: auto; 
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.edit-container {
+  display: flex; 
+  justify-content: center; 
+  width: 100%;
+  min-height: auto; 
+  padding: 0;
+  background: transparent !important; 
+}
+
+/* ==========================================================================
+   🎛️ DIE EDIT-CARD (Kompakt formatiert)
+   ========================================================================== */
+.edit-card { 
+  background: linear-gradient(145deg, #ffffff, #f8fafc); 
+  width: 100%; 
+  max-width: 580px; /* Etwas schmaler gemacht */
+  padding: 24px 28px; /* Innenabstände deutlich verringert */
+  border-radius: 20px; 
+  
+  max-height: 92vh;
+  overflow-y: auto; 
+  
+  box-shadow: 
+    0 20px 40px -15px rgba(148, 163, 184, 0.25),
+    0 0 0 2px rgba(59, 130, 246, 0.15),
+    0 0 25px rgba(59, 130, 246, 0.25),
+    inset 0 1px 0 #ffffff; 
+    
+  border: 1px solid #93c5fd; 
+  position: relative;
+}
+
+/* ==========================================================================
+   HEADER
+   ========================================================================== */
+.card-header { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  margin-bottom: 16px; /* Abstand nach unten verkürzt */
+  border-bottom: 2px dashed #93c5fd; 
+  padding-bottom: 10px; 
+}
+
+.card-header h2 { 
+  margin: 0; 
+  color: #1e3a8a; 
+  font-size: 22px; /* Etwas kompakter */
+  font-weight: 800;
+}
+
+.btn-close { 
+  background: #f0fdf4; 
+  border: 1px solid #93c5fd; 
+  font-size: 14px; 
+  color: #3b82f6; 
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease; 
+}
+
+.btn-close:hover { 
+  color: #ffffff; 
+  background: #ef4444;
+  border-color: #ef4444;
+}
+
+/* ==========================================================================
+   🏷️ UNIVERSAL-INPUT & KI-VORSCHLÄGE (Mehr Raum für Dropdown)
+   ========================================================================== */
+.edit-category-wrapper {
+  position: relative;
+  width: 100%;
+  /* Gibt dem Bereich etwas Luft, damit aufklappende Vorschläge nicht überlappen */
+  margin-bottom: 4px; 
+  margin-top: 25px; 
+}
+
+.edit-category-wrapper app-universal-tag-input-component {
+  display: block;
+  width: 100%;
+}
+
+.edit-category-wrapper ::v-deep .category-hybrid-zone,
+.edit-category-wrapper ::v-deep .universal-tag-input-wrapper {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  width: 100% !important;
+  padding: 0 !important;
+}
+
+.edit-category-wrapper ::v-deep .form-control,
+.edit-category-wrapper ::v-deep input {
+  width: 100% !important;
+  padding: 10px 14px !important;
+  font-size: 14px !important;
+  background-color: #ffffff !important;
+  border: 2px solid #bae6fd !important;
+  border-radius: 10px !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+}
+
+.edit-category-wrapper ::v-deep .form-control:focus,
+.edit-category-wrapper ::v-deep input:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.2) !important;
+}
+
+/* 🤖 KI-DROPDOWN-MENÜ: Schick, freistehend und mit genug Platz */
+.edit-category-wrapper ::v-deep .dropdown-selection-menu {
+  position: absolute !important;
+  top: 110% !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 9999 !important;
+  background-color: #ffffff !important;
+  border: 2px solid #3b82f6 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.25) !important;
+  padding: 6px 0 !important;
+}
+
+/* ==========================================================================
+   FORMULAR-ELEMENTE (Kompakte Abstände)
+   ========================================================================== */
+.form-group { 
+  margin-bottom: 14px; /* Deutlich straffere Abstände zwischen den Gruppen */
+  display: flex; 
+  flex-direction: column; 
+  gap: 6px; 
+}
+
+label { 
+  font-weight: 700; 
+  font-size: 11px; /* Kleinere Labels */
+  color: #475569; 
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+/* Inputs verschlankt */
+.form-control { 
+  padding: 10px 14px; 
+  background: #f0f9ff; 
+  border: 2px solid #bae6fd; 
+  border-radius: 10px; 
+  font-size: 14px; 
+  color: #0f172a; 
+  font-family: inherit;
+  transition: all 0.2s ease; 
+}
+
+.form-control:focus { 
+  outline: none; 
+  border-color: #3b82f6; 
+  background: #ffffff;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.2); 
+}
+
+textarea.form-control { 
+  resize: none;                /* Verhindert das manuelle Verzerren mit der Maus */
+  min-height: 80px;            /* Startet kompakt, aber geräumig genug */
+  height: auto;                /* Passt sich dynamisch an */
+  overflow-y: hidden;          /* Kein hässlicher Scrollbalken im Feld */
+  line-height: 1.5;            /* Angenehmer Zeilenabstand für lange Texte */
+}
+
+/* Fehler-Msg */
+.error-msg { 
+  color: #ef4444; 
+  font-size: 11px; 
+  font-weight: 600; 
+}
+
+/* ==========================================================================
+   SLIDER & BADGE (Kompakt)
+   ========================================================================== */
+.slider-wrapper { 
+  background: #f0f9ff; 
+  border: 2px solid #bae6fd;
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.funny-slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    --color: hsl(var(--hue), 75%, 45%);
+    background: linear-gradient(to right, var(--color) var(--val, 0%), #e0f2fe var(--val, 0%));
+}
+
+.funny-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid hsl(var(--hue, 160), 75%, 45%);
+}
+
+.funny-date-badge { 
+  font-weight: 700; 
+  font-size: 12px; 
+  padding: 6px 12px; 
+  border-radius: 8px; 
+  text-align: center; 
+  border: 1px solid transparent;
+}
+
+/* ==========================================================================
+   ⚡ FIBONACCI-TABLO (Volle 100% Breite & Kompakte, flache Höhe)
+   ========================================================================== */
+.fibonacci-tablo {
+    display: flex;
+    width: 100%; /* Perfektbündig mit den anderen Eingabefeldern */
+    box-sizing: border-box;
+    background: #f1f5f9; 
+    padding: 3px;
+    border-radius: 10px;
+    gap: 4px;
+    border: 2px solid transparent;
+    background-image: linear-gradient(#f1f5f9, #f1f5f9), linear-gradient(135deg, #3b82f6, #06b6d4, #8b5cf6);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+}
+
+.fibonacci-tablo button {
+    flex: 1; /* Verteilt sich gleichmäßig über die gesamte Breite */
+    height: 34px; /* Flache, kompakte Höhe wie früher */
+    padding: 0;
+    border: 2px solid transparent;
+    background: transparent;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+/* Die bunten Energie-Stufen für die Zahlen-Buttons */
+.fibonacci-tablo button:nth-child(1) { color: hsl(160, 100%, 30%); } /* Mint */
+.fibonacci-tablo button:nth-child(2) { color: hsl(190, 100%, 30%); } /* Cyan */
+.fibonacci-tablo button:nth-child(3) { color: hsl(220, 90%, 30%); }  /* Blau */
+.fibonacci-tablo button:nth-child(4) { color: hsl(250, 90%, 30%); }  /* Indigo */
+.fibonacci-tablo button:nth-child(5) { color: hsl(280, 90%, 30%); }  /* Violett */
+.fibonacci-tablo button:nth-child(6) { color: hsl(330, 90%, 30%); }  /* Pink */
+.fibonacci-tablo button:nth-child(7) { color: hsl(350, 90%, 30%); }  /* Kirschrot */
+.fibonacci-tablo button:nth-child(8) { color: hsl(0, 90%, 30%); }    /* Weinrot */
+
+.fibonacci-tablo button:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.8);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.fibonacci-tablo button.active {
+    background: white;
+    border: 2px solid currentColor; 
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* ==========================================================================
+   BUTTONS (Unten)
+   ========================================================================== */
+.form-actions { 
+  display: flex; 
+  justify-content: flex-end; 
+  gap: 12px; 
+  margin-top: 20px; /* Kompakter Abstand */
+  border-top: 2px solid #bae6fd; 
+  padding-top: 14px; 
+}
+
+.btn-primary { 
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); 
+  color: white; 
+  border: none; 
+  padding: 10px 20px; 
+  border-radius: 10px; 
+  font-weight: 700; 
+  font-size: 14px;
+  cursor: pointer; 
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn-secondary { 
+  background: #ffffff; 
+  color: #3b82f6; 
+  border: 1px solid #93c5fd; 
+  padding: 10px 20px; 
+  border-radius: 10px; 
+  font-weight: 600; 
+  font-size: 14px;
+  cursor: pointer; 
+}
+
+/* Universal-Input anpassen */
+.edit-category-wrapper ::v-deep input {
+  padding: 10px 14px !important;
+  font-size: 14px !important;
+  border-radius: 10px !important;
+}
+
+.offline-warning-text, .loading-state { 
+  font-size: 11px;
+  color: #94a3b8; 
+  text-align: center;
+  padding: 10px 0;
+}
