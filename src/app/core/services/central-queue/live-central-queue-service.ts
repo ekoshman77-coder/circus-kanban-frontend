@@ -1,5 +1,5 @@
 import { effect, inject, Injectable } from '@angular/core';
-import { from, Observable, of, Subject } from 'rxjs';
+import { from, interval, Observable, of, Subject } from 'rxjs';
 import { catchError, concatMap, finalize, takeUntil } from 'rxjs/operators';
 import { ConnectionService } from '../connection/connection-service';
 import { IQueueHandler } from './queue-handler-interface';
@@ -43,10 +43,31 @@ export class LiveCentralQueueService extends BaseCentralQueueService {
         this.processQueue();
       }
     });
+
+    interval(30000)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        if (this.connectionService.isOnline() && this.authContext.isLoggedIn()) {
+          console.log(`⏰ [LiveQueueInstance] Polling-Intervall: Queue ist leer. Starte sequenziellen Refresh...`);
+          this.processQueue();
+        }
+      });
+
+    this.authContext.onLogin$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(() => {
+      console.log('🔑 [LiveCentralQueueService] Login-Event empfangen! Erzwinge sofortigen Server-Fetch...');
+      const userId = this.authContext.getCurrentUserId();
+      if (userId) {
+        this.registry.forEach(handler => {
+          handler.forceFetchFromServer(userId).subscribe();
+        });
+      }
+    })
   }
 
   public override registerService(name: QueueHandlerName, handler: IQueueHandler): void {
-    if (!this.registry.has(name)) {
+      if(!this.registry.has(name)) {
       this.registry.set(name, handler);
       console.log(`🔌 [CentralQueueService] Handler erfolgreich registriert: "${name}"`);
     }
@@ -202,7 +223,7 @@ export class LiveCentralQueueService extends BaseCentralQueueService {
 
     from(handlers).pipe(
       concatMap(handler => {
-          return handler.refreshDataIfStale(userId);
+        return handler.refreshDataIfStale(userId);
       }),
       finalize(() => {
         // 🔓 2. Fetched-Status auf FALSE setzen & wartende Queue sofort aufwecken!

@@ -11,6 +11,7 @@ import { UserModel } from '../../../models/user-model';
 import { Todo } from '../../../models/todo';
 import { UserService } from '../../../services/user/user-service';
 import { EffortModalComponent } from '../effort-modal-component/effort-modal-component';
+import { TodoModalService } from '../todo-edit-component/todo-modal-service';
 
 @Component({
   selector: 'app-todo-item',
@@ -37,7 +38,7 @@ export class TodoItemComponent {
   private connectionService = inject(ConnectionService);
   public teamService = inject(TeamService);
   private userService = inject(UserService);
-  private router = inject(Router);
+  private todoModalService = inject(TodoModalService)  
   public elementRef = inject(ElementRef);
 
   // 🎯 Greift das Element #checkLabel aus dem Template
@@ -91,7 +92,8 @@ export class TodoItemComponent {
   }
 
   onEditClick() {
-    this.router.navigate(['/todopage/edit', this.item().id]);
+    console.log('✏️ [TodoItem] Edit-Button geklickt für ID:', this.item().id);
+    this.todoModalService.openEdit(this.item().id)
   }
 
   public onCheckClick(event: MouseEvent): void {

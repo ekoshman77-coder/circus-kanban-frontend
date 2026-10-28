@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { aiCategoriesApiUrl, aiNoteCategoriesUrl, aiNotePredictionUrl, aiPredictionApiUrl, aiPredictionEffortUrl, aiSanitizationCategoriesUrl, aiSanitizationPredictionUrl, aiTodoSnoozingUrl, getAiMilestonesUrl, smartPlannerFeedbackUrl, smartPlannerUrl, trackAiIgnoredMilestoneUrl, trackAiMilestoneDegradationUrl, trackAiMilestoneSelectionUrl } from './links';
+import { aiCategoriesApiUrl, aiMorningPlannerUrl, aiNoteCategoriesUrl, aiNotePredictionUrl, aiPredictionApiUrl, aiPredictionEffortUrl, aiSanitizationCategoriesUrl, aiSanitizationPredictionUrl, aiTodoSnoozingUrl, getAiMilestonesUrl, smartPlannerFeedbackUrl, smartPlannerUrl, trackAiIgnoredMilestoneUrl, trackAiMilestoneDegradationUrl, trackAiMilestoneSelectionUrl } from './links';
 import { ITodoJSON } from './dto/todo-json';
 import { MilestoneSuggestionsModel } from '../models/milestone-suggestions-model';
 import { IgnoredMilestones, MilestoneInteractionPayload } from './dto/tracked-milestones';
@@ -177,5 +177,13 @@ export class AiRepository {
   public snoozyTodo(todoId: string, durationInMin: number): Observable<void> {
     const payload: TodoSnoozyPayload = { todoId, durationInMin };
     return this.http.post<void>(aiTodoSnoozingUrl, payload);
+  }
+
+  /**
+   * ☕ Holt die morgendliche Top-Empfehlung für den Start
+   */
+  public getMorningRecommendation(): Observable<PlannerRecommendationsResponse> {
+    console.log("AiRepository:: Start loading morning recommendation");
+    return this.http.get<PlannerRecommendationsResponse>(aiMorningPlannerUrl);
   }
 }

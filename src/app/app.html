@@ -84,6 +84,8 @@
 
   <main class="content-container">
     <app-notification-component></app-notification-component>
+    <app-morning-planner-component></app-morning-planner-component>
+
     @if (showOfflineBanner()) {
     <div class="global-offline-banner">
       <div class="banner-content">
@@ -114,4 +116,9 @@
 }
 @if (userStatusPollingService.graduationPending()) {
   <app-graduation-modal></app-graduation-modal>
+}
+@if (todoModalService.activeEditingTodoId(); as id) {
+  <app-todo-edit 
+    (close)="todoModalService.closeEdit()">
+  </app-todo-edit>
 }

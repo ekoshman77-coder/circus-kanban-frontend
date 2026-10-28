@@ -37,8 +37,14 @@
 
             <div class="form-group">
                 <label for="description">Zusatzinfos / Geheime Notizen 📝</label>
-                <textarea id="description" formControlName="description" rows="4" class="form-control"
-                    placeholder="Schreib hier die Details auf..."></textarea>
+                <textarea 
+                    id="description"
+                    formControlName="description"
+                    class="form-control" 
+                    (input)="adjustTextareaHeight($event)"
+                    placeholder="Beschreibung eingeben...">
+                </textarea>
+                
             </div>
 
             <div class="form-group">

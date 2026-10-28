@@ -8,11 +8,13 @@ import { CentralQueueService } from './central-queue-service';
 import { NotificationService } from '../notification/notification-service';
 import { StateProvider } from './state-providers/base-state-provider';
 import { QueueHandlerName } from '../../enums/queue-handler-name';
+import { LoggerService } from '../logger/logger-service';
 
 export abstract class BaseQueueDataManager<TProvider extends StateProvider<any> = StateProvider<any> >
                      extends BaseDataManager implements IQueueHandler {
   protected queueService = inject(CentralQueueService);
   protected notificationService = inject(NotificationService);
+  protected logger = inject(LoggerService);
 
   serviceName: QueueHandlerName;
   protected stateProvider: TProvider;
@@ -49,22 +51,30 @@ export abstract class BaseQueueDataManager<TProvider extends StateProvider<any> 
 
   public refreshDataIfStale(userId: string): Observable<boolean> {
     const now = Date.now();
+    const diff = now - this.lastFetchTimestamp;
 
-    if (now - this.lastFetchTimestamp < this.FETCH_COOLDOWN_MS) {
+    if (diff < this.FETCH_COOLDOWN_MS) {
+      this.logger.info(
+        this.serviceName, 
+        `⏳ [Refresh] Übersprungen wegen Cooldown. Noch ${Math.round((this.FETCH_COOLDOWN_MS - diff) / 1000)}s übrig.`
+      );
       return of(true);
     }
+
+    this.logger.info(this.serviceName, `🔄 [Refresh] Starte regulären Fetch vom Server für User: ${userId}`);
 
     return this.fetchFromServer(userId).pipe(
       tap(() => {
         if (this.queueService.hasPendingItems()) {
-          console.warn(`⚠️ [${this.serviceName}] Server-Antwort verworfen, da ungesendete Offline-Items vorliegen.`);
+          this.logger.warn(this.serviceName, `⚠️ Server-Antwort verworfen, da ungesendete Offline-Items vorliegen.`);
           return;
         }
         this.lastFetchTimestamp = Date.now();
+        this.logger.info(this.serviceName, `✅ [Refresh] Erfolgreich abgeschlossen.`);
       }),
       map(() => true),
       catchError((err) => {
-        console.error(`❌ [${this.serviceName}] Fehler beim Aktualisieren der Daten:`, err);
+        this.logger.error(this.serviceName, `❌ Fehler beim Aktualisieren der Daten:`, err);
         return of(false);
       })
     );

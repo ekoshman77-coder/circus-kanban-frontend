@@ -21,6 +21,7 @@ export class UserService implements IAuthContext {
   public warnings = signal<string[] | null>(null);
 
   public readonly onLogout$ = new Subject<void>();
+  public readonly onLogin$ = new Subject<void>();
 
   public gamificationSignal = signal<GamificationResult>({
     currentXp: 0,
@@ -86,6 +87,7 @@ export class UserService implements IAuthContext {
           tap((user) => {
             this.saveSession(user);
             this.loadGamificationFromBackend(user.id);
+            this.onLogin$.next();
           })
         );
       })
