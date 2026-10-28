@@ -31,5 +31,6 @@
   export const sanitizeApiUrl = `${baseUrl}/sanitize`;
   export const aiSanitizationPredictionUrl = `${baseUrl}/ai/predict-sanitization`;
   export const aiSanitizationCategoriesUrl = `${baseUrl}/ai/sanitization/categories`;
+  export const aiMorningPlannerUrl = `${baseUrl}/ai/planner/morning`;
 
   

@@ -26,6 +26,8 @@ import { GraduationModalComponent } from './features/graduation-modal/graduation
 import { UserStatusPollingService } from './core/services/admin/user-status-polling-service';
 import { TodoEditComponent } from './core/shared/components/todo-edit-component/todo-edit-component';
 import { TodoModalService } from './core/shared/components/todo-edit-component/todo-modal-service';
+import { MorningPlannerComponent } from './features/morning-planner/morning-planner-component/morning-planner-component';
+import { PlannerService } from './core/services/ai/planner-service';
 
 @Component({
   selector: 'app-root',
@@ -42,8 +44,9 @@ import { TodoModalService } from './core/shared/components/todo-edit-component/t
     EditModalComponent, 
     LaborSwitchComponent,
     GraduationModalComponent,
-    TodoEditComponent
-  ], // 'Home' und 'TodoPageComponent' fliegen hier raus, da sie über den Router geladen werden!
+    TodoEditComponent,
+    MorningPlannerComponent
+  ], 
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
@@ -58,6 +61,7 @@ export class App implements OnInit {
   public draftUIService = inject(DraftUIService);
   public userStatusPollingService = inject(UserStatusPollingService)
   public todoModalService = inject(TodoModalService)
+  public plannerService = inject(PlannerService)
 
   // 🎯 Das globale Signal, das unser HTML mit den frischen Level-Daten füttert
   protected globalLevelUpResult = signal<GamificationResult | null>(null);
@@ -177,6 +181,7 @@ constructor() {
         this.router.navigate([currentUrlWithoutParams], { replaceUrl: true });
       }
     });
+    this.plannerService.checkMorningState();
   }
 
   closeBanner() {
