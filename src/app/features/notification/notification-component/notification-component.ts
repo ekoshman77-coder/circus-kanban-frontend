@@ -17,4 +17,13 @@ export class NotificationComponent {
   public close(id: string) {
     this.notificationService.clearNotification(id)
   }
+
+  public getButtonClass(variant?: string): string {
+    switch (variant) {
+      case 'primary':   return 'btn-primary';
+      case 'secondary': return 'btn-secondary';
+      case 'accent':    return 'btn-accent';
+      default:          return 'btn-default';
+    }
+  }
 }

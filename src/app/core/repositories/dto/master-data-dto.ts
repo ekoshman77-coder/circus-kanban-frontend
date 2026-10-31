@@ -7,5 +7,6 @@ export interface MasterDataDto {
   resources: string[];
   actions: string[];
   specializations: string[];
-  patternTypes: string[]
+  patternTypes: string[];
+  todoGroupChoices: string[];
 }

@@ -31,6 +31,7 @@ export class PlannerService extends BaseDataManager {
   public readonly recommendations = signal<RecommendedTodoItem[]>([]);
   public readonly isLoading = signal<boolean>(false);
   public readonly showMorningModal = signal<boolean>(false);
+  public readonly showPlannerModal = signal<boolean>(false);
 
   /**
    * Prüft, ob heute MORGENS ist und ob das Modal schon gezeigt wurde
@@ -68,6 +69,10 @@ export class PlannerService extends BaseDataManager {
     const todayString = new Date().toISOString().split('T')[0];
     this.localStorageService.setItem('last_morning_greeting_date', todayString);
     this.showMorningModal.set(false);
+  }
+
+  public closePlannerModal(): void {
+     this.showPlannerModal.set(false) 
   }
 
   /**
@@ -198,6 +203,45 @@ export class PlannerService extends BaseDataManager {
         },
         error: (err) => {
           console.error('Fehler beim Laden der morgendlichen KI-Empfehlung:', err);
+          this.isLoading.set(false);
+        }
+      });
+  }
+
+  /**
+   * 🎯 Lädt Empfehlungen basierend auf der bewussten Gruppenwahl nach Task-Abschluss (BREAK, LIGHT, HEAVY)
+   */
+  public loadRecommendationsByGroup(desiredGroup: string): void {
+    if (this.connectionService.isOffline()) {
+      console.warn('⚡ [PlannerService] Gruppen-Empfehlungen können offline nicht geladen werden.');
+      this.isLoading.set(false);
+      return;
+    }
+
+    this.isLoading.set(true);
+
+    // Hier rufen wir die AiRepository-Methode auf (die wir gleich noch kurz im Repository ergänzen)
+    this.aiRepository
+      .getGroupRecommendation(desiredGroup)
+      .subscribe({
+        next: (response: PlannerRecommendationsResponse) => {
+          this.activeRoundId.set(response.roundId);
+
+          const mappedItems: RecommendedTodoItem[] = response.recommendations
+            .filter((rec) => rec.todo !== null)
+            .map((rec) => ({
+              todo: Todo.fromJson(rec.todo!),
+              plannerDetails: rec.plannerDetails,
+              modeCode: rec.modeCode
+            }));
+
+          this.recommendations.set(mappedItems);
+          this.isLoading.set(false);
+
+          this.showPlannerModal.set(true);
+        },
+        error: (err) => {
+          console.error('Fehler beim Laden der Gruppen-Empfehlungen:', err);
           this.isLoading.set(false);
         }
       });

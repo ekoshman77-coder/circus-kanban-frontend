@@ -1,6 +1,8 @@
 import { computed, inject, signal } from "@angular/core";
 import { Todo, VisualStatus } from "../models/todo";
 import { TodoService } from "../services/todo/todo-service";
+import { NotificationService } from "../services/notification/notification-service";
+import { PlannerService } from "../services/ai/planner-service";
 
 export class TodoViewModel {
 
@@ -115,7 +117,13 @@ export class TodoViewModel {
     /**
      * Bestätigt den Aufwand für BEIDE Parteien und schließt das Ticket.
      */
-    public onEffortConfirmed(finalDevEffort: number, finalReviewerEffort: number, todoService: TodoService): void {
+    public onEffortConfirmed(
+        finalDevEffort: number, 
+        finalReviewerEffort: number, 
+        todoService: TodoService, 
+        notificationService: NotificationService,
+        plannerService: PlannerService
+    ): void {
         this.showEffortPopup.set(false);
 
         const updatedTodo = Todo.fromTodo(this.todo);
@@ -129,6 +137,31 @@ export class TodoViewModel {
         updatedTodo.assignedUserId = null
 
         todoService.updateTodo(updatedTodo, true);
+
+        // 🎯 2. HIER DIE MAGIE: Generische Action-Notification auslösen!
+        notificationService.showActionNotification(
+            `Starke Leistung! "${updatedTodo.task}" ist geschafft. Wie möchtest du weitermachen?`,
+            [
+                { 
+                    label: '☕ Pause', 
+                    value: 'BREAK', 
+                    variant: 'secondary', 
+                    onClick: (() => plannerService.loadRecommendationsByGroup('BREAK')) 
+                },
+                { 
+                    label: '🍃 Was Kleines', 
+                    value: 'LIGHT', 
+                    variant: 'primary', 
+                    onClick: (() => plannerService.loadRecommendationsByGroup('LIGHT')) 
+                },
+                { 
+                    label: '🚀 Nächster Brocken', 
+                    value: 'HEAVY', 
+                    variant: 'accent',
+                    onClick: (() => plannerService.loadRecommendationsByGroup('HEAVY'))
+                 }
+            ],
+        );
     }
 
 

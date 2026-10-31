@@ -1,12 +1,13 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { aiCategoriesApiUrl, aiMorningPlannerUrl, aiNoteCategoriesUrl, aiNotePredictionUrl, aiPredictionApiUrl, aiPredictionEffortUrl, aiSanitizationCategoriesUrl, aiSanitizationPredictionUrl, aiTodoSnoozingUrl, getAiMilestonesUrl, smartPlannerFeedbackUrl, smartPlannerUrl, trackAiIgnoredMilestoneUrl, trackAiMilestoneDegradationUrl, trackAiMilestoneSelectionUrl } from './links';
+import { aiCategoriesApiUrl, aiGroupPlannerUrl, aiMorningPlannerUrl, aiNoteCategoriesUrl, aiNotePredictionUrl, aiPredictionApiUrl, aiPredictionEffortUrl, aiSanitizationCategoriesUrl, aiSanitizationPredictionUrl, aiTodoSnoozingUrl, getAiMilestonesUrl, smartPlannerFeedbackUrl, smartPlannerUrl, trackAiIgnoredMilestoneUrl, trackAiMilestoneDegradationUrl, trackAiMilestoneSelectionUrl } from './links';
 import { ITodoJSON } from './dto/todo-json';
 import { MilestoneSuggestionsModel } from '../models/milestone-suggestions-model';
 import { IgnoredMilestones, MilestoneInteractionPayload } from './dto/tracked-milestones';
 import { TodoSnoozyPayload } from './dto/todo-snoozy-payload';
 import { PlannerFeedbackPayload } from '../models/queue-items/planner-queue-payload';
+import { PlannerGroupRecommendationPayload } from './dto/planner-group-recomendation-payload';
 
 export interface PlannerRecommendationDetail {
   plannerType: 'BAYES' | 'NEURAL';
@@ -185,5 +186,14 @@ export class AiRepository {
   public getMorningRecommendation(): Observable<PlannerRecommendationsResponse> {
     console.log("AiRepository:: Start loading morning recommendation");
     return this.http.get<PlannerRecommendationsResponse>(aiMorningPlannerUrl);
+  }
+
+  /**
+   * 🎯 Holt Empfehlungen basierend auf der bewussten Gruppenwahl nach Task-Abschluss
+   */
+  public getGroupRecommendation(desiredGroup: string): Observable<PlannerRecommendationsResponse> {
+    const payload: PlannerGroupRecommendationPayload = { desiredGroup };
+    console.log("AiRepository:: Start loading group recommendation", payload);
+    return this.http.post<PlannerRecommendationsResponse>(aiGroupPlannerUrl, payload);
   }
 }

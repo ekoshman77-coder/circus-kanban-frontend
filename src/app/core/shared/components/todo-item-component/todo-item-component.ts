@@ -12,6 +12,8 @@ import { Todo } from '../../../models/todo';
 import { UserService } from '../../../services/user/user-service';
 import { EffortModalComponent } from '../effort-modal-component/effort-modal-component';
 import { TodoModalService } from '../todo-edit-component/todo-modal-service';
+import { NotificationService } from '../../../services/notification/notification-service';
+import { PlannerService } from '../../../services/ai/planner-service';
 
 @Component({
   selector: 'app-todo-item',
@@ -38,7 +40,10 @@ export class TodoItemComponent {
   private connectionService = inject(ConnectionService);
   public teamService = inject(TeamService);
   private userService = inject(UserService);
-  private todoModalService = inject(TodoModalService)  
+  private todoModalService = inject(TodoModalService);
+  private notificationService = inject(NotificationService)
+  private plannerService = inject(PlannerService)
+
   public elementRef = inject(ElementRef);
 
   // 🎯 Greift das Element #checkLabel aus dem Template
@@ -113,7 +118,7 @@ export class TodoItemComponent {
       console.warn("⚠️ Keine Berechtigung!");
       return;
     }
-    this.item().onEffortConfirmed(devEffort, reviewerEffort, this.todoService);
+    this.item().onEffortConfirmed(devEffort, reviewerEffort, this.todoService, this.notificationService, this.plannerService);
   }
 
   public onDropdownChange(event: Event): void {

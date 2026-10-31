@@ -1,18 +1,33 @@
 <div class="notification-container">
   @if (notifications().length > 0) {
-    @for(notification of notifications(); track notification.id){
-    <div class="message-box">
-      @let n = notification; 
+  @for(notification of notifications(); track notification.id){
+  <div class="message-box" [class.has-actions]="notification.actions && notification.actions.length > 0">
+    @let n = notification;
+
+    <!-- Ockerer Bereich: Icon, Text, Close -->
+    <div class="message-header">
       @switch(n.type) {
-        @case ('success') {<span>✅</span>}
-        @case ('info') {<span>ℹ️</span>}
-        @case ('error') {<span>❌</span>}
+      @case ('success') {<span>✅</span>}
+      @case ('info') {<span>ℹ️</span>}
+      @case ('error') {<span>❌</span>}
       }
       <span class="message-text" [ngClass]="'message-' + n?.type">
         {{ n?.message }}
       </span>
       <button class="closeNotification" (click)="close(n.id)">×</button>
     </div>
-  }  
-}
+
+    <!-- 🎯 Neuer Bereich für die Aktions-Buttons (z.B. Pause, Leicht, Brocken) -->
+    @if (n.actions && n.actions.length > 0) {
+    <div class="notification-actions">
+      @for (action of n.actions; track action.label) {
+      <button class="action-btn" [ngClass]="getButtonClass(action.variant)" (click)="action.onClick(action.value)">
+        {{ action.label }}
+      </button>
+      }
+    </div>
+    }
+  </div>
+  }
+  }
 </div>

@@ -2,11 +2,19 @@ import { computed, Injectable, signal } from "@angular/core";
 import { generateLocalId } from "../../shared/constants/id-const";
 import { BaseDataManager } from "../abstract-base-data-manager/base-data-manager";
 
-/** Struktur einer systemweiten Toast-Benachrichtigung. */
+export interface NotificationAction<T = any> {
+    label: string;
+    value: T;
+    variant?: 'primary' | 'secondary' | 'accent'; // Nur UI-Rollen, keine Business-Logik!
+    onClick: (value: T) => void;
+}
+
 export interface AppNotification {
     id: string;
     message: string;
     type: 'success' | 'error' | 'info';
+    actions?: NotificationAction[];
+    autoClose?: boolean;
 }
 
 /**
@@ -60,6 +68,45 @@ export class NotificationService extends BaseDataManager {
         setTimeout(() => {
             this.clearNotification(newNotification.id);
         }, timeout);
+    }
+
+    /**
+     * 🎯 Zeigt eine interaktive Notification mit Auswahl-Buttons an.
+     * @param message Nachrichtentext (z. B. "Aufgabe erledigt! Wie möchtest du weitermachen?")
+     * @param actions Liste von Buttons mit Label, Value und optionalem Callback.
+     * @param onSelect Optionaler zentraler Callback, der den gewählten Wert/Index zurückgibt.
+     */
+    public showActionNotification<T>(
+        message: string,
+        actions: NotificationAction<T>[],
+        onSelect?: (selectedValue: T) => void,
+        type: 'success' | 'error' | 'info' = 'info'
+    ): void {
+        const id = generateLocalId();
+
+        const wrappedActions: NotificationAction<T>[] = actions.map(action => ({
+            ...action,
+            onClick: (val: T) => {
+                if (action.onClick) {
+                    action.onClick(val);
+                }
+                if (onSelect) {
+                    onSelect(val);
+                }
+                // Nach Auswahl schließt sich die Notification automatisch
+                this.clearNotification(id);
+            }
+        }));
+
+        const newNotification: AppNotification = {
+            id: id,
+            message: message,
+            type: type,
+            actions: wrappedActions,
+            autoClose: false // Bleibt stehen, bis der User wählt oder manuell schließt
+        };
+
+        this.notificationSignal.update((array) => [...array, newNotification]);
     }
 
     /**

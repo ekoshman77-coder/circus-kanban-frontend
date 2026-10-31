@@ -28,6 +28,7 @@ import { TodoEditComponent } from './core/shared/components/todo-edit-component/
 import { TodoModalService } from './core/shared/components/todo-edit-component/todo-modal-service';
 import { MorningPlannerComponent } from './features/morning-planner/morning-planner-component/morning-planner-component';
 import { PlannerService } from './core/services/ai/planner-service';
+import { GroupPlannerModalComponent } from './features/group-planner/group-planner-component/group-planner-component';
 
 @Component({
   selector: 'app-root',
@@ -45,7 +46,8 @@ import { PlannerService } from './core/services/ai/planner-service';
     LaborSwitchComponent,
     GraduationModalComponent,
     TodoEditComponent,
-    MorningPlannerComponent
+    MorningPlannerComponent,
+    GroupPlannerModalComponent
   ], 
   templateUrl: './app.html',
   styleUrl: './app.css'

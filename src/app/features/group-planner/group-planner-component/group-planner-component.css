@@ -1,0 +1,103 @@
+/* ==========================================================================
+   ✨ GROUP PLANNER MODAL: FLOATING WARM CONTAINER
+   ========================================================================== */
+
+.planner-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  /* Бархатное темное суфле с эффектом сине-фиолетового глубокого блюра */
+  background: rgba(15, 23, 42, 0.6); 
+  backdrop-filter: blur(10px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.planner-modal-container {
+  background: #ffffff;
+  width: 100%;
+  max-width: 780px;
+  max-height: 90vh;
+  border-radius: 24px;
+  /* Мягкая объёмная тень */
+  box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.25), 
+              0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideInDown 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.planner-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 28px;
+  /* Теплый сливочно-мятный градиент */
+  background: linear-gradient(135deg, #fffbf5 0%, #f0fdf4 100%);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.planner-modal-header h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  color: #0f172a;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+
+.planner-close-x-btn {
+  background: rgba(100, 116, 139, 0.08);
+  border: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 1.4rem;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: all 0.2s ease;
+}
+
+.planner-close-x-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  transform: scale(1.08);
+}
+
+.planner-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+  background: #ffffff;
+}
+
+/* Animations */
+@keyframes slideInDown {
+  from {
+    transform: translateY(-25px) scale(0.97);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

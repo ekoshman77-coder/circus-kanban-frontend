@@ -1,0 +1,20 @@
+@if (plannerService.showPlannerModal()) {
+  <div class="planner-modal-backdrop animate-fade-in" (click)="closeModal()">
+    <!-- stopPropagation verhindert, dass Klicks ins Modal das Overlay schließen -->
+    <div class="planner-modal-container" (click)="$event.stopPropagation()">
+      
+      <div class="planner-modal-header">
+        <h2>🎯 Deine nächsten Aufgaben</h2>
+        <button class="planner-close-x-btn" (click)="closeModal()">&times;</button>
+      </div>
+
+      <div class="planner-modal-body">
+        <app-planner-recommendation 
+          [recommendations]="plannerService.recommendations()"
+          (sessionCompleted)="handleSessionCompleted($event)">
+        </app-planner-recommendation>
+      </div>
+
+    </div>
+  </div>
+}

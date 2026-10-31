@@ -1,29 +1,23 @@
-<div class="recommendation-panel" cdkDropListGroup>
+<div class="planner-panel" cdkDropListGroup>
 
-  <!-- 🟢 TOP DROPZONE: AKZEPTIEREN -->
-  <div 
-    class="dropzone selection-zone"
-    cdkDropList
-    (cdkDropListDropped)="onDrop($event, 'select')">
-    <div class="zone-content">
-      <span class="icon">🚀</span>
-      <p><strong>Ziehe deine Wahl hierher</strong>, um sofort zu starten!</p>
+  <!-- 🟢 1. TOP-DROPZONE: AKZEPTIEREN -->
+  <div class="drop-zone accept-zone" 
+       cdkDropList 
+       (cdkDropListDropped)="onDrop($event, 'select')">
+    <div class="zone-inner" style="pointer-events: none;">
+      <span class="zone-icon">🚀</span>
+      <span class="zone-title">Auswählen & Starten</span>
+      <span class="zone-hint">Ziehe das Todo hierher</span>
     </div>
   </div>
 
-  <!-- 💡 MITTE: DIE CARDS -->
-  <div class="cards-container">
+  <!-- 📋 2. KARTEN-GRID ALS GEMEINSAME CDK-DROPLIST -->
+  <div class="recommendations-grid">
+    
     @for (todo of visibleList(); track todo.todo.id) {
-      <div 
-        class="todo-card" 
-        cdkDrag 
-        [cdkDragData]="todo">
-        
-        <!-- Drag Handle Header -->
-        <div class="card-drag-handle" cdkDragHandle>
-          <span class="grip-icon">⋮⋮</span>
-          
-          <!-- Mode-Code Handling (z.B. ALL_SNOOZED) -->
+        <div class="recommendation-card">        
+        <!-- Header & KI-Gründe -->
+        <div class="card-header-bar">
           @if (todo.modeCode === 'ALL_SNOOZED') {
             <span class="badge badge-warning">💤 Frühestes Aufwachen</span>
           } @else if (todo.modeCode) {
@@ -31,89 +25,67 @@
           }
         </div>
 
-        <div class="card-body">
-          <h3 class="todo-title">{{ todo.todo.task }}</h3>
-          
-          <!-- Hinweistext bei ALL_SNOOZED -->
-          @if (todo.modeCode === 'ALL_SNOOZED') {
-            <div class="snooze-notice">
-              <span class="brain-icon">⏰</span>
-              <p>Alle Aufgaben schlafen aktuell. Dies ist das erste To-Do, das wieder aktiv wird!</p>
-            </div>
-          }
-
-          <!-- 🧠 KI-Gründe & Planner-Details rendern -->
-          @if (todo.plannerDetails && todo.plannerDetails.length > 0) {
-            <div class="ai-reasoning-list">
-              @for (detail of todo.plannerDetails; track detail.plannerType) {
-                <div class="ai-reasoning">
-                  <span class="brain-icon">🧠</span>
-                  <p>
-                    <strong>{{ detail.plannerType }}:</strong> {{ detail.reasonCode }}
-                  </p>
-                </div>
-              }
-            </div>
-          }
-        </div>
-
-        <!-- CLICK FALLBACK BUTTONS -->
-        <div class="card-actions">
-          <button class="btn-accept" (click)="onSelect(todo)">
-            🚀 Anpacken
-          </button>
-          <button class="btn-reject-toggle" (click)="toggleInlineMenu(todo.todo.id)">
-            ❌ Ablehnen
-          </button>
-        </div>
-
-        <!-- INLINE POPOVER BEIM KLICK AUF ABLEHNEN -->
-        @if (activePopoverId() === todo.todo.id) {
-          <div class="inline-reject-menu animate-fade-in">
-            <p class="menu-title">Warum passt es gerade nicht?</p>
-            <div class="reject-options">
-              <button (click)="onReject(todo.todo.id, 'no_motivation')">🥱 Keine Lust</button>
-              <button (click)="onReject(todo.todo.id, 'too_heavy')">🧠 Zu schwer</button>
-              <button (click)="onReject(todo.todo.id, 'too_long')">⏱️ Zu lange</button>
-              <button (click)="onReject(todo.todo.id, 'snooze')">💤 Snooze</button>
-            </div>
+        @if (todo.plannerDetails && todo.plannerDetails.length > 0) {
+          <div class="ai-reasons-container">
+            @for (detail of todo.plannerDetails; track detail.plannerType) {
+              <div class="ai-reason-pill">
+                <span class="ai-icon">🧠</span>
+                <span><strong>{{ detail.plannerType }}:</strong> {{ detail.reasonCode }}</span>
+              </div>
+            }
           </div>
         }
 
-        <!-- Drag Preview (Was am Mauszeiger klebt) -->
-        <div *cdkDragPreview class="card-drag-preview">
-          <span>⚡ {{ todo.todo.task }}</span>
+<!-- 🎯 Компактный контейнер-приемник для конкретной задачи -->
+        <div class="draggable-todo-container"
+             cdkDropList
+             [id]="'card-list-' + todo.todo.id"
+             (cdkDropListDropped)="onDrop($event, 'self_return')">
+          
+          <!-- 🚀 Вешаем cdkDrag прямо на задачу, как в эталонном канбане! -->
+          <app-todo-item 
+            [item]="todo.todoViewModel" 
+            [isKanbanMode]="true"
+            [ngClass]="'status-' + todo.todoViewModel.visualStatus"
+            cdkDrag 
+            [cdkDragData]="todo">
+          </app-todo-item>
+
         </div>
+
+        <!-- Fallback-Buttons für Klicks -->
+        <div class="card-action-buttons">
+          <button type="button" class="btn-primary-action" (click)="onSelect(todo)">🚀 Anpacken</button>
+          <button type="button" class="btn-secondary-action" (click)="toggleInlineMenu(todo.todo.id)">❌ Ablehnen</button>
+        </div>
+
       </div>
-    } @empty {
-      <p class="empty-text">Keine weiteren Empfehlungen vorhanden.</p>
     }
   </div>
 
-  <!-- 🔴 BOTTOM DROPZONES: 4 ABLEHNUNGSGRÜNDE -->
-  <div class="reject-dropzones-wrapper">
-    <span class="section-label">...oder ziehe eine Karte direkt auf ein Feedback-Feld:</span>
-    
-    <div class="dropzones-grid">
+  <!-- 🔴 3. BOTTOM-DROPZONES MIT IDs FÜR DIE VERBINDUNG -->
+  <div class="reject-zones-section">
+    <span class="reject-label">Oder ziehe das Todo direkt in eine Feedback-Zone:</span>
+    <div class="reject-zones-grid">
       
-      <div class="dropzone reject-zone" cdkDropList (cdkDropListDropped)="onDrop($event, 'no_motivation')">
-        <span class="icon">🥱</span>
-        <span>Keine Lust</span>
+      <div id="motZone" class="drop-zone reject-item zone-motivation" cdkDropList (cdkDropListDropped)="onDrop($event, 'no_motivation')">
+        <span class="zone-icon" style="pointer-events: none;">🥱</span>
+        <span style="pointer-events: none;">Keine Lust</span>
       </div>
 
-      <div class="dropzone reject-zone" cdkDropList (cdkDropListDropped)="onDrop($event, 'too_heavy')">
-        <span class="icon">🧠</span>
-        <span>Zu schwer</span>
+      <div id="heavyZone" class="drop-zone reject-item zone-heavy" cdkDropList (cdkDropListDropped)="onDrop($event, 'too_heavy')">
+        <span class="zone-icon" style="pointer-events: none;">🧠</span>
+        <span style="pointer-events: none;">Zu schwer</span>
       </div>
 
-      <div class="dropzone reject-zone" cdkDropList (cdkDropListDropped)="onDrop($event, 'too_long')">
-        <span class="icon">⏱️</span>
-        <span>Zu lange</span>
+      <div id="longZone" class="drop-zone reject-item zone-long" cdkDropList (cdkDropListDropped)="onDrop($event, 'too_long')">
+        <span class="zone-icon" style="pointer-events: none;">⏱️</span>
+        <span style="pointer-events: none;">Zu lange</span>
       </div>
 
-      <div class="dropzone reject-zone snooze-zone" cdkDropList (cdkDropListDropped)="onDrop($event, 'snooze')">
-        <span class="icon">💤</span>
-        <span>Später (Snooze)</span>
+      <div id="snoozeZone" class="drop-zone reject-item zone-snooze" cdkDropList (cdkDropListDropped)="onDrop($event, 'snooze')">
+        <span class="zone-icon" style="pointer-events: none;">💤</span>
+        <span style="pointer-events: none;">Snooze</span>
       </div>
 
     </div>

@@ -2,6 +2,10 @@ import { Component, input, output, signal, computed } from '@angular/core';
 import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { RecommendationResult, RejectReason } from '../../../core/models/recommendation-result';
 import { RecommendedTodoItem } from '../../../core/services/ai/planner-service';
+import { TodoItemComponent } from '../../../core/shared/components/todo-item-component/todo-item-component';
+import { TodoViewModel } from '../../../core/viewmodel/todo-view-model';
+import { PlannerRecommendationDetail } from '../../../core/repositories/ai-repository';
+import { CommonModule } from '@angular/common';
 
 export interface RecommendationTodo {
   id: string;
@@ -14,7 +18,7 @@ export interface RecommendationTodo {
 @Component({
   selector: 'app-planner-recommendation',
   standalone: true,
-  imports: [DragDropModule],
+  imports: [DragDropModule, TodoItemComponent, CommonModule],
   templateUrl: './planner-recommendation-component.html',
   styleUrls: ['./planner-recommendation-component.css']
 })
@@ -32,7 +36,12 @@ export class PlannerRecommendationComponent {
   // Verbleibende Todos im UI (ausgeblendet, wenn bereits abgelehnt)
   visibleList = computed(() => {
     const rejectedIds = new Set(this.rejectionsBuffer().map(r => r.todoId));
-    return this.recommendations().filter(item => !rejectedIds.has(item.todo.id));
+    return this.recommendations().filter(item => !rejectedIds.has(item.todo.id))
+    .map(rec => ({
+       ...rec,
+       todoViewModel: new TodoViewModel(rec.todo, false)
+      }) 
+    );
   });
 
   // 🚀 Ein Todo wurde gewählt (Klick oder Drag nach oben)
@@ -61,10 +70,24 @@ export class PlannerRecommendationComponent {
     });
   }
 
-  onDrop(event: CdkDragDrop<any>, targetZone: 'select' | RejectReason) {
+  onDrop(event: CdkDragDrop<any>, targetZone: 'select' | 'self_return' | RejectReason) {
+    if (event.previousContainer === event.container) {
+      return;
+    }
+
     const item = event.item.data as RecommendedTodoItem;
     if (!item) return;
 
+    // 🛡 ЗАЩИТА 1: Если бросили в карточку (self_return)
+    if (targetZone === 'self_return') {
+      if (event.container.id !== event.previousContainer.id) {
+        console.warn("🚫 Нельзя переносить задачу из одной карты в другую!");
+        return; // Возвращаем на место
+      }
+      return; 
+    }
+
+    // 🚀 ЗАЩИТА 2: Штатная обработка для зоны "Auswählen" или зон отказов
     if (targetZone === 'select') {
       this.onSelect(item);
     } else {
