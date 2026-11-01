@@ -118,11 +118,10 @@ export class PlannerComponent {
   }
 
   handleSessionCompleted(result: RecommendationResult) {
-    console.log("HandleSessionCompleted startet")
-    // 1. Das Paket direkt an den Service weiterreichen!
-    this.plannerService.sendFeedback(result);
+    console.log("HandleSessionCompleted startet", result)
 
     // 2. Falls ein Todo gewählt wurde, als Fokus setzen
+    
     if (result.selectedTodoId) {
       const todo = this.todoService.getTodoById(result.selectedTodoId) ?? null;
       this.activeFocusTodo.set(todo);

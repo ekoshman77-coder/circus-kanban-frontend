@@ -93,26 +93,25 @@
   align-items: stretch; 
 }
 
-/* --- 2. DIE KARTE GEGEN SCHLOBBERN SCHÜTZEN --- */
 .recommendation-card {
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-left: 4px solid #6366f1;
-  border-radius: 14px;
-  padding: 14px;
+  border-radius: 12px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+  gap: 6px;
+  
+  /* 🟢 Ganz simpler, flacher Schatten */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+  
   position: relative;
   box-sizing: border-box;
-  
-  /* 🟢 Flexibel, damit 2 Karten nebeneinander passen (z.B. im 780px Modal) */
   flex: 1;
-  min-width: 300px;
-  max-width: 350px;
-  
-  min-height: 240px; 
+  min-width: 280px;
+  max-width: 340px;
+  min-height: auto;
   justify-content: space-between; 
 }
 
@@ -182,59 +181,54 @@
   visibility: hidden !important;
 }
 
-/* Card Header / Handle Bar */
-.card-handle-bar {
+/* --- CARD HEADER & DEZENTES GRUPPEN-BADGE --- */
+.card-header-bar {
   display: flex;
   align-items: center;
-  gap: 8px;
-  cursor: grab;
-  color: #94a3b8;
-  font-size: 14px;
-
-  &:active {
-    cursor: grabbing;
-  }
-
-  .grip-dots {
-    font-weight: bold;
-    letter-spacing: -2px;
-  }
-
-  .badge {
-    background: #f1f5f9;
-    color: #475569;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 11px;
-    font-weight: 600;
-  }
-
-  .badge-warning {
-    background: #fef3c7;
-    color: #92400e;
-  }
+  justify-content: flex-end; /* Schiebt das Badge dezent nach rechts oben */
+  margin-bottom: -2px;
 }
 
-/* AI Reasons Pille */
+/* 🟢 Gruppen-Badge extrem klein und unaufdringlich */
+.card-header-bar .badge {
+  background: #f1f5f9;
+  color: #64748b;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 9px;         /* Sehr kleine, dezente Schrift */
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.card-header-bar .badge-warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* --- 🧠 KI-BEGRÜNDUNGEN WIEDER GUT LESBAR & PRÄSENT --- */
 .ai-reasons-container {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
+  margin-bottom: 2px;
 }
 
 .ai-reason-pill {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: #f5f3ff;
+  background: #f5f3ff;   /* Zarter, eleganter KI-Schimmer */
   border: 1px solid #ede9fe;
-  padding: 6px 10px;
-  border-radius: 8px;
-  font-size: 12px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 11px;       /* Gut lesbare Schriftgröße */
+  font-weight: 500;
   color: #5b21b6;
 
   .ai-icon {
-    font-size: 14px;
+    font-size: 13px;
   }
 }
 
@@ -243,26 +237,24 @@
   margin: 4px 0;
 }
 
-/* Action Buttons */
+/* Action Buttons in der Karte etwas flacher */
 .card-action-buttons {
   display: flex;
-  gap: 8px;
-  margin-top: 4px;
+  gap: 6px;
+  margin-top: 2px;
 
   button {
     flex: 1;
-    padding: 8px;
-    border-radius: 8px;
-    font-size: 12px;
+    padding: 6px 8px; /* 🟢 Kompakterer Klick-Bereich */
+    border-radius: 6px;
+    font-size: 11px;
     font-weight: 600;
     cursor: pointer;
     border: none;
     transition: background 0.15s ease, transform 0.1s ease;
-
-    &:active {
-      transform: scale(0.97);
-    }
+    /* ... restliche Buttons ... */
   }
+}
 
   .btn-primary-action {
     background: #10b981;
@@ -284,7 +276,7 @@
       color: #334155;
     }
   }
-}
+
 
 /* Inline Reject Overlay */
 .inline-reject-overlay {

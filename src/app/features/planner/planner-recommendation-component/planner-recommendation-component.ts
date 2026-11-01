@@ -1,11 +1,12 @@
-import { Component, input, output, signal, computed } from '@angular/core';
+import { Component, input, output, signal, computed, inject } from '@angular/core';
 import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { RecommendationResult, RejectReason } from '../../../core/models/recommendation-result';
-import { RecommendedTodoItem } from '../../../core/services/ai/planner-service';
+import { PlannerService, RecommendedTodoItem } from '../../../core/services/ai/planner-service';
 import { TodoItemComponent } from '../../../core/shared/components/todo-item-component/todo-item-component';
 import { TodoViewModel } from '../../../core/viewmodel/todo-view-model';
 import { PlannerRecommendationDetail } from '../../../core/repositories/ai-repository';
 import { CommonModule } from '@angular/common';
+
 
 export interface RecommendationTodo {
   id: string;
@@ -23,6 +24,8 @@ export interface RecommendationTodo {
   styleUrls: ['./planner-recommendation-component.css']
 })
 export class PlannerRecommendationComponent {
+  private plannerService = inject(PlannerService);
+
   // 🟢 Verwendet das echte Server-Modell mit plannerDetails & modeCode
   recommendations = input<RecommendedTodoItem[]>([]);
   
@@ -64,10 +67,14 @@ export class PlannerRecommendationComponent {
   // 🏁 Baut das Paket zusammen und schickt es an die Elternkomponente / den Service
   private finishSession(selectedTodoId?: string) {
     console.log("PlannerRecommendationComponent: finishSession startet", selectedTodoId);
-    this.sessionCompleted.emit({
+
+    const result: RecommendationResult = {
       selectedTodoId: selectedTodoId,
       rejections: this.rejectionsBuffer()
-    });
+    }
+    this.plannerService.sendFeedback(result)
+
+    this.sessionCompleted.emit(result);
   }
 
   onDrop(event: CdkDragDrop<any>, targetZone: 'select' | 'self_return' | RejectReason) {

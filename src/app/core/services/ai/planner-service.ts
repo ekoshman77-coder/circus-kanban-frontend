@@ -105,7 +105,7 @@ export class PlannerService extends BaseDataManager {
               plannerDetails: rec.plannerDetails,
               modeCode: rec.modeCode
             }));
-
+          console.log(mappedItems)
           this.recommendations.set(mappedItems);
           this.isLoading.set(false);
         },
@@ -260,5 +260,47 @@ export class PlannerService extends BaseDataManager {
 
   public override checkUnsavedData(): string | null {
     return null;
+  }
+
+  /**
+   * 🛡 UI-TEST-SIMULATOR: Garantiert immer mindestens 2 unterschiedliche Karten 
+   * für die Frontend-Entwicklung, falls die KI sich zu einig ist.
+   */
+  private ensureTwoDistinctRecommendation(items: RecommendedTodoItem[]): RecommendedTodoItem[] {
+    if (items.length === 0) {
+      // Fallback, wenn gar keine da sind
+      return [
+        {
+          todo: new Todo({ task: '🚀 KI-Hauptvorschlag: Backend-Architektur aufräumen', effort: 3, category: 'Backend' }),
+          plannerDetails: [{ plannerType: 'BAYES', reasonCode: 'Perfekt für deinen aktuellen Fokus.', score: 0.5 }],
+          modeCode: 'STANDARD'
+        },
+        {
+          todo: new Todo({ task: '💡 KI-Alternative: Dokumentation aktualisieren', effort: 2, category: 'Docs' }),
+          plannerDetails: [{ plannerType: 'NEURAL', reasonCode: 'Schneller Quick-Win für zwischendurch.', score: 0.5  }],
+          modeCode: 'STANDARD'
+        }
+      ];
+    }
+
+    const uniqueIds = new Set(items.map(i => i.todo.id));
+    // Wenn nur 1 Vorschlag kommt oder beide exakt dieselbe ID haben:
+    if (items.length === 1 || uniqueIds.size === 1) {
+      const base = items[0];
+      const clonedTodo = Todo.fromJson(base.todo.toJson());
+      clonedTodo.id = base.todo.id + '-simulated-alt';
+      clonedTodo.task = base.todo.task + ' (Alternative KI-Perspektive)';
+      
+      const secondItem: RecommendedTodoItem = {
+        todo: clonedTodo,
+        plannerDetails: [
+          { plannerType: 'BAYES', reasonCode: 'Zweiter simulierter Vorschlag zur UI-Ansicht.', score: 1 }
+        ],
+        modeCode: base.modeCode
+      };
+      return [base, secondItem];
+    }
+
+    return items;
   }
 }

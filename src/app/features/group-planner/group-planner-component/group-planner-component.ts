@@ -15,9 +15,6 @@ export class GroupPlannerModalComponent {
   private todoService = inject(TodoService)
 
 public handleSessionCompleted(result: RecommendationResult): void {
-    // 1. Feedback an den Service schicken (schiebt es in die Queue)
-    this.plannerService.sendFeedback(result);
-
     // 2. Wenn ein Todo ausgewählt wurde, kannst du es als Fokus setzen (optional)
     if (result.selectedTodoId) {
       const realTodo = this.todoService.getTodoById(result.selectedTodoId);
