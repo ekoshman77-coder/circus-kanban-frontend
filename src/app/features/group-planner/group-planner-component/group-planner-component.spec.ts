@@ -1,18 +1,37 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
-import { GroupPlannerComponent } from './group-planner-component';
+import { GroupPlannerModalComponent } from './group-planner-component';
+import { PlannerService } from '../../../core/services/ai/planner-service';
+import { TodoService } from '../../../core/services/todo/todo-service';
+import { describe, beforeEach, it, expect, vi } from 'vitest';
 
 describe('GroupPlannerComponent', () => {
-  let component: GroupPlannerComponent;
-  let fixture: ComponentFixture<GroupPlannerComponent>;
+  let component: GroupPlannerModalComponent;
+  let fixture: ComponentFixture<GroupPlannerModalComponent>;
+  let mockPlannerService: any;
+  let mockTodoService: any;
 
   beforeEach(async () => {
+    // 💡 1. Mocks für die benötigten Services erstellen
+    mockPlannerService = {
+      closePlannerModal: vi.fn(),
+      showPlannerModal: vi.fn()
+    };
+
+    mockTodoService = {
+      getTodoById: vi.fn()
+    };
+
     await TestBed.configureTestingModule({
-      imports: [GroupPlannerComponent]
+      imports: [GroupPlannerModalComponent],
+      providers: [
+        // 💡 2. Echte Services durch unsere Mocks ersetzen
+        { provide: PlannerService, useValue: mockPlannerService },
+        { provide: TodoService, useValue: mockTodoService }
+      ]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(GroupPlannerComponent);
+    fixture = TestBed.createComponent(GroupPlannerModalComponent);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

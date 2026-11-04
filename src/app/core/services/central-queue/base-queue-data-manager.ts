@@ -20,7 +20,7 @@ export abstract class BaseQueueDataManager<TProvider extends StateProvider<any> 
   protected stateProvider: TProvider;
 
   private lastFetchTimestamp = 0;
-  private readonly FETCH_COOLDOWN_MS = 30000;
+  private readonly FETCH_COOLDOWN_MS = 60000;
 
   constructor(name: QueueHandlerName) {
     super();

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { PlannerService } from '../../../core/services/ai/planner-service';
 import { RecommendationResult } from '../../../core/models/recommendation-result';
 import { PlannerRecommendationComponent } from '../../planner/planner-recommendation-component/planner-recommendation-component';
@@ -9,6 +9,7 @@ import { TodoService } from '../../../core/services/todo/todo-service';
   imports: [PlannerRecommendationComponent],
   templateUrl: './group-planner-component.html',
   styleUrl: './group-planner-component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class GroupPlannerModalComponent {
   public plannerService = inject(PlannerService);

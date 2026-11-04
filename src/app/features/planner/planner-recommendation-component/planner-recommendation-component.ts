@@ -1,4 +1,4 @@
-import { Component, input, output, signal, computed, inject } from '@angular/core';
+import { Component, input, output, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { RecommendationResult, RejectReason } from '../../../core/models/recommendation-result';
 import { PlannerService, RecommendedTodoItem } from '../../../core/services/ai/planner-service';
@@ -7,6 +7,7 @@ import { TodoViewModel } from '../../../core/viewmodel/todo-view-model';
 import { PlannerRecommendationDetail } from '../../../core/repositories/ai-repository';
 import { CommonModule } from '@angular/common';
 
+export type AcceptReason = 'select_easy' | 'select_ontime' | 'select_motivated' | 'select_important';
 
 export interface RecommendationTodo {
   id: string;
@@ -21,7 +22,8 @@ export interface RecommendationTodo {
   standalone: true,
   imports: [DragDropModule, TodoItemComponent, CommonModule],
   templateUrl: './planner-recommendation-component.html',
-  styleUrls: ['./planner-recommendation-component.css']
+  styleUrls: ['./planner-recommendation-component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PlannerRecommendationComponent {
   private plannerService = inject(PlannerService);
@@ -48,7 +50,7 @@ export class PlannerRecommendationComponent {
   });
 
   // 🚀 Ein Todo wurde gewählt (Klick oder Drag nach oben)
-  onSelect(item: RecommendedTodoItem) {
+  onSelect(item: RecommendedTodoItem, targetZone: string | null = null) {
     this.finishSession(item.todo.id);
   }
 
@@ -77,30 +79,27 @@ export class PlannerRecommendationComponent {
     this.sessionCompleted.emit(result);
   }
 
-  onDrop(event: CdkDragDrop<any>, targetZone: 'select' | 'self_return' | RejectReason) {
-    if (event.previousContainer === event.container) {
-      return;
-    }
+// onDrop(event: CdkDragDrop<any>, targetZone: 'select' | 'self_return' | RejectReason | AcceptReason) {
+//   if (event.previousContainer === event.container) {
+//     return;
+//   }
 
-    const item = event.item.data as RecommendedTodoItem;
-    if (!item) return;
+//   const item = event.item.data as RecommendedTodoItem;
+//   if (!item) return;
 
-    // 🛡 ЗАЩИТА 1: Если бросили в карточку (self_return)
-    if (targetZone === 'self_return') {
-      if (event.container.id !== event.previousContainer.id) {
-        console.warn("🚫 Нельзя переносить задачу из одной карты в другую!");
-        return; // Возвращаем на место
-      }
-      return; 
-    }
+//   if (targetZone === 'self_return') {
+//     return; 
+//   }
 
-    // 🚀 ЗАЩИТА 2: Штатная обработка для зоны "Auswählen" или зон отказов
-    if (targetZone === 'select') {
-      this.onSelect(item);
-    } else {
-      this.onReject(item.todo.id, targetZone);
-    }
-  }
+//   // Если это одна из причин принятия
+//   if (targetZone.startsWith('select')) {
+//     console.log(`Принято с причиной: ${targetZone}`);
+//     // Передаем причину вместе с выбранной задачей
+//     this.onSelect(item, targetZone);
+//   } else {
+//     this.onReject(item.todo.id, targetZone as RejectReason);
+//   }
+// }
 
   toggleInlineMenu(todoId: string) {
     this.activePopoverId.update(id => id === todoId ? null : todoId);

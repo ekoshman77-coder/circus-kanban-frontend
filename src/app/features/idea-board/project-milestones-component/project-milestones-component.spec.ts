@@ -8,8 +8,13 @@ import { TeamService } from '../../../core/services/team/team-service';
 import { TodoQueryService } from '../../../core/services/todo/todo-query-service';
 import { signal } from '@angular/core';
 import { Todo } from '../../../core/models/todo';
-import { CdkDragDrop } from '@angular/cdk/drag-drop';
+import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { describe, beforeEach, it, expect, vi } from 'vitest';
+import { CommonModule } from '@angular/common';
+import { MilestoneSelectorComponent } from '../../../core/shared/components/milestone-selector-component/milestone-selector-component';
+import { TodoItemComponentMock } from '@tests/helpers/todo-item-component-mock';
+import { TodoPlanningModalComponent } from '../../../core/shared/components/todo-planning-modal-component/todo-planning-modal-component';
+import { TodoItemComponent } from '../../../core/shared/components/todo-item-component/todo-item-component';
 
 describe('ProjectMilestonesComponent (Vitest Edition)', () => {
   let component: ProjectMilestonesComponent;
@@ -108,7 +113,11 @@ describe('ProjectMilestonesComponent (Vitest Edition)', () => {
         { provide: TeamService, useValue: mockTeamService },
         { provide: TodoQueryService, useValue: mockTodoQueryService }
       ]
-    }).compileComponents();
+    }).overrideComponent(ProjectMilestonesComponent, {
+        remove: { imports: [TodoItemComponent] },       // 👈 Echtes Todo-Item rauswerfen
+        add: { imports: [TodoItemComponentMock] }       // 👈 Mock stattdessen reinwachsen lassen      }
+
+    });
 
     fixture = TestBed.createComponent(ProjectMilestonesComponent);
     component = fixture.componentInstance;

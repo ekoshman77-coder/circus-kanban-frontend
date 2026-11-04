@@ -119,7 +119,7 @@ export class PlannerService extends BaseDataManager {
   /**
    * Sendet das Runden-Feedback (Optimistisch & Offline-Safe über DataManager)
    */
-  public sendFeedback(feedback: RecommendationResult): void {
+public sendFeedback(feedback: RecommendationResult): void {
     const currentUserId = this.userService.getCurrentUserId() ?? '';
     const roundId = this.activeRoundId() ?? '';
 
@@ -137,18 +137,26 @@ export class PlannerService extends BaseDataManager {
       .filter((todo): todo is { todoId: string; reason: Exclude<RejectReason, 'snooze'> } => todo.reason !== 'snooze')
       .map((reject) => ({
         todoId: reject.todoId,
-        rejectReason: reject.reason
+        reason: reject.reason
       }));
 
-    // 3. Feedback in die Queue schieben
+    // 3. Akzeptiertes Todo als Objekt aufbauen (inkl. optionalem Grund aus der UI, falls vorhanden)
+    const acceptedTodoPayload = feedback.selectedTodoId 
+      ? {
+          todoId: feedback.selectedTodoId,
+          reason: (feedback as any).selectedReason ?? null 
+        }
+      : null;
+
+    // 4. Feedback in die Queue schieben
     this.plannerDataManager.queueFeedback(
       currentUserId,
       roundId,
-      feedback.selectedTodoId ?? null,
+      acceptedTodoPayload, 
       rejectedTodos
     );
 
-    // 4. UI sofort zurücksetzen (Zero-Latency)
+    // 5. UI sofort zurücksetzen (Zero-Latency)
     this.recommendations.set([]);
     this.activeRoundId.set(null);
     this.isLoading.set(false);

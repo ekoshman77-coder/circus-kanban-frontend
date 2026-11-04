@@ -40,7 +40,7 @@ export interface PlannerRecommendationPayload {
  */
 export interface RejectedTodoFeedback {
   todoId: string;
-  rejectReason: 'no_motivation' | 'too_heavy' | 'too_long' | null;
+  reason: 'no_motivation' | 'too_heavy' | 'too_long' | null;
 }
 
 export interface MilestoneSuggestion {

@@ -1,21 +1,8 @@
-<div class="planner-panel" cdkDropListGroup>
-
-  <!-- 🟢 1. TOP-DROPZONE: AKZEPTIEREN -->
-  <div class="drop-zone accept-zone" 
-       cdkDropList 
-       (cdkDropListDropped)="onDrop($event, 'select')">
-    <div class="zone-inner" style="pointer-events: none;">
-      <span class="zone-icon">🚀</span>
-      <span class="zone-title">Auswählen & Starten</span>
-      <span class="zone-hint">Ziehe das Todo hierher</span>
-    </div>
-  </div>
-
-  <!-- 📋 2. KARTEN-GRID ALS GEMEINSAME CDK-DROPLIST -->
+<div class="planner-panel">
   <div class="recommendations-grid">
-    
     @for (todo of visibleList(); track todo.todo.id) {
-        <div class="recommendation-card">        
+      <div class="recommendation-card">
+        
         <!-- Header & KI-Gründe -->
         <div class="card-header-bar">
           @if (todo.modeCode === 'ALL_SNOOZED') {
@@ -36,59 +23,47 @@
           </div>
         }
 
-<!-- 🎯 Компактный контейнер-приемник для конкретной задачи -->
-        <div class="draggable-todo-container"
-             cdkDropList
-             [id]="'card-list-' + todo.todo.id"
-             (cdkDropListDropped)="onDrop($event, 'self_return')">
-          
-          <!-- 🚀 Вешаем cdkDrag прямо на задачу, как в эталонном канбане! -->
+        <!-- Задача -->
+        <div class="draggable-todo-container">
           <app-todo-item 
             [item]="todo.todoViewModel" 
             [isKanbanMode]="true"
-            [ngClass]="'status-' + todo.todoViewModel.visualStatus"
-            cdkDrag 
-            [cdkDragData]="todo">
+            [ngClass]="'status-' + todo.todoViewModel.visualStatus">
           </app-todo-item>
-
         </div>
 
-        <!-- Fallback-Buttons für Klicks -->
-        <div class="card-action-buttons">
-          <button type="button" class="btn-primary-action" (click)="onSelect(todo)">🚀 Anpacken</button>
-          <button type="button" class="btn-secondary-action" (click)="toggleInlineMenu(todo.todo.id)">❌ Ablehnen</button>
+        <!-- 🚀 Интерактивный блок кнопок c ховер-расщеплением -->
+        <div class="card-action-bar">
+          
+          <!-- Зона Принятия -->
+          <div class="action-group accept-group">
+            <button type="button" class="btn-main btn-accept">
+              🚀 Anpacken
+            </button>
+            <div class="chips-subpanel">
+              <button class="chip-btn" (click)="onSelect(todo, 'select_easy')">⚡ Leicht</button>
+              <button class="chip-btn" (click)="onSelect(todo, 'select_ontime')">🎯 Pünktlich</button>
+              <button class="chip-btn" (click)="onSelect(todo, 'select_motivated')">🔥 Motiviert</button>
+              <button class="chip-btn" (click)="onSelect(todo, null)">✨ Passt gerade</button>
+            </div>
+          </div>
+
+          <!-- Зона Отклонения -->
+          <div class="action-group reject-group">
+            <button type="button" class="btn-main btn-reject">
+              ❌ Ablehnen
+            </button>
+            <div class="chips-subpanel">
+              <button class="chip-btn" (click)="onReject(todo.todo.id, 'no_motivation')">🥱 Keine Lust</button>
+              <button class="chip-btn" (click)="onReject(todo.todo.id, 'too_heavy')">🧠 Zu schwer</button>
+              <button class="chip-btn" (click)="onReject(todo.todo.id, 'too_long')">⏱️ Zu lange</button>
+              <button class="chip-btn" (click)="onReject(todo.todo.id, 'snooze')">💤 Snooze</button>
+            </div>
+          </div>
+
         </div>
 
       </div>
     }
   </div>
-
-  <!-- 🔴 3. BOTTOM-DROPZONES MIT IDs FÜR DIE VERBINDUNG -->
-  <div class="reject-zones-section">
-    <span class="reject-label">Oder ziehe das Todo direkt in eine Feedback-Zone:</span>
-    <div class="reject-zones-grid">
-      
-      <div id="motZone" class="drop-zone reject-item zone-motivation" cdkDropList (cdkDropListDropped)="onDrop($event, 'no_motivation')">
-        <span class="zone-icon" style="pointer-events: none;">🥱</span>
-        <span style="pointer-events: none;">Keine Lust</span>
-      </div>
-
-      <div id="heavyZone" class="drop-zone reject-item zone-heavy" cdkDropList (cdkDropListDropped)="onDrop($event, 'too_heavy')">
-        <span class="zone-icon" style="pointer-events: none;">🧠</span>
-        <span style="pointer-events: none;">Zu schwer</span>
-      </div>
-
-      <div id="longZone" class="drop-zone reject-item zone-long" cdkDropList (cdkDropListDropped)="onDrop($event, 'too_long')">
-        <span class="zone-icon" style="pointer-events: none;">⏱️</span>
-        <span style="pointer-events: none;">Zu lange</span>
-      </div>
-
-      <div id="snoozeZone" class="drop-zone reject-item zone-snooze" cdkDropList (cdkDropListDropped)="onDrop($event, 'snooze')">
-        <span class="zone-icon" style="pointer-events: none;">💤</span>
-        <span style="pointer-events: none;">Snooze</span>
-      </div>
-
-    </div>
-  </div>
-
 </div>

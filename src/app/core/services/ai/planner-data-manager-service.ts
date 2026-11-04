@@ -37,7 +37,7 @@ export class PlannerDataManagerService extends BaseQueueDataManager<EmptyStatePr
           id: '',
           userId: payload.userId,
           roundId: payload.roundId,
-          acceptedTodoId: payload.acceptedTodoId,
+          acceptedTodo: payload.acceptedTodo, 
           rejectedTodos: payload.rejectedTodos,
           displayInfo: {
             category: 'KI-Planer',
@@ -77,14 +77,14 @@ export class PlannerDataManagerService extends BaseQueueDataManager<EmptyStatePr
   public queueFeedback(
     userId: string,
     roundId: string,
-    acceptedTodoId: string | null,
+    acceptedTodo: { todoId: string; reason: string | null } | null,
     rejectedTodos: RejectedTodoFeedback[]
   ): void {
     const payload: PlannerFeedbackPayload = {
       id: roundId,
       userId,
       roundId,
-      acceptedTodoId,
+      acceptedTodo,
       rejectedTodos,
       displayInfo: {
         category: 'KI-Planer',

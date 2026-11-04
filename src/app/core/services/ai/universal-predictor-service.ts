@@ -5,10 +5,6 @@ import { firstValueFrom } from 'rxjs';
 
 /**
  * Universeller Vorhersage-Service für das gesamte System.
- * * Agiert als zentraler, hybrider Detektiv, der:
- * 1. Kategorien für To-Dos und Notizen basierend auf Textanalysen prognostiziert (Online via KI, Offline via LocalStorage-Heuristik).
- * 2. Aufwandsschätzungen (Effort-Predictions) anhand von globalen Team-Benchmarks berechnet.
- * 3. Dynamisch Kategorielisten ausliest, um sie in Formularen anzubieten.
  */
 @Injectable({
   providedIn: 'root'
@@ -19,13 +15,6 @@ export class UniversalPredictorService {
 
   /**
    * Sagt die am besten passende Kategorie für ein To-Do oder eine Notiz voraus.
-   * * Entscheidet dynamisch anhand des Verbindungsstatus:
-   * - **ONLINE:** Ruft das serverbasierte KI-Modell auf.
-   * - **OFFLINE:** Analysiert lokal gespeicherte Daten im LocalStorage über ein Häufigkeits-Punktesystem.
-   * * @param text Der Freitext des Elements (z. B. Titel oder Beschreibung).
-   * @param userId Die ID des Benutzers (für den Offline-Fallback).
-   * @param contextType Der Kontext der Anfrage ('todo' oder 'note').
-   * @returns Ein Promise mit der vorgeschlagenen Kategorie oder einem leeren String bei ungültigem Input.
    */
   public async predict(
     text: string, 
@@ -37,23 +26,32 @@ export class UniversalPredictorService {
 
     if (this.connectionService.status() === 'ONLINE') {
       try {
-        console.log("prediction from service läuft")
-        // Übergibt den text, contextType und den optionalen patternType direkt an das Repository
+        console.log("prediction from service läuft");
+        
+        // Argumente dynamisch zusammenbauen, damit undefined nicht erzwungen wird
+        const args: [string, 'todo' | 'note' | 'sanitization', string?] = [text, contextType];
+        if (patternType !== undefined) {
+          args.push(patternType);
+        }
+
         return (await firstValueFrom(
-          this.aiRepository.getServerPrediction(text, contextType, patternType)
+          this.aiRepository.getServerPrediction(...args)
         )).suggestedCategory;
       } catch (err) {
         console.warn('⚡ Server-KI nicht erreichbar...');
       }
     }
+
+    // 💡 Fallback auf Offline-Heuristik, wenn offline oder nach Serverfehler
+    if (contextType === 'todo' || contextType === 'note') {
+      return this.predictOffline(text, userId, contextType);
+    }
+
     return '';
   }
 
   /**
    * Sagt den voraussichtlichen Zeitaufwand (in Stunden) für eine Aufgabe voraus.
-   * Nutzt dafür einen globalen Team-Benchmark auf dem Server.
-   * * @param text Der Aufgabentext.
-   * @returns Ein Promise mit der geschätzten Stundenzahl oder `null`, falls offline oder nicht ermittelbar.
    */
   public async predictEffort(text: string): Promise<number | null> {
     if (!text || text.trim().length < 3) return null;
@@ -75,12 +73,6 @@ export class UniversalPredictorService {
 
   /**
    * Liefert alle verfügbaren Kategorien für Dropdown-Auswahlen.
-   * Versucht im Online-Modus globale Kategorien zu laden, andernfalls werden
-   * die bereits genutzten Kategorien aus dem lokalen Cache des Nutzers extrahiert.
-   * * @param userId Die ID des Benutzers.
-   * @param contextType Der Kontext der Anfrage ('todo' oder 'note').
-   * @param localCategories Optionale Standardkategorien als finaler Fallback.
-   * @returns Ein Promise mit einem sortierten Array von Kategorienamen.
    */
   public async getAvailableCategories(userId: string, contextType: 'todo' | 'note' | 'sanitization', localCategories: string[]): Promise<string[]> {
     if (this.connectionService.status() === 'ONLINE') {
@@ -101,8 +93,6 @@ export class UniversalPredictorService {
 
   /**
    * Heuristischer Offline-Algorithmus.
-   * Durchsucht den LocalStorage nach Übereinstimmungen im Titel und Inhalt/Beschreibung
-   * und bewertet, welche Kategorie am häufigsten mit ähnlichen Wörtern verknüpft war.
    */
   private predictOffline(text: string, userId: string, contextType: 'todo' | 'note'): string {
     const storageKey = contextType === 'note' ? `local_notes_${userId}` : `local_todos_${userId}`;

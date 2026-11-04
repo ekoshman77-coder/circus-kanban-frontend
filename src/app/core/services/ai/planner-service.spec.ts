@@ -113,8 +113,8 @@ describe('PlannerService (Vitest - Strictly Typed)', () => {
       expect(mockPlannerDataManager.queueFeedback).toHaveBeenCalledWith(
         'user-999',
         'round-abc',
-        'todo-999',
-        [{ todoId: 'todo-456', rejectReason: 'too_heavy' }]
+        { todoId: 'todo-999', reason: null }, 
+        [{ todoId: 'todo-456', reason: 'too_heavy' }]
       );
 
       // Verification of cleared state (Zero Latency)

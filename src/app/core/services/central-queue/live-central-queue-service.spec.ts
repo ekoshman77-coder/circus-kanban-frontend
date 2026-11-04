@@ -38,7 +38,8 @@ describe('LiveCentralQueueService - Lawinen-Extraktion, Draft & Recovery (Vitest
 
     mockAuthContext = {
       isLoggedIn: vi.fn().mockReturnValue(true),
-      getCurrentUserId: vi.fn().mockReturnValue('user-123')
+      getCurrentUserId: vi.fn().mockReturnValue('user-123'),
+      onLogin$: new Subject<void>()
     };
 
     mockHandler = {
