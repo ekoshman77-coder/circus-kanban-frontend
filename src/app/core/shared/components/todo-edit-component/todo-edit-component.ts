@@ -25,6 +25,7 @@ export class TodoEditComponent implements OnInit {
   protected todoService = inject(TodoService);
   protected connectionService = inject(ConnectionService)
   private todoEditService = inject(TodoModalService)
+  public isPauseMode = signal<boolean>(false); 
 
   public close = output<void>();
 
@@ -57,6 +58,9 @@ export class TodoEditComponent implements OnInit {
       console.log('📝 [TodoEdit] Gefundenes To-Do:', todo);
 
       if (todo) {
+        const isPause = todo.effort === 0;
+        this.isPauseMode.set(isPause);
+
         this.currentTodo = todo;
         this.milestoneId.set(todo.milestoneId)
         // 🌟 Signal direkt mit der bestehenden Kategorie des To-Dos initialisieren
@@ -79,7 +83,7 @@ export class TodoEditComponent implements OnInit {
         this.todoForm = this.fb.group({
           task: [todo.task, [Validators.required, Validators.minLength(3)]],
           description: [todo.description],
-          effort: [todo.effort, [Validators.required]],
+          effort: [{ value: todo.effort, disabled: isPause }, [Validators.required]], // Im Pausenmodus gesperrt
           daysAhead: [daysAhead, [Validators.required]]
         });
       } else {
@@ -135,7 +139,7 @@ export class TodoEditComponent implements OnInit {
   save(): void {
     if (this.todoForm.invalid) return;
 
-    const formValues = this.todoForm.value;
+    const formValues = this.todoForm.getRawValue();
     const targetDate = new Date();
     targetDate.setDate(targetDate.getDate() + formValues.daysAhead);
     targetDate.setHours(23, 59, 59, 999);
@@ -161,5 +165,19 @@ export class TodoEditComponent implements OnInit {
     const textarea = event.target;
     textarea.style.height = 'auto'; // Kurz zurücksetzen, um die echte Höhe zu messen
     textarea.style.height = textarea.scrollHeight + 'px'; // Auf die tatsächliche Text-Höhe setzen
+  }
+
+  public togglePauseMode(isPause: boolean): void {
+    this.isPauseMode.set(isPause);
+    const effortControl = this.todoForm.get('effort');
+    if (isPause) {
+      effortControl?.setValue(0);
+      effortControl?.disable();
+    } else {
+      effortControl?.enable();
+      if (effortControl?.value === 0 || effortControl?.value === null) {
+        effortControl?.setValue(1); // Standard auf 1 SP setzen, wenn es aktiv wird
+      }
+    }
   }
 }

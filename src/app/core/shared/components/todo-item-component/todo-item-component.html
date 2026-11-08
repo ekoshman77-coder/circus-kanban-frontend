@@ -15,7 +15,7 @@
 
       <div class="todo-metadata">
         <span class="todo-date">
-          📅 {{ item().dateText }} {{ item().timestamp | date:'dd.MM.yyyy HH:mm' }}
+          📅 {{ item().dateText }} {{ item().timestamp | date:'dd.MM.yyyy' }}
         </span>
 
         @if (item().category) {
@@ -31,8 +31,13 @@
         @if (!item().done) {
           <div class="points-container">
             @if (isOffline()) {
-              <span class="points-badge offline-text" title="Geplanten Aufwand ansehen (Offline gesperrt)">
+              <span class="points-badge offline-text" title="Geplanter Aufwand ansehen (Offline gesperrt)">
                 {{ item().effort }} P
+              </span>
+            } @else if (item().effort === 0) {
+              <!-- ☕ PAUSEN-TODO SPERRE: Fester Text, nicht klickbar, klar als Pause erkennbar -->
+              <span class="points-badge pause-badge-static" title="Pausen-Todo (0 Punkte - Änderung nur im Edit-Formular möglich)">
+                ☕ 0 P (Pause)
               </span>
             } @else {
               <select 
@@ -43,14 +48,16 @@
                 title="Geplanten Aufwand bearbeiten"
               >
                 @for (p of todoService.fibonacciSequence; track p) {
-                  <option [value]="p">
-                    {{ p === item().effort ? '✍️ ' : '' }}{{ p }} P
-                  </option>
+                  @if (p > 0) {
+                    <option [value]="p">
+                      {{ p === item().effort ? '✍️ ' : '' }}{{ p }} P
+                    </option>
+                  }
                 }
               </select>
             }
           </div>
-        } 
+        }
 
         @if (isTeamsPopupEnabled()) {
           @if (assignedUser(); as user) {

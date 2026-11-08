@@ -172,7 +172,20 @@
   transform: scale(1.05);                /* Die Pille hüpft der Maus minimal entgegen */
 }
 
-
+/* ☕ Fester Badge für Pausen-Todos direkt auf der Mini-Karte */
+.points-badge.pause-badge-static {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 1px 6px !important;
+  box-sizing: border-box;
+  font-size: 10px;
+  font-weight: 700;
+  color: #059669;
+  background-color: #ecfdf5;
+  border: 1px solid #10b981;
+  cursor: default;
+}
 
 /* Das winzige ✍️-Symbol innerhalb der Pille */
 .edit-hint-icon {

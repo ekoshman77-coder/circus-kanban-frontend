@@ -1,0 +1,245 @@
+:host {
+  display: contents;
+  box-sizing: border-box;
+}
+
+.recommendation-card {
+  position: relative;
+  background: #ffffff;
+  
+  /* 🧊 Тончайшая базовая рамка вокруг карточки */
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  
+  /* 💡 Неоновая левая полоса с мягким свечением внутрь карточки */
+  border-left: 5px solid #6366f1;
+  box-shadow: -4px 0 12px rgba(99, 102, 241, 0.25);
+  
+  border-radius: 16px;
+  padding: 16px 18px;
+  
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  
+  box-sizing: border-box;
+  flex: 1 1 300px;       
+  min-width: 280px;      
+  max-width: 340px;      
+  justify-content: space-between; 
+  overflow: hidden;
+  
+  /* Плавная магия переходов */
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 🌟 Неоновый хайлайт по верхнему краю карточки */
+.recommendation-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #6366f1 0%, #10b981 100%);
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+/* ==========================================================================
+   🎯 HOVER-EFFECTS: Всплытие и переход в зеленый неон
+   ========================================================================== */
+.recommendation-card:hover {
+  transform: translateY(-5px) scale(1.01);
+  border-color: rgba(16, 185, 129, 0.6);
+  border-left-color: #10b981;
+  box-shadow: 
+    -6px 0 20px rgba(16, 185, 129, 0.4),
+    0 20px 35px -10px rgba(16, 185, 129, 0.25),
+    0 8px 15px -5px rgba(99, 102, 241, 0.15);
+}
+
+.recommendation-card:hover::before {
+  opacity: 1;
+  background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+}
+
+/* Container für das Todo-Item */
+.draggable-todo-container {
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   🚀 ACTION BAR & HOVER CHIPS
+   ========================================================================== */
+.card-action-bar {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.action-group {
+  position: relative;
+  flex: 1;
+  min-height: 40px;
+}
+
+/* Hauptbuttons */
+.btn-main {
+  width: 100%;
+  height: 40px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-accept {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+}
+
+.btn-accept:hover {
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+}
+
+.btn-reject {
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+}
+
+.btn-reject:hover {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+/* Subpanel mit 4 Chips (standardmäßig verborgen) */
+.chips-subpanel {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.96);
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.chip-btn {
+  background: #ffffff;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 6px;
+  cursor: pointer;
+  border: 1px solid #e2e8f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.chip-btn:hover {
+  transform: scale(1.04);
+}
+
+.accept-group .chip-btn {
+  border-color: #34d399;
+  color: #047857;
+}
+
+.accept-group .chip-btn:hover { 
+  background: #ecfdf5; 
+  border-color: #059669;
+}
+
+.reject-group .chip-btn {
+  border-color: #fb923c;
+  color: #c2410c;
+}
+
+.reject-group .chip-btn:hover { 
+  background: #fff7ed; 
+  border-color: #ea580c;
+}
+
+/* Hover-Magie: Blendet Hauptbutton aus und Subpanel ein */
+.action-group:hover .btn-main {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.action-group:hover .chips-subpanel {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+/* ==========================================================================
+   HEADER & KI-BADGES
+   ========================================================================== */
+.card-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.card-header-bar .badge {
+  background: #f1f5f9;
+  color: #64748b;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.card-header-bar .badge-warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.ai-reasons-container {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ai-reason-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  border: 1px solid #ddd6fe;
+  padding: 5px 9px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #5b21b6;
+}
+
+@media (max-width: 768px) {
+  .recommendation-card {
+    max-width: 100% !important;
+  }
+}
+
+/* Wenn die Karte akzeptiert ist, bekommt sie direkt diesen edlen Look */
+.recommendation-card.accepted {
+  border: 2px solid #10b981;
+  box-shadow: 0 8px 20px -4px rgba(16, 185, 129, 0.3);
+}
+
+/* Auch beim Hovern bewegt sich der Rahmen nun vollkommen synchron mit */
+.recommendation-card.accepted:hover {
+  box-shadow: 0 14px 28px -4px rgba(16, 185, 129, 0.45);
+}

@@ -5,12 +5,11 @@ import { TodoService } from '../../../core/services/todo/todo-service';
 import { Todo } from '../../../core/models/todo';
 import { UserService } from '../../../core/services/user/user-service';
 import { PlannerService, RecommendedTodoItem } from '../../../core/services/ai/planner-service';
-import { PlannerRecommendationComponent, RecommendationTodo } from '../planner-recommendation-component/planner-recommendation-component';
 import { PlannerSettingsComponent } from '../planner-settings-component/planner-settings-component';
 import { TodoItemComponent } from '../../../core/shared/components/todo-item-component/todo-item-component';
 import { TodoViewModel } from '../../../core/viewmodel/todo-view-model';
-import { RecommendationResult } from '../../../core/models/recommendation-result';
 import { UserSettingsService } from '../../../core/services/user/user-settings-service';
+import { PlannerRecommendationComponent } from '../planner-recommendation-component/planner-recommendation-component';
 
 @Component({
   selector: 'app-planner',
@@ -31,7 +30,9 @@ export class PlannerComponent {
   private plannerService = inject(PlannerService);
 
   showAiRecommendation = signal<boolean>(false);
-  recommendedTodos = this.plannerService.recommendations
+  recommendedTodos = signal<RecommendedTodoItem[]>([]);
+  activeRoundId = signal<string>(''); // Falls die Komponente die roundId für die Kindkomponente braucht
+
   activeFocusTodo = signal<Todo | null>(null);
   showSettings = signal<boolean>(false);
 
@@ -104,26 +105,29 @@ export class PlannerComponent {
     }
   }
 
-  handleTodoSelected(recommendation: RecommendationTodo) {
-    // 1. Das echte Todo aus dem Service / der Liste anhand der ID holen
-    const realTodo = this.todoService.getTodoById(recommendation.id);
+// Wird aufgerufen, wenn in der Recommendation-Komponente eine Karte "Angepackt" wird
+  handleTodoSelected(selectedItem: RecommendedTodoItem) {
+    // 1. Als aktives Fokus-Todo auf der Seite setzen
+    this.activeFocusTodo.set(selectedItem.todo);
 
-    if (realTodo) {
-      // 2. Als aktives Fokus-Todo setzen
-      this.activeFocusTodo.set(realTodo);
-    }
-
-    // 3. Empfehlungs-Panel sofort schließen
+    // 2. Empfehlungs-Panel sofort schließen und lokale Liste leeren
     this.showAiRecommendation.set(false);
+    this.recommendedTodos.set([]);
+    this.activeRoundId.set('');
   }
 
-  handleSessionCompleted(result: RecommendationResult) {
-    console.log("HandleSessionCompleted startet", result)
+  completeFocusTodo() {
+    console.log("completedFocusTodo");
+    this.recommendedTodos.set([]);
+    this.activeRoundId.set('');
+    this.activeFocusTodo.set(null);
+  }
 
+  handleSessionCompleted(selectedTodoId: string | null) {
     // 2. Falls ein Todo gewählt wurde, als Fokus setzen
     
-    if (result.selectedTodoId) {
-      const todo = this.todoService.getTodoById(result.selectedTodoId) ?? null;
+    if (selectedTodoId) {
+      const todo = this.todoService.getTodoById(selectedTodoId) ?? null;
       this.activeFocusTodo.set(todo);
     }
 
@@ -131,19 +135,24 @@ export class PlannerComponent {
     this.showAiRecommendation.set(false);
   }
 
-  openRecommendationPanel() {
-    // API Call für KI-Empfehlungen...
+openRecommendationPanel() {
     this.showAiRecommendation.set(true);
 
     this.plannerService.loadSmartRecommendation(
       this.userEnergy(), 
       this.worlkingTimeLeft()
-    );
-  }
-
-  completeFocusTodo() {
-    console.log("completedFocusTodo")
-     this.plannerService.clearRecommendations()
-     this.activeFocusTodo.set(null)
+    ).subscribe({
+      next: (vm) => {
+        if (vm) {
+          // Die fertig gemappten Items und die RoundId direkt aus dem ViewModel übernehmen
+          this.recommendedTodos.set(vm.recommendations);
+          this.activeRoundId.set(vm.roundId);
+        }
+      },
+      error: (err) => {
+        console.error('Fehler beim Laden der Smart Recommendations:', err);
+        this.showAiRecommendation.set(false);
+      }
+    });
   }
 }

@@ -3,9 +3,10 @@ import { Observable, of, throwError } from 'rxjs';
 import { BaseQueueDataManager } from '../central-queue/base-queue-data-manager';
 import { QueueItem } from '../../models/queue-items/queue-item';
 import { EmptyStateProvider } from '../central-queue/state-providers/empty-state-provider';
-import { AiRepository, RejectedTodoFeedback } from '../../repositories/ai-repository';
 import { PlannerFeedbackPayload, SnoozePayload } from '../../models/queue-items/planner-queue-payload';
 import { QueueHandlerName } from '../../enums/queue-handler-name';
+import { AiRepository } from '../../repositories/ai-repository';
+import { AcceptAction, RejectAction } from '../../models/recommendation-actions';
 
 export type PlannerQueueAction = 'SEND_FEEDBACK' | 'SNOOZE_TODO';
 
@@ -33,17 +34,7 @@ export class PlannerDataManagerService extends BaseQueueDataManager<EmptyStatePr
     switch (action) {
       case 'SEND_FEEDBACK': {
         const payload = item.payload as PlannerFeedbackPayload;
-        return this.aiRepository.sendPlannerFeedback({
-          id: '',
-          userId: payload.userId,
-          roundId: payload.roundId,
-          acceptedTodo: payload.acceptedTodo, 
-          rejectedTodos: payload.rejectedTodos,
-          displayInfo: {
-            category: 'KI-Planer',
-            title: 'Feedback zur Aufgabenplanung'
-          }
-        });
+        return this.aiRepository.sendPlannerFeedback(payload);
       }
 
       case 'SNOOZE_TODO': {
@@ -74,18 +65,31 @@ export class PlannerDataManagerService extends BaseQueueDataManager<EmptyStatePr
   // 📝 QUEUE AKTIONEN SCHIEBEN
   // ==========================================
 
+  /**
+   * 🎯 Schiebt ein explizites Runden-Feedback in die Queue (RoundId kommt direkt aus der UI-Aktion)
+   */
+/**
+   * 🎯 Schiebt ein Runden-Feedback basierend auf unseren sauberen Actions in die Queue
+   */
   public queueFeedback(
     userId: string,
-    roundId: string,
-    acceptedTodo: { todoId: string; reason: string | null } | null,
-    rejectedTodos: RejectedTodoFeedback[]
+    acceptAction: AcceptAction | null,
+    rejectActions: RejectAction[]
   ): void {
+    // Die roundId holen wir uns sicher direkt aus der jeweiligen Action
+    const roundId = acceptAction?.roundId ?? rejectActions[0]?.roundId ?? '';
+
     const payload: PlannerFeedbackPayload = {
       id: roundId,
       userId,
       roundId,
-      acceptedTodo,
-      rejectedTodos,
+      acceptedTodo: acceptAction 
+        ? { todoId: acceptAction.todoId, reason: acceptAction.reason ?? null } 
+        : null,
+      rejectedTodos: rejectActions.map(r => ({
+        todoId: r.todoId,
+        reason: r.reason
+      })),
       displayInfo: {
         category: 'KI-Planer',
         title: 'Feedback zur Aufgabenplanung'
@@ -94,32 +98,35 @@ export class PlannerDataManagerService extends BaseQueueDataManager<EmptyStatePr
 
     this.queueService.enqueue(this.serviceName, 'SEND_FEEDBACK', payload);
   }
+  
+  /**
+   * 💤 Schiebt ein Snooze-Event unabhängig von Runden-IDs in die Queue
+   */
+  public queueSnooze(
+    todoId: string, 
+    durationInMin: number, 
+    todoTitle?: string
+  ): void {
+    const payload: SnoozePayload = {
+      id: todoId,
+      durationInMin,
+      displayInfo: {
+        category: 'Aufgabe verschieben',
+        title: todoTitle 
+          ? `"${todoTitle}" (${durationInMin} Min.)` 
+          : `Aufgabe für ${durationInMin} Min. pausieren`
+      }
+    };
 
-public queueSnooze(
-  todoId: string, 
-  durationInMin: number, 
-  todoTitle?: string // 💡 Optionaler Titel aus der UI
-): void {
-  const payload: SnoozePayload = {
-    id: todoId,
-    durationInMin,
-    displayInfo: {
-      category: 'Aufgabe verschieben',
-      title: todoTitle 
-        ? `"${todoTitle}" (${durationInMin} Min.)` 
-        : `Aufgabe für ${durationInMin} Min. pausieren`
-    }
-  };
-
-  this.queueService.enqueue(this.serviceName, 'SNOOZE_TODO', payload);
-}
+    this.queueService.enqueue(this.serviceName, 'SNOOZE_TODO', payload);
+  }
 
   // ==========================================
   // 🧹 BASE DATA MANAGER OVERRIDES
   // ==========================================
 
   public override resetData(): void {
-    // Kein lokaler Cache zu bereinigen
+    // Kein lokaler State zu bereinigen
   }
 
   public override checkUnsavedData(): string | null {

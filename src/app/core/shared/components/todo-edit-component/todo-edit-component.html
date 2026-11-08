@@ -9,11 +9,10 @@
         <form [formGroup]="todoForm" (ngSubmit)="save()">
 
             <div class="form-group">
-                <app-milestone-selector-component
-                    [initialMilestoneId]="milestoneId()"
+                <app-milestone-selector-component [initialMilestoneId]="milestoneId()"
                     (milestoneSelected)="onMilestoneSelected($any($event))">
                 </app-milestone-selector-component>
-                    
+
                 <label for="task">Was ist zu tun? 🎯</label>
                 <input id="task" type="text" formControlName="task" class="form-control" (input)="0"
                     placeholder="z.B. Weltherrschaft planen...">
@@ -25,11 +24,8 @@
             <div class="form-group">
                 <label>Kategorie pimpen? 🏷️</label>
                 <div class="edit-category-wrapper">
-                    <app-universal-tag-input-component 
-                        [textToWatch]="todoForm.get('task')?.value || ''" 
-                        [contextType]="'todo'"
-                        [placeholder]="'Kategorie ändern...'" 
-                        [initialValue]="editTodoCategory()"
+                    <app-universal-tag-input-component [textToWatch]="todoForm.get('task')?.value || ''"
+                        [contextType]="'todo'" [placeholder]="'Kategorie ändern...'" [initialValue]="editTodoCategory()"
                         (valueChanged)="onCategoryChanged($event)">
                     </app-universal-tag-input-component>
                 </div>
@@ -37,33 +33,52 @@
 
             <div class="form-group">
                 <label for="description">Zusatzinfos / Geheime Notizen 📝</label>
-                <textarea 
-                    id="description"
-                    formControlName="description"
-                    class="form-control" 
-                    (input)="adjustTextareaHeight($event)"
-                    placeholder="Beschreibung eingeben...">
+                <textarea id="description" formControlName="description" class="form-control"
+                    (input)="adjustTextareaHeight($event)" placeholder="Beschreibung eingeben...">
                 </textarea>
-                
+
             </div>
 
+<div class="ui-group">
+    <label>Aufgaben-Modus 🔄</label>
+    <div class="toggle-switch-container" (click)="togglePauseMode(!isPauseMode())">
+        <div class="toggle-info">
+            @if (isPauseMode()) {
+                <span class="mode-status-text pause-text">☕ Pause-Modus (0 Punkte)</span>
+            } @else {
+                <span class="mode-status-text active-text">⚡ Aktives Todo (Punkte wählbar)</span>
+            }
+        </div>
+        <!-- Der eigentliche iOS-Switch -->
+        <div class="ios-switch" [class.checked]="isPauseMode()">
+            <div class="switch-handle"></div>
+        </div>
+    </div>
+</div>
             <div class="form-group">
                 <label>Wie viel Power kostet das? ⚡</label>
+                @if (isPauseMode()) {
+                <div class="pause-effort-info">
+                    ☕ Pausen-Modus aktiv: Aufwand ist fest auf 0 Punkte fixiert.
+                </div>
+                } @else {
                 <div class="fibonacci-tablo" [ngClass]="{ 'offline-disabled': isOffline() }">
                     @for (num of todoService.fibonacciSequence; track num) {
-                    <button type="button" 
-                        [class.active]="todoForm.get('effort')?.value === num"
+                    @if (num > 0) {
+                    <button type="button" [class.active]="todoForm.get('effort')?.value === num"
                         (click)="todoForm.get('effort')?.setValue(num)">
                         {{ num }}
                         <span class="pts">pts</span>
                     </button>
                     }
+                    }
                 </div>
                 @if (isOffline()) {
                 <small class="offline-warning-text">⚠️ Punkte ändern ist im Offline-Modus gesperrt.</small>
                 }
+                }
             </div>
-            
+
             <div class="form-group flex-1">
                 <label for="daysAheadSlider">Wann muss es fertig sein? 📅</label>
                 <div class="slider-wrapper">

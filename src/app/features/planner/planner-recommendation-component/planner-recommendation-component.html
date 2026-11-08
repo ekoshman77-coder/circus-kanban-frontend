@@ -1,69 +1,13 @@
 <div class="planner-panel">
   <div class="recommendations-grid">
-    @for (todo of visibleList(); track todo.todo.id) {
-      <div class="recommendation-card">
-        
-        <!-- Header & KI-Gründe -->
-        <div class="card-header-bar">
-          @if (todo.modeCode === 'ALL_SNOOZED') {
-            <span class="badge badge-warning">💤 Frühestes Aufwachen</span>
-          } @else if (todo.modeCode) {
-            <span class="badge">{{ todo.modeCode }}</span>
-          }
-        </div>
-
-        @if (todo.plannerDetails && todo.plannerDetails.length > 0) {
-          <div class="ai-reasons-container">
-            @for (detail of todo.plannerDetails; track detail.plannerType) {
-              <div class="ai-reason-pill">
-                <span class="ai-icon">🧠</span>
-                <span><strong>{{ detail.plannerType }}:</strong> {{ detail.reasonCode }}</span>
-              </div>
-            }
-          </div>
-        }
-
-        <!-- Задача -->
-        <div class="draggable-todo-container">
-          <app-todo-item 
-            [item]="todo.todoViewModel" 
-            [isKanbanMode]="true"
-            [ngClass]="'status-' + todo.todoViewModel.visualStatus">
-          </app-todo-item>
-        </div>
-
-        <!-- 🚀 Интерактивный блок кнопок c ховер-расщеплением -->
-        <div class="card-action-bar">
-          
-          <!-- Зона Принятия -->
-          <div class="action-group accept-group">
-            <button type="button" class="btn-main btn-accept">
-              🚀 Anpacken
-            </button>
-            <div class="chips-subpanel">
-              <button class="chip-btn" (click)="onSelect(todo, 'select_easy')">⚡ Leicht</button>
-              <button class="chip-btn" (click)="onSelect(todo, 'select_ontime')">🎯 Pünktlich</button>
-              <button class="chip-btn" (click)="onSelect(todo, 'select_motivated')">🔥 Motiviert</button>
-              <button class="chip-btn" (click)="onSelect(todo, null)">✨ Passt gerade</button>
-            </div>
-          </div>
-
-          <!-- Зона Отклонения -->
-          <div class="action-group reject-group">
-            <button type="button" class="btn-main btn-reject">
-              ❌ Ablehnen
-            </button>
-            <div class="chips-subpanel">
-              <button class="chip-btn" (click)="onReject(todo.todo.id, 'no_motivation')">🥱 Keine Lust</button>
-              <button class="chip-btn" (click)="onReject(todo.todo.id, 'too_heavy')">🧠 Zu schwer</button>
-              <button class="chip-btn" (click)="onReject(todo.todo.id, 'too_long')">⏱️ Zu lange</button>
-              <button class="chip-btn" (click)="onReject(todo.todo.id, 'snooze')">💤 Snooze</button>
-            </div>
-          </div>
-
-        </div>
-
-      </div>
+    @for (rec of visibleList(); track rec.todo.id) {
+      <app-recommendation-card 
+        [item]="rec" 
+        [roundId]="roundId()"
+        [acceptText]="'🚀 Anpacken'"
+        (accepted)="onCardAccepted($event)"
+        (rejected)="onCardRejected($event)">
+      </app-recommendation-card>
     }
   </div>
 </div>

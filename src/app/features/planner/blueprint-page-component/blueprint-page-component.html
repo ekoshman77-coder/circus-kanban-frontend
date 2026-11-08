@@ -1,0 +1,56 @@
+<div class="blueprint-container">
+  <header class="blueprint-header">
+    <h1>🌅 Morning Energy Blueprint</h1>
+    <p>Dein strukturierter Tagesplan, basierend auf deinen Energieniveaus.</p>
+    <button type="button" class="btn-generate" (click)="generateBlueprint()">
+      ⚡ Blueprint generieren
+    </button>
+  </header>
+
+  @if (isLoading()) {
+  <div class="loading-state">Lade deinen Energie-Blueprint...</div>
+  }
+
+  @if (dailyBlueprint(); as blueprint) {
+  <div class="slots-timeline">
+    @for (slot of blueprint.slots; track slot.startTime) {
+    <div class="slot-row">
+      <!-- Meta-Infos zum Zeitslot -->
+      <div class="slot-meta">
+        <span class="slot-time">{{ slot.startTime }} - {{ slot.endTime }}</span>
+        <span class="slot-energy">{{ slot.energyLevel }}</span>
+        <p class="slot-reason">{{ slot.reason }}</p>
+      </div>
+
+      <!-- Die Empfehlungen des Slots -->
+      <div class="slot-cards-container" style="flex: 1; display: flex; flex-direction: row; gap: 0.75rem;">
+        @if (slot.recommendations.length > 0) {
+        @for (rec of slot.recommendations; track rec.todo.id) {
+        <div [class.dimmed-card]="isRejected(rec.todo.id)" [class.accepted-card]="isAccepted(rec.todo.id)"
+          style="position: relative;">
+          <app-recommendation-card 
+            [item]="rec" 
+            [roundId]="blueprint.roundId"
+            [acceptText]="isAccepted(rec.todo.id) ? '🚀 In Bearbeitung' : '✅ Bestätigen'"
+            [isAccepted]="isAccepted(rec.todo.id)"
+            (accepted)="onTodoAccepted($event)" 
+            (rejected)="onTodoRejected($event)">
+          </app-recommendation-card>
+
+          @if (isRejected(rec.todo.id)) {
+          <button class="restore-corner-badge" title="Für heute verworfen – Klicken zum Wiederherstellen"
+            (click)="restoreTodo(rec.todo.id)">
+            ↩️
+          </button>
+          }
+        </div>
+        }
+        } @else {
+        <div class="empty-slot">Kein Vorschlag für diesen Slot.</div>
+        }
+      </div>
+    </div>
+    }
+  </div>
+  }
+</div>

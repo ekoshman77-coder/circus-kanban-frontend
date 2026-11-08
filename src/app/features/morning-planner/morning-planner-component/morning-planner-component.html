@@ -17,8 +17,8 @@
       }
 
       <!-- Empfehlung vorhanden -->
-      @if (!plannerService.isLoading() && plannerService.recommendations().length > 0) {
-        @let currentItem = plannerService.recommendations()[0];
+      @if (!plannerService.isLoading() && currentRecommendations().length > 0) {
+        @let currentItem = currentRecommendations()[0];
         
         <div class="task-spotlight">
           <span class="badge">Dein sanfter Einstieg</span>
@@ -45,7 +45,7 @@
       }
 
       <!-- Fallback, falls keine Aufgabe da ist -->
-      @if (!plannerService.isLoading() && plannerService.recommendations().length === 0) {
+      @if (!plannerService.isLoading() && currentRecommendations().length === 0) {
         <div class="empty-state">
           <p>Alles blitzblank für heute oder noch im Schlummermodus. Genieß deinen Tag! 🎉</p>
           <button class="btn btn-secondary" (click)="closeModal()">Schließen</button>

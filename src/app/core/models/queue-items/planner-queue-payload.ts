@@ -1,5 +1,4 @@
 import { SnapshotPayload } from "./queue-item";
-import { RejectedTodoFeedback } from '../../repositories/ai-repository';
 
 export interface TodoFeedbackItem {
   todoId: string;

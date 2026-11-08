@@ -12,6 +12,7 @@ import { ProjectCalculatorComponent } from './features/idea-board/project-calcul
 import { TeamManagementComponent } from './features/team-management/team-management-component/team-management-component';
 import { AdminBoardComponent } from './features/admin/admin-board-component/admin-board-component';
 import { adminGuard } from './core/guards/admin-guard';
+import { BlueprintPageComponent } from './features/planner/blueprint-page-component/blueprint-page-component';
 
 export const routes: Routes = [
     { 
@@ -56,6 +57,11 @@ export const routes: Routes = [
     { 
       path: "team", 
       component: TeamManagementComponent,
+      canActivate: [authGuard]
+    },
+    { 
+      path: "blueprint", 
+      component: BlueprintPageComponent,
       canActivate: [authGuard]
     },
     { 

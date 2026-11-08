@@ -1,47 +1,13 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { aiCategoriesApiUrl, aiGroupPlannerUrl, aiMorningPlannerUrl, aiNoteCategoriesUrl, aiNotePredictionUrl, aiPredictionApiUrl, aiPredictionEffortUrl, aiSanitizationCategoriesUrl, aiSanitizationPredictionUrl, aiTodoSnoozingUrl, getAiMilestonesUrl, smartPlannerFeedbackUrl, smartPlannerUrl, trackAiIgnoredMilestoneUrl, trackAiMilestoneDegradationUrl, trackAiMilestoneSelectionUrl } from './links';
-import { ITodoJSON } from './dto/todo-json';
-import { MilestoneSuggestionsModel } from '../models/milestone-suggestions-model';
+import { aiCategoriesApiUrl, aiDailyBlueprintUrl, aiGroupPlannerUrl, aiMorningPlannerUrl, aiNoteCategoriesUrl, aiNotePredictionUrl, aiPredictionApiUrl, aiPredictionEffortUrl, aiSanitizationCategoriesUrl, aiSanitizationPredictionUrl, aiTodoSnoozingUrl, getAiMilestonesUrl, smartPlannerFeedbackUrl, smartPlannerUrl, trackAiIgnoredMilestoneUrl, trackAiMilestoneDegradationUrl, trackAiMilestoneSelectionUrl } from './links';
 import { IgnoredMilestones, MilestoneInteractionPayload } from './dto/tracked-milestones';
 import { TodoSnoozyPayload } from './dto/todo-snoozy-payload';
 import { PlannerFeedbackPayload } from '../models/queue-items/planner-queue-payload';
 import { PlannerGroupRecommendationPayload } from './dto/planner-group-recomendation-payload';
-
-export interface PlannerRecommendationDetail {
-  plannerType: 'BAYES' | 'NEURAL';
-  score: number;
-  reasonCode: string;
-}
-
-export interface RecommendedTodoResponse {
-  todo: ITodoJSON | null;
-  plannerDetails: PlannerRecommendationDetail[];
-  modeCode: 'STANDARD' | 'ALL_SNOOZED';
-}
-
-/**
- * Das Haupt-Antwort-Objekt vom Server mit der Runden-ID und den max. 2 Vorschlägen
- */
-export interface PlannerRecommendationsResponse {
-  roundId: string;
-  recommendations: RecommendedTodoResponse[];
-}
-
-export interface PlannerRecommendationPayload {
-  userId: string;
-  userEnergy: string;       // "LOW" | "MEDIUM" | "HIGH"
-  workingTimeLeft: number;  // verbleibende Stunden
-}
-
-/**
- * Einzelner Ablehnungseintrag für ein Todo
- */
-export interface RejectedTodoFeedback {
-  todoId: string;
-  reason: 'no_motivation' | 'too_heavy' | 'too_long' | null;
-}
+import { PlannerRecommendationRequest } from '../models/planner-recommendation-request';
+import { DailyBlueprintResponse, PlannerRecommendationsResponse } from './dto/planner-recommendation-response';
 
 export interface MilestoneSuggestion {
   title: string;
@@ -110,11 +76,19 @@ export class AiRepository {
   /**
    * Holt die 2 Vorschläge inkl. roundId vom Server
    */
-  public getPlannerRecommendation(payload: PlannerRecommendationPayload): Observable<PlannerRecommendationsResponse> {
+  public getPlannerRecommendation(payload: PlannerRecommendationRequest): Observable<PlannerRecommendationsResponse> {
     console.log("AiRepository:: Start loading recommendation", payload) 
     return this.http.post<PlannerRecommendationsResponse>(smartPlannerUrl, payload);
   }
 
+  /**
+   * 🌅 Holt den vollständigen Tages-Blueprint für den Morning Energy Modus
+   */
+  public getDailyBlueprint(): Observable<DailyBlueprintResponse> {
+    console.log("AiRepository:: Start loading daily blueprint");
+    return this.http.get<DailyBlueprintResponse>(aiDailyBlueprintUrl); 
+  }
+  
   /**
    * Sendet das präzise Runden-Feedback an den Server
    */

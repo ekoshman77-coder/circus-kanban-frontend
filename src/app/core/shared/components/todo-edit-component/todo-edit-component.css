@@ -199,6 +199,81 @@ textarea.form-control {
 }
 
 /* ==========================================================================
+   🔄 MODUS-UMSCHALTER (Pause vs. Aktiv)
+   ========================================================================== */
+.toggle-switch-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f0f9ff;
+    border: 2px solid #bae6fd;
+    border-radius: 10px;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.toggle-switch-container:hover {
+    border-color: #3b82f6;
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+}
+
+.mode-status-text {
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.active-text {
+    color: #1d4ed8;
+}
+
+.pause-text {
+    color: #059669;
+}
+
+/* Der Schalter selbst */
+.ios-switch {
+    position: relative;
+    width: 48px;
+    height: 26px;
+    background-color: #cbd5e1;
+    border-radius: 13px;
+    transition: background-color 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Wenn aktiv (Pausen-Modus) leuchtet er in einem sanften, edlen Grün */
+.ios-switch.checked {
+    background-color: #10b981; 
+}
+
+/* Der Schiebe-Knopf */
+.switch-handle {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    background-color: white;
+    border-radius: 50%;
+    transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Verschiebung des Knopfs nach rechts */
+.ios-switch.checked .switch-handle {
+    transform: translateX(22px);
+}
+
+.ui-group {
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ==========================================================================
    SLIDER & BADGE (Kompakt)
    ========================================================================== */
 .slider-wrapper { 
@@ -291,6 +366,17 @@ textarea.form-control {
     background: white;
     border: 2px solid currentColor; 
     box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.pause-effort-info {
+  padding: 12px 16px;
+  background: #f0fdf4;
+  border: 2px solid #86efac;
+  border-radius: 10px;
+  color: #15803d;
+  font-weight: 700;
+  font-size: 13px;
+  text-align: center;
 }
 
 /* ==========================================================================

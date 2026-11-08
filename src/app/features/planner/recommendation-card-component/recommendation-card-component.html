@@ -1,0 +1,61 @@
+<div class="recommendation-card">
+  
+  <!-- Header & KI-Gründe -->
+  <div class="card-header-bar">
+    @if (item().modeCode === 'ALL_SNOOZED') {
+      <span class="badge badge-warning">💤 Frühestes Aufwachen</span>
+    } @else if (item().modeCode) {
+      <span class="badge">{{ item().modeCode }}</span>
+    }
+  </div>
+
+  @if (item().plannerDetails && item().plannerDetails.length > 0) {
+    <div class="ai-reasons-container">
+      @for (detail of item().plannerDetails; track detail.plannerType) {
+        <div class="ai-reason-pill">
+          <span class="ai-icon">🧠</span>
+          <span><strong>{{ detail.plannerType }}:</strong> {{ detail.reasonCode }}</span>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Task Item -->
+  <div class="draggable-todo-container">
+    <app-todo-item 
+      [item]="formattedTodoVm" 
+      [isKanbanMode]="true"
+      [ngClass]="'status-' + formattedTodoVm.visualStatus">
+    </app-todo-item>
+  </div>
+
+  <!-- Action Bar mit flexiblem Accept-Text -->
+  <div class="card-action-bar">
+    
+    <div class="action-group accept-group">
+      <button type="button" class="btn-main btn-accept">
+        {{ acceptText() }}
+      </button>
+      <div class="chips-subpanel">
+        <button type="button" class="chip-btn" (click)="onSelect('select_easy')">⚡ Leicht</button>
+        <button type="button" class="chip-btn" (click)="onSelect('select_ontime')">🎯 Pünktlich</button>
+        <button type="button" class="chip-btn" (click)="onSelect('select_motivated')">🔥 Motiviert</button>
+        <button type="button" class="chip-btn" (click)="onSelect()">✨ Passt</button>
+      </div>
+    </div>
+
+    <div class="action-group reject-group">
+      <button type="button" class="btn-main btn-reject">
+        ❌ Ablehnen
+      </button>
+      <div class="chips-subpanel">
+        <button class="chip-btn" (click)="onReject('no_motivation')">🥱 Keine Lust</button>
+        <button class="chip-btn" (click)="onReject('too_heavy')">🧠 Zu schwer</button>
+        <button class="chip-btn" (click)="onReject('too_long')">⏱️ Zu lange</button>
+        <button class="chip-btn" (click)="onReject('snooze')">💤 Snooze</button>
+      </div>
+    </div>
+
+  </div>
+
+</div>

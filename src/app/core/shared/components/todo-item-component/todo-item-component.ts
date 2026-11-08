@@ -89,6 +89,11 @@ export class TodoItemComponent {
     if (this.isOffline()) return;
     const currentTodo = this.item();
 
+    if (currentTodo.effort === 0) {
+      console.warn('⚠️ [TodoItem] Pausen-Todos (0 pts) können hier nicht geändert werden.');
+      return;
+    }
+    
     if (!currentTodo.todo.done && currentTodo.effort > 0) {
       this.todoService.updateTodoEffort(currentTodo.id, newPoints);
     }

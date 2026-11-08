@@ -4,6 +4,7 @@ import { TodoService } from '../../../services/todo/todo-service';
 import { CommonModule } from '@angular/common';
 import { UniversalTagInputComponent } from '../universal-tag-input-component/universal-tag-input-component';
 import { MilestoneSelectorComponent } from '../milestone-selector-component/milestone-selector-component';
+import { QuickPanelMode } from '../../../../features/quick-todo/quick-panel-component/quick-panel-component';
 
 @Component({
   selector: 'app-todo-planning-modal-component',
@@ -14,6 +15,7 @@ import { MilestoneSelectorComponent } from '../milestone-selector-component/mile
 export class TodoPlanningModalComponent implements OnInit {
   private fb = inject(FormBuilder);
   private todoService = inject(TodoService);
+  protected readonly QuickPanelMode = QuickPanelMode;
 
   // Inputs & Outputs für die Kommunikation mit dem Board
   initialTaskName = input<string>('');
@@ -21,6 +23,7 @@ export class TodoPlanningModalComponent implements OnInit {
   initialCategory = input<string>('');
   currentMilestoneId = input<string | null>(null);
   disableMilestoneSelection = input<boolean>(false);
+  todoMode = input<QuickPanelMode>(QuickPanelMode.ACTIVE);
 
   closeModal = output<void>();
   todoPlanned = output<void>();
@@ -76,12 +79,19 @@ public sliderPercentage = computed(() => {
   });
 
   ngOnInit(): void {
-    console.log("TodoPlanningModal:: onOnInit MilestoneId = ", this.currentMilestoneId())
+    const isPause = this.todoMode() === QuickPanelMode.PAUSE;
+
+    console.log("TodoPlanningModal:: onOnInit isPause = ", isPause)
     this.planningForm.patchValue({
       task: this.initialTaskName(),
       description: this.initialDescription(),
+      effort: isPause ? 0 : 1,
       milestoneId: this.currentMilestoneId() || '' // Falls ein Meilenstein aktiv übergeben wurde
     });
+
+    if (isPause) {
+      this.planningForm.get('effort')?.disable(); // 👈 Eingabe für Pausen-Todos komplett sperren!
+    }
 
     this.selectedCategory.set(this.initialCategory() || 'Idee');
     this.sliderDays.set(0);
@@ -105,28 +115,32 @@ public onSliderInput(event: Event): void {
     this.closeModal.emit();
   }
 
-  public submitPlan(): void {
+public submitPlan(): void {
     if (this.planningForm.invalid) return;
 
-    const values = this.planningForm.value;
+    // getRawValue() liest auch deaktivierte Felder (wie Effort im Pausen-Modus) sicher aus!
+    const values = this.planningForm.getRawValue();
 
     // Fälligkeit aus dem Slider berechnen
     const targetDate = new Date();
     targetDate.setDate(targetDate.getDate() + this.sliderDays());
     targetDate.setHours(23, 59, 59, 999);
 
-    // Automatisches Einsortieren ins Backlog!
+    // Automatisches Einsortieren ins Backlog (Pausen-Todos haben garantiert 0 Punkte)
+    const finalEffort = this.todoMode() === QuickPanelMode.PAUSE ? 0 : values.effort;
+
     this.todoService.createAndAddTodo({
       task: values.task,
       description: values.description || '',
-      effort: values.effort,
+      effort: finalEffort,
       dueDate: targetDate.getTime(),
       category: this.selectedCategory(),
       milestoneId: values.milestoneId || this.currentMilestoneId() || undefined,
-      isStarted: false // Backlog-Karten starten immer unberührt
+      isStarted: false
     });
 
     this.planningForm.reset({ task: '', description: '', effort: 1 });
+    this.planningForm.get('effort')?.enable(); // Wieder aktivieren für den nächsten normalen Durchlauf
     this.todoPlanned.emit();
   }
 }

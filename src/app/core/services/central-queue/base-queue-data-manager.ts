@@ -54,11 +54,7 @@ export abstract class BaseQueueDataManager<TProvider extends StateProvider<any> 
     const diff = now - this.lastFetchTimestamp;
 
     if (diff < this.FETCH_COOLDOWN_MS) {
-      this.logger.info(
-        this.serviceName, 
-        `⏳ [Refresh] Übersprungen wegen Cooldown. Noch ${Math.round((this.FETCH_COOLDOWN_MS - diff) / 1000)}s übrig.`
-      );
-      return of(true);
+     return of(true);
     }
 
     this.logger.info(this.serviceName, `🔄 [Refresh] Starte regulären Fetch vom Server für User: ${userId}`);

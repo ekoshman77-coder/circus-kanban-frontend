@@ -2,6 +2,7 @@
   <div class="panel-overlay-wrapper">
     <app-planner-recommendation
       [recommendations]="recommendedTodos()"
+      [roundId]="activeRoundId()"
       (sessionCompleted)="handleSessionCompleted($event)">
     </app-planner-recommendation>
   </div>

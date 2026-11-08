@@ -146,19 +146,19 @@ export class TodoViewModel {
                     label: '☕ Pause', 
                     value: 'BREAK', 
                     variant: 'secondary', 
-                    onClick: (() => plannerService.loadRecommendationsByGroup('BREAK')) 
+                    onClick: (() => plannerService.openPlannerModal('BREAK')) 
                 },
                 { 
                     label: '🍃 Was Kleines', 
                     value: 'LIGHT', 
                     variant: 'primary', 
-                    onClick: (() => plannerService.loadRecommendationsByGroup('LIGHT')) 
+                    onClick: (() => plannerService.openPlannerModal('LIGHT')) 
                 },
                 { 
                     label: '🚀 Nächster Brocken', 
                     value: 'HEAVY', 
                     variant: 'accent',
-                    onClick: (() => plannerService.loadRecommendationsByGroup('HEAVY'))
+                    onClick: (() => plannerService.openPlannerModal('HEAVY'))
                  }
             ],
         );

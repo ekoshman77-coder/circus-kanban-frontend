@@ -39,7 +39,11 @@
 </div>
 
 @if (isModalOpen()) {
-<app-todo-planning-modal-component [initialTaskName]="prefilledTaskName()" [currentMilestoneId]="newMilestoneId()"
-  (closeModal)="isModalOpen.set(false)" (todoPlanned)="onTodoModalPlanned()">
+<app-todo-planning-modal-component 
+  [initialTaskName]="prefilledTaskName()" 
+  [currentMilestoneId]="newMilestoneId()"
+  [todoMode]="actuelModus()"
+  (closeModal)="isModalOpen.set(false)" 
+  (todoPlanned)="onTodoModalPlanned()">
 </app-todo-planning-modal-component>
 }
