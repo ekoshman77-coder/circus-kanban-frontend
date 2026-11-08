@@ -1,4 +1,11 @@
-import { RecommendedTodoItem } from "../services/ai/planner-service";
+import { PlannerRecommendationDetail } from "../repositories/dto/planner-recommendation-response";
+import { Todo } from "./todo";
+
+export interface RecommendedTodoItem {
+  todo: Todo;
+  plannerDetails: PlannerRecommendationDetail[];
+  modeCode: 'STANDARD' | 'ALL_SNOOZED';
+}
 
 // Das saubere Domain-Model für die UI
 export interface BlueprintViewSlot {

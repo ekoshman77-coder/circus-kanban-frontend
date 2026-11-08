@@ -233,13 +233,15 @@
   }
 }
 
-/* Wenn die Karte akzeptiert ist, bekommt sie direkt diesen edlen Look */
+/* 🌟 Sofort sichtbarer, fester Hintergrund für akzeptierte Karten */
 .recommendation-card.accepted {
-  border: 2px solid #10b981;
-  box-shadow: 0 8px 20px -4px rgba(16, 185, 129, 0.3);
+  background: #d1fae5 !important; /* Ein kräftiges, sauberes Mintgrün */
+  border-color: #059669 !important;
+  box-shadow: 0 8px 20px -4px rgba(5, 150, 105, 0.35);
 }
 
-/* Auch beim Hovern bewegt sich der Rahmen nun vollkommen synchron mit */
+/* Auch beim Hovern bleibt der grüne Hintergrund stabil erhalten und wandert perfekt mit */
 .recommendation-card.accepted:hover {
-  box-shadow: 0 14px 28px -4px rgba(16, 185, 129, 0.45);
+  background: #a7f3d0 !important;
+  box-shadow: 0 14px 28px -4px rgba(5, 150, 105, 0.5);
 }

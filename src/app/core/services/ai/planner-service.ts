@@ -6,16 +6,10 @@ import { ConnectionService } from '../connection/connection-service';
 import { BaseDataManager } from '../abstract-base-data-manager/base-data-manager';
 import { AcceptAction, RejectAction, SnoozeAction } from '../../models/recommendation-actions';
 import { PlannerDataManagerService } from './planner-data-manager-service';
-import { PlannerRecommendationsResponse, DailyBlueprintResponse, PlannerRecommendationDetail, PlannerRecommendationItem } from '../../repositories/dto/planner-recommendation-response';
+import { PlannerRecommendationsResponse, DailyBlueprintResponse, PlannerRecommendationDetail, PlannerRecommendationItem, MorningRecommendationsResponse, MorningRecommendationItem } from '../../repositories/dto/planner-recommendation-response';
 import { TodoService } from '../todo/todo-service';
-import { DailyBlueprintViewModel, PlannerRecommendationViewModel } from '../../models/recommendation-view-models';
+import { DailyBlueprintViewModel, PlannerRecommendationViewModel, RecommendedTodoItem } from '../../models/recommendation-view-models';
 import { catchError, finalize, map, Observable, of, tap } from 'rxjs';
-
-export interface RecommendedTodoItem {
-  todo: Todo;
-  plannerDetails: PlannerRecommendationDetail[];
-  modeCode: 'STANDARD' | 'ALL_SNOOZED';
-}
 
 @Injectable({
   providedIn: 'root'
@@ -108,26 +102,37 @@ export class PlannerService extends BaseDataManager {
     }
   }
 
+  private mapMorningRecommendationItem(item: MorningRecommendationItem): RecommendedTodoItem {
+    console.log('🔍 Service: Rohe Server-Antwort empfangen:', item);
+   const mappedTodo = Todo.fromJson(item.todo);
+   return {
+      todo: mappedTodo,
+      plannerDetails: item.plannerDetails,
+      modeCode: 'STANDARD'
+   }  
+
+  }
   // --- Modal Steuerung ---
 
   public checkMorningState(): void {
-    const now = new Date();
-    const currentHour = now.getHours();
-    const isMorningTime = currentHour >= 5 && currentHour < 12;
-    const todayString = now.toISOString().split('T')[0];
-    const lastShownDate = this.localStorageService.getItem('last_morning_greeting_date');
+    this.showMorningModal.set(true);
+    // const now = new Date();
+    // const currentHour = now.getHours();
+    // const isMorningTime = currentHour >= 5 && currentHour < 12;
+    // const todayString = now.toISOString().split('T')[0];
+    // const lastShownDate = this.localStorageService.getItem('last_morning_greeting_date');
 
-    if (lastShownDate === todayString) {
-      return;
-    }
+    // if (lastShownDate === todayString) {
+    //   return;
+    // }
 
-    if (isMorningTime) {
-      if (this.connectionService.isOffline()) {
-        this.localStorageService.setItem('last_morning_greeting_date', todayString);
-        return;
-      }
-      this.showMorningModal.set(true);
-    }
+    // if (isMorningTime) {
+    //   if (this.connectionService.isOffline()) {
+    //     this.localStorageService.setItem('last_morning_greeting_date', todayString);
+    //     return;
+    //   }
+    //   this.showMorningModal.set(true);
+    // }
   }
 
   public dismissMorningModal(): void {
@@ -173,7 +178,15 @@ export class PlannerService extends BaseDataManager {
     this.isLoading.set(true);
 
     return this.aiRepository.getMorningRecommendation().pipe(
-       map(response => this.handleRecommendationsResponse(response)),
+       map(response => {
+         const roundId = response.roundId;
+         const recs = response.recommendations.map(rec => this.mapMorningRecommendationItem(rec))
+         const vm: PlannerRecommendationViewModel = {
+            roundId: roundId,
+            recommendations: recs
+         }
+         return vm
+      }),
        finalize(() => {
          this.isLoading.set(false)
        })

@@ -1,8 +1,9 @@
 import { Component, input, signal, computed, inject, ChangeDetectionStrategy, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { PlannerService, RecommendedTodoItem } from '../../../core/services/ai/planner-service';
+import { PlannerService } from '../../../core/services/ai/planner-service';
 import { AcceptAction, RejectAction } from '../../../core/models/recommendation-actions';
 import { RecommendationCardComponent } from '../recommendation-card-component/recommendation-card-component';
+import { RecommendedTodoItem } from '../../../core/models/recommendation-view-models';
 
 @Component({
   selector: 'app-planner-recommendation',

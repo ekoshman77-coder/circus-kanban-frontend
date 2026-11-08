@@ -1,9 +1,9 @@
-import { Component, computed, input, output, signal } from '@angular/core';
+import { Component, computed, HostBinding, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TodoItemComponent } from '../../../core/shared/components/todo-item-component/todo-item-component';
-import { RecommendedTodoItem } from '../../../core/services/ai/planner-service';
 import { TodoViewModel } from '../../../core/viewmodel/todo-view-model';
 import { AcceptAction, AcceptReason, RejectAction, RejectReason } from '../../../core/models/recommendation-actions';
+import { RecommendedTodoItem } from '../../../core/models/recommendation-view-models';
 
 @Component({
   selector: 'app-recommendation-card',
@@ -17,7 +17,6 @@ export class RecommendationCardComponent {
   item = input.required<RecommendedTodoItem>();
   roundId = input.required<string>()
   acceptText = input<string>('🚀 Anpacken');
-  isAccepted = input<boolean>(false);
   
   accepted = output<AcceptAction>();
   rejected = output<RejectAction>();

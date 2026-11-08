@@ -1,8 +1,8 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
-import { PlannerService, RecommendedTodoItem } from '../../../core/services/ai/planner-service';
+import { PlannerService } from '../../../core/services/ai/planner-service';
 import { CommonModule } from '@angular/common';
 import { finalize } from 'rxjs';
-import { PlannerRecommendationViewModel } from '../../../core/models/recommendation-view-models';
+import { PlannerRecommendationViewModel, RecommendedTodoItem } from '../../../core/models/recommendation-view-models';
 
 @Component({
   selector: 'app-morning-planner-component',

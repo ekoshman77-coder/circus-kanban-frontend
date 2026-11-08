@@ -32,7 +32,6 @@
             [item]="rec" 
             [roundId]="blueprint.roundId"
             [acceptText]="isAccepted(rec.todo.id) ? '🚀 In Bearbeitung' : '✅ Bestätigen'"
-            [isAccepted]="isAccepted(rec.todo.id)"
             (accepted)="onTodoAccepted($event)" 
             (rejected)="onTodoRejected($event)">
           </app-recommendation-card>
@@ -41,6 +40,14 @@
           <button class="restore-corner-badge" title="Für heute verworfen – Klicken zum Wiederherstellen"
             (click)="restoreTodo(rec.todo.id)">
             ↩️
+          </button>
+          }
+
+          <!-- ✅ NEU: Badge für Akzeptiert/Bestätigt (oben links) -->
+          @if (isAccepted(rec.todo.id)) {
+          <button class="accept-corner-badge" title="Aufgabe ist bestätigt – Klicken zum Aufheben"
+            (click)="unacceptTodo(rec.todo.id)">
+            ⭐
           </button>
           }
         </div>

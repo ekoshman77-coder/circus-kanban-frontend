@@ -7,7 +7,7 @@ import { TodoSnoozyPayload } from './dto/todo-snoozy-payload';
 import { PlannerFeedbackPayload } from '../models/queue-items/planner-queue-payload';
 import { PlannerGroupRecommendationPayload } from './dto/planner-group-recomendation-payload';
 import { PlannerRecommendationRequest } from '../models/planner-recommendation-request';
-import { DailyBlueprintResponse, PlannerRecommendationsResponse } from './dto/planner-recommendation-response';
+import { DailyBlueprintResponse, MorningRecommendationsResponse, PlannerRecommendationsResponse } from './dto/planner-recommendation-response';
 
 export interface MilestoneSuggestion {
   title: string;
@@ -157,9 +157,9 @@ export class AiRepository {
   /**
    * ☕ Holt die morgendliche Top-Empfehlung für den Start
    */
-  public getMorningRecommendation(): Observable<PlannerRecommendationsResponse> {
+  public getMorningRecommendation(): Observable<MorningRecommendationsResponse> {
     console.log("AiRepository:: Start loading morning recommendation");
-    return this.http.get<PlannerRecommendationsResponse>(aiMorningPlannerUrl);
+    return this.http.get<MorningRecommendationsResponse>(aiMorningPlannerUrl);
   }
 
   /**

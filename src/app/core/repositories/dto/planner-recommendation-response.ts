@@ -1,3 +1,6 @@
+import { Todo } from "../../models/todo";
+import { ITodoJSON } from "./todo-json";
+
 export interface PlannerRecommendationDetail {
   plannerType: 'BAYES' | 'NEURAL';
   score: number;
@@ -9,6 +12,7 @@ export interface PlannerRecommendationItem {
   plannerDetails: PlannerRecommendationDetail[];
   modeCode?: 'STANDARD' | 'ALL_SNOOZED';
 }
+
 
 export interface PlannerRecommendationsResponse {
   roundId: string;
@@ -28,4 +32,15 @@ export interface DailyBlueprintResponse {
   userId: string;
   generatedAtHour: number;
   slots: BlueprintSlotDto[];
+}
+
+export interface MorningRecommendationItem {
+  todo: ITodoJSON;
+  plannerDetails: PlannerRecommendationDetail[];
+  modeCode?: 'STANDARD' | 'ALL_SNOOZED';
+}
+
+export interface MorningRecommendationsResponse {
+  roundId: string;
+  recommendations: MorningRecommendationItem[];
 }

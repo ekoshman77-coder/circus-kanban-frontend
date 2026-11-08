@@ -148,6 +148,11 @@ export class BlueprintPageComponent implements OnInit {
     this.plannerService.rejectRecommendation(action);
   }
 
+  unacceptTodo(todoId: string) {
+    this.acceptedBuffer.update(list => list.filter(id => id !== todoId));
+    this.persistBuffers();
+  }
+
   restoreTodo(todoId: string) {
     this.rejectionsBuffer.update(list => list.filter(id => id !== todoId));
     this.persistBuffers();

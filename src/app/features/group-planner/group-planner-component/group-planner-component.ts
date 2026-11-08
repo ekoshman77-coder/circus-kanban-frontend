@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, effect, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { PlannerService, RecommendedTodoItem } from '../../../core/services/ai/planner-service';
 import { PlannerRecommendationComponent } from '../../planner/planner-recommendation-component/planner-recommendation-component';
+import { PlannerService } from '../../../core/services/ai/planner-service';
+import { RecommendedTodoItem } from '../../../core/models/recommendation-view-models';
 
 @Component({
   selector: 'app-group-planner-modal',
