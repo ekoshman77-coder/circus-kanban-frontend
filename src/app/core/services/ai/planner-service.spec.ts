@@ -4,27 +4,28 @@ import { UserService } from '../user/user-service';
 import { AiRepository } from '../../repositories/ai-repository';
 import { ConnectionService } from '../connection/connection-service';
 import { PlannerDataManagerService } from './planner-data-manager-service';
+import { TodoService } from '../todo/todo-service';
 import { Todo } from '../../models/todo';
-import { RecommendationResult } from '../../models/recommendation-result';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { of } from 'rxjs';
 import { signal } from '@angular/core';
+import { RejectAction } from '../../models/recommendation-actions';
 
 describe('PlannerService (Vitest - Strictly Typed)', () => {
   let service: PlannerService;
-  let mockUserService: Partial< UserService >;
-  let mockAiRepository: Partial< AiRepository >;
-  let mockConnectionService: Partial< ConnectionService >;
-  let mockPlannerDataManager: Partial< PlannerDataManagerService >;
+  let mockUserService: Partial<UserService>;
+  let mockAiRepository: Partial<AiRepository>;
+  let mockConnectionService: Partial<ConnectionService>;
+  let mockPlannerDataManager: Partial<PlannerDataManagerService>;
+  let mockTodoService: Partial<TodoService>;
 
-  const rawServerTodo = {
+  const sampleTodo = new Todo({
     id: 'todo-123',
     task: 'Räume deinen Schreibtisch auf',
     category: 'Arbeit',
     done: false,
-    projectId: 'project-1',
     userId: 'user-999'
-  };
+  });
 
   beforeEach(() => {
     mockUserService = {
@@ -32,16 +33,21 @@ describe('PlannerService (Vitest - Strictly Typed)', () => {
     };
 
     mockConnectionService = {
-      isOffline: signal< boolean >(false),
-      isOnline: signal< boolean >(true)
+      isOffline: signal<boolean>(false),
+      isOnline: signal<boolean>(true)
+    };
+
+    mockTodoService = {
+      allTodos: signal<Todo[]>([sampleTodo])
     };
 
     mockAiRepository = {
       getPlannerRecommendation: vi.fn().mockReturnValue(of({
         roundId: 'round-abc',
+        userId: 'user-999',
         recommendations: [
           {
-            todo: rawServerTodo,
+            todoId: 'todo-123',
             plannerDetails: [],
             modeCode: 'STANDARD'
           }
@@ -60,7 +66,8 @@ describe('PlannerService (Vitest - Strictly Typed)', () => {
         { provide: UserService, useValue: mockUserService },
         { provide: ConnectionService, useValue: mockConnectionService },
         { provide: AiRepository, useValue: mockAiRepository },
-        { provide: PlannerDataManagerService, useValue: mockPlannerDataManager }
+        { provide: PlannerDataManagerService, useValue: mockPlannerDataManager },
+        { provide: TodoService, useValue: mockTodoService }
       ]
     });
 
@@ -76,70 +83,52 @@ describe('PlannerService (Vitest - Strictly Typed)', () => {
   });
 
   describe('loadSmartRecommendation', () => {
-    it('sollte die Empfehlungen laden und das Signal befüllen', () => {
-      service.loadSmartRecommendation('HIGH', 4);
+    it('sollte die Empfehlungen vom Repository laden und mappen', (done) => {
+      service.loadSmartRecommendation('HIGH', 4).subscribe(vm => {
+        expect(mockAiRepository.getPlannerRecommendation).toHaveBeenCalledWith({
+          userId: 'user-999',
+          userEnergy: 'HIGH',
+          workingTimeLeft: 4
+        });
 
-      expect(mockAiRepository.getPlannerRecommendation).toHaveBeenCalledWith({
-        userId: 'user-999',
-        userEnergy: 'HIGH',
-        workingTimeLeft: 4
+        expect(vm).not.toBeNull();
+        expect(vm?.roundId).toBe('round-abc');
+        expect(vm?.recommendations.length).toBe(1);
+        expect(vm?.recommendations[0].todo.task).toBe('Räume deinen Schreibtisch auf');
+        expect(service.isLoading()).toBe(false);
+        
       });
-
-      expect(service.activeRoundId()).toBe('round-abc');
-      expect(service.recommendations().length).toBe(1);
-      expect(service.recommendations()[0].todo.task).toBe('Räume deinen Schreibtisch auf');
-      expect(service.isLoading()).toBe(false);
     });
   });
 
-  describe('sendFeedback', () => {
-    it('sollte Snooze-Aktionen in die Queue stellen und Runden-Feedback absenden', () => {
-      service.activeRoundId.set('round-abc');
+  describe('Feedback and Snooze Actions', () => {
+    it('sollte akzeptierte Empfehlungen an den DataManager übergeben', () => {
+      const action = { roundId: 'round-abc', todoId: 'todo-123' };
+      service.acceptRecommendation(action);
 
-      const feedback: RecommendationResult = {
-        selectedTodoId: 'todo-999',
-        rejections: [
-          { todoId: 'todo-123', reason: 'snooze' },
-          { todoId: 'todo-456', reason: 'too_heavy' }
-        ]
-      };
-
-      service.sendFeedback(feedback);
-
-      // Verify queueSnooze was called
-      expect(mockPlannerDataManager.queueSnooze).toHaveBeenCalledWith('todo-123', 30);
-
-      // Verify Feedback Payload in Queue
       expect(mockPlannerDataManager.queueFeedback).toHaveBeenCalledWith(
         'user-999',
-        'round-abc',
-        { todoId: 'todo-999', reason: null }, 
-        [{ todoId: 'todo-456', reason: 'too_heavy' }]
+        action,
+        []
       );
-
-      // Verification of cleared state (Zero Latency)
-      expect(service.recommendations()).toEqual([]);
-      expect(service.activeRoundId()).toBeNull();
-      expect(service.isLoading()).toBe(false);
     });
-  });
 
-  describe('snoozyrecommendedTodo', () => {
-    it('sollte das Snoozing in die Queue einreihen und lokal aus dem Signal entfernen', () => {
-      const todo1 = new Todo({ task: 'Task 1', id: 'todo-1' });
-      const todo2 = new Todo({ task: 'Task 2', id: 'todo-2' });
+    it('sollte abgelehnte Empfehlungen an den DataManager übergeben', () => {
+      const action: RejectAction = { roundId: 'round-abc', todoId: 'todo-123', reason: 'too_heavy' };
+      service.rejectRecommendation(action);
 
-      service.recommendations.set([
-        { todo: todo1, plannerDetails: [], modeCode: 'STANDARD' },
-        { todo: todo2, plannerDetails: [], modeCode: 'STANDARD' }
-      ]);
+      expect(mockPlannerDataManager.queueFeedback).toHaveBeenCalledWith(
+        'user-999',
+        null,
+        [action]
+      );
+    });
 
-      // Aufruf ist void, kein .subscribe()
-      service.snoozyrecommendedTodo('todo-1', 15);
+    it('sollte Snooze-Aktionen in die Queue einreihen', () => {
+      const snoozeAction = { todoId: 'todo-123', durationInMin: 30 };
+      service.snoozeRecommendation(snoozeAction);
 
-      expect(mockPlannerDataManager.queueSnooze).toHaveBeenCalledWith('todo-1', 15);
-      expect(service.recommendations().length).toBe(1);
-      expect(service.recommendations()[0].todo.id).toBe('todo-2');
+      expect(mockPlannerDataManager.queueSnooze).toHaveBeenCalledWith('todo-123', 30);
     });
   });
 });

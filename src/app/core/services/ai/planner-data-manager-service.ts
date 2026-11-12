@@ -3,12 +3,10 @@ import { Observable, of, throwError } from 'rxjs';
 import { BaseQueueDataManager } from '../central-queue/base-queue-data-manager';
 import { QueueItem } from '../../models/queue-items/queue-item';
 import { EmptyStateProvider } from '../central-queue/state-providers/empty-state-provider';
-import { PlannerFeedbackPayload, SnoozePayload } from '../../models/queue-items/planner-queue-payload';
+import { PlannerFeedbackPayload, PlannerQueueAction, RetrainPlannerPayload, SnoozePayload } from '../../models/queue-items/planner-queue-payload';
 import { QueueHandlerName } from '../../enums/queue-handler-name';
 import { AiRepository } from '../../repositories/ai-repository';
 import { AcceptAction, RejectAction } from '../../models/recommendation-actions';
-
-export type PlannerQueueAction = 'SEND_FEEDBACK' | 'SNOOZE_TODO';
 
 @Injectable({
   providedIn: 'root'
@@ -46,6 +44,11 @@ export class PlannerDataManagerService extends BaseQueueDataManager<EmptyStatePr
           return this.aiRepository.snoozyTodo(payload.id, duration);
         }
         return of(null);
+      }
+
+      case 'RETRAIN_AI': {
+        // Ruft den POST-Endpunkt /api/ai/planner/train über das Repository auf
+        return this.aiRepository.retrainAi();
       }
 
       default:
@@ -119,6 +122,21 @@ export class PlannerDataManagerService extends BaseQueueDataManager<EmptyStatePr
     };
 
     this.queueService.enqueue(this.serviceName, 'SNOOZE_TODO', payload);
+  }
+
+  /**
+   * 🎓 Schiebt das Retraining des globalen neuronalen Netzes in die Queue
+   */
+  public queueRetrainAi(): void {
+    const payload: RetrainPlannerPayload = {
+      id: 'retrain-global-' + Date.now(),
+      displayInfo: {
+        category: 'KI-Planer',
+        title: 'KI-Weiterbildung'
+      }
+    };
+
+    this.queueService.enqueue(this.serviceName, 'RETRAIN_AI', payload);
   }
 
   // ==========================================

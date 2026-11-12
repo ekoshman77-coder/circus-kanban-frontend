@@ -2,16 +2,21 @@ import { Component, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { UserEnergyLevel } from '../../../core/models/user.settings';
 import { UserSettingsService } from '../../../core/services/user/user-settings-service';
+import { PlannerService } from '../../../core/services/ai/planner-service';
+import { NotificationService } from '../../../core/services/notification/notification-service';
+import { UniversalPopupComponent } from '../../../core/shared/components/universal-popup-component/universal-popup-component';
 
 @Component({
   selector: 'app-planner-settings',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, UniversalPopupComponent],
   templateUrl: './planner-settings-component.html',
   styleUrl: './planner-settings-component.css'
 })
 export class PlannerSettingsComponent {
   private userSettingsService = inject(UserSettingsService);
+  private plannerservice = inject(PlannerService)
+  private notificationService = inject(NotificationService)
 
   // 1️⃣ LOKALE UI-SIGNALS (Komponente besitzt ihren eigenen State)
   public userEnergy = signal<UserEnergyLevel>('MEDIUM');
@@ -27,6 +32,9 @@ export class PlannerSettingsComponent {
   public displayWorkingHours = signal<number>(8);
   public displayPrimeStart = signal<number>(10);
   public displayPrimeEnd = signal<number>(18);
+
+  // Signal für das Retraining-Popup
+  public showRetrainPopup = signal<boolean>(false);
 
   constructor() {
     // Synchronisiere den DataManager-State in die lokalen Komponentensignals
@@ -47,7 +55,31 @@ export class PlannerSettingsComponent {
 
       this.sliderWorkingTimeLeft.set(settings.workingTimeLeft);
       this.displayWorkingTimeLeft.set(settings.workingTimeLeft);
-    }, { allowSignalWrites: true });
+    });
+  }
+
+  // Öffnet das Popup
+  public openRetrainPopup(): void {
+    this.showRetrainPopup.set(true);
+  }
+
+  // Wird aufgerufen, wenn der User im Popup auf "Bestätigen" klickt
+  public handleRetrainConfirm(): void {
+    this.showRetrainPopup.set(false);
+
+    // 1. In die Queue schieben (Respektiert Live & Labor-Modus)
+    this.plannerservice.retrainAi();
+
+    // 2. Schicke Erfolgs-Notification
+    this.notificationService.showNotification(
+      '🚀 KI-Weiterbildung wurde erfolgreich in die Warteschlange eingereiht!',
+      'success'
+    );
+  }
+
+  // Wird aufgerufen, wenn abgebrochen wird
+  public handleRetrainCancel(): void {
+    this.showRetrainPopup.set(false);
   }
 
   // ⚡ ENERGIE LEVEL ÄNDERN
@@ -96,5 +128,9 @@ export class PlannerSettingsComponent {
 
   public onPrimeTimeEndChange(): void {
     this.userSettingsService.changePrimeTimeEnd(this.displayPrimeEnd());
+  }
+
+  public onRetrainAi() {
+    this.showRetrainPopup.set(true) 
   }
 }

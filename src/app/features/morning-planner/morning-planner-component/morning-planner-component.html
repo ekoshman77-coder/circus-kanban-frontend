@@ -10,14 +10,14 @@
       </div>
 
       <!-- Loading State -->
-      @if (plannerService.isLoading()) {
+      @if (isLoading()) {
         <div class="loading-state">
           <p>Die KI brüht den perfekten Start-Task für dich auf...</p>
         </div>
       }
 
       <!-- Empfehlung vorhanden -->
-      @if (!plannerService.isLoading() && currentRecommendations().length > 0) {
+      @if (!isLoading() && currentRecommendations().length > 0) {
         @let currentItem = currentRecommendations()[0];
         
         <div class="task-spotlight">
@@ -45,7 +45,7 @@
       }
 
       <!-- Fallback, falls keine Aufgabe da ist -->
-      @if (!plannerService.isLoading() && currentRecommendations().length === 0) {
+      @if (!isLoading() && currentRecommendations().length === 0) {
         <div class="empty-state">
           <p>Alles blitzblank für heute oder noch im Schlummermodus. Genieß deinen Tag! 🎉</p>
           <button class="btn btn-secondary" (click)="closeModal()">Schließen</button>

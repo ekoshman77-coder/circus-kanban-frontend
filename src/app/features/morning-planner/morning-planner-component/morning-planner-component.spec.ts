@@ -3,6 +3,7 @@ import { MorningPlannerComponent } from './morning-planner-component';
 import { PlannerService } from '../../../core/services/ai/planner-service';
 import { signal } from '@angular/core';
 import { describe, beforeEach, it, expect, vi } from 'vitest';
+import { of } from 'rxjs';
 
 describe('MorningPlannerComponent', () => {
   let component: MorningPlannerComponent;
@@ -13,7 +14,10 @@ describe('MorningPlannerComponent', () => {
     // 💡 1. Wir bauen einen sauberen Mock für den PlannerService
     mockPlannerService = {
       showMorningModal: signal(false), // Das Signal, das die Komponente per computed abfragt
-      loadMorningRecommendation: vi.fn(),
+      loadMorningRecommendation: vi.fn().mockReturnValue(of({
+        roundId: 'round-123',
+        recommendations: [],
+      })),
       dismissMorningModal: vi.fn(),
       sendFeedback: vi.fn(),
       snoozyrecommendedTodo: vi.fn()
@@ -42,7 +46,7 @@ describe('MorningPlannerComponent', () => {
     mockPlannerService.showMorningModal.set(true);
     
     // Komponente triggert ngOnInit / Effekte neu
-    component.ngOnInit();
+    fixture.detectChanges();
 
     expect(mockPlannerService.loadMorningRecommendation).toHaveBeenCalled();
   });

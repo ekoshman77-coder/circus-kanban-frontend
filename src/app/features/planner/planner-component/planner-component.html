@@ -32,17 +32,27 @@
 
 <div class="planner-container">
   <div class="planner-header">
-    <h2>Smart Planner</h2>
-    
-    <!-- Trigger-Button, wenn kein Panel offen ist & kein Fokus gewählt wurde -->
-    @if (!showAiRecommendation() && !activeFocusTodo()) {
-      <button 
-        class="btn-trigger" 
-        (click)="openRecommendationPanel()">
-        ✨ KI-Empfehlung holen
-      </button>
-    }
-  </div>
+    <div class="header-main-row">
+      <h2 class="gradient-title">Smart Planner</h2>
+      
+      <!-- 🎛️ Hier kommen die beiden Buttons nebeneinander hin -->
+      <div class="header-actions-group">
+        <button 
+          class="settings-toggle-btn" 
+          [class.active-btn]="showSettings()"
+          (click)="showSettings.set(!showSettings())">
+          ⚙️ Einstellungen <span class="toggle-arrow">{{ showSettings() ? '▲' : '▼' }}</span>
+        </button>
+
+        @if (!showAiRecommendation() && !activeFocusTodo()) {
+          <button 
+            class="magic-btn" 
+            (click)="openRecommendationPanel()">
+            ✨ KI-Empfehlung holen
+          </button>
+        }
+      </div>
+    </div>
 
   @if (showSettings()) {
     <div class="planner-settings-dropdown animate-slide-down">

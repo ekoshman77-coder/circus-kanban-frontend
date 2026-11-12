@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { PlannerService } from '../../../core/services/ai/planner-service';
 import { CommonModule } from '@angular/common';
 import { finalize } from 'rxjs';

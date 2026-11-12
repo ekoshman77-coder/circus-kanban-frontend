@@ -1,5 +1,7 @@
 import { SnapshotPayload } from "./queue-item";
 
+export type PlannerQueueAction = 'SEND_FEEDBACK' | 'SNOOZE_TODO' | 'RETRAIN_AI';
+
 export interface TodoFeedbackItem {
   todoId: string;
   reason: string | null; // z. B. "motivation", "effort", "time" oder Ablehnungsgründe
@@ -15,4 +17,8 @@ export interface PlannerFeedbackPayload extends SnapshotPayload {
 export interface SnoozePayload extends SnapshotPayload {
   // id entspricht der todoId!
   durationInMin: number;
+}
+
+export interface RetrainPlannerPayload extends SnapshotPayload {
+  // Keine weiteren Spezialfelder nötig, da der Endpunkt parameterlos ist
 }

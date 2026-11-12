@@ -152,3 +152,24 @@
   font-size: 12px; 
   margin: 0 0 22px 0; 
 }
+
+/* --- 🎓 KI-WEITERBILDUNG --- */
+.retrain-label {
+  color: #6366f1;
+}
+
+.retrain-subtitle {
+  margin-bottom: 12px !important;
+}
+
+.ai-retrain-btn {
+  width: 100%;
+  text-align: center;
+  background: rgba(224, 231, 255, 0.7);
+  border: 1px solid rgba(99, 102, 241, 0.5);
+  color: #3730a3;
+}
+
+.ai-retrain-btn:hover {
+  background: rgba(224, 231, 255, 0.9);
+}

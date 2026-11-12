@@ -10,6 +10,7 @@ import { PlannerRecommendationsResponse, DailyBlueprintResponse, PlannerRecommen
 import { TodoService } from '../todo/todo-service';
 import { DailyBlueprintViewModel, PlannerRecommendationViewModel, RecommendedTodoItem } from '../../models/recommendation-view-models';
 import { catchError, finalize, map, Observable, of, tap } from 'rxjs';
+import { NotificationService } from '../notification/notification-service';
 
 @Injectable({
   providedIn: 'root'
@@ -20,6 +21,7 @@ export class PlannerService extends BaseDataManager {
   private aiRepository = inject(AiRepository);
   private connectionService = inject(ConnectionService);
   private plannerDataManager = inject(PlannerDataManagerService);
+  private notificationService = inject(NotificationService)
 
   //  public readonly activeRoundId = signal<string | null>(null);
   public readonly isLoading = signal<boolean>(false);
@@ -115,24 +117,23 @@ export class PlannerService extends BaseDataManager {
   // --- Modal Steuerung ---
 
   public checkMorningState(): void {
-    this.showMorningModal.set(true);
-    // const now = new Date();
-    // const currentHour = now.getHours();
-    // const isMorningTime = currentHour >= 5 && currentHour < 12;
-    // const todayString = now.toISOString().split('T')[0];
-    // const lastShownDate = this.localStorageService.getItem('last_morning_greeting_date');
+    const now = new Date();
+    const currentHour = now.getHours();
+    const isMorningTime = currentHour >= 5 && currentHour < 12;
+    const todayString = now.toISOString().split('T')[0];
+    const lastShownDate = this.localStorageService.getItem('last_morning_greeting_date');
 
-    // if (lastShownDate === todayString) {
-    //   return;
-    // }
+    if (lastShownDate === todayString) {
+      return;
+    }
 
-    // if (isMorningTime) {
-    //   if (this.connectionService.isOffline()) {
-    //     this.localStorageService.setItem('last_morning_greeting_date', todayString);
-    //     return;
-    //   }
-    //   this.showMorningModal.set(true);
-    // }
+    if (isMorningTime) {
+      if (this.connectionService.isOffline()) {
+        this.localStorageService.setItem('last_morning_greeting_date', todayString);
+        return;
+      }
+      this.showMorningModal.set(true);
+    }
   }
 
   public dismissMorningModal(): void {
@@ -148,6 +149,14 @@ export class PlannerService extends BaseDataManager {
   public openPlannerModal(group: string): void {
     this.currentPlannerGroup.set(group);
     this.showPlannerModal.set(true)
+  }
+
+  public retrainAi(): void {
+     this.plannerDataManager.queueRetrainAi();
+     this.notificationService.showNotification(
+      '🚀 KI-Weiterbildung wurde erfolgreich in die Warteschlange eingereiht!',
+      'success'
+    );
   }
 
   // --- Empfehlungen Laden (Die 4 Typen) ---

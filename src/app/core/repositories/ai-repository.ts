@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { aiCategoriesApiUrl, aiDailyBlueprintUrl, aiGroupPlannerUrl, aiMorningPlannerUrl, aiNoteCategoriesUrl, aiNotePredictionUrl, aiPredictionApiUrl, aiPredictionEffortUrl, aiSanitizationCategoriesUrl, aiSanitizationPredictionUrl, aiTodoSnoozingUrl, getAiMilestonesUrl, smartPlannerFeedbackUrl, smartPlannerUrl, trackAiIgnoredMilestoneUrl, trackAiMilestoneDegradationUrl, trackAiMilestoneSelectionUrl } from './links';
+import { aiCategoriesApiUrl, aiDailyBlueprintUrl, aiGroupPlannerUrl, aiMorningPlannerUrl, aiNoteCategoriesUrl, aiNotePredictionUrl, aiPredictionApiUrl, aiPredictionEffortUrl, aiRetrainUrl, aiSanitizationCategoriesUrl, aiSanitizationPredictionUrl, aiTodoSnoozingUrl, getAiMilestonesUrl, smartPlannerFeedbackUrl, smartPlannerUrl, trackAiIgnoredMilestoneUrl, trackAiMilestoneDegradationUrl, trackAiMilestoneSelectionUrl } from './links';
 import { IgnoredMilestones, MilestoneInteractionPayload } from './dto/tracked-milestones';
 import { TodoSnoozyPayload } from './dto/todo-snoozy-payload';
 import { PlannerFeedbackPayload } from '../models/queue-items/planner-queue-payload';
@@ -169,5 +169,11 @@ export class AiRepository {
     const payload: PlannerGroupRecommendationPayload = { desiredGroup };
     console.log("AiRepository:: Start loading group recommendation", payload);
     return this.http.post<PlannerRecommendationsResponse>(aiGroupPlannerUrl, payload);
+  }
+
+  // retrain ai
+  public retrainAi(): Observable<void>{
+    console.log("AiRepository:: Start retrin Ai");
+    return this.http.post<void>(aiRetrainUrl, {});     
   }
 }

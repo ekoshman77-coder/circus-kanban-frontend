@@ -34,5 +34,7 @@
   export const aiMorningPlannerUrl = `${baseUrl}/ai/planner/morning`;
   export const aiDailyBlueprintUrl = `${baseUrl}/ai/planner/blueprint`;
   export const aiGroupPlannerUrl = `${baseUrl}/ai/planner/group-recommend`;
+  export const aiRetrainUrl = `${baseUrl}/ai/planner/train`;
+  
 
   

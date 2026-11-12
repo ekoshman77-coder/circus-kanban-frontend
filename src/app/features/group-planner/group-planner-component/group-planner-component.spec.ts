@@ -3,6 +3,7 @@ import { GroupPlannerModalComponent } from './group-planner-component';
 import { PlannerService } from '../../../core/services/ai/planner-service';
 import { TodoService } from '../../../core/services/todo/todo-service';
 import { describe, beforeEach, it, expect, vi } from 'vitest';
+import { signal } from '@angular/core';
 
 describe('GroupPlannerComponent', () => {
   let component: GroupPlannerModalComponent;
@@ -14,7 +15,9 @@ describe('GroupPlannerComponent', () => {
     // 💡 1. Mocks für die benötigten Services erstellen
     mockPlannerService = {
       closePlannerModal: vi.fn(),
-      showPlannerModal: vi.fn()
+      showPlannerModal: vi.fn(),
+      currentPlannerGroup: signal(""),
+      loadRecommendationsByGroup: vi.fn().mockReturnValue({ subscribe: vi.fn() })
     };
 
     mockTodoService = {

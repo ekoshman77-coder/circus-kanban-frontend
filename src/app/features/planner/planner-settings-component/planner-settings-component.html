@@ -36,6 +36,20 @@
 
   <hr class="settings-divider">
 
+  <!-- 🎓 KI-WEITERBILDUNG -->
+<div class="setting-group">
+    <label class="group-label retrain-label">🎓 KI-Modell & Weiterbildung</label>
+    <p class="profile-subtitle retrain-subtitle">
+      Kalibriert das globale neuronale Netz neu und richtet deine Präferenzen frisch aus.
+    </p>
+    <button 
+      type="button" 
+      class="energy-btn high ai-retrain-btn"
+      (click)="onRetrainAi()">
+      🎓 KI-Weiterbildung starten
+    </button>
+  </div>
+
   <h4 class="profile-title">🧠 Dein biologischer Rhythmus & Standards</h4>
   <p class="profile-subtitle">Diese Werte gelten als Standard für jeden neuen Tag.</p>
 
@@ -81,3 +95,17 @@
     </div>
   </div>
 </div>
+
+<!-- 🛸 UNIVERSAL POPUP FÜR DIE KI-WEITERBILDUNG -->
+@if (showRetrainPopup()) {
+  <app-universal-popup-component
+    animationIcon="🎓"
+    title="KI-Weiterbildung starten"
+    message="Möchtest du das neuronale Netz neu kalibrieren und deine persönlichen Bayes-Präferenzen frisch ausrichten?"
+    confirmText="Ja, Weiterbildung starten"
+    cancelText="Abbrechen"
+    mode="danger"
+    (confirm)="handleRetrainConfirm()"
+    (cancel)="handleRetrainCancel()">
+  </app-universal-popup-component>
+}
