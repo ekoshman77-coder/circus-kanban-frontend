@@ -206,3 +206,38 @@
 .accepted-card .accept-corner-badge {
   pointer-events: auto; 
 }
+
+.empty-blueprint-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  /* 🌿 Ein sanfter, eleganter Gradient von zartem Mint/Grün zu frischem Cyan/Blau */
+  background: linear-gradient(135deg, rgba(236, 253, 245, 0.8) 0%, rgba(224, 242, 254, 0.8) 100%);
+  border: 2px dashed rgba(16, 185, 129, 0.4);
+  border-radius: 20px;
+  color: #334155;
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+  box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.05), 0 8px 10px -6px rgba(59, 130, 246, 0.05);
+  backdrop-filter: blur(8px);
+}
+
+.empty-blueprint-state h2 {
+  margin: 0;
+  font-size: 1.6rem;
+  /* Edler Farbverlauf für die Überschrift */
+  background: linear-gradient(135deg, #065f46 0%, #0369a1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+}
+
+.empty-blueprint-state p {
+  margin: 0;
+  color: #475569;
+  font-size: 1rem;
+  max-width: 420px;
+  line-height: 1.6;
+}

@@ -238,10 +238,30 @@ export class PlannerService extends BaseDataManager {
   /**
    * ✅ Todo Akzeptieren
    */
-  public acceptRecommendation(action: AcceptAction): void {
-    const currentUserId = this.userService.getCurrentUserId() ?? '';
-    this.plannerDataManager.queueFeedback(currentUserId, action, []);
+public acceptRecommendation(action: AcceptAction, shouldActivate: boolean = true): void {
+  const currentUserId = this.userService.getCurrentUserId() ?? '';
+
+  if (shouldActivate) {
+    const todo = this.todoService.getTodoById(action.todoId);
+    if (todo) {
+      let updatedTodo = todo.cloneWith({ isStarted: true });
+
+      // Wenn es ein offenes Team-/Projekt-Todo ist, dem User zuweisen und auf IN_PROGRESS setzen
+      if (todo.milestoneId && todo.milestoneId.trim() !== '' && (!todo.assignedUserId || todo.assignedUserId.trim() === '')) {
+        updatedTodo = updatedTodo.cloneWith({
+          assignedUserId: currentUserId,
+          teamStatus: 'IN_PROGRESS',
+          isStarted: true
+        });
+      }
+
+      this.todoService.updateTodo(updatedTodo);
+    }
   }
+
+  // KI-Feedback wie gewohnt in die Queue einreihen
+  this.plannerDataManager.queueFeedback(currentUserId, action, []);
+}
 
   /**
    * ❌ Todo Ablehnen
